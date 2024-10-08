@@ -14,6 +14,8 @@
 // @include      http*://hentaiverse.org/*
 // @include      http*://alt.hentaiverse.org/*
 // @include      https://e-hentai.org/*
+// @connect        hentaiverse.org/*
+// @connect        e-hentai.org/*
 // @compatible   Firefox + Greasemonkey
 // @compatible   Chrome/Chromium + Tampermonkey
 // @compatible   Android + Firefox + Usi/Tampermonkey
@@ -22,17 +24,19 @@
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_notification
+// @grant          GM_xmlhttpRequest
 // @grant        unsafeWindow
 // @run-at       document-end
 // ==/UserScript==
 /* eslint-disable camelcase */
 
-const standalone = ['option', 'arena', 'drop', 'stats', 'roundType', 'staminaLostLog', 'monsterStatus', 'battleCode', 'roundAll', 'roundAll', 'roundNow', 'disabled'];
+const standalone = ['option', 'arena', 'drop', 'stats', 'roundType', 'staminaLostLog', 'monsterStatus', 'battleCode', 'roundAll', 'roundAll', 'roundNow', 'disabled', 'stamina', 'staminaTime'];
 const sharable = ['option'];
 const excludeStandalone = { 'option': ['optionStandalone', 'version', 'lang'] };
-let isIsekai = window.location.href.indexOf('isekai') !== -1;
-let current = isIsekai ? 'isekai' : 'persistent';
-let other = isIsekai ? 'persistent' : 'isekai';
+const herf = window.location.href;
+const isIsekai = herf.indexOf('isekai') !== -1;
+const current = isIsekai ? 'isekai' : 'persistent';
+const other = isIsekai ? 'persistent' : 'isekai';
 
 (function init() {
   if (window.location.host === 'e-hentai.org') {
@@ -110,18 +114,19 @@ let other = isIsekai ? 'persistent' : 'isekai';
     delValue(2);
     g('dateNow', time(2));
     if (g('option').quickSite) quickSite();
-    if (g('option').encounter) encounterCheck();
-    if (!g('option').restoreStamina && gE('#stamina_readout .fc4.far>div').textContent.match(/\d+/)[0] * 1 <= g('option').staminaLow) {
-      setTimeout(autoSwitchIsekai, (g('option').isekaiTime * (Math.random() * 20 + 90) / 100) * 1000);
-      return;
+
+    GetItems();
+    CheckSupply();
+    CheckRepair();
+
+    if (g('option').idleArena) {
+      LoadArenas();
     }
-    if (g('option').repair) {
-      repairCheck();
-      return;
-    }
-    if (g('option').idleArena) setTimeout(idleArena, (g('option').idleArenaTime * (Math.random() * 20 + 90) / 100) * 1000);
+    if (g('option').encounter) getEncounter();
+    asyncGetStamina();
   }
 }());
+
 // 通用//
 function getKeys(objArr, prop) {
   let out = [];
@@ -223,7 +228,7 @@ function getValue(item, toJSON) { // 读取数据
   }
   if (Object.keys(excludeStandalone).includes(item)) {
     if (!otherWorldItem) {
-      otherWorldItem = getLocal(`${current}_${item}`)
+      otherWorldItem = getLocal(`${current}_${item}`);
     }
     if (!otherWorldItem) {
       otherWorldItem = {}
@@ -233,7 +238,7 @@ function getValue(item, toJSON) { // 读取数据
       otherWorldItem[key] = getLocal(`${current}_${item}`)[key];
     }
   }
-  setLocal(`${other}_${item}`, otherWorldItem)
+  setLocal(`${other}_${item}`, otherWorldItem);
   return getLocal(`${current}_${item}`);
 }
 
@@ -381,14 +386,16 @@ function addStyle(lang) { // CSS
     `.selectTable:before{content:"${String.fromCharCode(0x22A0.toString(10))}";}`,
     '.hvAACenter{text-align:center;}',
     '.hvAATitle{font-weight:bolder;}',
-    '.hvAAGoto{cursor:pointer;text-decoration:underline;color:#5C0D11;}',
+    '.hvAAGoto{cursor:pointer;text-decoration:underline;}',
     '.hvAANew{width:25px;height:25px;float:left;background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAMCAYAAACX8hZLAAAAcElEQVQ4jbVRSQ4AIQjz/59mTiZIF3twmnCwFAq4FkeFXM+5vCzohYxjPMtfxS8CN6iqQ7TfE0wrODxVbzJNgoaTo4CmbBO1ZWICouQ0DHaL259MEzaU+w8pZOdSjcUgaPJDHCbO0A2kuAiuwPGQ+wBms12x8HExTwAAAABJRU5ErkJggg==) center no-repeat transparent;}',
     '#hvAATab-Alarm input[type="text"]{width:512px;}',
     '.testAlarms>div{border:2px solid #000;}',
     '.hvAAArenaLevels{display:none;}',
+    '.hvAAcheckItems{display:grid; grid-template-columns:repeat(3, 1fr 0.3fr)}',
+    '.hvAAcheckItems>input.hvAANumber{width:32px}',
     '.hvAAConfig{width:100%;height:16px;}',
     '.hvAAButtonBox{position:relative;top:468px;}',
-    '.lastEncounter{font-weight:bold;font-size:large;position:absolute;top:32px;left:1253px;text-decoration:none;}',
+    '.lastEncounter{font-weight:bold;font-size:large;position:absolute;top:32px;left:1248px;text-decoration:none;}',
     '.quickSiteBar{position:absolute;top:0px;left:1280px;font-size:18px;text-align:left;width:165px;height:calc(100% - 10px);display:flex;flex-direction:column;flex-wrap:wrap;}',
     '.quickSiteBar>span{display:block;max-height:24px;overflow:hidden;text-overflow:ellipsis;}',
     '.quickSiteBar>span>a{text-decoration:none;}',
@@ -450,7 +457,7 @@ function optionBox() { // 配置界面
     '<div class="hvAATabmenu">',
     '  <span name="Main"><l0>主要选项</l0><l1>主要選項</l1><l2>Main</l2></span>',
     '  <span name="Item"><l01>物品</l01><l2>Item</l2></span>',
-    '  <span name="Channel"><input id="channelSkillSwitch" type="checkbox">Channel<l01>技能</l01><l2> Spells</l2></span>',
+    '  <span name="Channel"><input id="channelSkillSwitch" type="checkbox"><l0>引导技能</l0><l1>引導技能</l1><l2>Channel Spells</l2></span>',
     '  <span name="Buff"><input id="buffSkillSwitch" type="checkbox">BUFF<l01>技能</l01><l2> Spells</l2></span>',
     '  <span name="Debuff"><input id="debuffSkillSwitch" type="checkbox">DEBUFF<l01>技能</l01><l2> Spells</l2></span>',
     '  <span name="Skill"><input id="skillSwitch" type="checkbox"><l01>其他技能</l01><l2>Skills</l2></span>',
@@ -470,9 +477,9 @@ function optionBox() { // 配置界面
     '    <l0><br>在任意页面停留</l0><l1><br>在任意頁面停留</l1><l2><br>Idle in any page for </l2><input class="hvAANumber" name="isekaiTime" type="text"><l0>秒后，进行跳转</l0><l1>秒後，進行跳轉</l1><l2>s, start switch check</l2></label></div>',
 
     '  <div class="hvAACenter">',
-    '    Gem: Health.<input class="hvAANumber" name="hp1" placeholder="50" type="text">%',
-    '    Mana.<input class="hvAANumber" name="mp1" placeholder="70" type="text">%%',
-    '    Spirt.<input class="hvAANumber" name="sp1" placeholder="75" type="text">%</div>',
+    '    <l0>使用宝石：生命</l0><l1>使用寶石：生命</l1><l2>Gem: Health.</l2><input class="hvAANumber" name="hp1" placeholder="50" type="text">%',
+    '    <l0>魔力</l0><l1>魔力</l1><l2>Mana.</l2><input class="hvAANumber" name="mp1" placeholder="70" type="text">%',
+    '    <l0>灵力</l0><l1>靈力</l1><l2>Spirt.</l2><input class="hvAANumber" name="sp1" placeholder="75" type="text">%</div>',
     '  <div class="hvAACenter" id="attackStatus" style="color:red;"><b>*<l0>攻击模式</l0><l1>攻擊模式</l1><l2>Attack Mode</l2></b>:',
     '    <select class="hvAANumber" name="attackStatus"><option value="-1"></option><option value="0">物理 / Physical</option><option value="1">火 / Fire</option><option value="2">冰 / Cold</option><option value="3">雷 / Elec</option><option value="4">风 / Wind</option><option value="5">圣 / Divine</option><option value="6">暗 / Forbidden</option></select></div>',
     '  <div><b><l0>暂停相关</l0><l1>暫停相關</l1><l2>Pause with</l2></b>: ',
@@ -488,8 +495,8 @@ function optionBox() { // 配置界面
     '  <div><b><l01>魔法技能</l01><l2>Offensive Magic</l2></b>: <br>',
     '    <l0>中阶技能使用条件</l0><l1>中階技能使用條件</l1><l2>Conditions for 2nd Tier</l2>: {{middleSkillCondition}}',
     '    <l0>高阶技能使用条件</l0><l1>高階技能使用條件</l1><l2>Conditions for 3rd Tier</l2>: {{highSkillCondition}}</div>',
-    '  <div><input id="turnOnSS" type="checkbox"><label for="turnOnSS"><b><l0>开启</l0><l1>開啟</l1><l2>Turn on </l2>Spirit Stance</b></label>: {{turnOnSSCondition}}</div>',
-    '  <div><input id="turnOffSS" type="checkbox"><label for="turnOffSS"><b><l0>关闭</l0><l1>關閉</l1><l2>Turn off </l2>Spirit Stance</b></label>: {{turnOffSSCondition}}</div>',
+    '  <div><input id="turnOnSS" type="checkbox"><label for="turnOnSS"><b><l0>开启灵动架式</l0><l1>開啟靈動架勢</l1><l2>Turn on Spirit Stance</l2></b></label>: {{turnOnSSCondition}}</div>',
+    '  <div><input id="turnOffSS" type="checkbox"><label for="turnOffSS"><b><l0>关闭灵动架式</l0><l1>關閉靈動架勢</l1><l2>Turn off Spirit Stance</l2></b></label>: {{turnOffSSCondition}}</div>',
     '  <div><input id="defend" type="checkbox"><label for="defend"><b>Defend</b></label>: {{defendCondition}}</div>',
     '  <div><input id="focus" type="checkbox"><label for="focus"><b>Focus</b></label>: {{focusCondition}}</div>',
     '  <div><l2>If the page </l2><b><l0>页面停留</l0><l1>頁面停留</l1><l2>stays idle</l2></b><l2> for </l2>: ',
@@ -498,11 +505,11 @@ function optionBox() { // 配置界面
     '  <div><l0>当<b>小马答题</b>时间</l0><l1>當<b>小馬答題</b>時間</l1><l2>If <b>RIDDLE</b> ETR</l2><l0></l0><l1></l1><l2></l2> ≤ <input class="hvAANumber" name="riddleAnswerTime" placeholder="3" type="text"><l0>秒，如果输入框为空则随机生成答案并提交</l0><l1>秒，如果輸入框為空則隨機生成答案並提交</l1><l2>s and no answer has been chosen yet, a random answer will be generated and submitted</l2></div>',
     '  <div><l0>当<b>小马答题</b>时</l0><l1>當<b>小馬答題</b>時</l1><l2>If <b>RIDDLE</b></l2>: ',
     '    <input id="riddlePopup" type="checkbox"><label for="riddlePopup"><l0>弹窗答题</l0><l1>弹窗答题</l1><l2>POPUP a window to answer</l2></label>; <button class="testPopup"><l0>预处理</l0><l1>預處理</l1><l2>Pretreat</l2></button></div>',
-    '  <div><b>Stamina</b>: <l0>当损失</l0><l1>當損失</l1><l2>If it lost </l2>Stamina ≥ <input class="hvAANumber" name="staminaLose" placeholder="5" type="text">: ',
+    '  <div><b><l0>精力</l0><l1>精力</l1><l2>Stamina</l2></b>: <l0>当损失精力</l0><l1>當損失精力</l1><l2>If it lost Stamina</l2> ≥ <input class="hvAANumber" name="staminaLose" placeholder="5" type="text">: ',
     '    <input id="staminaPause" type="checkbox"><label for="staminaPause"><l0>脚本暂停</l0><l1>腳本暫停</l1><l2>pause script</l2></label>; ',
     '    <input id="staminaWarn" type="checkbox"><label for="staminaWarn"><l01>警告</l01><l2>warn</l2></label>; ',
     '    <input id="staminaFlee" type="checkbox"><label for="staminaFlee"><l01>逃跑</l01><l2>flee</l2></label>',
-    '    <button class="staminaLostLog"><l0>stamina损失日志</l0><l1>stamina損失日誌</l1><l2>staminaLostLog</l2></button></div>',
+    '    <button class="staminaLostLog"><l0>精力损失日志</l0><l1>精力損失日誌</l1><l2>staminaLostLog</l2></button></div>',
     '  <div><input id="idleArena" type="checkbox"><label for="idleArena"><b><l0>闲置竞技场</l0><l1>閒置競技場</l1><l2>Idle Arena</l2></b>: ',
     '    <l0>在任意页面停留</l0><l1>在任意頁面停留</l1><l2>Idle in any page for </l2><input class="hvAANumber" name="idleArenaTime" type="text"><l0>秒后，开始竞技场</l0><l1>秒後，開始競技場</l1><l2>s, start Arena</l2></label> <button class="idleArenaReset"><l01>重置</l01><l2>Reset</l2></button>;<br>',
     '    <l0>进行的竞技场相对应等级</l0><l1>進行的競技場相對應等級</l1><l2>The levels of the Arena you want to complete</l2>:  ',
@@ -513,14 +520,46 @@ function optionBox() { // 配置界面
     '        <input id="arLevel_120" value="120,20" type="checkbox"><label for="arLevel_120">120</label> <input id="arLevel_130" value="130,21" type="checkbox"><label for="arLevel_130">130</label> <input id="arLevel_140" value="140,23" type="checkbox"><label for="arLevel_140">140</label> <input id="arLevel_150" value="150,24" type="checkbox"><label for="arLevel_150">150</label> <input id="arLevel_165" value="165,26" type="checkbox"><label for="arLevel_165">165</label> <input id="arLevel_180" value="180,27" type="checkbox"><label for="arLevel_180">180</label> <input id="arLevel_200" value="200,28" type="checkbox"><label for="arLevel_200">200</label> <input id="arLevel_225" value="225,29" type="checkbox"><label for="arLevel_225">225</label> <input id="arLevel_250" value="250,32" type="checkbox"><label for="arLevel_250">250</label> <input id="arLevel_300" value="300,33" type="checkbox"><label for="arLevel_300">300</label> <input id="arLevel_400" value="400,34" type="checkbox"><label for="arLevel_400">400</label> <input id="arLevel_500" value="500,35" type="checkbox"><label for="arLevel_500">500</label><br>',
     '        <input id="arLevel_RB50" value="RB50,105" type="checkbox"><label for="arLevel_RB50">RB50</label> <input id="arLevel_RB75A" value="RB75A,106" type="checkbox"><label for="arLevel_RB75A">RB75A</label> <input id="arLevel_RB75B" value="RB75B,107" type="checkbox"><label for="arLevel_RB75B">RB75B</label> <input id="arLevel_RB75C" value="RB75C,108" type="checkbox"><label for="arLevel_RB75C">RB75C</label><br>',
     '        <input id="arLevel_RB100" value="RB100,109" type="checkbox"><label for="arLevel_RB100">RB100</label> <input id="arLevel_RB150" value="RB150,110" type="checkbox"><label for="arLevel_RB150">RB150</label> <input id="arLevel_RB200" value="RB200,111" type="checkbox"><label for="arLevel_RB200">RB200</label> <input id="arLevel_RB250" value="RB250,112" type="checkbox"><label for="arLevel_RB250">RB250</label> <input id="arLevel_GF" value="GF,gr" type="checkbox"><label for="arLevel_GF">GrindFest <input class="hvAANumber" name="idleArenaGrTime" placeholder="1" type="text"></label></div></div>',
+
+    '  <div class="hvAACenter"><input id="checkSupply" type="checkbox"><l0>检查物品库存(0为不检查)</l0><l1>檢查物品庫存(0為不檢查)</l1><l2>Check is item needs supply(input 0 to not check)</l2>: ',
+    '  <div class="hvAAcheckItems">',
+    '  <l0>体力药水</l0><l1>體力藥水</l1><l2>Health Potion</l2><input class="hvAANumber" name="checkItem_11191" placeholder="0" type="text">',
+    '  <l0>体力长效药</l0><l1>體力長效藥</l1><l2>Health Draught</l2><input class="hvAANumber" name="checkItem_11195" placeholder="0" type="text">',
+    '  <l0>体力秘药</l0><l1>體力秘藥</l1><l2>Health Elixir</l2><input class="hvAANumber" name="checkItem_11199" placeholder="0" type="text">',
+    '  <l0>魔力药水</l0><l1>魔力藥水</l1><l2>Mana Potion</l2><input class="hvAANumber" name="checkItem_11291" placeholder="0" type="text">',
+    '  <l0>魔力长效药</l0><l1>魔力長效藥</l1><l2>Mana Draught</l2><input class="hvAANumber" name="checkItem_11295" placeholder="0" type="text">',
+    '  <l0>魔力秘药</l0><l1>魔力秘藥</l1><l2>Mana Elixir</l2><input class="hvAANumber" name="checkItem_11299" placeholder="0" type="text">',
+    '  <l0>灵力药水</l0><l1>靈力藥水</l1><l2>Spirit Potion</l2><input class="hvAANumber" name="checkItem_11391" placeholder="0" type="text">',
+    '  <l0>灵力长效药</l0><l1>靈力長效藥</l1><l2>Spirit Draught</l2><input class="hvAANumber" name="checkItem_11395" placeholder="0" type="text">',
+    '  <l0>灵力秘药</l0><l1>靈力秘藥</l1><l2>Spirit Elixir</l2><input class="hvAANumber" name="checkItem_11399" placeholder="0" type="text">',
+    '  <l0>终极秘药</l0><l1>終極秘藥</l1><l2>Last Elixir</l2><input class="hvAANumber" name="checkItem_11501" placeholder="0" type="text">',
+    '  <l0>花瓶</l0><l1>花瓶</l1><l2>Flower Vase</l2><input class="hvAANumber" name="checkItem_19111" placeholder="0" type="text">',
+    '  <l0>泡泡糖</l0><l1>泡泡糖</l1><l2>Bubble-Gum</l2><input class="hvAANumber" name="checkItem_19131" placeholder="0" type="text">',
+    '  <l0>能量饮料</l0><l1>能量飲料</l1><l2>Energy Drink</l2><input class="hvAANumber" name="checkItem_11401" placeholder="0" type="text">',
+    '  <l0>咖啡因糖果</l0><l1>咖啡因糖果</l1><l2>Caffeinated Candy</l2><input class="hvAANumber" name="checkItem_11402" placeholder="0" type="text">',
+    '  <l0>火焰魔药</l0><l1>火焰魔藥</l1><l2>Infusion of Flames</l2><input class="hvAANumber" name="checkItem_12101" placeholder="0" type="text">',
+    '  <l0>冰冷魔药</l0><l1>冰冷魔藥</l1><l2>Infusion of Frost</l2><input class="hvAANumber" name="checkItem_12201" placeholder="0" type="text">',
+    '  <l0>闪电魔药</l0><l1>閃電魔藥</l1><l2>Infusion of Lightning</l2><input class="hvAANumber" name="checkItem_12301" placeholder="0" type="text">',
+    '  <l0>风暴魔药</l0><l1>風暴魔藥</l1><l2>Infusion of Storms</l2><input class="hvAANumber" name="checkItem_12401" placeholder="0" type="text">',
+    '  <l0>神圣魔药</l0><l1>神聖魔藥</l1><l2>Infusion of Divinity</l2><input class="hvAANumber" name="checkItem_12501" placeholder="0" type="text">',
+    '  <l0>黑暗魔药</l0><l1>黑暗魔藥</l1><l2>Infusion of Darkness</l2><input class="hvAANumber" name="checkItem_12601" placeholder="0" type="text">',
+    '  <l0>加速卷轴</l0><l1>加速捲軸</l1><l2>Scroll of Swiftness</l2><input class="hvAANumber" name="checkItem_13101" placeholder="0" type="text">',
+    '  <l0>保护卷轴</l0><l1>保護捲軸</l1><l2>Scroll of Protection</l2><input class="hvAANumber" name="checkItem_13111" placeholder="0" type="text">',
+    '  <l0>化身卷轴</l0><l1>化身捲軸</l1><l2>Scroll of the Avatar</l2><input class="hvAANumber" name="checkItem_13199" placeholder="0" type="text">',
+    '  <l0>吸收卷轴</l0><l1>吸收捲軸</l1><l2>Scroll of Absorption</l2><input class="hvAANumber" name="checkItem_13201" placeholder="0" type="text">',
+    '  <l0>幻影卷轴</l0><l1>幻影捲軸</l1><l2>Scroll of Shadows</l2><input class="hvAANumber" name="checkItem_13211" placeholder="0" type="text">',
+    '  <l0>生命卷轴</l0><l1>生命捲軸</l1><l2>Scroll of Life</l2><input class="hvAANumber" name="checkItem_13221" placeholder="0" type="text">',
+    '  <l0>众神卷轴</l0><l1>眾神捲軸</l1><l2>Scroll of the Gods</l2><input class="hvAANumber" name="checkItem_13299" placeholder="0" type="text">',
+    '</div></div>',
     '  <div><input id="repair" type="checkbox"><label for="repair"><b><l0>修复装备</l0><l1>修復裝備</l1><l2>Repair Equipment</l2></b></label>: ',
     '    <l0>耐久度</l0><l1>耐久度</l1><l2>Durability</l2> ≤ <input class="hvAANumber" name="repairValue" type="text">%</div>',
-    '  <div><input id="etherTap" type="checkbox"><label for="etherTap"><b>Ether Tap</b></label>: {{etherTapCondition}}</div>',
+    '  <div><input id="etherTap" type="checkbox"><label for="etherTap"><b><l0>以太水龙头</l0><l1>以太水龍頭</l1><l2>Ether Tap</l2></b></label>: {{etherTapCondition}}</div>',
     '  <div><input id="autoFlee" type="checkbox"><label for="autoFlee"><b><l0>自动逃跑</l0><l1>自動逃跑</l1><l2>Flee</l2></b></label>: {{fleeCondition}}</div>',
     '  <div><div class="hvAANew"></div><input id="autoPause" type="checkbox"><label for="autoPause"><b><l0>自动暂停</l0><l1>自動暫停</l1><l2>Pause</l2></b></label>: {{pauseCondition}}</div>',
-    '  <div><input id="restoreStamina" type="checkbox"><label for="restoreStamina"><b><l0>战前回复</l0><l1>戰前回复</l1><l2>Restore stamina</l2></b>: ',
-    '    <l0>战斗前，如果</l0><l1>戰鬥前，如果</l1><l2><b></b>if before a battle and </l2>Stamina ≤ <input class="hvAANumber" name="staminaLow" placeholder="30" type="text"></label><br>',
-    '    <l0>说明: 如果不勾选，当Stamina小于此值后，则不进行闲置竞技场</l0><l1>說明: 如果不勾選，當Stamina小於此值後，則不進行閒置競技場</l1><l2>Note: If unchecked, when Stamina is less than this value, no Idle Arena</l2></div>',
+    '  <div><b><l0>保证最低精力</l0><l1>保證最低精力</l1><l2>Ensure Min Stamina</l2></b>: ',
+    '    <l0>精力阈值</l0><l1>精力閾值</l1><l2><b></b>Stamina threshold</l2>: Min(85, <input class="hvAANumber" name="staminaLow" placeholder="61" type="text">)',
+    '    <l0>含自然恢复的阈值<l1>含自然恢復的閾值</l1><l2><b></b>Stamina threshold with naturally recovers.</l2>: <input class="hvAANumber" name="staminaLowWithReNat" placeholder="0" type="text"></label>',
+    '    <input id="restoreStamina" type="checkbox"><label for="restoreStamina"><l0>战前恢复</l0><l1>戰前恢復</l1><l2>Restore stamina</l2></div>',
     '  <div><input id="recordEach" type="checkbox"><label for="recordEach"><b><l0>单独记录每场战役</l0><l1>單獨記錄每場戰役</l1><l2>Record each battle separately</l2></b></label></div>',
     '  <div><b><l0>延迟</l0><l1>延遲</l1><l2>Delay</l2></b>: 1. <l0>其他/Buff/Debuff技能</l0><l1>其他/Buff/Debuff技能</l1><l2>Skills&BUFF/DEBUFF Spells</l2>: <input class="hvAANumber" name="delay" placeholder="200" type="text">ms 2. <l01>其他</l01><l2>Other</l2>: <input class="hvAANumber" name="delay2" placeholder="30" type="text">ms<br>',
     '    <l0>说明: 单位毫秒，且在设定值基础上取其的50%-150%进行延迟，0表示不延迟</l0><l1>說明: 單位毫秒，且在設定值基礎上取其的50%-150%進行延遲，0表示不延遲</l1><l2>Note: unit milliseconds, and based on the set value multiply 50% -150% to delay, 0 means no delay</l2>',
@@ -528,91 +567,137 @@ function optionBox() { // 配置界面
     '  </div>',
     '<div class="hvAATab" id="hvAATab-Item">',
     '  <div class="itemOrder"><l0>施放顺序</l0><l1>施放順序</l1><l2>Cast Order</l2>: <input name="itemOrderName" style="width:80%;" type="text" disabled="true"><input name="itemOrderValue" style="width:80%;" type="hidden" disabled="true"><br>',
-    '    <input id="itemOrder_Cure" value="Cure,311" type="checkbox"><label for="itemOrder_Cure">Cure</label><input id="itemOrder_FC" value="FC,313" type="checkbox"><label for="itemOrder_FC">Full-Cure</label><input id="itemOrder_HP" value="HP,11195" type="checkbox"><label for="itemOrder_HP">Health Potion</label><input id="itemOrder_HE" value="HE,11199" type="checkbox"><label for="itemOrder_HE">Health Elixir</label><input id="itemOrder_MP" value="MP,11295" type="checkbox"><label for="itemOrder_MP">Mana Potion</label><br>',
-    '    <input id="itemOrder_ME" value="ME,11299" type="checkbox"><label for="itemOrder_ME">Mana Elixir</label><input id="itemOrder_SP" value="SP,11395" type="checkbox"><label for="itemOrder_SP">Spirit Potion</label><input id="itemOrder_SE" value="SE,11399" type="checkbox"><label for="itemOrder_SE">Spirit Elixir</label><input id="itemOrder_LE" value="LE,11501" type="checkbox"><label for="itemOrder_LE">Last Elixir</label><input id="itemOrder_ED" value="ED,11401" type="checkbox"><label for="itemOrder_ED">Energy Drink</label></div>',
-    '  <div><input id="item_Cure" type="checkbox"><label for="item_Cure"><b>Cure</b></label>: {{itemCureCondition}}</div>',
-    '  <div><input id="item_FC" type="checkbox"><label for="item_FC"><b>Full-Cure</b></label>: {{itemFCCondition}}</div>',
-    '  <div><input id="item_HP" type="checkbox"><label for="item_HP"><b>Health Potion</b></label>: {{itemHPCondition}}</div>',
-    '  <div><input id="item_HE" type="checkbox"><label for="item_HE"><b>Health Elixir</b></label>: {{itemHECondition}}</div>',
-    '  <div><input id="item_MP" type="checkbox"><label for="item_MP"><b>Mana Potion</b></label>: {{itemMPCondition}}</div>',
-    '  <div><input id="item_ME" type="checkbox"><label for="item_ME"><b>Mana Elixir</b></label>: {{itemMECondition}}</div>',
-    '  <div><input id="item_SP" type="checkbox"><label for="item_SP"><b>Spirit Potion</b></label>: {{itemSPCondition}}</div>',
-    '  <div><input id="item_SE" type="checkbox"><label for="item_SE"><b>Spirit Elixir</b></label>: {{itemSECondition}}</div>',
-    '  <div><input id="item_LE" type="checkbox"><label for="item_LE"><b>Last Elixir</b></label>: {{itemLECondition}}</div>',
-    '  <div><input id="item_ED" type="checkbox"><label for="item_ED"><b>Energy Drink</b></label>: {{itemEDCondition}}</div></div>',
+    '    <input id="itemOrder_Cure" value="Cure,311" type="checkbox"><label for="itemOrder_Cure"><l0>治疗(Cure)</l0><l1>治療(Cure)</l1><l2>Cure</l2></label>',
+    '    <input id="itemOrder_FC" value="FC,313" type="checkbox"><label for="itemOrder_FC"><l0>完全治愈(FC)</l0><l1>完全治愈(FC)</l1><l2>Full-Cure</l2></label>',
+    '    <input id="itemOrder_HP" value="HP,11195" type="checkbox"><label for="itemOrder_HP"><l0>生命药水(HP)</l0><l1>生命藥水(HP)</l1><l2>Health Potion</l2></label>',
+    '    <input id="itemOrder_HE" value="HE,11199" type="checkbox"><label for="itemOrder_HE"><l0>生命秘药(HE)</l0><l1>生命秘藥(HE)</l1><l2>Health Elixir</l2></label>',
+    '    <input id="itemOrder_MP" value="MP,11295" type="checkbox"><label for="itemOrder_MP"><l0>魔力药水(MP)</l0><l1>魔力藥水(MP)</l1><l2>Mana Potion</l2></label><br>',
+    '    <input id="itemOrder_ME" value="ME,11299" type="checkbox"><label for="itemOrder_ME"><l0>魔力秘药(ME)</l0><l1>魔力秘藥(ME)</l1><l2>Mana Elixir</l2></label>',
+    '    <input id="itemOrder_SP" value="SP,11395" type="checkbox"><label for="itemOrder_SP"><l0>灵力药水(SP)</l0><l1>靈力藥水(SP)</l1><l2>Spirit Potion</l2></label>',
+    '    <input id="itemOrder_SE" value="SE,11399" type="checkbox"><label for="itemOrder_SE"><l0>灵力秘药(SE)</l0><l1>靈力秘藥(SE)</l1><l2>Spirit Elixir</l2></label>',
+    '    <input id="itemOrder_LE" value="LE,11501" type="checkbox"><label for="itemOrder_LE"><l0>最终秘药(LE)</l0><l1>最終秘藥(LE)</l1><l2>Last Elixir</l2></label>',
+    '    <input id="itemOrder_ED" value="ED,11401" type="checkbox"><label for="itemOrder_ED"><l0>能量饮料(ED)</l0><l1>能量飲料(ED)</l1><l2>Energy Drink</l2></label></div>',
+    '  <div><input id="item_Cure" type="checkbox"><label for="item_Cure"><b><l0>治疗(Cure)</l0><l1>治療(Cure)</l1><l2>Cure</l2></b></label>: {{itemCureCondition}}</div>',
+    '  <div><input id="item_FC" type="checkbox"><label for="item_FC"><b><l0>完全治愈(FC)</l0><l1>完全治愈(FC)</l1><l2>Full-Cure</l2></b></label>: {{itemFCCondition}}</div>',
+    '  <div><input id="item_HP" type="checkbox"><label for="item_HP"><b><l0>生命药水(HP)</l0><l1>生命藥水(HP)</l1><l2>Health Potion</l2></b></label>: {{itemHPCondition}}</div>',
+    '  <div><input id="item_HE" type="checkbox"><label for="item_HE"><b><l0>生命秘药(HE)</l0><l1>生命秘藥(HE)</l1><l2>Health Elixir</l2></b></label>: {{itemHECondition}}</div>',
+    '  <div><input id="item_MP" type="checkbox"><label for="item_MP"><b><l0>魔力药水(MP)</l0><l1>魔力藥水(MP)</l1><l2>Mana Potion</l2></b></label>: {{itemMPCondition}}</div>',
+    '  <div><input id="item_ME" type="checkbox"><label for="item_ME"><b><l0>魔力秘药(ME)</l0><l1>魔力秘藥(ME)</l1><l2>Mana Elixir</l2></b></label>: {{itemMECondition}}</div>',
+    '  <div><input id="item_SP" type="checkbox"><label for="item_SP"><b><l0>灵力药水(SP)</l0><l1>靈力藥水(SP)</l1><l2>Spirit Potion</l2></b></label>: {{itemSPCondition}}</div>',
+    '  <div><input id="item_SE" type="checkbox"><label for="item_SE"><b><l0>灵力秘药(SE)</l0><l1>靈力秘藥(SE)</l1><l2>Spirit Elixir</l2></b></label>: {{itemSECondition}}</div>',
+    '  <div><input id="item_LE" type="checkbox"><label for="item_LE"><b><l0>最终秘药(LE)</l0><l1>最終秘藥(LE)</l1><l2>Last Elixir</l2></b></label>: {{itemLECondition}}</div>',
+    '  <div><input id="item_ED" type="checkbox"><label for="item_ED"><b><l0>能量饮料(ED)</l0><l1>能量飲料(ED)</l1><l2>Energy Drink</l2></b></label>: {{itemEDCondition}}</div></div>',
     '<div class="hvAATab" id="hvAATab-Channel">',
-    '  <l0><b>获得Channel时</b>（此时1点MP施法与150%伤害）</l0><l1><b>獲得Channel時</b>（此時1點MP施法與150%傷害）</l1><l2><b>During Channeling effect</b> (1 mp spell cost and 150% spell damage)</l2>:',
-    '  <div><b><l0>先施放Channel技能</l0><l1>先施放Channel技能</l1><l2>First cast</l2></b>: <br>',
+    '  <l0><b>获得引导时</b>（此时1点MP施法与150%伤害）</l0><l1><b>獲得引導時</b>（此時1點MP施法與150%傷害）</l1><l2><b>During Channeling effect</b> (1 mp spell cost and 150% spell damage)</l2>:',
+    '  <div><b><l0>先施放引导技能</l0><l1>先施放引導技能</l1><l2>First cast</l2></b>: <br>',
     '    <l0>注意: 此处的施放顺序与</l0><l1>注意: 此處的施放順序与</l1><l2>Note: The cast order here is the same as in</l2><a class="hvAAGoto" name="hvAATab-Buff">BUFF<l01>技能</l01><l2> Spells</l2></a><l0>里的相同</l0><l1>裡的相同</l1><br>',
-    '    <input id="channelSkill_Pr" type="checkbox"><label for="channelSkill_Pr">Protection</label><input id="channelSkill_SL" type="checkbox"><label for="channelSkill_SL">Spark of Life</label><input id="channelSkill_SS" type="checkbox"><label for="channelSkill_SS">Spirit Shield</label><input id="channelSkill_Ha" type="checkbox"><label for="channelSkill_Ha">Haste</label><br>',
-    '    <input id="channelSkill_AF" type="checkbox"><label for="channelSkill_AF">Arcane Focus</label><input id="channelSkill_He" type="checkbox"><label for="channelSkill_He">Heartseeker</label><input id="channelSkill_Re" type="checkbox"><label for="channelSkill_Re">Regen</label><input id="channelSkill_SV" type="checkbox"><label for="channelSkill_SV">Shadow Veil</label><input id="channelSkill_Ab" type="checkbox"><label for="channelSkill_Ab">Absorb</label></div>',
+    '    <input id="channelSkill_Pr" type="checkbox"><label for="channelSkill_Pr"><l0>保护(Pr)</l0><l1>保護(Pr)</l1><l2>Protection</l2></label>',
+    '    <input id="channelSkill_SL" type="checkbox"><label for="channelSkill_SL"><l0>生命火花(SL)</l0><l1>生命火花(SL)</l1><l2>Spark of Life</l2></label>',
+    '    <input id="channelSkill_SS" type="checkbox"><label for="channelSkill_SS"><l0>灵力盾(SS)</l0><l1>靈力盾(SS)</l1><l2>Spirit Shield</l2></label>',
+    '    <input id="channelSkill_Ha" type="checkbox"><label for="channelSkill_Ha"><l0>疾速(Ha)</l0><l1>疾速(Ha)</l1><l2>Haste</l2></label><br>',
+    '    <input id="channelSkill_AF" type="checkbox"><label for="channelSkill_AF"><l0>奥术集中(AF)</l0><l1>奧術集中(AF)</l1><l2>Arcane Focus</l2></label>',
+    '    <input id="channelSkill_He" type="checkbox"><label for="channelSkill_He"><l0>穿心(He)</l0>穿心(He)</l1><l2>Heartseeker</l2></label>',
+    '    <input id="channelSkill_Re" type="checkbox"><label for="channelSkill_Re"><l0>细胞活化(Re)</l0><l1>細胞活化(Re)</l1><l2>Regen</l2></label>',
+    '    <input id="channelSkill_SV" type="checkbox"><label for="channelSkill_SV"><l0>影纱(SV)</l0><l1>影紗(SV)</l1><l2>Shadow Veil</l2></label>',
+    '    <input id="channelSkill_Ab" type="checkbox"><label for="channelSkill_Ab"><l0>吸收(Ab)</l0><l1>吸收(Ab)</l1><l2>Absorb</l2></label></div>',
     '  <div><input id="channelSkill2" type="checkbox"><label for="channelSkill2"><l0><b>再使用技能</b></label>: ',
     '    <div class="channelSkill2Order"><l0>施放顺序</l0><l1>施放順序</l1><l2>Cast Order</l2>: <input name="channelSkill2OrderName" style="width:80%;" type="text" disabled="true"><input name="channelSkill2OrderValue" style="width:80%;" type="hidden" disabled="true"><br>',
-    '    <input id="channelSkill2Order_Cu" value="Cu,311" type="checkbox"><label for="channelSkill2Order_Cu">Cure</label><input id="channelSkill2Order_FC" value="FC,313" type="checkbox"><label for="channelSkill2Order_FC">Full-Cure</label><input id="channelSkill2Order_Pr" value="Pr,411" type="checkbox"><label for="channelSkill2Order_Pr">Protection</label><input id="channelSkill2Order_SL" value="SL,422" type="checkbox"><label for="channelSkill2Order_SL">Spark of Life</label><input id="channelSkill2Order_SS" value="SS,423" type="checkbox"><label for="channelSkill2Order_SS">Spirit Shield</label><input id="channelSkill2Order_Ha" value="Ha,412" type="checkbox"><label for="channelSkill2Order_Ha">Haste</label><br>',
-    '    <input id="channelSkill2Order_AF" value="AF,432" type="checkbox"><label for="channelSkill2Order_AF">Arcane Focus</label><input id="channelSkill2Order_He" value="He,431" type="checkbox"><label for="channelSkill2Order_He">Heartseeker</label><input id="channelSkill2Order_Re" value="Re,312" type="checkbox"><label for="channelSkill2Order_Re">Regen</label><input id="channelSkill2Order_SV" value="SV,413" type="checkbox"><label for="channelSkill2Order_SV">Shadow Veil</label><input id="channelSkill2Order_Ab" value="Ab,421" type="checkbox"><label for="channelSkill2Order_Ab">Absorb</label></div></div>',
+    '    <input id="channelSkill2Order_Cu" value="Cu,311" type="checkbox"><label for="channelSkill2Order_Cu"><l0>治疗(Cure)</l0><l1>治療(Cure)</l1><l2>Cure</l2></label>',
+    '    <input id="channelSkill2Order_FC" value="FC,313" type="checkbox"><label for="channelSkill2Order_FC"><l0>完全治愈(FC)</l0><l1>完全治愈(FC)</l1><l2>Full-Cure</l2></label>',
+    '    <input id="channelSkill2Order_Pr" value="Pr,411" type="checkbox"><label for="channelSkill2Order_Pr"><l0>保护(Pr)</l0><l1>保護(Pr)</l1><l2>Protection</l2></label>',
+    '    <input id="channelSkill2Order_SL" value="SL,422" type="checkbox"><label for="channelSkill2Order_SL"><l0>生命火花(SL)</l0><l1>生命火花(SL)</l1><l2>Spark of Life</l2></label>',
+    '    <input id="channelSkill2Order_SS" value="SS,423" type="checkbox"><label for="channelSkill2Order_SS"><l0>灵力盾(SS)</l0><l1>靈力盾(SS)</l1><l2>Spirit Shield</l2></label>',
+    '    <input id="channelSkill2Order_Ha" value="Ha,412" type="checkbox"><label for="channelSkill2Order_Ha"><l0>疾速(Ha)</l0><l1>疾速(Ha)</l1><l2>Haste</l2></label><br>',
+    '    <input id="channelSkill2Order_AF" value="AF,432" type="checkbox"><label for="channelSkill2Order_AF"><l0>奥术集中(AF)</l0><l1>奧術集中(AF)</l1><l2>Arcane Focus</l2></label>',
+    '    <input id="channelSkill2Order_He" value="He,431" type="checkbox"><label for="channelSkill2Order_He"><l0>穿心(He)</l0>穿心(He)</l1><l2>Heartseeker</l2></label>',
+    '    <input id="channelSkill2Order_Re" value="Re,312" type="checkbox"><label for="channelSkill2Order_Re"><l0>细胞活化(Re)</l0><l1>細胞活化(Re)</l1><l2>Regen</l2></label>',
+    '    <input id="channelSkill2Order_SV" value="SV,413" type="checkbox"><label for="channelSkill2Order_SV"><l0>影纱(SV)</l0><l1>影紗(SV)</l1><l2>Shadow Veil</l2></label>',
+    '    <input id="channelSkill2Order_Ab" value="Ab,421" type="checkbox"><label for="channelSkill2Order_Ab"><l0>吸收(Ab)</l0><l1>吸收(Ab)</l1><l2>Absorb</l2></label></div></div>',
     '  <div><l0><b>最后ReBuff</b>: 重新施放最先消失的Buff</l0><l1><b>最後ReBuff</b>: 重新施放最先消失的Buff</l1><l2><b>At last, re-cast the spells which will expire first</b></l2>.</div></div>',
     '<div class="hvAATab" id="hvAATab-Buff">{{buffSkillCondition}}',
     '  <div class="buffSkillOrder"><l0>施放顺序</l0><l1>施放順序</l1><l2>Cast Order</l2>: ',
     '    <input name="buffSkillOrderValue" style="width:80%;" type="text" disabled="true"><br>',
-    '    <input id="buffSkillOrder_Pr" type="checkbox"><label for="buffSkillOrder_Pr">Protection</label><input id="buffSkillOrder_SL" type="checkbox"><label for="buffSkillOrder_SL">Spark of Life</label><input id="buffSkillOrder_SS" type="checkbox"><label for="buffSkillOrder_SS">Spirit Shield</label><input id="buffSkillOrder_Ha" type="checkbox"><label for="buffSkillOrder_Ha">Haste</label><br>',
-    '    <input id="buffSkillOrder_AF" type="checkbox"><label for="buffSkillOrder_AF">Arcane Focus</label><input id="buffSkillOrder_He" type="checkbox"><label for="buffSkillOrder_He">Heartseeker</label><input id="buffSkillOrder_Re" type="checkbox"><label for="buffSkillOrder_Re">Regen</label><input id="buffSkillOrder_SV" type="checkbox"><label for="buffSkillOrder_SV">Shadow Veil</label><input id="buffSkillOrder_Ab" type="checkbox"><label for="buffSkillOrder_Ab">Absorb</label></div>',
+    '    <input id="buffSkillOrder_Pr" type="checkbox"><label for="buffSkillOrder_Pr"><l0>保护(Pr)</l0><l1>保護(Pr)</l1><l2>Protection</l2></label>',
+    '    <input id="buffSkillOrder_SL" type="checkbox"><label for="buffSkillOrder_SL"><l0>生命火花(SL)</l0><l1>生命火花(SL)</l1><l2>Spark of Life</l2></label>',
+    '    <input id="buffSkillOrder_SS" type="checkbox"><label for="buffSkillOrder_SS"><l0>灵力盾(SS)</l0><l1>靈力盾(SS)</l1><l2>Spirit Shield</l2></label>',
+    '    <input id="buffSkillOrder_Ha" type="checkbox"><label for="buffSkillOrder_Ha"><l0>疾速(Ha)</l0><l1>疾速(Ha)</l1><l2>Haste</l2></label><br>',
+    '    <input id="buffSkillOrder_AF" type="checkbox"><label for="buffSkillOrder_AF"><l0>奥术集中(AF)</l0><l1>奧術集中(AF)</l1><l2>Arcane Focus</l2></label>',
+    '    <input id="buffSkillOrder_He" type="checkbox"><label for="buffSkillOrder_He"><l0>穿心(He)</l0>穿心(He)</l1><l2>Heartseeker</l2></label>',
+    '    <input id="buffSkillOrder_Re" type="checkbox"><label for="buffSkillOrder_Re"><l0>细胞活化(Re)</l0><l1>細胞活化(Re)</l1><l2>Regen</l2></label>',
+    '    <input id="buffSkillOrder_SV" type="checkbox"><label for="buffSkillOrder_SV"><l0>影纱(SV)</l0><l1>影紗(SV)</l1><l2>Shadow Veil</l2></label>',
+    '    <input id="buffSkillOrder_Ab" type="checkbox"><label for="buffSkillOrder_Ab"><l0>吸收(Ab)</l0><l1>吸收(Ab)</l1><l2>Absorb</l2></label></div>',
     '  <div><l0>Buff不存在就施放的技能</l0><l1>Buff不存在就施放的技能</l1><l2>Cast spells if the buff is not present</l2>: ',
-    '    <div><input id="buffSkill_HD" type="checkbox"><label for="buffSkill_HD">Health Draught</label>{{buffSkillHDCondition}}</div>',
-    '    <div><input id="buffSkill_MD" type="checkbox"><label for="buffSkill_MD">Mana Draught</label>{{buffSkillMDCondition}}</div>',
-    '    <div><input id="buffSkill_SD" type="checkbox"><label for="buffSkill_SD">Spirit Draught</label>{{buffSkillSDCondition}}</div>',
-    '    <div><input id="buffSkill_FV" type="checkbox"><label for="buffSkill_FV">Flower Vase</label>{{buffSkillFVCondition}}</div>',
-    '    <div><input id="buffSkill_BG" type="checkbox"><label for="buffSkill_BG">Bubble-Gum</label>{{buffSkillBGCondition}}</div>',
-    '    <div><input id="buffSkill_Pr" type="checkbox"><label for="buffSkill_Pr">Protection</label>{{buffSkillPrCondition}}</div>',
-    '    <div><input id="buffSkill_SL" type="checkbox"><label for="buffSkill_SL">Spark of Life</label>{{buffSkillSLCondition}}</div>',
-    '    <div><input id="buffSkill_SS" type="checkbox"><label for="buffSkill_SS">Spirit Shield</label>{{buffSkillSSCondition}}</div>',
-    '    <div><input id="buffSkill_Ha" type="checkbox"><label for="buffSkill_Ha">Haste</label>{{buffSkillHaCondition}}</div>',
-    '    <div><input id="buffSkill_AF" type="checkbox"><label for="buffSkill_AF">Arcane Focus</label>{{buffSkillAFCondition}}</div>',
-    '    <div><input id="buffSkill_He" type="checkbox"><label for="buffSkill_He">Heartseeker</label>{{buffSkillHeCondition}}</div>',
-    '    <div><input id="buffSkill_Re" type="checkbox"><label for="buffSkill_Re">Regen</label>{{buffSkillReCondition}}</div>',
-    '    <div><input id="buffSkill_SV" type="checkbox"><label for="buffSkill_SV">Shadow Veil</label>{{buffSkillSVCondition}}</div>',
-    '    <div><input id="buffSkill_Ab" type="checkbox"><label for="buffSkill_Ab">Absorb</label>{{buffSkillAbCondition}}</div></div></div>',
+    '    <div><input id="buffSkill_HD" type="checkbox"><label for="buffSkill_HD"><l0>生命长效药(HD)</l0><l1>生命長效藥(HD)</l1><l2>Health Draught</l2></label>{{buffSkillHDCondition}}</div>',
+    '    <div><input id="buffSkill_MD" type="checkbox"><label for="buffSkill_MD"><l0>魔力长效药(MD)</l0><l1>魔力長效藥(MD)</l1><l2>Mana Draught</l2></label>{{buffSkillMDCondition}}</div>',
+    '    <div><input id="buffSkill_SD" type="checkbox"><label for="buffSkill_SD"><l0>灵力长效药(MD)</l0><l1>靈力長效藥(MD)</l1><l2>Spirit Draught</l2></label>{{buffSkillSDCondition}}</div>',
+    '    <div><input id="buffSkill_FV" type="checkbox"><label for="buffSkill_FV"><l0>花瓶(FV)</l0><l1>花瓶(FV)</l1><l2>Flower Vase</l2></label>{{buffSkillFVCondition}}</div>',
+    '    <div><input id="buffSkill_BG" type="checkbox"><label for="buffSkill_BG"><l0>泡泡糖(BG)</l0><l1>泡泡糖(BG)</l1><l2>Bubble-Gum</l2></label>{{buffSkillBGCondition}}</div>',
+    '    <div><input id="buffSkill_Pr" type="checkbox"><label for="buffSkill_Pr"><l0>保护(Pr)</l0><l1>保護(Pr)</l1><l2>Protection</l2></label>{{buffSkillPrCondition}}</div>',
+    '    <div><input id="buffSkill_SL" type="checkbox"><label for="buffSkill_SL"><l0>生命火花(SL)</l0><l1>生命火花(SL)</l1><l2>Spark of Life</l2></label>{{buffSkillSLCondition}}</div>',
+    '    <div><input id="buffSkill_SS" type="checkbox"><label for="buffSkill_SS"><l0>灵力盾(SS)</l0><l1>靈力盾(SS)</l1><l2>Spirit Shield</l2></label>{{buffSkillSSCondition}}</div>',
+    '    <div><input id="buffSkill_Ha" type="checkbox"><label for="buffSkill_Ha"><l0>疾速(Ha)</l0><l1>疾速(Ha)</l1><l2>Haste</l2></label>{{buffSkillHaCondition}}</div>',
+    '    <div><input id="buffSkill_AF" type="checkbox"><label for="buffSkill_AF"><l0>奥术集中(AF)</l0><l1>奧術集中(AF)</l1><l2>Arcane Focus</l2></label>{{buffSkillAFCondition}}</div>',
+    '    <div><input id="buffSkill_He" type="checkbox"><label for="buffSkill_He"><l0>穿心(He)</l0>穿心(He)</l1><l2>Heartseeker</l2></label>{{buffSkillHeCondition}}</div>',
+    '    <div><input id="buffSkill_Re" type="checkbox"><label for="buffSkill_Re"><l0>细胞活化(Re)</l0><l1>細胞活化(Re)</l1><l2>Regen</l2></label>{{buffSkillReCondition}}</div>',
+    '    <div><input id="buffSkill_SV" type="checkbox"><label for="buffSkill_SV"><l0>影纱(SV)</l0><l1>影紗(SV)</l1><l2>Shadow Veil</l2></label>{{buffSkillSVCondition}}</div>',
+    '    <div><input id="buffSkill_Ab" type="checkbox"><label for="buffSkill_Ab"><l0>吸收(Ab)</l0><l1>吸收(Ab)</l1><l2>Absorb</l2></label>{{buffSkillAbCondition}}</div>',
+    '  </div>',
+    '</div>',
     '<div class="hvAATab" id="hvAATab-Debuff">',
     '  <div class="debuffSkillOrder"><l0>施放顺序</l0><l1>施放順序</l1><l2>Cast Order</l2>:',
     '    <input name="debuffSkillOrderValue" style="width:80%;" type="text" disabled="true"><br>',
-    '    <input id="debuffSkillOrder_Sle" type="checkbox"><label for="debuffSkillOrder_Sle">Sleep</label><input id="debuffSkillOrder_Bl" type="checkbox"><label for="debuffSkillOrder_Bl">Blind</label><input id="debuffSkillOrder_Slo" type="checkbox"><label for="debuffSkillOrder_Slo">Slow</label><br>',
-    '    <input id="debuffSkillOrder_Im" type="checkbox"><label for="debuffSkillOrder_Im">Imperil</label><input id="debuffSkillOrder_MN" type="checkbox"><label for="debuffSkillOrder_MN">MagNet</label><input id="debuffSkillOrder_Si" type="checkbox"><label for="debuffSkillOrder_Si">Silence</label><input id="debuffSkillOrder_Dr" type="checkbox"><label for="debuffSkillOrder_Dr">Drain</label><input id="debuffSkillOrder_We" type="checkbox"><label for="debuffSkillOrder_We">Weaken</label><input id="debuffSkillOrder_Co" type="checkbox"><label for="debuffSkillOrder_Co">Confuse</label></div>',
-    '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillImAll" type="checkbox"><label for="debuffSkillImAll"><l0>先给所有敌人上Imperil</l0><l1>先給所有敵人上Imperil</l1><l2>Imperiled all enemies first.</l2></label></div>{{debuffSkillImAllCondition}}',
-    '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillWeAll" type="checkbox"><label for="debuffSkillWeAll"><l0>先给所有敌人上Weaken</l0><l1>先給所有敵人上Weaken</l1><l2>Weakened all enemies first.</l2></label></div>{{debuffSkillWeAllCondition}}',
-    '    <div><input id="debuffSkill_Sle" type="checkbox"><label for="debuffSkill_Sle">Sleep</label>{{debuffSkillSleCondition}}</div>',
-    '    <div><input id="debuffSkill_Bl" type="checkbox"><label for="debuffSkill_Bl">Blind</label>{{debuffSkillBlCondition}}</div>',
-    '    <div><input id="debuffSkill_Slo" type="checkbox"><label for="debuffSkill_Slo">Slow</label>{{debuffSkillSloCondition}}</div>',
-    '    <div><input id="debuffSkill_Im" type="checkbox"><label for="debuffSkill_Im">Imperil</label>{{debuffSkillImCondition}}</div>',
-    '    <div><input id="debuffSkill_MN" type="checkbox"><label for="debuffSkill_MN">MagNet</label>{{debuffSkillMNCondition}}</div>',
-    '    <div><input id="debuffSkill_Si" type="checkbox"><label for="debuffSkill_Si">Silence</label>{{debuffSkillSiCondition}}</div>',
-    '    <div><input id="debuffSkill_Dr" type="checkbox"><label for="debuffSkill_Dr">Drain</label>{{debuffSkillDrCondition}}</div>',
-    '    <div><input id="debuffSkill_We" type="checkbox"><label for="debuffSkill_We">Weaken</label>{{debuffSkillWeCondition}}</div>',
-    '    <div><input id="debuffSkill_Co" type="checkbox"><label for="debuffSkill_Co">Confuse</label>{{debuffSkillCoCondition}}</div>',
+    '    <input id="debuffSkillOrder_Sle" type="checkbox"><label for="debuffSkillOrder_Sle"><l0>沉眠(Sl)</l0><l1>沉眠(Sl)</l1><l2>Sleep</l2></label>',
+    '    <input id="debuffSkillOrder_Bl" type="checkbox"><label for="debuffSkillOrder_Bl"><l0>致盲(Bl)</l0><l1>致盲(Bl)</l1><l2>Blind</l2></label>',
+    '    <input id="debuffSkillOrder_Slo" type="checkbox"><label for="debuffSkillOrder_Slo"><l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2></label>',
+    '    <input id="debuffSkillOrder_Im" type="checkbox"><label for="debuffSkillOrder_Im"><l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2></label>',
+    '    <input id="debuffSkillOrder_MN" type="checkbox"><label for="debuffSkillOrder_MN"><l0>魔磁网(MN)</l0><l1>魔磁網(MN)</l1><l2>MagNet</l2></label>',
+    '    <input id="debuffSkillOrder_Si" type="checkbox"><label for="debuffSkillOrder_Si"><l0>沉默(Si)</l0><l1>沉默(Si)</l1><l2>Silence</l2></label>',
+    '    <input id="debuffSkillOrder_Dr" type="checkbox"><label for="debuffSkillOrder_Dr"><l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2></label>',
+    '    <input id="debuffSkillOrder_We" type="checkbox"><label for="debuffSkillOrder_We"><l0>虚弱(We)</l0><l1>虛弱(We)</l1><l2>Weaken</l2></label>',
+    '    <input id="debuffSkillOrder_Co" type="checkbox"><label for="debuffSkillOrder_Co"><l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2></label></div>',
+    '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillImAll" type="checkbox"><label for="debuffSkillImAll"><l0>先给所有敌人上陷危(Im)</l0><l1>先給所有敵人上陷危(Im)</l1><l2>Imperiled all enemies first.</l2></label></div>{{debuffSkillImAllCondition}}',
+    '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillWeAll" type="checkbox"><label for="debuffSkillWeAll"><l0>先给所有敌人上虚弱(We)</l0><l1>先給所有敵人上虛弱(We)</l1><l2>Weakened all enemies first.</l2></label></div>{{debuffSkillWeAllCondition}}',
+    '    <div><input id="debuffSkill_Sle" type="checkbox"><label for="debuffSkill_Sle"><l0>沉眠(Sl)</l0><l1>沉眠(Sl)</l1><l2>Sleep</l2></label>{{debuffSkillSleCondition}}</div>',
+    '    <div><input id="debuffSkill_Bl" type="checkbox"><label for="debuffSkill_Bl"><l0>致盲(Bl)</l0><l1>致盲(Bl)</l1><l2>Blind</l2></label>{{debuffSkillBlCondition}}</div>',
+    '    <div><input id="debuffSkill_Slo" type="checkbox"><label for="debuffSkill_Slo"><l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2></label>{{debuffSkillSloCondition}}</div>',
+    '    <div><input id="debuffSkill_Im" type="checkbox"><label for="debuffSkill_Im"><l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2></label>{{debuffSkillImCondition}}</div>',
+    '    <div><input id="debuffSkill_MN" type="checkbox"><label for="debuffSkill_MN"><l0>魔磁网(MN)</l0><l1>魔磁網(MN)</l1><l2>MagNet</l2></label>{{debuffSkillMNCondition}}</div>',
+    '    <div><input id="debuffSkill_Si" type="checkbox"><label for="debuffSkill_Si"><l0>沉默(Si)</l0><l1>沉默(Si)</l1><l2>Silence</l2></label>{{debuffSkillSiCondition}}</div>',
+    '    <div><input id="debuffSkill_Dr" type="checkbox"><label for="debuffSkill_Dr"><l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2></label>{{debuffSkillDrCondition}}</div>',
+    '    <div><input id="debuffSkill_We" type="checkbox"><label for="debuffSkill_We"><l0>虚弱(We)</l0><l1>虛弱(We)</l1><l2>Weaken</l2></label>{{debuffSkillWeCondition}}</div>',
+    '    <div><input id="debuffSkill_Co" type="checkbox"><label for="debuffSkill_Co"><l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2></label></label>{{debuffSkillCoCondition}}</div>',
     '  <div><l0>持续</l0><l1>持續</l1><l2>Expire</l2> Turns: <input id="debuffSkillTurnAlert" type="checkbox"><label for="debuffSkillTurnAlert"><l0>无法正常施放DEBUFF技能时，警报</l0><l1>無法正常施放DEBUFF技能時，警報</l1><l2>If it can not cast de-skills normally, alert.</l2></label><br>',
-    '    Sleep: <input class="hvAANumber" name="debuffSkillTurn_Sle" type="text"> Blind: <input class="hvAANumber" name="debuffSkillTurn_Bl" type="text"> Slow: <input class="hvAANumber" name="debuffSkillTurn_Slo" type="text"><br>',
-    '    Imperil: <input class="hvAANumber" name="debuffSkillTurn_Im" type="text"> MagNet: <input class="hvAANumber" name="debuffSkillTurn_MN" type="text"> Silence: <input class="hvAANumber" name="debuffSkillTurn_Si" type="text"><br>',
-    '    Drain: <input class="hvAANumber" name="debuffSkillTurn_Dr" type="text"> Weaken: <input class="hvAANumber" name="debuffSkillTurn_We" type="text"> Confuse: <input class="hvAANumber" name="debuffSkillTurn_Co" type="text"> </div></div>',
+    '    <l0>沉眠(Sl)</l0><l1>沉眠(Sl)</l1><l2>Sleep</l2>: <input class="hvAANumber" name="debuffSkillTurn_Sle" type="text">',
+    '    <l0>致盲(Bl)</l0><l1>致盲(Bl)</l1><l2>Blind</l2>: <input class="hvAANumber" name="debuffSkillTurn_Bl" type="text">',
+    '    <l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2>: <input class="hvAANumber" name="debuffSkillTurn_Slo" type="text"><br>',
+    '    <l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2>: <input class="hvAANumber" name="debuffSkillTurn_Im" type="text">',
+    '    <l0>魔磁网(MN)</l0><l1>魔磁網(MN)</l1><l2>MagNet</l2>: <input class="hvAANumber" name="debuffSkillTurn_MN" type="text">',
+    '    <l0>沉默(Si)</l0><l1>沉默(Si)</l1><l2>Silence</l2>: <input class="hvAANumber" name="debuffSkillTurn_Si" type="text"><br>',
+    '    <l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2>: <input class="hvAANumber" name="debuffSkillTurn_Dr" type="text">',
+    '    <l0>虚弱(We)</l0><l1>虛弱(We)</l1><l2>Weaken</l2>: <input class="hvAANumber" name="debuffSkillTurn_We" type="text">',
+    '    <l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2>: <input class="hvAANumber" name="debuffSkillTurn_Co" type="text"> </div></div>',
     '<div class="hvAATab" id="hvAATab-Skill">',
-    '  <div><span><l0>注意: 默认在Spirit状态下使用，请在<a class="hvAAGoto" name="hvAATab-Main">主要选项</a>勾选并设置<b>开启/关闭Spirit Stance</b></l0><l1>注意: 默認在Spirit狀態下使用，請在<a class="hvAAGoto" name="hvAATab-Main">主要選項</a>勾選並設置<b>開啟/關閉Spirit Stance</b></l1><l2>Note: use under Spirit by default, please check and set the <b>Turn on/off Spirit Stance</b> in <a class="hvAAGoto" name="hvAATab-Main">Main</a></l2></span></div>',
+    '  <div><span><l0>注意: 默认在灵动架式状态下使用，请在<a class="hvAAGoto" name="hvAATab-Main">主要选项</a>勾选并设置<b>开启/关闭灵动架式</b></l0><l1>注意: 默認在靈動架式狀態下使用，請在<a class="hvAAGoto" name="hvAATab-Main">主要選項</a>勾選並設置<b>開啟/關閉靈動架式</b></l1><l2>Note: use under Spirit by default, please check and set the <b>Turn on/off Spirit Stance</b> in <a class="hvAAGoto" name="hvAATab-Main">Main</a></l2></span></div>',
     '  <div class="skillOrder"><l0>施放顺序</l0><l1>施放順序</l1><l2>Cast Order</l2>: ',
     '  <input name="skillOrderValue" style="width:80%;" type="text" disabled="true"><br>',
     '  <input id="skillOrder_OFC" type="checkbox"><label for="skillOrder_OFC"><l0>友情小马砲</l0><l1>友情小馬砲</l1><l2>OFC</l2></label><input id="skillOrder_FRD" type="checkbox"><label for="skillOrder_FRD"><l0>龙吼</l0><l1>龍吼</l1><l2>FRD</l2></label><input id="skillOrder_T3" type="checkbox"><label for="skillOrder_T3">T3</label><input id="skillOrder_T2" type="checkbox"><label for="skillOrder_T2">T2</label><input id="skillOrder_T1" type="checkbox"><label for="skillOrder_T1">T1</label></div>',
     '  <div><input id="skill_OFC" type="checkbox"><label for="skill_OFC"><l0>友情小马砲</l0><l1>友情小馬砲</l1><l2>OFC</l2></label>: <input id="skillOTOS_OFC" type="checkbox"><label for="skillOTOS_OFC"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label>{{skillOFCCondition}}</div>',
     '  <div><input id="skill_FRD" type="checkbox"><label for="skill_FRD"><l0>龙吼</l0><l1>龍吼</l1><l2>FRD</l2></label>: <input id="skillOTOS_FRD" type="checkbox"><label for="skillOTOS_FRD"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label>{{skillFRDCondition}}</div>',
     '  <div><l0>战斗风格</l0><l1>戰鬥風格</l1><l2>Fighting style</l2>: <select name="fightingStyle"><option value="1">二天一流 / Niten Ichiryu</option><option value="2">单手 / One-Handed</option><option value="3">双手 / 2-Handed Weapon</option><option value="4">双持 / Dual Wielding</option><option value="5">法杖 / Staff</option></select></div>',
-    '  <div><input id="skill_T3" type="checkbox"><label for="skill_T3"><l0>3阶（如果有）</l0><l1>3階（如果有）</l1><l2>T3(if exist)</l2></label>: <input id="skillOTOS_T3" type="checkbox"><label for="skillOTOS_T3"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label><br><input id="mercifulBlow" type="checkbox"><label for="mercifulBlow">Merciful Blow: <l0>优先攻击满足条件的敌人 (25% HP, 流血)</l0><l1>優先攻擊滿足條件的敵人 (25% HP, 流血)</l1><l2>Attack the enemy which has 25% HP and is bleeding first</l2></label>{{skillT3Condition}}</div>',
+    '  <div><input id="skill_T3" type="checkbox"><label for="skill_T3"><l0>3阶（如果有）</l0><l1>3階（如果有）</l1><l2>T3(if exist)</l2></label>: <input id="skillOTOS_T3" type="checkbox"><label for="skillOTOS_T3"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label><br><input id="mercifulBlow" type="checkbox"><label for="mercifulBlow"><l0>最后的慈悲(MB)：优先攻击满足条件的敌人 (25% HP, 流血)</l0><l1>最後的慈悲(MB)：優先攻擊滿足條件的敵人 (25% HP, 流血)</l1><l2>Merciful Blow: Attack the enemy which has 25% HP and is bleeding first</l2></label>{{skillT3Condition}}</div>',
     '  <div><input id="skill_T2" type="checkbox"><label for="skill_T2"><l0>2阶（如果有）</l0><l1>2階（如果有）</l1><l2>T2(if exist)</l2></label>: <input id="skillOTOS_T2" type="checkbox"><label for="skillOTOS_T2"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label>{{skillT2Condition}}</div>',
     '  <div><input id="skill_T1" type="checkbox"><label for="skill_T1"><l0>1阶</l0><l1>1階</l1><l2>T1</l2></label>: <input id="skillOTOS_T1" type="checkbox"><label for="skillOTOS_T1"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label>{{skillT1Condition}}</div></div>',
     '<div class="hvAATab" id="hvAATab-Scroll">',
     '  <l0>战役模式</l0><l1>戰役模式</l1><l2>Battle type</l2>: ',
-    '  <input id="scrollRoundType_ar" type="checkbox"><label for="scrollRoundType_ar">The Arena</label><input id="scrollRoundType_rb" type="checkbox"><label for="scrollRoundType_rb">Ring of Blood</label><input id="scrollRoundType_gr" type="checkbox"><label for="scrollRoundType_gr">GrindFest</label><input id="scrollRoundType_iw" type="checkbox"><label for="scrollRoundType_iw">Item World</label><input id="scrollRoundType_ba" type="checkbox"><label for="scrollRoundType_ba">Encounter</label><input id="scrollRoundType_tw" type="checkbox"><label for="scrollRoundType_tw">The Tower</label>{{scrollCondition}}',
+    '  <input id="scrollRoundType_ar" type="checkbox"><label for="scrollRoundType_ar"><l0>竞技场(AR)</l0><l1>競技場(AR)</l1><l2>The Arena</l2></label><input id="scrollRoundType_rb" type="checkbox"><label for="scrollRoundType_rb"><l0>浴血擂台(RB)</l0><l1>浴血擂台(RB)</l1><l2>Ring of Blood</l2></label><input id="scrollRoundType_gr" type="checkbox"><label for="scrollRoundType_gr"><l0>压榨届(GF)</l0><l1>壓榨界(GF)</l1><l2>GrindFest</l2></label><input id="scrollRoundType_iw" type="checkbox"><label for="scrollRoundType_iw"><l0>道具届(IW)</l0><l1>道具界(IW)</l1><l2>Item World</l2></label><input id="scrollRoundType_ba" type="checkbox"><label for="scrollRoundType_ba"><l0>随机遭遇(ba)</l0><l1>隨機遭遇(ba)</l1><l2>Encounter</l2></label><input id="scrollRoundType_tw" type="checkbox"><label for="scrollRoundType_tw"><l0>塔楼(Tw)</l0><l1>塔樓(Tw)</l1><l2>The Tower</l2></label>{{scrollCondition}}',
     '  <input id="scrollFirst" type="checkbox"><label for="scrollFirst"><l0>存在技能生成的Buff时，仍然使用卷轴</l0><l1>存在技能生成的Buff時，仍然使用捲軸</l1><l2>Use Scrolls even when there are effects from spells</l2>.</label>',
-    '  <div><input id="scroll_Go" type="checkbox"><label for="scroll_Go">Scroll of the Gods</label>{{scrollGoCondition}}</div>',
-    '  <div><input id="scroll_Av" type="checkbox"><label for="scroll_Av">Scroll of the Avatar</label>{{scrollAvCondition}}</div>',
-    '  <div><input id="scroll_Pr" type="checkbox"><label for="scroll_Pr">Scroll of Protection</label>{{scrollPrCondition}}</div>',
-    '  <div><input id="scroll_Sw" type="checkbox"><label for="scroll_Sw">Scroll of Swiftness</label>{{scrollSwCondition}}</div>',
-    '  <div><input id="scroll_Li" type="checkbox"><label for="scroll_Li">Scroll of Life</label>{{scrollLiCondition}}</div>',
-    '  <div><input id="scroll_Sh" type="checkbox"><label for="scroll_Sh">Scroll of Shadows</label>{{scrollShCondition}}</div>',
-    '  <div><input id="scroll_Ab" type="checkbox"><label for="scroll_Ab">Scroll of Absorption</label>{{scrollAbCondition}}</div></div>',
+    '  <div><input id="scroll_Sw" type="checkbox"><label for="scroll_Sw"><l0>加速卷轴(Sw)</l0><l1>加速捲軸(Sw)</l1><l2>Scroll of Swiftness</l2></label>{{scrollSwCondition}}</div>',
+    '  <div><input id="scroll_Pr" type="checkbox"><label for="scroll_Pr"><l0>保护卷轴(Pr)</l0><l1>保護捲軸(Pr)</l1><l2>Scroll of Protection</l2></label>{{scrollPrCondition}}</div>',
+    '  <div><input id="scroll_Av" type="checkbox"><label for="scroll_Av"><l0>化身卷轴(Av)</l0><l1>化身捲軸(Av)</l1><l2>Scroll of the Avatar</l2></label>{{scrollAvCondition}}</div>',
+    '  <div><input id="scroll_Ab" type="checkbox"><label for="scroll_Ab"><l0>吸收卷轴(Ab)</l0><l1>吸收捲軸(Ab)</l1><l2>Scroll of Absorption</l2></label>{{scrollAbCondition}}</div>',
+    '  <div><input id="scroll_Sh" type="checkbox"><label for="scroll_Sh"><l0>幻影卷轴(Sh)</l0><l1>幻影捲軸(Sh)</l1><l2>Scroll of Shadows</l2></label>{{scrollShCondition}}</div>',
+    '  <div><input id="scroll_Li" type="checkbox"><label for="scroll_Li"><l0>生命卷轴(Li)</l0><l1>生命捲軸(Li)</l1><l2>Scroll of Life</l2></label>{{scrollLiCondition}}</div>',
+    '  <div><input id="scroll_Go" type="checkbox"><label for="scroll_Go"><l0>众神卷轴(Go)</l0><l1>眾神捲軸(Go)</l1><l2>Scroll of the Gods</l2></label>{{scrollGoCondition}}</div></div>',
     '<div class="hvAATab" id="hvAATab-Infusion">',
     '  <l0>注意：魔药属性与</l0><l1>注意：魔藥屬性與</l1><l2>Note: The style of infusion is the same as Attack Mode in </l2><a class="hvAAGoto" name="hvAATab-Main"><l0>主要选项</l0><l1>主要選項</l1><l2>Main</l2></a><l0>里的攻击模式相同</l0><l1>裡的攻擊模式相同</l1><l2></l2><br>{{infusionCondition}}</div>',
     '<div class="hvAATab" id="hvAATab-Alarm">',
@@ -624,10 +709,13 @@ function optionBox() { // 配置界面
     '  <span class="hvAATitle"><l0>攻击规则</l0><l1>攻擊規則</l1><l2>Attack Rule</l2></span> <l01><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README.md#攻击规则-示例" target="_blank">示例</a></l01><l2><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README_en.md#attack-rule-example" target="_blank">Example</a></l2>',
     '  <div>1. <l0>每回合计算敌人当前血量，血量最低的设置初始血量为10，其他敌人为当前血量倍数*10</l0><l1>每回合計算敌人當前血量，血量最低的設置初始血量為10，其他敌人為當前血量倍數*10</l1><l2>Each enemiy is assigned a number which is used to determine the target to attack, let\'s call that number Priority Weight or PW.</l2></div>',
     '  <div>2. <l0>初始权重与下述各Buff权重相加</l0><l1>初始權重與下述各Buff權重相加</l1><l2>PW(X) = 10 * HP(X) / Min_HP + Accumulated_Weight_of_Deprecating_Spells_In_Effect(X)</l2><br>',
-    '    Sleep: <input class="hvAANumber" name="weight_Sle" placeholder="5" type="text"> Blind: <input class="hvAANumber" name="weight_Bl" placeholder="3" type="text"> Slow: <input class="hvAANumber" name="weight_Slo" placeholder="3" type="text"> Imperil: <input class="hvAANumber" name="weight_Im" placeholder="-5" type="text"><br>',
-    '    MagNet: <input class="hvAANumber" name="weight_MN" placeholder="-4" type="text"> Silence: <input class="hvAANumber" name="weight_Si" placeholder="-4" type="text"> Drain: <input class="hvAANumber" name="weight_Dr" placeholder="-4" type="text"> Weaken: <input class="hvAANumber" name="weight_We" placeholder="-4" type="text"><br>',
-    '    Confuse: <input class="hvAANumber" name="weight_Co" placeholder="-1" type="text"> Coalesced Mana: <input class="hvAANumber" name="weight_CM" placeholder="-5" type="text"><br>',
-    '    Stunned: <input class="hvAANumber" name="weight_Stun" placeholder="-4" type="text"> Penetrated Armor: <input class="hvAANumber" name="weight_PA" placeholder="-4" type="text"> Bleeding Wound: <input class="hvAANumber" name="weight_BW" placeholder="-4" type="text"></div>',
+    '    <l0>沉眠(Sl)</l0><l1>沉眠(Sl)</l1><l2>Sleep</l2>: <input class="hvAANumber" name="weight_Sle" placeholder="5" type="text"> <l0>致盲(Bl)</l0><l1>致盲(Bl)</l1><l2>Blind</l2>: <input class="hvAANumber" name="weight_Bl" placeholder="3" type="text"> <l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2>: <input class="hvAANumber" name="weight_Slo" placeholder="3" type="text"> <l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2>: <input class="hvAANumber" name="weight_Im" placeholder="-5" type="text"><br>',
+    '    <l0>魔磁网(MN)</l0><l1>魔磁網(MN)</l1><l2>MagNet</l2>: <input class="hvAANumber" name="weight_MN" placeholder="-4" type="text"> <l0>沉默(Si)</l0><l1>沉默(Si)</l1><l2>Silence</l2>: <input class="hvAANumber" name="weight_Si" placeholder="-4" type="text"> <l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2>: <input class="hvAANumber" name="weight_Dr" placeholder="-4" type="text"> <l0>虚弱(We)</l0><l1>虛弱(We)</l1><l2>Weaken</l2>: <input class="hvAANumber" name="weight_We" placeholder="-4" type="text"><br>',
+    '    <l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2>: <input class="hvAANumber" name="weight_Co" placeholder="-1" type="text">',
+    '    <l0>魔力合流(CM)</l0><l1>魔力合流(CM)</l1><l2>Coalesced Mana</l2>: <input class="hvAANumber" name="weight_CM" placeholder="-5" type="text"><br>',
+    '    <l0>眩晕</l0><l1>眩暈</l1><l2>Stunned</l2>: <input class="hvAANumber" name="weight_Stun" placeholder="-4" type="text">',
+    '    <l0>破甲</l0><l1>破甲</l1><l2>Penetrated Armor</l2>: <input class="hvAANumber" name="weight_PA" placeholder="-4" type="text">',
+    '    <l0>流血</l0><l1>流血</l1><l2>Bleeding Wound</l2>: <input class="hvAANumber" name="weight_BW" placeholder="-4" type="text"></div>',
     '  <div>3. <input id="ruleReverse" type="checkbox"><label for="ruleReverse"><l0>计算出最终权重，攻击权重最小/最大的敌人(勾选: 最大)</l0><l1>計算出最終權重，攻擊權重最小/最大的敌人(勾選: 最大)</l1><l2>Whichever enemy has the lowest/highest PW will be the target. (ON means highest)</l2></label></div>',
     '  <div>PS. <l0>如果你对各Buff权重有特别见解，请务必</l0><l1>如果你對各Buff權重有特別見解，請務必</l1><l2>If you have any suggestions, please </l2><a class="hvAAGoto" name="hvAATab-Feedback"><l0>告诉我</l0><l1>告訴我</l1><l2>let me know</l2></a>.</div></div>',
     '<div class="hvAATab hvAACenter" id="hvAATab-Drop">',
@@ -1524,49 +1612,6 @@ function riddleAlert() { // 答题警报
   }
 }
 // 战斗外//
-function repairCheck() {
-  let json; let checkOnload; let checkLength;
-  let len = 0;
-  let lastID;
-  const eqps = [];
-  checkOnload = function () {
-    if (json) {
-      setTimeout(checkOnload, 200);
-      return;
-    }
-    post('?s=Forge&ss=re', (data) => {
-      post(gE('#mainpane>script[src]', data).src, (data1) => {
-        json = JSON.parse(data1.match(/{.*}/)[0]);
-        gE('.eqp>[id]', 'all', data).forEach((i) => {
-          eqps.push(i.id.match(/\d+/)[0]);
-        });
-        len = 0;
-        if (eqps.length === 0) {
-          checkLength();
-          return;
-        }
-        for (let i in eqps) {
-          const id = eqps[i];
-          if (json[id].d.match(/Condition: \d+ \/ \d+ \((\d+)%\)/)[1] <= g('option').repairValue) {
-            if (id === lastID) {
-              return;
-            }
-            lastID = id; // 记录最后一次需要修理的装备id，然后再次检测是否修理成功
-            post('?s=Forge&ss=re', checkOnload, `select_item=${id}`);
-          } else {
-            checkLength();
-          }
-        }
-      }, null, 'text');
-    });
-  };
-  checkLength = function () {
-    len++;
-    if (len >= eqps.length && g('option').idleArena) setTimeout(idleArena, (g('option').idleArenaTime * (Math.random() * 20 + 90) / 100) * 1000);
-  };
-  checkOnload();
-}
-
 function quickSite() { // 快捷站点
   const quickSiteBar = gE('body').appendChild(cE('div'));
   quickSiteBar.className = 'quickSiteBar';
@@ -1586,136 +1631,267 @@ function quickSite() { // 快捷站点
 }
 
 function autoSwitchIsekai() {
-  const herf = window.location.href;
-  let isIsekai = herf.indexOf('isekai') !== -1;
-  let domain = herf.slice(0, herf.indexOf('.org') + 4);
   if (!g('option').isekai) {
     // 若不启用自动跳转
     return;
   }
-  if (isIsekai) {
-    window.location.href = domain;
-    return;
-  }
-  window.location.href = `${domain}/isekai/`;
+  window.location.href = `${herf.slice(0, herf.indexOf('.org') + 4)}/${isIsekai ? 'isekai' : ''}/`;
 }
 
-function idleArena() { // 闲置竞技场
-  let arena = getValue('arena', true) || {};
-  if (arena.date !== g('dateNow')) {
-    arena = {
-      date: g('dateNow'),
-      gr: g('option').idleArenaGrTime,
-      token: {
-        length: 0,
-      },
-    };
-    // iframe打开四个网站，设定四个判断值，同时true才继续
-    const getToken = function (data, e) {
-      const imgs = gE('img[src*="startchallenge.png"]', 'all', data);
-      if (e.target.responseURL.match(/ss=gr$/)) {
-        arena.token.gr = gE('img[src*="startgrindfest.png"]', data).getAttribute('onclick').match(/init_battle\(1, '(.*?)'\)/)[1];
-      } else {
-        imgs.forEach((_) => {
-          const temp = _.getAttribute('onclick').match(/init_battle\((\d+),\d+,'(.*?)'\)/);
-          arena.token[temp[1]] = temp[2];
-        });
-      }
-      arena.token.length++;
-    };
-    post('?s=Battle&ss=gr', getToken);
-    post('?s=Battle&ss=ar', getToken);
-    post('?s=Battle&ss=ar&page=2', getToken);
-    post('?s=Battle&ss=rb', getToken);
-    var checkOnload = function () {
-      if (arena.token.length < 4) {
-        setTimeout(checkOnload, 200);
-      } else {
-        setValue('arena', arena);
-        setTimeout(idleArena, 200);
-      }
-    };
-    checkOnload();
+function checkStamina(staminaLow = undefined) {
+  let stamina = getValue('stamina');
+  if (!stamina) {
     return;
   }
-  if (arena.isOk) {
-    setTimeout(autoSwitchIsekai, (g('option').isekaiTime * (Math.random() * 20 + 90) / 100) * 1000)
+  const lastTime = getValue('staminaTime');
+  stamina += lastTime ? (time(0) - lastTime) / 1000 / 60 / 60 : 0;
+  let timeNow = time(0) / 1000 / 60 / 60 % 24;
+  if (stamina > staminaLow && ((stamina + 24 - timeNow) > g('option').staminaLowWithReNat)) {
+    return true;
+  }
+  if (isIsekai || !g('option').restoreStamina) {
     return;
   }
-  if (g('option').restoreStamina && gE('#stamina_readout .fc4.far>div').textContent.match(/\d+/)[0] * 1 <= g('option').staminaLow && gE('#stamina_readout .fc4.far>div').textContent.match(/\d+/)[0] * 1 < 85) {
+  const items = g('items');
+  if (!items) return;
+  const ed = items[11401];
+  const cc = items[11402];
+  if (!ed && !cc) {
+    return;
+  }
+  const minRecover = 15; // TODO get and check from hathperks
+  if (stamina < (100 - minRecover)) {
     post(window.location.href, goto, 'recover=stamina');
     return;
   }
-  arena.array = arena.array || g('option').idleArenaValue.split(',');
-  let href; let
-    id;
-  while (arena.array.length > 0) {
-    id = arena.array[0] * 1;
-    if (isNaN(id)) {
-      href = 'gr';
-      id = 'gr';
-    } else if (id >= 105) {
-      href = 'rb';
-    } else if (id >= 19) {
-      href = 'ar&page=2';
-    } else {
-      href = 'ar';
-    }
-    if (!(id in arena.token)) {
-      arena.array.splice(0, 1);
-    } else {
-      break;
-    }
-  }
-  document.title = _alert(-1, '闲置竞技场', '閒置競技場開始', 'Idle Arena start');
-  if (arena.array[0] === 'gr' && arena.gr <= 0) {
-    arena.array.splice(0, 1);
-    setValue('arena', arena);
-    idleArena();
-    return;
-  } if (arena.array[0] === 'gr' && arena.gr > 0) {
-    arena.gr--;
-  } else {
-    arena.array.splice(0, 1);
-  }
-  if (arena.array.length === 0) arena.isOk = true;
-  setValue('arena', arena);
-  const token = arena.token[id];
-  if (id === 'gr') id = 1;
-  post(`?s=Battle&ss=${href}`, goto, `initid=${String(id)}&inittoken=${token}`);
 }
 
-function encounterCheck() { // encounter
+function asyncGetStamina() {
+  post(window.location.href, page => {
+    setValue('staminaTime', time(0));
+    setValue('stamina', gE('#stamina_readout .fc4.far>div', page).textContent.match(/\d+/)[0] * 1);
+  });
+  // TODO get and check from hathperks
+  // post('https://e-hentai.org/hathperks.php', data => {
+  //   gE('.stuffbox>tr', data)[26];
+  // });
+}
+
+function GetItems() {
+  post('?s=Character&ss=it', (data) => {
+    const items = {};
+    for (let each of gE('.nosel.itemlist>tbody', data).children) {
+      const name = each.children[0].children[0].innerText;
+      const id = each.children[0].children[0].getAttribute('id').split('_')[1];
+      const count = each.children[1].innerText;
+      items[id] = [name, count];
+    }
+    g('items', items);
+  });
+}
+
+function CheckSupply() {
+  if (!g('option').checkSupply) {
+    g('supplyChecked', true);
+    return;
+  }
+  const items = g('items');
+  if (!items) {
+    setTimeout(CheckSupply, 1000);
+    return;
+  }
+  const checkList = g('option').checkItem;
+  const needs = [];
+  for (let id in checkList) {
+    const [name, count] = items[id] ? items[id] : [undefined, 0];
+    if ((count ? count : 0) < checkList[id]) {
+      needs.push(`\n${name}(${count}<${checkList[id]})`);
+    }
+  }
+  if (needs.length) {
+    alert(`Needs supply:${needs}`);
+  }
+  g('supplyChecked', !needs.length);
+}
+
+function CheckRepair() {
+  if (!g('option').repair) {
+    g('equipChecked', true);
+    return;
+  }
+  post('?s=Forge&ss=re', page => {
+    const ids = [];
+    gE('.eqp>[id]', 'all', page).forEach((i) => {
+      ids.push(i.id.match(/\d+/)[0]);
+    });
+    post(gE('#mainpane>script[src]', page).src, script => {
+      const eqps = [];
+      const json = JSON.parse(script.match(/{.*}/)[0]);
+      for (let id of ids) {
+        const condition = 1 * json[id].d.match(/Condition: \d+ \/ \d+ \((\d+)%\)/)[1];
+        if (condition > g('option').repairValue) {
+          continue;
+        }
+        eqps.push(id);
+        post('?s=Forge&ss=re', data => {
+          if (gE('.messagebox_error', data)?.innerText) {
+            return;
+          }
+          eqps.splice(eqps.indexOf(id), 1);
+          console.log(eqps.length);
+          if (!eqps.length) {
+            g('equipChecked', true);
+          }
+        }, `select_item=${id}`);
+      }
+      if (!eqps.length) {
+        g('equipChecked', true);
+      }
+    }, null, 'text');
+  });
+}
+
+function LoadArenas() {
+  let arena = getValue('arena', true);
+  if (arena && arena.date === g('dateNow')) {
+    return;
+  }
+  const getToken = function (data, e) {
+    let arena = getValue('arena', true);
+    if (e.target.responseURL.match(/ss=gr$/)) {
+      arena.token.gr = gE('img[src*="startgrindfest.png"]', data).getAttribute('onclick').match(/init_battle\(1, '(.*?)'\)/)[1];
+    } else {
+      gE('img[src*="startchallenge.png"]', 'all', data).forEach((_) => {
+        const temp = _.getAttribute('onclick').match(/init_battle\((\d+),\d+,'(.*?)'\)/);
+        arena.token[temp[1]] = temp[2];
+      });
+    }
+    arena.token.length++;
+    setValue('arena', arena);
+    if (arena.token.length === arena.sites.length) {
+      setTimeout(idleArena, g('option').idleArenaTime * 1000);
+    }
+  };
+
+  arena.data = g('dateNow');
+  arena.gr = g('option').idleArenaGrTime;
+  arena.array = g('option').idleArenaValue.split(',');
+  arena.token = { length: 0 };
+  if (!arena.sites) {
+    arena.sites = ['?s=Battle&ss=gr',
+      '?s=Battle&ss=ar',
+      '?s=Battle&ss=ar&page=2',
+      '?s=Battle&ss=rb'
+    ]
+  }
+  arena.array.reverse();
+  setValue('arena', arena);
+  for (let site of arena.sites) {
+    post(site, getToken);
+  }
+}
+
+function checkBattleReady(method, staminaLow) {
+  if (undefined in [g('supplyChecked'), g('equipChecked')]) {
+    setTimeout(method, 1000);
+    return;
+  }
+  if (!g('supplyChecked') || !g('equipChecked')) {
+    return;
+  }
+  if (checkStamina(staminaLow)) {
+    return true;
+  }
+  setTimeout(method, 60 * 1000);
+}
+
+function idleArena() { // 闲置竞技场
+  let arena = getValue('arena', true);
+  if (arena.array.length === 0) {
+    setTimeout(autoSwitchIsekai, (g('option').isekaiTime * (Math.random() * 20 + 90) / 100) * 1000);
+    return;
+  }
+  if (g('onEncounter', true)) {
+    setTimeout(idleArena, 1000);
+    return;
+  }
+  if (!checkBattleReady(idleArena, g('option').staminaLow)) {
+    return;
+  }
+  let id;
+  while (arena.array.length > 0) {
+    id = arena.array.pop() * 1;
+    id = isNaN(id) ? 'gr' : id;
+    if (id in arena.token) {
+      break;
+    }
+    id = undefined;
+  }
+  let href;
+  if (!id) {
+    setValue('arena', arena);
+    return;
+  } else if (id === 'gr') {
+    if (arena.gr <= 0) {
+      setValue('arena', arena);
+      idleArena();
+      return;
+    }
+    arena.gr--;
+    href = 'gr';
+    id = 1;
+  } else if (id >= 105) {
+    href = 'rb';
+  } else if (id >= 19) {
+    href = 'ar&page=2';
+  } else {
+    href = 'ar';
+  }
+
+  document.title = _alert(-1, '闲置竞技场开始', '閒置競技場開始', 'Idle Arena start');
+  setValue('arena', arena);
+  post(`?s=Battle&ss=${href}`, goto, `initid=${String(id)}&inittoken=${arena.token[id]}`);
+}
+
+function onEncounter() {
+  g('onEncounter', true);
+  if (!checkBattleReady(onEncounter, 60)) {
+    return;
+  }
+  const encounter = getValue('encounter');
+  encounter.lastTime = time(0);
+  setValue('encounter', encounter);
+  openUrl('https://e-hentai.org/news.php?encounter');
+  setTimeout(g('onEncounter', false), 1000);
+}
+
+function getEncounter() { // encounter
   const timeNow = time(0);
   const encounter = (getValue('encounter') && getValue('encounter', true).dateNow === g('dateNow')) ? getValue('encounter', true) : {
     dateNow: g('dateNow'),
     time: 0,
   };
+  setValue('encounter', encounter);
   if (!encounter.lastTime || (timeNow - encounter.lastTime >= 30 * 60 * 1000 && encounter.time < 24)) {
-    if (g('option').restoreStamina && gE('#stamina_readout .fc4.far>div').textContent.match(/\d+/)[0] * 1 <= g('option').staminaLow) {
-      post(window.location.href, goto, 'recover=stamina');
-      return;
-    }
-    encounter.lastTime = timeNow;
-    setValue('encounter', encounter);
-    openUrl('https://e-hentai.org/news.php?encounter');
+    onEncounter();
     return;
   }
-  let lastEncounter;
-  if (gE('.lastEncounter')) {
-    lastEncounter = gE('.lastEncounter');
-  } else {
+  let lastEncounter = gE('.lastEncounter');
+  if (!lastEncounter) {
     lastEncounter = gE('body').appendChild(cE('a'));
     lastEncounter.className = 'lastEncounter';
-    lastEncounter.title = `${time(3, encounter.lastTime)}\nEncounter TIme: ${encounter.time}`;
+    lastEncounter.title = `${time(3, encounter.lastTime)}\nEncounter Time: ${encounter.time}`;
     lastEncounter.href = 'https://e-hentai.org/news.php?encounter';
     lastEncounter.onclick = function () {
       if (encounter.time >= 24 && _alert(1, '是否重置', '是否重置', 'Whether to reset')) delValue('encounter');
     };
   }
-  lastEncounter.innerHTML = `${Math.floor((timeNow - encounter.lastTime) / 1000 / 60)}<l0>分钟前</l0><l1>分鐘前</l1><l2> mins before</l2>`;
-  setTimeout(encounterCheck, 1 * 60 * 1000 * (Math.random() * 20 + 90) / 100);
+  const gap = Math.floor((timeNow - encounter.lastTime) / 1000 / 60);
+  lastEncounter.innerHTML = `${gap}<l0>分钟前</l0><l1>分鐘前</l1><l2> mins before</l2>`;
+  let interval = gap >= 29 ? 1 : 60;
+  setTimeout(getEncounter, interval * 1000 * (Math.random() * 20 + 90) / 100);
 }
+
 // 战斗中//
 function main() { // 主程序
   if (getValue('disabled')) { // 如果禁用
@@ -1748,13 +1924,10 @@ function main() { // 主程序
     setTimeout(goto, 3 * 1000);
     return;
   }
-
-  g('end', false);
-  var taskList = [useGem, deadSoon, autoPause, autoDefend, useScroll, useChannelSkill, useBuffSkill, useInfusions, useDeSkill, autoFocus, autoSS, autoSkill, attack]
+  var taskList = [useGem, deadSoon, autoPause, autoSS, autoDefend, useScroll, useChannelSkill, useBuffSkill, useInfusions, useDeSkill, autoFocus, autoSkill, attack];
 
   for (let i in taskList) {
-    const task = taskList[i];
-    if (g('end', task())) return;
+    if (taskList[i]()) return;
   }
 }
 
@@ -1773,48 +1946,46 @@ function getRangeCenter(target, range = 0, excludeCondition = undefined) {
   let order = target.order;
   let newOrder = order;
   // sort by order to fix id
-  g('monsterStatus').sort(objArrSort('order'));
+  let monsterStatus = JSON.parse(JSON.stringify(g('monsterStatus')));
+  monsterStatus.sort(objArrSort('order'));
   for (let i = order - 2 * range; i <= order + 2 * range; i++) {
-    if (i < 0 || i >= g('monsterStatus').length) {
+    if (i < 0 || i >= monsterStatus.length) {
       continue;
     }
-    let weight = g('monsterStatus')[i].finWeight;
-    weight = (weight == Infinity) ? 0 : weight
+    let weight = monsterStatus[i].finWeight;
+    weight = (weight == Infinity) ? 0 : weight;
     maxWeight = maxWeight > weight ? maxWeight : weight;
   }
-  maxWeight *= ((range === 0) ? 1 : (range * 2))
+  maxWeight *= ((range === 0) ? 1 : (range * 2));
   for (let i = order - range; i <= order + range; i++) {
     let rank = 0;
-    if (i < 0 || i >= g('monsterStatus').length) {
+    if (i < 0 || i >= monsterStatus.length) {
       continue;
     }
-    if (g('monsterStatus')[i].isDead) {
+    if (monsterStatus[i].isDead) {
       continue;
     }
     for (let j = i - range; j <= (i + range); j++) {
-      if (j < 0 || j >= g('monsterStatus').length) {
-        rank += maxWeight
+      if (j < 0 || j >= monsterStatus.length) {
+        rank += maxWeight;
         continue;
       }
-      let mon = g('monsterStatus')[j]
+      let mon = monsterStatus[j];
       if (mon.isDead) {
-        rank += maxWeight
+        rank += maxWeight;
         continue;
       }
       if (excludeCondition && excludeCondition(mon)) {
-        rank += maxWeight
+        rank += maxWeight;
         continue;
       }
-      rank += mon.finWeight
+      rank += mon.finWeight;
     }
     if (rank < minRank) {
       newOrder = i;
     }
   }
-  target = g('monsterStatus')[newOrder]
-  // reset to sorted by finWeight
-  g('monsterStatus').sort(objArrSort('finWeight'));
-  return target
+  return monsterStatus[newOrder];
 }
 
 function autoPause() {
@@ -2039,7 +2210,7 @@ function newRound() { // New Round
       };
       id = id + 1;
     }
-    setValue('monsterStatus', monsterStatus);
+    // setValue('monsterStatus', monsterStatus);
     g('monsterStatus', monsterStatus);
     let roundNow; let
       roundAll;
@@ -2056,8 +2227,8 @@ function newRound() { // New Round
   } else if (!getValue('monsterStatus') || getValue('monsterStatus', true).length !== gE('div.btm2', 'all').length) {
     setValue('roundNow', 1);
     setValue('roundAll', 1);
-    fixMonsterStatus();
   }
+  fixMonsterStatus();
   g('roundNow', getValue('roundNow') * 1);
   g('roundAll', getValue('roundAll') * 1);
   g('roundLeft', getValue('roundAll') - g('roundNow'));
@@ -2495,9 +2666,9 @@ function useBuffSkill() { // 自动施法BUFF技能
   if (!checkCondition(g('option').buffSkillCondition)) {
     return false;
   }
-
+  let i;
   const skillPack = g('option').buffSkillOrderValue.split(',');
-  for (let i = 0; i < skillPack.length; i++) {
+  for (i = 0; i < skillPack.length; i++) {
     let buff = skillPack[i];
     if (g('option').buffSkill[buff] && checkCondition(g('option')[`buffSkill${buff}Condition`]) && !gE(`#pane_effects>img[src*="${skillLib[buff].img}"]`) && isOn(skillLib[buff].id)) {
       gE(skillLib[buff].id).click();
@@ -2680,20 +2851,22 @@ function useDeSkill() { // 自动施法DEBUFF技能
     skillPack.splice(i, 1);
     i--;
   }
+  skillPack.sort((x, y) => g('option').debuffSkillOrderValue.indexOf(x) - g('option').debuffSkillOrderValue.indexOf(y))
   let toAllCount = skillPack.length;
-  if (g('option').debuffSkill) { // 是否有启用的buff(不算两个特殊的)
+  if (g('option').debuffSkill) { // 是否有启用的buff(不算两个特殊的);
     skillPack = skillPack.concat(g('option').debuffSkillOrderValue.split(','));
   }
   for (let i in skillPack) {
     let buff = skillPack[i];
-    if (!g('option').debuffSkill[buff] && i >= toAllCount) { // 检查buff是否启用
+    if (i >= toAllCount && !skillPack[i]) { // 检查buff是否启用
       continue;
     }
     if (!checkCondition(g('option')[`debuffSkill${buff}Condition`])) { // 检查条件
       continue;
     }
+    let succeed = useDebuffSkill(skillPack[i], i < toAllCount);
     // 前 toAllCount 个都是先给全体上的
-    if (useDebuffSkill(skillPack[i], i < toAllCount)) {
+    if (succeed) {
       return true;
     }
   }
@@ -2753,10 +2926,7 @@ function useDebuffSkill(buff, isAll = false) {
   if (!isOn(skillLib[buff].id)) { // 技能不可用
     return false;
   }
-
-  let isDebuffed = (target) => gE(`img[src*="${skillLib[buff].img}"]`, gE(`#mkey_${target.id}>.btm6`))
-
-  g('monsterStatus').sort(objArrSort('finWeight'));
+  let isDebuffed = (target) => gE(`img[src*="${skillLib[buff].img}"]`, gE(`#mkey_${target.id}>.btm6`));
   let primaryTarget;
   let max = isAll ? g('monsterStatus').length : 1;
   for (let i = 0; i < max; i++) {
@@ -2773,7 +2943,6 @@ function useDebuffSkill(buff, isAll = false) {
   if (primaryTarget === undefined) {
     return false;
   }
-
   let id = getRangeCenter(primaryTarget, skillLib[buff].range, isDebuffed).id;
   const imgs = gE('img', 'all', gE(`#mkey_${id}>.btm6`));
   if (imgs.length < 6 || !g('option').debuffSkillTurnAlert || (g('option').debuffSkillTurn && imgs[imgs.length - 1].getAttribute('onmouseover').match(/\(.*,.*, (.*?)\)$/)[1] * 1 >= g('option').debuffSkillTurn[buff])) {
@@ -2828,7 +2997,7 @@ function attack() { // 自动打怪
 }
 
 function fixMonsterStatus() { // 修复monsterStatus
-  document.title = _alert(-1, 'monsterStatus错误，正在尝试修复', 'monsterStatus錯誤，正在嘗試修復', 'monsterStatus Error, trying to fix');
+  // document.title = _alert(-1, 'monsterStatus错误，正在尝试修复', 'monsterStatus錯誤，正在嘗試修復', 'monsterStatus Error, trying to fix');
   const monsterStatus = [];
   gE('div.btm2', 'all').forEach((monster, i) => {
     monsterStatus.push({
@@ -2838,7 +3007,7 @@ function fixMonsterStatus() { // 修复monsterStatus
     });
   });
   setValue('monsterStatus', monsterStatus);
-  goto();
+  g('monsterStatus', monsterStatus);
 }
 
 function dropMonitor(battleLog) { // 掉落监测
@@ -2973,7 +3142,7 @@ function recordUsage(parm) {
         stats.hurt._mtotal += point;
         stats.hurt._mavg = Math.round(stats.hurt._mtotal / stats.hurt._mcount);
       }
-    } else if (text.match(/^[\w ]+ [a-z]+s [\w+ -]+ for \d+( .*)? damage/) || text.match(/^You .* for \d+ .* damage/)) { // text.match(/for \d+ .* damage/)
+    } else if (text.match(/^[\w ]+ [a-z]+s [\w+ -]+ for \d+( .*)? damage/) || text.match(/^You .* for \d+ .* damage/)) { // text.match(/for \d+ .* damage/);
       reg = text.match(/for (\d+)( .*)? damage/);
       magic = text.match(/^[\w ]+ [a-z]+s [\w+ -]+ for/) ? text.match(/^([\w ]+) [a-z]+s [\w+ -]+ for/)[1].replace(/^Your /, '') : text.match(/^You (\w+)/)[1];
       point = reg[1] * 1;
