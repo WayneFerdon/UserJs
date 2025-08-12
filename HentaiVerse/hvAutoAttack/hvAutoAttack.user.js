@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.22.11
+// @version      2.90.22.12
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1990,12 +1990,12 @@ try {
         let result;
         for (let key of paramList) {
           if (!result) {
-            result = g(key) ?? getValue(key) ?? (g('battle') ?? getValue('battle', true))[key];
+            result = g(key) ?? (g('battle') ?? getValue('battle', true))[key] ?? getValue(key);
             continue;
           }
           result = result[key]
         }
-        return result;
+        return isNaN(result * 1) ? result : result * 1;
       }
       return str * 1;
     };
@@ -2246,6 +2246,16 @@ try {
     await Promise.all(Array.from(gE('#ability_treelist>div>img', 'all', doc)).map(async img => { try {
       const _ = img.getAttribute('onclick')?.match(/(\?s=(.*)tree=(.*))'/);
       const [href, type] = _ ? [_[1], _[3]] : ['?s=Character&ss=ab&tree=general', 'general'];
+      switch(type){
+        case 'deprecating1':
+        case 'deprecating2':
+        case 'elemental':
+        case 'forbidden':
+        case 'divine':
+          break;
+        default:
+          return;
+      }
       const html = await $ajax.fetch(href);
       const doc = $doc(html);
       const slots = Array.from(gE('.ability_slotbox>div>div', 'all', doc)).forEach(slot => {
@@ -2344,6 +2354,7 @@ try {
     }
     if (needs.length) {
       console.log(`Needs supply:${needs}`);
+      document.title = `[C!]` + document.title;
     }
     logSwitchAsyncTask(arguments);
     return !needs.length;
@@ -2370,6 +2381,7 @@ try {
     } catch (e) {console.error(e)}}))).filter(e => e);
     if (eqps.length) {
       console.log('eqps need repair: ', eqps);
+      document.title = `[R!]` + document.title;
     }
     logSwitchAsyncTask(arguments);
     return !eqps.length;
@@ -2466,12 +2478,10 @@ try {
 
   async function startUpdateArena(idleStart, startIdleArena=true) { try {
     const now = time(0);
-    console.log('startUpdateArena now', now, idleStart);
     if (!idleStart) {
       await updateArena();
     }
     let timeout = g('option').idleArenaTime * _1s;
-    console.log('startUpdateArena timeout', timeout);
     if (idleStart) {
       timeout -= time(0) - idleStart;
     }
@@ -2532,10 +2542,15 @@ try {
     }
     const staminaChecked = checkStamina(condition.staminaLow, condition.staminaCost);
     console.log("staminaChecked", condition.staminaLow, condition.staminaCost, staminaChecked);
-    if (staminaChecked) { // 1: succeed, -1: failed with nature recover
-      return staminaChecked === 1;
+    if(staminaChecked === 1){ // succeed
+        return true;
     }
-    setTimeout(method, Math.floor(time(0) / _1h + 1) * _1h - time(0));
+    if(staminaChecked === 0){ // failed until today ends
+      setTimeout(method, Math.floor(time(0) / _1h + 1) * _1h - time(0));
+      document.title = `[S!!]` + document.title;
+    } else { // case -1: // failed with nature recover
+      document.title = `[S!]` + document.title;
+    }
   }
 
   async function idleArena() { try { // 闲置竞技场
