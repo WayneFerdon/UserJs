@@ -1995,7 +1995,7 @@ try {
           }
           result = result[key]
         }
-        return isNaN(result * 1) ? result : result * 1;
+        return isNaN(result * 1) ? result : (result * 1);
       }
       return str * 1;
     };
