@@ -1990,7 +1990,7 @@ try {
         let result;
         for (let key of paramList) {
           if (!result) {
-            result = g(key) ?? (g('battle') ?? getValue('battle', true))[key] ?? getValue(key);
+            result = (g('battle') ?? getValue('battle', true))[key] ?? g(key) ?? getValue(key);
             continue;
           }
           result = result[key]
