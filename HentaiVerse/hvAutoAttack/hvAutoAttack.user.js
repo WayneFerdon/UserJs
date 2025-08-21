@@ -2529,7 +2529,7 @@ try {
       arena.arrayDone = [];
     }
     if (!isToday || !arena.isOptionUpdated) {
-      arena.array = g('option').idleArenaValue.split(',') ?? [];
+      arena.array = g('option').idleArenaValue?.split(',') ?? [];
       arena.array.reverse();
     }
     return setValue('arena', arena);
@@ -3755,6 +3755,7 @@ try {
     }
 
     const skillOrder = (g('option').skillOrderValue || 'OFC,FRD,T3,T2,T1').split(',');
+    const fightStyle = g('option').fightingStyle;
     const skillLib = {
       OFC: {
         id: '1111',
@@ -3765,16 +3766,17 @@ try {
         oc: 4,
       },
       T3: {
-        id: `2${g('option').fightingStyle}03`,
-        oc: 2,
+        id: `2${fightStyle}03`,
+        // oc: 2203:4 2303:2 2403:3
+        oc: fightStyle === 2 ? 4 : fightStyle === 3 ? 2 : fightStyle === 4 ? 3 : undefined,
       },
       T2: {
-        id: `2${g('option').fightingStyle}02`,
-        oc: 2,
+        id: `2${fightStyle}02`,
+        oc: fightStyle === 1 ? undefined : 2, // 2202:2  2302:2 2402:2
       },
       T1: {
-        id: `2${g('option').fightingStyle}01`,
-        oc: 2,
+        id: `2${fightStyle}01`,
+        oc: fightStyle === 1 ? 4 : fightStyle === 2 ? 1 : 2 // 2101:4 2201:1 2301:2 2401:2 2501:2
       },
     };
     const rangeSkills = {
@@ -3803,7 +3805,7 @@ try {
       if (skillLib[skill].id in rangeSkills) {
         range = rangeSkills[skillLib[skill].id];
       }
-      if (!g('option').mercifulBlow || g('option').fightingStyle !== '2' || skill !== 'T3') {
+      if (!g('option').mercifulBlow || fightStyle !== '2' || skill !== 'T3') {
         continue;
       }
       // Merciful Blow
