@@ -3757,28 +3757,20 @@ try {
     const skillOrder = (g('option').skillOrderValue || 'OFC,FRD,T3,T2,T1').split(',');
     const fightStyle = g('option').fightingStyle;
     const skillLib = {
-      OFC: {
-        id: '1111',
-        oc: 8,
-      },
-      FRD: {
-        id: '1101',
-        oc: 4,
-      },
-      T3: {
-        id: `2${fightStyle}03`,
-        // oc: 2203:4 2303:2 2403:3
-        oc: fightStyle === 2 ? 4 : fightStyle === 3 ? 2 : fightStyle === 4 ? 3 : undefined,
-      },
-      T2: {
-        id: `2${fightStyle}02`,
-        oc: fightStyle === 1 ? undefined : 2, // 2202:2  2302:2 2402:2
-      },
-      T1: {
-        id: `2${fightStyle}01`,
-        oc: fightStyle === 1 ? 4 : fightStyle === 2 ? 1 : 2 // 2101:4 2201:1 2301:2 2401:2 2501:2
-      },
+      OFC: '1111',
+      FRD: '1101',
+      T3: `2${fightStyle}03`,
+      T2: `2${fightStyle}02`,
+      T1: `2${fightStyle}01`
     };
+    const skillOC = { // default as 2
+      '1101': 4,
+      '1111': 8,
+      '2101': 4,
+      '2201': 1,
+      '2203': 4,
+      '2403': 3
+    }
     const rangeSkills = {
       2101: 2,
       2403: 2,
@@ -3787,37 +3779,39 @@ try {
     const monsterStatus = g('battle').monsterStatus;
     for (let i in skillOrder) {
       let skill = skillOrder[i];
-      let range = 0;
       if (!checkCondition(g('option')[`skill${skill}Condition`])) {
         continue;
       }
-      if (!isOn(skillLib[skill].id)) {
+      let id = skillLib[skill];
+      if (!isOn(id)) {
         continue;
       }
-      if (g('oc') < skillLib[skill].oc) {
+      if (g('oc') < (id in skillOC ? skillOC[id] : 2)) {
         continue;
       }
       if (g('option').skillOTOS && g('option').skillOTOS[skill] && g('skillOTOS')[skill] >= 1) {
         continue;
       }
       g('skillOTOS')[skill]++;
-      gE(skillLib[skill].id).click();
-      if (skillLib[skill].id in rangeSkills) {
-        range = rangeSkills[skillLib[skill].id];
-      }
-      if (!g('option').mercifulBlow || fightStyle !== '2' || skill !== 'T3') {
-        continue;
-      }
+      gE(id).click();
       // Merciful Blow
-      for (let j = 0; j < monsterStatus.length; j++) {
-        if (monsterStatus[j].hpNow / monsterStatus[j].hp < 0.25 && gE(`#mkey_${getMonsterID(monsterStatus[j])} img[src*="wpn_bleed"]`)) {
-          gE(`#mkey_${getRangeCenterID(monsterStatus[j])}`).click();
-          return true;
+      let target = 0;
+      if (g('option').mercifulBlow && fightStyle === '2' && skill === 'T3') {
+        for (let j = 0; j < monsterStatus.length; j++) {
+          if (monsterStatus[j].hpNow / monsterStatus[j].hp >= 0.25) {
+            continue;
+          }
+          if (!gE(`#mkey_${getMonsterID(monsterStatus[j])} img[src*="wpn_bleed"]`)) {
+            continue;
+          }
+          target = j;
+          break;
         }
       }
+      const range = id in rangeSkills ? rangeSkills[id] : 0;
+      gE(`#mkey_${getRangeCenterID(monsterStatus[target], range)}`).click();
+      return true;
     }
-    gE(`#mkey_${getRangeCenterID(monsterStatus[0])}`).click();
-    return true;
   }
 
   function useDeSkill() { // 自动施法DEBUFF技能
