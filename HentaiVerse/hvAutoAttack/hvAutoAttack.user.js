@@ -3394,10 +3394,8 @@ try {
     const order = g('option').itemOrderValue.split(',');
     for (let i = 0; i < name.length; i++) {
       let id = order[i];
-      if (g('option').item[name[i]] && checkCondition(g('option')[`item${name[i]}Condition`]) && isOn(id)) {
-        if(isOn(id)){
-          gE(id)?.click();
-        }
+      if (g('option').item[name[i]] && checkCondition(g('option')[`item${name[i]}Condition`]) && isOn(id) && gE(id)) {
+        gE(id).click();
         return true;
       }
     }
