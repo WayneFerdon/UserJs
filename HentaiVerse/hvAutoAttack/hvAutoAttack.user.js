@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.22.16
+// @version      2.90.22.17
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -3394,8 +3394,8 @@ try {
     const order = g('option').itemOrderValue.split(',');
     for (let i = 0; i < name.length; i++) {
       let id = order[i];
-      if (g('option').item[name[i]] && checkCondition(g('option')[`item${name[i]}Condition`]) && isOn(id) && gE(id)) {
-        gE(id).click();
+      if (g('option').item[name[i]] && checkCondition(g('option')[`item${name[i]}Condition`]) && isOn(id)) {
+        gE(`.bti3>div[onmouseover*="${id}"]`).click();
         return true;
       }
     }
