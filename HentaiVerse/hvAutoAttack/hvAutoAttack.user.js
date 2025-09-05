@@ -520,7 +520,7 @@ try {
     if (id * 1 > 10000) { // 使用物品
       return gE(`.bti3>div[onmouseover*="${id}"]`);
     } // 施放技能
-    return (gE(id) && gE(id).style.opacity !== 0.5) ? gE(id) : false;
+    return (gE(id) && gE(id).style.opacity * 1 !== 0.5) ? gE(id) : false;
   }
 
   function setLocal(item, value) {
