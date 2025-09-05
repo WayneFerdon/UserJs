@@ -3395,7 +3395,7 @@ try {
     for (let i = 0; i < name.length; i++) {
       let id = order[i];
       if (g('option').item[name[i]] && checkCondition(g('option')[`item${name[i]}Condition`]) && isOn(id)) {
-        gE(`.bti3>div[onmouseover*="${id}"]`).click();
+        (gE(`.bti3>div[onmouseover*="${id}"]`) ?? gE(id)).click();
         return true;
       }
     }
