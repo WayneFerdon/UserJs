@@ -305,6 +305,12 @@ try {
       setPauseUI(box2);
       reloader();
       g('attackStatus', g('option').attackStatus);
+      for (let fightingStyle = 1; fightingStyle < 6; fightingStyle++) {
+        if(gE(`2${fightingStyle}01`)){
+          g('fightingStyle', fightingStyle.toString());
+        }
+      }
+
       g('timeNow', time(0));
       g('runSpeed', 1);
       Debug.log('______________newRound', false);
@@ -1034,7 +1040,6 @@ try {
       '  <input id="skillOrder_OFC" type="checkbox"><label for="skillOrder_OFC"><l0>友情小马砲</l0><l1>友情小馬砲</l1><l2>OFC</l2></label><input id="skillOrder_FRD" type="checkbox"><label for="skillOrder_FRD"><l0>龙吼</l0><l1>龍吼</l1><l2>FRD</l2></label><input id="skillOrder_T3" type="checkbox"><label for="skillOrder_T3">T3</label><input id="skillOrder_T2" type="checkbox"><label for="skillOrder_T2">T2</label><input id="skillOrder_T1" type="checkbox"><label for="skillOrder_T1">T1</label></div>',
       '  <div><input id="skill_OFC" type="checkbox"><label for="skill_OFC"><l0>友情小马砲</l0><l1>友情小馬砲</l1><l2>OFC</l2></label>: <input id="skillOTOS_OFC" type="checkbox"><label for="skillOTOS_OFC"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label>{{skillOFCCondition}}</div>',
       '  <div><input id="skill_FRD" type="checkbox"><label for="skill_FRD"><l0>龙吼</l0><l1>龍吼</l1><l2>FRD</l2></label>: <input id="skillOTOS_FRD" type="checkbox"><label for="skillOTOS_FRD"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label>{{skillFRDCondition}}</div>',
-      '  <div><l0>战斗风格</l0><l1>戰鬥風格</l1><l2>Fighting style</l2>: <select name="fightingStyle"><option value="1">二天一流 / Niten Ichiryu</option><option value="2">单手 / One-Handed</option><option value="3">双手 / 2-Handed Weapon</option><option value="4">双持 / Dual Wielding</option><option value="5">法杖 / Staff</option></select></div>',
       '  <div><input id="skill_T3" type="checkbox"><label for="skill_T3"><l0>3阶（如果有）</l0><l1>3階（如果有）</l1><l2>T3(if exist)</l2></label>: <input id="skillOTOS_T3" type="checkbox"><label for="skillOTOS_T3"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label><br><input id="mercifulBlow" type="checkbox"><label for="mercifulBlow"><l0>最后的慈悲(MB)：优先攻击满足条件的敌人 (25% HP, 流血)</l0><l1>最後的慈悲(MB)：優先攻擊滿足條件的敵人 (25% HP, 流血)</l1><l2>Merciful Blow: Attack the enemy which has 25% HP and is bleeding first</l2></label>{{skillT3Condition}}</div>',
       '  <div><input id="skill_T2" type="checkbox"><label for="skill_T2"><l0>2阶（如果有）</l0><l1>2階（如果有）</l1><l2>T2(if exist)</l2></label>: <input id="skillOTOS_T2" type="checkbox"><label for="skillOTOS_T2"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label>{{skillT2Condition}}</div>',
       '  <div><input id="skill_T1" type="checkbox"><label for="skill_T1"><l0>1阶</l0><l1>1階</l1><l2>T1</l2></label>: <input id="skillOTOS_T1" type="checkbox"><label for="skillOTOS_T1"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label>{{skillT1Condition}}</div></div>',
@@ -3760,7 +3765,7 @@ try {
     }
 
     const skillOrder = (g('option').skillOrderValue || 'OFC,FRD,T3,T2,T1').split(',');
-    const fightStyle = g('option').fightingStyle;
+    const fightStyle = g('fightingStyle');
     const skillLib = {
       OFC: '1111',
       FRD: '1101',
@@ -4001,7 +4006,7 @@ try {
     const attackStatus = g('attackStatus');
     const monsterStatus = g('battle').monsterStatus;
     if (attackStatus === 0) {
-      if (g('option').fightingStyle === '1') { // 二天一流
+      if (g('fightingStyle') === '1') { // 二天一流
         range = 1;
       }
     } else {
