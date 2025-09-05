@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.22.15
+// @version      2.90.22.16
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -520,7 +520,7 @@ try {
     if (id * 1 > 10000) { // 使用物品
       return gE(`.bti3>div[onmouseover*="${id}"]`);
     } // 施放技能
-    return (gE(id) && gE(id).style.opacity * 1 !== 0.5) ? gE(id) : false;
+    return gE(id) && (gE(id).style.opacity * 1 !== 0.5);
   }
 
   function setLocal(item, value) {
@@ -1979,7 +1979,6 @@ try {
     }
     let i; let j; let
     k;
-    const result = [];
     const returnValue = function (str) {
       if (str.match(/^_/)) {
         const arr = str.split('_');
@@ -2015,7 +2014,9 @@ try {
     };
 
     for (i in parms) {
+      let parmResult = true;
       for (j = 0; j < parms[i].length; j++) {
+        let result = true;
         if (!Array.isArray(parms[i])) {
           continue;
         }
@@ -2033,29 +2034,30 @@ try {
 
         switch (k[1]) {
           case '1':
-            result[i] = k[0] > k[2];
+            result = k[0] > k[2];
             break;
           case '2':
-            result[i] = k[0] < k[2];
+            result = k[0] < k[2];
             break;
           case '3':
-            result[i] = k[0] >= k[2];
+            result = k[0] >= k[2];
             break;
           case '4':
-            result[i] = k[0] <= k[2];
+            result = k[0] <= k[2];
             break;
           case '5':
-            result[i] = k[0] === k[2];
+            result = k[0] === k[2];
             break;
           case '6':
-            result[i] = k[0] !== k[2];
+            result = k[0] !== k[2];
             break;
         }
-        if (result[i] === false) {
-          j = parms[i].length;
+        if (!result) {
+          parmResult = false;
+          break;
         }
       }
-      if (result[i] === true) {
+      if (parmResult) {
         return true;
       }
     }
@@ -3391,8 +3393,11 @@ try {
     const name = g('option').itemOrderName.split(',');
     const order = g('option').itemOrderValue.split(',');
     for (let i = 0; i < name.length; i++) {
-      if (g('option').item[name[i]] && checkCondition(g('option')[`item${name[i]}Condition`]) && isOn(order[i])) {
-        isOn(order[i]).click();
+      let id = order[i];
+      if (g('option').item[name[i]] && checkCondition(g('option')[`item${name[i]}Condition`]) && isOn(id)) {
+        if(isOn(id)){
+          gE(id).click();
+        }
         return true;
       }
     }
