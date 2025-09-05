@@ -3396,7 +3396,7 @@ try {
       let id = order[i];
       if (g('option').item[name[i]] && checkCondition(g('option')[`item${name[i]}Condition`]) && isOn(id)) {
         if(isOn(id)){
-          gE(id).click();
+          gE(id)?.click();
         }
         return true;
       }
