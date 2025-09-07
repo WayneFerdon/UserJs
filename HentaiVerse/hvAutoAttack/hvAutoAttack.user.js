@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.22.18
+// @version      2.90.22.19
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -61,9 +61,9 @@ try {
   }
   try {
     if(window.location.href.startsWith('https://')) {
-      MAIN_URL = MAIN_URL.replace(/^http:/, /^https:/);
+      MAIN_URL = MAIN_URL.replace(/^http:/, 'https:');
     } else {
-      MAIN_URL = MAIN_URL.replace(/^https:/, /^http:/);
+      MAIN_URL = MAIN_URL.replace(/^https:/, 'http:');
     }
   } catch (e) {}
   const Debug = {
