@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.22.20
+// @version      2.90.22.21
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -856,7 +856,7 @@ try {
       '  </div>',
 
       '<div class="hvAATab" id="hvAATab-BattleStarter">',
-      ' <div><input id="encounter" type="checkbox"><label for="encounter"><b><l0>自动遭遇战</l0><l1>自動遭遇戰</l1><l2>Auto Encounter</l2></b></label><input id="encounterQuickCheck" type="checkbox"><label for="encounterQuickCheck"><l0>精准倒计时(影响性能)</l0><l1>精準(影響性能)</l1><l2>Precise encounter cd(might reduced performsance)</l2></label></div>',
+      ' <div><input id="encounter" type="checkbox"><label for="encounter"><b><l0>自动遭遇战</l0><l1>自動遭遇戰</l1><l2>Auto Encounter</l2></b></label><input id="encounterQuickCheck" type="checkbox"><label for="encounterQuickCheck"><l0>精准倒计时(影响性能)</l0><l1>精準(影響性能)</l1><l2>Precise encounter cd(might reduced performsance)</l2></label><input id="encounterDisplay" type="checkbox"><label for="encounterDisplay"><l0>不自动遭遇时显示倒计时</l0><l1>不自動遭遇時顯示倒計時</l1><l2>Display CountDown While Not Auto Encounter</l2></label></div>',
       '  <div><input id="idleArena" type="checkbox"><label for="idleArena"><b><l0>闲置竞技场</l0><l1>閒置競技場</l1><l2>Idle Arena</l2>: </b>',
       '    <l0>在任意页面停留</l0><l1>在任意頁面停留</l1><l2>Idle in any page for </l2><input class="hvAANumber" name="idleArenaTime" type="text"><l0>秒后，开始竞技场</l0><l1>秒後，開始競技場</l1><l2>s, start Arena</l2></label> <button class="idleArenaReset"><l01>重置</l01><l2>Reset</l2></button>;<br>',
       '    <l0>进行的竞技场相对应等级</l0><l1>進行的競技場相對應等級</l1><l2>The levels of the Arena you want to complete</l2>:  ',
@@ -2431,6 +2431,10 @@ try {
   }
 
   async function updateEncounter(engage, isInBattle) { try {
+    if(!g('option').encounter && !g('option').encounterDisplay){
+      console.log("skip encounter check");
+      return;
+    }
     if(getValue('disabled')){
       await pauseAsync(_1s);
       return await updateEncounter(engage, isInBattle);
