@@ -2212,6 +2212,19 @@ try {
     for (let e of current) {
       dict[e.href ?? `newDawn`] = e;
     }
+    try {
+      // if is latest version data
+      for (let e of encounter) {}
+    } catch {
+      // if old versions
+      const last = encounter.lastTime;
+      const times = encounter.time;
+      encounter = [];
+      for (let i = 0; i <= times; i++) {
+        encounter.unshift({ href: i===0 ? undefined : i, time: last, encountered: i===0 ? undefined : time(0) });
+      }
+      setEncounter(encounter);
+    }
     for (let e of encounter) {
       const key = e.href ?? `newDawn`;
       dict[key] ??= e;
