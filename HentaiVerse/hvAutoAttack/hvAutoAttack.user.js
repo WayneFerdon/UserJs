@@ -4127,18 +4127,19 @@ try {
       const value = text.innerHTML * 1;
       const percentage = value ? percentages[i] : 0;
       const inner = `[${percentage.toString()}%]`;
-      text.style.cssText = `
+      text.style.cssText += textOC ? `
         display: grid;
         grid-template-columns: 1fr 1fr;
         width: 120px;
-      `
+      `: "";
       const percentageDiv = gE('div', text);
       const style = `
         position: relative;
-        right: -10px;
+        top: ${textOC ? 0 : text === textHP ? -16.67 : -16}px;
+        right: ${textOC ? -10 : text === textMP ? -60 : text === textSP ? 40 : -100}px;
         filter: brightness(0.2);
         text-align: left;
-        `
+      `
       if (percentageDiv) {
         percentageDiv.innerHTML = inner;
         percentageDiv.style.cssText = style;
