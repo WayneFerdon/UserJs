@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.22.19
+// @version      2.90.22.20
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -4127,18 +4127,24 @@ try {
       const value = text.innerHTML * 1;
       const percentage = value ? percentages[i] : 0;
       const inner = `[${percentage.toString()}%]`;
+      text.style.cssText = `
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        width: 120px;
+      `
       const percentageDiv = gE('div', text);
-      if (percentageDiv) {
-        percentageDiv.innerHTML = inner;
-        return;
-      }
-      text.innerHTML += `<div style="
+      const style = `
         position: relative;
-        top: ${textOC ? -15 : text === textHP ? -16.67 : -16}px;
-        right: ${textOC ? -70 : text === textMP ? -60 : text === textSP ? 40 : -100}px;
+        right: -10px;
         filter: brightness(0.2);
         text-align: left;
-        ">${inner}</div>`
+        `
+      if (percentageDiv) {
+        percentageDiv.innerHTML = inner;
+        percentageDiv.style.cssText = style;
+        return;
+      }
+      text.innerHTML += `<div style="${style}">${inner}</div>`
     });
   }
 
