@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.22.22
+// @version      2.90.22.21
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -3056,30 +3056,35 @@ try {
         }
         return;
 
-        async function onNewRound(){
-          try {
-            const html = await $ajax.fetch(window.location.href);
-
-            gE('#pane_completion').removeChild(gE('#btcp'));
-            clearBattleUnresponsive();
-            const doc = $doc(html)
-            if (gE('#riddlecounter', doc)) {
-              if (g('option').riddlePopup && !window.opener) {
-                window.open(window.location.href, 'riddleWindow', 'resizable,scrollbars,width=1241,height=707');
-                return;
-              }
-              goto();
+        async function onNewRound(){ try {
+          if(getValue('disabled')){
+            await pauseAsync(_1s);
+            return await onNewRound();
+          }
+          if(gE('#btcp').innerHTML.containes("finishbattle.png")){
+            goto();
+            return;
+          }
+          const html = await $ajax.fetch(window.location.href);
+          gE('#pane_completion').removeChild(gE('#btcp'));
+          clearBattleUnresponsive();
+          const doc = $doc(html)
+          if (gE('#riddlecounter', doc)) {
+            if (g('option').riddlePopup && !window.opener) {
+              window.open(window.location.href, 'riddleWindow', 'resizable,scrollbars,width=1241,height=707');
               return;
             }
-            ['#battle_right', '#battle_left'].forEach(selector=>{ gE('#battle_main').replaceChild(gE(selector, doc), gE(selector)); })
-            unsafeWindow.battle = new unsafeWindow.Battle();
-            unsafeWindow.battle.clear_infopane();
-            Debug.log('______________newRound', true);
-            newRound(true);
-            onBattle();
-          } catch(e) { e=>console.error(e) }
-        }
-      }
+            goto();
+            return;
+          }
+          ['#battle_right', '#battle_left'].forEach(selector=>{ gE('#battle_main').replaceChild(gE(selector, doc), gE(selector)); })
+          unsafeWindow.battle = new unsafeWindow.Battle();
+          unsafeWindow.battle.clear_infopane();
+          Debug.log('______________newRound', true);
+          newRound(true);
+          onBattle();
+        } catch(e) { e=>console.error(e) }
+      }}
 
       if (g('monsterAlive') > 0) { // Defeat
         SetExitBattleTimeout(g('option').autoSkipDefeated ? 'SkipDefeated' : 'Defeat');
