@@ -872,6 +872,7 @@ try {
       '      <div><l0>含本日自然恢复的阈值<l1>含本日自然恢復的閾值</l1><l2><b></b>Stamina threshold with naturally recovers today.</l2>: <input class="hvAANumber" name="staminaLowWithReNat" placeholder="0" type="text">; </div>',
       '      <div><input id="restoreStamina" type="checkbox"><label for="restoreStamina"><l0>战前恢复</l0><l1>戰前恢復</l1><l2>Restore stamina</l2>; </div>',
       '      <div><l0>进入遭遇战的最低精力<l1>進入遭遇戰的最低精力</l1><l2><b></b>Minimum stamina to engage encounter</l2>: <input class="hvAANumber" name="staminaEncounter" placeholder="60" type="text"></div>',
+      '      <div><l0>进入压榨届的最低精力<l1>進入壓榨屆的最低精力</l1><l2><b></b>Minimum stamina to auto start GrindFest</l2>: <input class="hvAANumber" name="staminaGrindFest" placeholder="100" type="text"></div>',
       '  </div>',
       '  <div><input id="repair" type="checkbox"><label for="repair"><b><l0>修复装备</l0><l1>修復裝備</l1><l2>Repair Equipment</l2></b></label>: ',
       '    <l0>耐久度</l0><l1>耐久度</l1><l2>Durability</l2> ≤ <input class="hvAANumber" name="repairValue" type="text">%</div>',
@@ -2657,7 +2658,7 @@ try {
       href = 'ar';
     }
     cost ??= staminaCost[key];
-    if (!checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: true })) {
+    if (!checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: true, staminaLow: g('option').staminaGrindFest})) {
       logSwitchAsyncTask(arguments);
       return;
     }
