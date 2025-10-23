@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.22.24
+// @version      2.90.22.25
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1021,8 +1021,8 @@ try {
       '    <input id="debuffSkillOrder_Dr" type="checkbox"><label for="debuffSkillOrder_Dr"><l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2></label>',
       '    <input id="debuffSkillOrder_We" type="checkbox"><label for="debuffSkillOrder_We"><l0>虚弱(We)</l0><l1>虛弱(We)</l1><l2>Weaken</l2></label>',
       '    <input id="debuffSkillOrder_Co" type="checkbox"><label for="debuffSkillOrder_Co"><l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2></label></div>',
-      '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillWeAll" type="checkbox"><label for="debuffSkillWeAll"><l0>先给所有敌人上虚弱(We)</l0><l1>先給所有敵人上虛弱(We)</l1><l2>Weakened all enemies first.</l2></label></div>{{debuffSkillWeAllCondition}}',
-      '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillImAll" type="checkbox"><label for="debuffSkillImAll"><l0>先给所有敌人上陷危(Im)</l0><l1>先給所有敵人上陷危(Im)</l1><l2>Imperiled all enemies first.</l2></label></div>{{debuffSkillImAllCondition}}',
+      '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillWeAll" type="checkbox"><label for="debuffSkillWeAll"><l0>先给所有敌人上虚弱(We)</l0><l1>先給所有敵人上虛弱(We)</l1><l2>Weakened all enemies first.</l2></label><input id="debuffSkillWeAllByIndex" type="checkbox"><label for="debuffSkillWeAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead weight</l2></label></div>{{debuffSkillWeAllCondition}}',
+      '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillImAll" type="checkbox"><label for="debuffSkillImAll"><l0>先给所有敌人上陷危(Im)</l0><l1>先給所有敵人上陷危(Im)</l1><l2>Imperiled all enemies first.</l2></label><input id="debuffSkillImAllByIndex" type="checkbox"><label for="debuffSkillImAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead weight</l2></label></div>{{debuffSkillImAllCondition}}',
       '    <div><input id="debuffSkill_Sle" type="checkbox"><label for="debuffSkill_Sle"><l0>沉眠(Sl)</l0><l1>沉眠(Sl)</l1><l2>Sleep</l2></label>{{debuffSkillSleCondition}}</div>',
       '    <div><input id="debuffSkill_Bl" type="checkbox"><label for="debuffSkill_Bl"><l0>致盲(Bl)</l0><l1>致盲(Bl)</l1><l2>Blind</l2></label>{{debuffSkillBlCondition}}</div>',
       '    <div><input id="debuffSkill_Slo" type="checkbox"><label for="debuffSkill_Slo"><l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2></label>{{debuffSkillSloCondition}}</div>',
@@ -2906,7 +2906,7 @@ try {
        * @param {(target) => bool} excludeCondition target with id
        * @returns
        */
-  function getRangeCenterID(target, range = undefined, isWeaponAttack = false, excludeCondition = undefined) {
+  function getRangeCenterID(target, range = undefined, isWeaponAttack = false, excludeCondition = undefined, forceUseIndex = undefined) {
     if (!range) {
       return getMonsterID(target);
     }
@@ -2932,7 +2932,10 @@ try {
           rank += unreachableWeight - cew;
           continue;
         }
-        rank += mon.finWeight + cew; // 中心目标会受到副手及冲击攻击时，相当于有效生命值降低
+        // 中心目标会受到副手及冲击攻击时，相当于有效生命值降低
+        rank += cew;
+        // 强制使用顺序而非权重时，全部使用统一的权重而非怪物状态
+        rank += forceUseIndex ? -1 : mon.finWeight;
       }
       if (rank < minRank) {
         newOrder = i;
@@ -3969,7 +3972,8 @@ try {
       }
       break;
     }
-    let id = getRangeCenterID(primaryTarget, range, isDebuffed);
+    let debuffByIndex = isAll && g('option')[`debuffSkill${buff}AllByIndex`];
+    let id = getRangeCenterID(primaryTarget, range, isDebuffed, debuffByIndex);
     const imgs = gE('img', 'all', gE(`#mkey_${id}>.btm6`));
     // 已有buff小于6个
     // 未开启debuff失败警告
