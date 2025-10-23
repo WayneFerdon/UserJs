@@ -3961,19 +3961,19 @@ try {
 
     let range = 0;
     let ab;
+    const ability = getValue('ability', true);
     for (ab in skillLib[buff].range) {
-      const ranges = skillLib[buff].range[ab][skillLib[buff].skill * 1];
+      const ranges = skillLib[buff].range[ab];
       if (!ranges) {
         continue;
       }
-      const ability = getValue('ability', true);
       if(ability){
         range = ranges[ability[ab].level];
       }
       break;
     }
     let debuffByIndex = isAll && g('option')[`debuffSkill${buff}AllByIndex`];
-    let id = getRangeCenterID(primaryTarget, range, isDebuffed, debuffByIndex);
+    let id = getRangeCenterID(primaryTarget, range, false, isDebuffed, debuffByIndex);
     const imgs = gE('img', 'all', gE(`#mkey_${id}>.btm6`));
     // 已有buff小于6个
     // 未开启debuff失败警告
