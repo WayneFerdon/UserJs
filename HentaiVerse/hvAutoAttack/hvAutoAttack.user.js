@@ -3957,7 +3957,6 @@ try {
         primaryTarget = target;
       }
     }
-    console.log(primaryTarget, monsterStatus);
     if (primaryTarget === undefined) {
       return false;
     }
