@@ -2658,7 +2658,7 @@ try {
       href = 'ar';
     }
     cost ??= staminaCost[key];
-    if (!checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: true, staminaLow: href = 'gr' ? g('option').staminaGrindFest : 0})) {
+    if (!checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: true, staminaLow: href === 'gr' ? g('option').staminaGrindFest : undefined})) {
       logSwitchAsyncTask(arguments);
       return;
     }
