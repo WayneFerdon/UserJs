@@ -3940,7 +3940,8 @@ try {
     if (!isOn(skillLib[buff].id)) { // 技能不可用
       return false;
     }
-    const monsterStatus = g('battle').monsterStatus;
+    let monsterStatus = g('battle').monsterStatus;
+    let debuffByIndex = isAll && g('option')[`debuffSkill${buff}AllByIndex`];
     let isDebuffed = (target) => gE(`img[src*="${skillLib[buff].img}"]`, gE(`#mkey_${getMonsterID(target)}>.btm6`));
     let primaryTarget;
     let max = isAll ? monsterStatus.length : 1;
@@ -3952,9 +3953,11 @@ try {
       if (isDebuffed(target)) { // 检查是否已有该buff
         continue;
       }
-      primaryTarget = target;
-      break;
+      if(!primaryTarget || (debuffByIndex && primaryTarget.order > target.order)){
+        primaryTarget = target;
+      }
     }
+    console.log(primaryTarget, monsterStatus);
     if (primaryTarget === undefined) {
       return false;
     }
@@ -3972,7 +3975,6 @@ try {
       }
       break;
     }
-    let debuffByIndex = isAll && g('option')[`debuffSkill${buff}AllByIndex`];
     let id = getRangeCenterID(primaryTarget, range, false, isDebuffed, debuffByIndex);
     const imgs = gE('img', 'all', gE(`#mkey_${id}>.btm6`));
     // 已有buff小于6个
