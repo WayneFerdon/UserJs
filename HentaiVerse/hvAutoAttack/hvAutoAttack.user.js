@@ -3973,8 +3973,8 @@ try {
       if(!id || center.rank < minRank){
         minRank = center.rank;
         id = center.id;
-        if(!debuffByIndex){
-          // 只有按照顺序覆盖全体才需要遍历全部
+        if(!isAll){
+          // 只有覆盖全体才需要遍历全部
           break;
         }
       }
