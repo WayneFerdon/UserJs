@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.22.26
+// @version      2.90.22.27
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2906,9 +2906,9 @@ try {
        * @param {(target) => bool} excludeCondition target with id
        * @returns
        */
-  function getRangeCenterID(target, range = undefined, isWeaponAttack = false, excludeCondition = undefined, forceUseIndex = undefined) {
+  function getRangeCenter(target, range = undefined, isWeaponAttack = false, excludeCondition = undefined, forceUseIndex = undefined) {
     if (!range) {
-      return getMonsterID(target);
+      return { id: getMonsterID(target), rank: Number.MAX_SAFE_INTEGER };
     }
     const centralExtraWeight = -1 * Math.log10(1 + (isWeaponAttack ? (g('option').centralExtraRatio / 100) ?? 0 : 0));
     let order = target.order;
@@ -2917,7 +2917,7 @@ try {
     let msTemp = JSON.parse(JSON.stringify(g('battle').monsterStatus));
     msTemp.sort(objArrSort('order'));
     let unreachableWeight = g('option').unreachableWeight;
-    let minRank;
+    let minRank = Number.MAX_SAFE_INTEGER;
     for (let i = order - range; i <= order + range; i++) {
       if (i < 0 || i >= msTemp.length || msTemp[i].isDead) {
         continue; // 无法选中
@@ -2939,9 +2939,10 @@ try {
       }
       if (rank < minRank) {
         newOrder = i;
+        minRank = rank;
       }
     }
-    return getMonsterID(newOrder);
+    return { id: getMonsterID(newOrder), rank: minRank};
   }
 
   function autoPause() {
@@ -3401,7 +3402,8 @@ try {
       }
       let weight = baseHpRatio * Math.log10(monsterStatus[i].hpNow / hpMin); // > 0 生命越低权重越低优先级越高
       monsterStatus[i].hpWeight = weight;
-      if (yggdrasilExtraWeight && ('Yggdrasil' === gE('div.btm3>div>div', monsterBuff[i].parentNode).innerText || '世界树 Yggdrasil' === gE('div.btm3>div>div', monsterBuff[i].parentNode).innerText)) { // 默认设置下，任何情况都优先击杀群体大量回血的boss"Yggdrasil"
+      const name = gE('div.btm3>div>div', monsterBuff[i].parentNode).innerText;
+      if (yggdrasilExtraWeight && ('Yggdrasil' === name || '世界树 Yggdrasil' === name)) { // 默认设置下，任何情况都优先击杀群体大量回血的boss"Yggdrasil"
         weight += yggdrasilExtraWeight; // yggdrasilExtraWeight.defalut -1000
       }
       for (j in skillLib) {
@@ -3845,7 +3847,7 @@ try {
         }
       }
       const range = id in rangeSkills ? rangeSkills[id] : 0;
-      gE(`#mkey_${getRangeCenterID(monsterStatus[target], range)}`).click();
+      gE(`#mkey_${getRangeCenter(monsterStatus[target], range).id}`).click();
       return true;
     }
   }
@@ -3940,27 +3942,7 @@ try {
     if (!isOn(skillLib[buff].id)) { // 技能不可用
       return false;
     }
-    let monsterStatus = g('battle').monsterStatus;
-    let debuffByIndex = isAll && g('option')[`debuffSkill${buff}AllByIndex`];
-    let isDebuffed = (target) => gE(`img[src*="${skillLib[buff].img}"]`, gE(`#mkey_${getMonsterID(target)}>.btm6`));
-    let primaryTarget;
-    let max = isAll ? monsterStatus.length : 1;
-    for (let i = 0; i < max; i++) {
-      let target = buff === 'Dr' ? monsterStatus[max - i - 1] : monsterStatus[i];
-      if (monsterStatus[i].isDead) {
-        continue;
-      }
-      if (isDebuffed(target)) { // 检查是否已有该buff
-        continue;
-      }
-      if(!primaryTarget || (debuffByIndex && primaryTarget.order > target.order)){
-        primaryTarget = target;
-      }
-    }
-    if (primaryTarget === undefined) {
-      return false;
-    }
-
+    // 获取范围
     let range = 0;
     let ab;
     const ability = getValue('ability', true);
@@ -3974,7 +3956,33 @@ try {
       }
       break;
     }
-    let id = getRangeCenterID(primaryTarget, range, false, isDebuffed, debuffByIndex);
+
+    // 获取目标
+    let isDebuffed = (target) => gE(`img[src*="${skillLib[buff].img}"]`, gE(`#mkey_${getMonsterID(target)}>.btm6`));
+    let monsterStatus = g('battle').monsterStatus;
+    let max = isAll ? monsterStatus.length : 1;
+    let debuffByIndex = isAll && g('option')[`debuffSkill${buff}AllByIndex`];
+    let id;
+    let minRank = Number.MAX_SAFE_INTEGER;
+    for (let i = 0; i < max; i++) {
+      let target = buff === 'Dr' ? monsterStatus[max - i - 1] : monsterStatus[i];
+      if (target.isDead || isDebuffed(target)) {
+        continue;
+      }
+      const center = getRangeCenter(target, range, false, isDebuffed, debuffByIndex);
+      if(!id || center.rank < minRank){
+        minRank = center.rank;
+        id = center.id;
+        if(!debuffByIndex){
+          // 只有按照顺序覆盖全体才需要遍历全部
+          break;
+        }
+      }
+    }
+    if (id === undefined) {
+      return false;
+    }
+
     const imgs = gE('img', 'all', gE(`#mkey_${id}>.btm6`));
     // 已有buff小于6个
     // 未开启debuff失败警告
@@ -4064,7 +4072,7 @@ try {
         }
       }
     }
-    gE(`#mkey_${getRangeCenterID(monsterStatus[0], range, !attackStatus)}`).click();
+    gE(`#mkey_${getRangeCenter(monsterStatus[0], range, !attackStatus).id}`).click();
     return true;
   }
 
