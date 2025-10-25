@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.22.28
+// @version      2.90.22.29
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -3959,9 +3959,14 @@ try {
 
     // 获取目标
     let isDebuffed = (target) => gE(`img[src*="${skillLib[buff].img}"]`, gE(`#mkey_${getMonsterID(target)}>.btm6`));
-    let monsterStatus = g('battle').monsterStatus;
-    let max = isAll ? monsterStatus.length : 1;
     let debuffByIndex = isAll && g('option')[`debuffSkill${buff}AllByIndex`];
+    let monsterStatus = g('battle').monsterStatus;
+    if (debuffByIndex){
+      monsterStatus = JSON.parse(JSON.stringify(monsterStatus));
+      monsterStatus.sort(objArrSort('order'));
+    }
+    let max = isAll ? monsterStatus.length : 1;
+
     let id;
     let minRank = Number.MAX_SAFE_INTEGER;
     for (let i = 0; i < max; i++) {
