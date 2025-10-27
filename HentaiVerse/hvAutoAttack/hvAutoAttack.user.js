@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.22.30
+// @version      2.90.22.31
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -524,7 +524,7 @@ try {
 
   function isOn(id) { // 是否可以施放技能/使用物品
     if (id * 1 > 10000) { // 使用物品
-      return gE(`.bti3>div[onmouseover*="${id}"]`);
+      return gE(`.bti3>div[onmouseover*="(${id})"]`);
     } // 施放技能
     return gE(id) && (gE(id).style.opacity * 1 !== 0.5);
   }
@@ -3430,7 +3430,7 @@ try {
     for (let i = 0; i < name.length; i++) {
       let id = order[i];
       if (g('option').item[name[i]] && checkCondition(g('option')[`item${name[i]}Condition`]) && isOn(id)) {
-        (gE(`.bti3>div[onmouseover*="${id}"]`) ?? gE(id)).click();
+        (gE(`.bti3>div[onmouseover*="(${id})"]`) ?? gE(id)).click();
         return true;
       }
     }
@@ -3444,13 +3444,13 @@ try {
     if (!g('option').scroll) {
       return false;
     }
-    if (!checkCondition(g('option').scrollCondition)) {
-      return false;
-    }
     if (!g('option').scrollRoundType) {
       return false;
     }
     if (!g('option').scrollRoundType[g('battle').roundType]) {
+      return false;
+    }
+    if (!checkCondition(g('option').scrollCondition)) {
       return false;
     }
     const scrollLib = {
@@ -3505,7 +3505,7 @@ try {
       if (!g('option').scroll[i]) {
         continue;
       }
-      if(!gE(`.bti3>div[onmouseover*="${scrollLib[i].id}"]`)){
+      if(!gE(`.bti3>div[onmouseover*="(${scrollLib[i].id})"]`)){
         continue;
       }
       if(!checkCondition(g('option')[`scroll${i}Condition`])){
@@ -3515,7 +3515,7 @@ try {
         if (gE(`#pane_effects>img[src*="${scrollLib[i][`img${j}`]}${scrollFirst}"]`)) {
           continue;
         }
-        gE(`.bti3>div[onmouseover*="${scrollLib[i].id}"]`).click();
+        gE(`.bti3>div[onmouseover*="(${scrollLib[i].id})"]`).click();
         return true;
       }
     }
@@ -3720,8 +3720,8 @@ try {
       },
     };
     for (i in draughtPack) {
-      if (!gE(`#pane_effects>img[src*="${draughtPack[i].img}"]`) && g('option').buffSkill && g('option').buffSkill[i] && checkCondition(g('option')[`buffSkill${i}Condition`]) && gE(`.bti3>div[onmouseover*="${draughtPack[i].id}"]`)) {
-        gE(`.bti3>div[onmouseover*="${draughtPack[i].id}"]`).click();
+      if (!gE(`#pane_effects>img[src*="${draughtPack[i].img}"]`) && g('option').buffSkill && g('option').buffSkill[i] && checkCondition(g('option')[`buffSkill${i}Condition`]) && gE(`.bti3>div[onmouseover*="(${draughtPack[i].id})"]`)) {
+        gE(`.bti3>div[onmouseover*="(${draughtPack[i].id})"]`).click();
         return true;
       }
     }
@@ -3758,8 +3758,8 @@ try {
       id: 12601,
       img: 'darkinfusion',
     }];
-    if (gE(`.bti3>div[onmouseover*="${infusionLib[g('attackStatus')].id}"]`) && !gE(`#pane_effects>img[src*="${infusionLib[[g('attackStatus')]].img}"]`)) {
-      gE(`.bti3>div[onmouseover*="${infusionLib[g('attackStatus')].id}"]`).click();
+    if (gE(`.bti3>div[onmouseover*="(${infusionLib[g('attackStatus')].id})"]`) && !gE(`#pane_effects>img[src*="${infusionLib[[g('attackStatus')]].img}"]`)) {
+      gE(`.bti3>div[onmouseover*="(${infusionLib[g('attackStatus')].id})"]`).click();
       return true;
     }
     return false;
