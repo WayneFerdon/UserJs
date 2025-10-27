@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.22.29
+// @version      2.90.22.30
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -3501,20 +3501,22 @@ try {
       },
     };
     const scrollFirst = (g('option').scrollFirst) ? '_scroll' : '';
-    let isUsed;
     for (const i in scrollLib) {
-      if (g('option').scroll[i] && gE(`.bti3>div[onmouseover*="${scrollLib[i].id}"]`) && checkCondition(g('option')[`scroll${i}Condition`])) {
-        for (let j = 1; j <= scrollLib[i].mult; j++) {
-          if (gE(`#pane_effects>img[src*="${scrollLib[i][`img${j}`]}${scrollFirst}"]`)) {
-            isUsed = true;
-            break;
-          }
-          isUsed = false;
+      if (!g('option').scroll[i]) {
+        continue;
+      }
+      if(!gE(`.bti3>div[onmouseover*="${scrollLib[i].id}"]`)){
+        continue;
+      }
+      if(!checkCondition(g('option')[`scroll${i}Condition`])){
+        continue;
+      }
+      for (let j = 1; j <= scrollLib[i].mult; j++) {
+        if (gE(`#pane_effects>img[src*="${scrollLib[i][`img${j}`]}${scrollFirst}"]`)) {
+          continue;
         }
-        if (!isUsed) {
-          gE(`.bti3>div[onmouseover*="${scrollLib[i].id}"]`).click();
-          return true;
-        }
+        gE(`.bti3>div[onmouseover*="${scrollLib[i].id}"]`).click();
+        return true;
       }
     }
     return false;
