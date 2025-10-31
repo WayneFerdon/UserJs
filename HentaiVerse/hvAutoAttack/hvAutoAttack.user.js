@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.22.32
+// @version      2.90.22.33
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1041,7 +1041,7 @@ try {
       '  <input id="skillOrder_OFC" type="checkbox"><label for="skillOrder_OFC"><l0>友情小马砲</l0><l1>友情小馬砲</l1><l2>OFC</l2></label><input id="skillOrder_FRD" type="checkbox"><label for="skillOrder_FRD"><l0>龙吼</l0><l1>龍吼</l1><l2>FRD</l2></label><input id="skillOrder_T3" type="checkbox"><label for="skillOrder_T3">T3</label><input id="skillOrder_T2" type="checkbox"><label for="skillOrder_T2">T2</label><input id="skillOrder_T1" type="checkbox"><label for="skillOrder_T1">T1</label></div>',
       '  <div><input id="skill_OFC" type="checkbox"><label for="skill_OFC"><l0>友情小马砲</l0><l1>友情小馬砲</l1><l2>OFC</l2></label>: <input id="skillOTOS_OFC" type="checkbox"><label for="skillOTOS_OFC"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label>{{skillOFCCondition}}</div>',
       '  <div><input id="skill_FRD" type="checkbox"><label for="skill_FRD"><l0>龙吼</l0><l1>龍吼</l1><l2>FRD</l2></label>: <input id="skillOTOS_FRD" type="checkbox"><label for="skillOTOS_FRD"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label>{{skillFRDCondition}}</div>',
-      '  <div><input id="skill_T3" type="checkbox"><label for="skill_T3"><l0>3阶（如果有）</l0><l1>3階（如果有）</l1><l2>T3(if exist)</l2></label>: <input id="skillOTOS_T3" type="checkbox"><label for="skillOTOS_T3"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label><br><input id="mercifulBlow" type="checkbox"><label for="mercifulBlow"><l0>最后的慈悲(MB)：优先攻击满足条件的敌人 (25% HP, 流血)</l0><l1>最後的慈悲(MB)：優先攻擊滿足條件的敵人 (25% HP, 流血)</l1><l2>Merciful Blow: Attack the enemy which has 25% HP and is bleeding first</l2></label>{{skillT3Condition}}</div>',
+      '  <div><input id="skill_T3" type="checkbox"><label for="skill_T3"><l0>3阶（如果有）</l0><l1>3階（如果有）</l1><l2>T3(if exist)</l2></label>: <input id="skillOTOS_T3" type="checkbox"><label for="skillOTOS_T3"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label><br><input id="mercifulBlow" type="checkbox"><label for="mercifulBlow"><l0>最后的慈悲(MB)：优先攻击满足条件的敌人 (25% HP, 流血)</l0><l1>最後的慈悲(MB)：優先攻擊滿足條件的敵人 (25% HP, 流血)</l1><l2>Merciful Blow: Attack the enemy which has 25% HP and is bleeding first</l2><br><input id="mercifulBlowStrict" type="checkbox"><label for="mercifulBlowStrict"><l0>最后的慈悲(MB)：只攻击满足条件的敌人 (25% HP, 流血)</l0><l1>最後的慈悲(MB)：只攻擊滿足條件的敵人 (25% HP, 流血)</l1><l2>Merciful Blow: Attack the enemy which has 25% HP and is bleeding only</l2></label>{{skillT3Condition}}</div>',
       '  <div><input id="skill_T2" type="checkbox"><label for="skill_T2"><l0>2阶（如果有）</l0><l1>2階（如果有）</l1><l2>T2(if exist)</l2></label>: <input id="skillOTOS_T2" type="checkbox"><label for="skillOTOS_T2"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label>{{skillT2Condition}}</div>',
       '  <div><input id="skill_T1" type="checkbox"><label for="skill_T1"><l0>1阶</l0><l1>1階</l1><l2>T1</l2></label>: <input id="skillOTOS_T1" type="checkbox"><label for="skillOTOS_T1"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label>{{skillT1Condition}}</div></div>',
 
@@ -3817,7 +3817,6 @@ try {
       2403: 2,
       1111: 4,
     }
-    const monsterStatus = g('battle').monsterStatus;
     for (let i in skillOrder) {
       let skill = skillOrder[i];
       if (!checkCondition(g('option')[`skill${skill}Condition`])) {
@@ -3835,24 +3834,39 @@ try {
       }
       g('skillOTOS')[skill]++;
       gE(id).click();
-      // Merciful Blow
-      let target = 0;
-      if (g('option').mercifulBlow && fightStyle === '2' && skill === 'T3') {
-        for (let j = 0; j < monsterStatus.length; j++) {
-          if (monsterStatus[j].hpNow / monsterStatus[j].hp >= 0.25) {
-            continue;
-          }
-          if (!gE(`#mkey_${getMonsterID(monsterStatus[j])} img[src*="wpn_bleed"]`)) {
-            continue;
-          }
-          target = j;
-          break;
-        }
+      let target = getWeaponSkillTarget(id);
+      if(!target){
+        continue;
       }
       const range = id in rangeSkills ? rangeSkills[id] : 0;
-      gE(`#mkey_${getRangeCenter(monsterStatus[target], range).id}`).click();
+      gE(`#mkey_${getRangeCenter(target, range).id}`).click();
       return true;
     }
+  }
+
+  function getWeaponSkillTarget(id){
+    let target = undefined;
+    const monsterStatus = g('battle').monsterStatus;
+    if (id !== 2203) {
+      return monsterStatus[0];
+    }
+    // Merciful Blow
+    if(g('option').mercifulBlow || g('option').mercifulBlowStrict){
+      // get target with conditions (hp < 0.25 and bleeding)
+      for (let j = 0; j < monsterStatus.length; j++) {
+        if (monsterStatus[j].hpNow / monsterStatus[j].hp >= 0.25) {
+          continue;
+        }
+        if (!gE(`#mkey_${getMonsterID(monsterStatus[j])} img[src*="wpn_bleed"]`)) {
+          continue;
+        }
+        return monsterStatus[j];
+      }
+    }
+    if(!g('option').mercifulBlowStrict){
+      return monsterStatus[0];
+    }
+    return undefined;
   }
 
   function useDeSkill() { // 自动施法DEBUFF技能
