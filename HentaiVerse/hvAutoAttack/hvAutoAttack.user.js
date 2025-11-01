@@ -4193,7 +4193,7 @@ try {
     const barMP = gE('#vbm') ?? gE('#dvbm');
     const barSP = gE('#vbs') ?? gE('#dvbs');
     const barOC = gE('#dvbc');
-    const textHP = gE('#vrhd') ?? gE('#dvrhd');
+    const textHP = gE('#vrhd') ?? gE('#dvrhd') ?? gE('#dvrhb');
     const textMP = gE('#vrm') ?? gE('#dvrm');
     const textSP = gE('#vrs') ?? gE('#dvrs');
     const textOC = gE('#dvrc');
