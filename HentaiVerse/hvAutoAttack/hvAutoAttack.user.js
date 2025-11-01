@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.22.34
+// @version      2.90.22.35
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2541,7 +2541,10 @@ try {
       await Promise.all(arena.sites.map(async site => { try {
         const doc = $doc(await $ajax.fetch(site));
         if (site === '?s=Battle&ss=gr') {
-          arena.token.gr = gE('img[src*="startgrindfest.png"]', doc).getAttribute('onclick').match(/init_battle\(1, '(.*?)'\)/)[1];
+          const onclickInner = gE('img[src*="startgrindfest.png"]', doc).getAttribute('onclick').match(/init_battle\(1, '(.*?)'\)/);
+          if(onclickInner){
+            arena.token.gr = onclickInner[1];
+          }
           return;
         }
         gE('img[src*="startchallenge.png"]', 'all', doc).forEach((_) => {
@@ -2668,7 +2671,15 @@ try {
       arena.gr--;
     }
     setValue('arena', arena);
-    $ajax.open(`?s=Battle&ss=${href}`, `initid=${String(key)}&inittoken=${token}`);
+    if(!token && href === 'gr'){
+      if(window.location.href.includes(`?s=Battle&ss=gr`)){
+        gE('#grindfest>div>div>img').onclick();
+      } else {
+        const html = $ajax.open(`?s=Battle&ss=gr`);
+      }
+    } else {
+      $ajax.open(`?s=Battle&ss=${href}`, `initid=${String(key)}&inittoken=${token}`);
+    }
     logSwitchAsyncTask(arguments);
   } catch (e) {console.error(e)}}
 
