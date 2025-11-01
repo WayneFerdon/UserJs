@@ -3797,15 +3797,12 @@ try {
 
     const skillOrder = (g('option').skillOrderValue || 'OFC,FRD,T3,T2,T1').split(',');
     const fightStyle = g('fightingStyle');
-    if(!fightStyle){
-      return;
-    }
     const skillLib = {
       OFC: '1111',
       FRD: '1101',
-      T3: `2${fightStyle}03`,
-      T2: `2${fightStyle}02`,
-      T1: `2${fightStyle}01`,
+      T3: fightStyle ? `2${fightStyle}03` : undefined,
+      T2: fightStyle ? `2${fightStyle}02` : undefined,
+      T1: fightStyle ? `2${fightStyle}01` : undefined,
     };
     const skillOC = { // default as 2
       '1101': 4,
@@ -3822,6 +3819,9 @@ try {
     }
     for (let i in skillOrder) {
       let skill = skillOrder[i];
+      if(!skill){
+        return;
+      }
       if (!checkCondition(g('option')[`skill${skill}Condition`])) {
         continue;
       }
