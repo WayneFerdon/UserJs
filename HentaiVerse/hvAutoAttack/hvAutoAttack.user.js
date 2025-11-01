@@ -3791,9 +3791,8 @@ try {
     const textSP = gE('#vrs') ?? gE('#dvrs');
     const spValue = textSP.childNodes[0].textContent * 1;
     if (spValue <= 1){
-      return;
+      return false;
     }
-    console.log( textSP.childNodes[0].textContent, spValue);
     if ((g('option').turnOnSS && checkCondition(g('option').turnOnSSCondition) && !gE('#ckey_spirit[src*="spirit_a"]')) || (g('option').turnOffSS && checkCondition(g('option').turnOffSSCondition) && gE('#ckey_spirit[src*="spirit_a"]'))) {
       gE('#ckey_spirit').click();
       return true;
