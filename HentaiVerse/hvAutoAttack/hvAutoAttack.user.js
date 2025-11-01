@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.22.37
+// @version      2.90.22.38
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -355,7 +355,8 @@ try {
       return;
     }
     gE('img[src*="startchallenge.png"]', 'all', document).forEach((btn) => {
-      const temp = btn.getAttribute('onclick').match(/init_battle\((\d+),\d+,'(.*?)'\)/);
+      const onclick = btn.getAttribute('onclick');
+      const temp = onclick.match(/init_battle\((\d+),\d+,'(.*?)'\)/) ?? onclick.match(/init_battle\((\d+),\d+\)/);
       if(ar.includes(temp[1])) {
         return;
       }
@@ -2396,16 +2397,32 @@ try {
       return await asyncCheckRepair();
     }
     logSwitchAsyncTask(arguments);
-    const doc = $doc(await $ajax.fetch('?s=Forge&ss=re'));
-    const json = JSON.parse((await $ajax.fetch(gE('#mainpane>script[src]', doc).src)).match(/{.*}/)[0]);
-    const eqps = (await Promise.all(Array.from(gE('.eqp>[id]', 'all', doc)).map(async eqp => { try {
-      const id = eqp.id.match(/\d+/)[0];
-      const condition = 1 * json[id].d.match(/Condition: \d+ \/ \d+ \((\d+)%\)/)[1];
-      if (condition > g('option').repairValue) {
-        return;
-      }
-      return gE('.messagebox_error', $doc(await $ajax.fetch(`?s=Forge&ss=re`, `select_item=${id}`)))?.innerText ? undefined : id;
-    } catch (e) {console.error(e)}}))).filter(e => e);
+    var eqps;
+    if(!isIsekai){
+      var doc = $doc(await $ajax.fetch('?s=Forge&ss=re'));
+      const json = JSON.parse((await $ajax.fetch(gE('#mainpane>script[src]', doc).src)).match(/{.*}/)[0]);
+      console.log(json);
+      eqps = (await Promise.all(Array.from(gE('.eqp>[id]', 'all', doc)).map(async eqp => { try {
+        const id = eqp.id.match(/\d+/)[0];
+        const condition = 1 * json[id].d.match(/Condition: \d+ \/ \d+ \((\d+)%\)/)[1];
+        if (condition > g('option').repairValue) {
+          return;
+        }
+        return gE('.messagebox_error', $doc(await $ajax.fetch(`?s=Forge&ss=re`, `select_item=${id}`)))?.innerText ? undefined : id;
+      } catch (e) {console.error(e)}}))).filter(e => e);
+    } else {
+      doc = $doc(await $ajax.fetch('?s=Bazaar&ss=am&screen=repair&filter=equipped'));
+
+      eqps = (await Promise.all(Array.from(gE('#equiplist>table>tbody>tr:not(.eqselall):not(.eqtplabel)', 'all', doc)).map(async eqp => { try {
+        const id = eqp.getAttribute('onmouseover').match(/hover_equip\((\d+)\)/)[1];
+        const condition = 1 * gE('td:last-child', eqp).childNodes[0].textContent.replace('%', '');
+        if (condition > g('option').repairValue) {
+          return;
+        }
+        // TODO repair
+        return id;
+      } catch (e) {console.error(e)}}))).filter(e => e);
+    }
     if (eqps.length) {
       console.log('eqps need repair: ', eqps);
       document.title = `[R!]` + document.title;
@@ -2547,8 +2564,12 @@ try {
           }
           return;
         }
-        gE('img[src*="startchallenge.png"]', 'all', doc).forEach((_) => {
-          const temp = _.getAttribute('onclick').match(/init_battle\((\d+),\d+,'(.*?)'\)/);
+        gE('img[src*="startchallenge.png"]', 'all', doc).forEach((btn) => {
+          const onclick = btn.getAttribute('onclick');
+          const temp = onclick.match(/init_battle\((\d+),\d+,'(.*?)'\)/);
+          if(!temp){
+            return;
+          }
           arena.token[temp[1]] = temp[2];
         });
       } catch (e) {console.error(e)}}));
