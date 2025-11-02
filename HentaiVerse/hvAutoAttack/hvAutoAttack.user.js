@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.22.38
+// @version      2.90.22.39
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2401,7 +2401,6 @@ try {
     if(!isIsekai){
       var doc = $doc(await $ajax.fetch('?s=Forge&ss=re'));
       const json = JSON.parse((await $ajax.fetch(gE('#mainpane>script[src]', doc).src)).match(/{.*}/)[0]);
-      console.log(json);
       eqps = (await Promise.all(Array.from(gE('.eqp>[id]', 'all', doc)).map(async eqp => { try {
         const id = eqp.id.match(/\d+/)[0];
         const condition = 1 * json[id].d.match(/Condition: \d+ \/ \d+ \((\d+)%\)/)[1];
@@ -2412,7 +2411,6 @@ try {
       } catch (e) {console.error(e)}}))).filter(e => e);
     } else {
       doc = $doc(await $ajax.fetch('?s=Bazaar&ss=am&screen=repair&filter=equipped'));
-
       eqps = (await Promise.all(Array.from(gE('#equiplist>table>tbody>tr:not(.eqselall):not(.eqtplabel)', 'all', doc)).map(async eqp => { try {
         const id = eqp.getAttribute('onmouseover').match(/hover_equip\((\d+)\)/)[1];
         const condition = 1 * gE('td:last-child', eqp).childNodes[0].textContent.replace('%', '');
@@ -2420,7 +2418,15 @@ try {
           return;
         }
         // TODO repair
-        return id;
+        var iframe = cE('iframe');
+        iframe.style.cssText += "display:none"
+        iframe.src = `?s=Bazaar&ss=am&screen=repair&filter=equipped&eqids[]=${id}`;
+        document.body.appendChild(iframe);
+        await loadIframe(iframe);
+        if(gE('#equipsubmit', iframe.contentWindow.document.body).getAttribute('disabled')){
+          return id;
+        }
+        gE('#equipform', iframe.contentWindow.document.body).submit();
       } catch (e) {console.error(e)}}))).filter(e => e);
     }
     if (eqps.length) {
@@ -2430,6 +2436,15 @@ try {
     logSwitchAsyncTask(arguments);
     return !eqps.length;
   } catch (e) {console.error(e)}; return false; }
+
+  function loadIframe(iframe) {
+    return new Promise((resolve, reject) => {
+      // 监听iframe的load事件
+      iframe.onload = () => {
+        resolve("Iframe loaded successfully");
+      };
+    });
+  }
 
   function checkStamina(low, cost) {
     let stamina = getValue('stamina');
@@ -2558,19 +2573,26 @@ try {
       await Promise.all(arena.sites.map(async site => { try {
         const doc = $doc(await $ajax.fetch(site));
         if (site === '?s=Battle&ss=gr') {
-          const onclickInner = gE('img[src*="startgrindfest.png"]', doc).getAttribute('onclick').match(/init_battle\(1, '(.*?)'\)/);
+          const onclickInner = gE('img[src*="startgrindfest.png"]', doc).getAttribute('onclick').match(/init_battle\(1\)/);
           if(onclickInner){
-            arena.token.gr = onclickInner[1];
+            arena.token.gr = null;
           }
           return;
         }
         gE('img[src*="startchallenge.png"]', 'all', doc).forEach((btn) => {
           const onclick = btn.getAttribute('onclick');
-          const temp = onclick.match(/init_battle\((\d+),\d+,'(.*?)'\)/);
-          if(!temp){
+          var temp = onclick.match(/init_battle\((\d+),\d+,'(.*?)'\)/);
+          if(temp){
+            arena.token[temp[1]] = temp[2];
             return;
           }
-          arena.token[temp[1]] = temp[2];
+          temp = onclick.match(/init_battle\((\d+),\d+\)/);
+          if(temp){
+            arena.token[temp[1]] = null;
+            return;
+          }
+          temp = onclick.match(/init_battle\((\d+)\)/);
+          arena.token[temp[1]] = null;
         });
       } catch (e) {console.error(e)}}));
     }
@@ -2609,6 +2631,15 @@ try {
   }
 
   async function idleArena() { try { // 闲置竞技场
+    function writeArenaStart(){
+      document.title = _alert(-1, '闲置竞技场开始', '閒置競技場開始', 'Idle Arena start');
+      if (key !== 'gr'){
+        arena.arrayDone.push(key);
+      } else {
+        arena.gr--;
+      }
+      setValue('arena', arena);
+    }
     let arena = getValue('arena', true);
     console.log('arena:', getValue('arena', true));
     if (arena.array.length === 0) {
@@ -2685,23 +2716,39 @@ try {
       logSwitchAsyncTask(arguments);
       return;
     }
-    document.title = _alert(-1, '闲置竞技场开始', '閒置競技場開始', 'Idle Arena start');
-    if (key !== 'gr'){
-      arena.arrayDone.push(key);
-    } else {
-      arena.gr--;
-    }
-    setValue('arena', arena);
-    if(!token && href === 'gr'){
-      if(window.location.href.includes(`?s=Battle&ss=gr`)){
-        gE('#grindfest>div>div>img').onclick();
-      } else {
-        arena.gr++;
-        setValue('arena', arena);
-        const html = $ajax.open(`?s=Battle&ss=gr`);
-      }
-    } else {
+    if(token){
+      writeArenaStart();
       $ajax.open(`?s=Battle&ss=${href}`, `initid=${String(key)}&inittoken=${token}`);
+      logSwitchAsyncTask(arguments);
+      return;
+    }
+    // new version in isekai
+    var iframe = cE('iframe');
+    iframe.src = `?s=Battle&ss=${href}`;
+    iframe.style.cssText += "display:none";
+    document.body.appendChild(iframe);
+    await loadIframe(iframe);
+    var btns = gE(`#arena_list>tbody>tr>td>img`, 'all', iframe.contentWindow.document.body);
+    for(let btn of btns){
+      const onclick = btn.getAttribute('onclick');
+      if(!onclick){
+        continue;
+      }
+      var temp = onclick.match(/init_battle\((\d+),\d+\)/) ?? onclick.match(/init_battle\((\d+)\)/);
+      if(!temp || temp[1]*1 !== key){
+        continue;
+      }
+      iframe.contentWindow.confirm = function(message) { // 自动点击进入
+        return true;
+      };
+      iframe.contentWindow.alert = function(message) {
+        return;
+      };
+      writeArenaStart();
+      btn.onclick();
+      await loadIframe(iframe);
+      goto();
+      return;
     }
     logSwitchAsyncTask(arguments);
   } catch (e) {console.error(e)}}
