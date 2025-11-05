@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.25
+// @version      2.90.26
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -4428,8 +4428,8 @@ try {
       if (debug) {
         console.log(text);
       }
-      if (text.match(/you for \d+ \w+ damage/)) {
-        reg = text.match(/you for (\d+) (\w+) damage/);
+      if (text.match(/you for \d+ \w+ damage/) || text.match(/You take \d+ \w+ damage/)) {
+        reg = text.match(/you for (\d+) (\w+) damage/) ?? text.match(/You take (\d+) (\w+) damage/);
         magic = reg[2].replace('ing', '');
         point = reg[1] * 1;
         stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
@@ -4472,7 +4472,8 @@ try {
       } else if (text.match(/absorbs \d+ points of damage from the attack into \d+ points of \w+ damage/)) {
         reg = text.match(/(.*) absorbs (\d+) points of damage from the attack into (\d+) points of (\w+) damage/);
         point = reg[2] * 1;
-        magic = parm.log[i - 1].textContent.match(/you for (\d+) (\w+) damage/)[2].replace('ing', '');
+        magic = parm.log[i - 1].textContent.match(/you for (\d+) (\w+) damage/) ?? parm.log[i - 1].textContent.match(/You take (\d+) (\w+) damage/);
+        magic = magic[2].replace('ing', '');
         stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
         point = reg[3] * 1;
         magic = `${reg[1].replace('Your ', '')}_${reg[4]}`;
