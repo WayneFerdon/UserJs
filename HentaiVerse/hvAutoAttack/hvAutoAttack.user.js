@@ -4428,8 +4428,8 @@ try {
       if (debug) {
         console.log(text);
       }
-      if (text.match(/you for \d+ \w+ damage/) || text.match(/You take \d+ \w+ damage/)) {
-        reg = text.match(/you for (\d+) (\w+) damage/) ?? text.match(/You take (\d+) (\w+) damage/);
+      if (text.match(/you for \d+ \w+ damage/) || text.match(/(You|and) take \d+ \w+ damage/)) {
+        reg = text.match(/you for (\d+) (\w+) damage/) ?? text.match(/(You|and) take (\d+) (\w+) damage/);
         magic = reg[2].replace('ing', '');
         point = reg[1] * 1;
         stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
@@ -4444,6 +4444,9 @@ try {
           stats.hurt._mcount++;
           stats.hurt._mtotal += point;
           stats.hurt._mavg = Math.round(stats.hurt._mtotal / stats.hurt._mcount);
+        }
+        if (text.match(/You ((partially )*(evade|parry|block)( and )*)+ the attack/)){
+          stats.self.evade++;
         }
       } else if (text.match(/^[\w ]+ [a-z]+s [\w+ -]+ for \d+( .*)? damage/) || text.match(/^You .* for \d+ .* damage/)) {
         reg = text.match(/for (\d+)( .*)? damage/);
@@ -4472,7 +4475,7 @@ try {
       } else if (text.match(/absorbs \d+ points of damage from the attack into \d+ points of \w+ damage/)) {
         reg = text.match(/(.*) absorbs (\d+) points of damage from the attack into (\d+) points of (\w+) damage/);
         point = reg[2] * 1;
-        magic = parm.log[i - 1].textContent.match(/you for (\d+) (\w+) damage/) ?? parm.log[i - 1].textContent.match(/You take (\d+) (\w+) damage/);
+        magic = parm.log[i - 1].textContent.match(/you for (\d+) (\w+) damage/) ?? parm.log[i - 1].textContent.match(/(You|and) take (\d+) (\w+) damage/);
         magic = magic[2].replace('ing', '');
         stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
         point = reg[3] * 1;
