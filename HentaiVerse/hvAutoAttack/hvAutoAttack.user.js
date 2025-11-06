@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.28
+// @version      2.90.29
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -869,10 +869,11 @@ try {
       '        <input id="arLevel_RB50" value="RB50,105" type="checkbox"><label for="arLevel_RB50">RB50</label> <input id="arLevel_RB75A" value="RB75A,106" type="checkbox"><label for="arLevel_RB75A">RB75A</label> <input id="arLevel_RB75B" value="RB75B,107" type="checkbox"><label for="arLevel_RB75B">RB75B</label> <input id="arLevel_RB75C" value="RB75C,108" type="checkbox"><label for="arLevel_RB75C">RB75C</label>',
       '        <input id="arLevel_RB100" value="RB100,109" type="checkbox"><label for="arLevel_RB100">RB100</label> <input id="arLevel_RB150" value="RB150,110" type="checkbox"><label for="arLevel_RB150">RB150</label> <input id="arLevel_RB200" value="RB200,111" type="checkbox"><label for="arLevel_RB200">RB200</label> <input id="arLevel_RB250" value="RB250,112" type="checkbox"><label for="arLevel_RB250">RB250</label> <input id="arLevel_GF" value="GF,gr" type="checkbox"><label for="arLevel_GF" >GrindFest </label><input class="hvAANumber" name="idleArenaGrTime" placeholder="1" type="text"></div><div><input id="obscureNotIdleArena" type="checkbox"><label for="obscureNotIdleArena"><l0>页面中置灰未设置且未完成的</l0><l1>頁面中置灰未設置且未完成的</l1><l2>obscure not setted and not battled in Battle&gt;Arena/RingOfBlood</l2></div></div>',
       '  <div>',
-      '      <b>[S!]<l0>精力</l0><l1>精力</l1><l2>Stamina</l2>: </b> <l0>阈值</l0><l1>閾值</l1><l2><b></b> threshold</l2>: Min(85, <input class="hvAANumber" name="staminaLow" placeholder="60" type="text">)<br>',
+      '      <b>[S!]<l0>精力</l0><l1>精力</l1><l2>Stamina</l2>: </b>',
       '      <l0>进入遭遇战的最低精力</l0><l1>進入遭遇戰的最低精力</l1><l2><b></b>Minimum stamina to engage encounter</l2>: <input class="hvAANumber" name="staminaEncounter" placeholder="60" type="text"></br>',
+      '      <l0>竞技场/浴血擂台阈值</l0><l1>競技場/浴血擂台閾值</l1><l2><b></b>Minimum stamina to auto start The Arena or Ring Of Blood</l2>: Min(85, <input class="hvAANumber" name="staminaLow" placeholder="60" type="text">)<br>',
       '      <l0>进入压榨届的最低精力</l0><l1>進入壓榨屆的最低精力</l1><l2><b></b>Minimum stamina to auto start GrindFest</l2>: <input class="hvAANumber" name="staminaGrindFest" placeholder="100" type="text"></br>',
-      '      <b>[S!!]</b><l0>含本日自然恢复的阈值</l0><l1>含本日自然恢復的閾值</l1><l2><b></b>Stamina threshold with naturally recovers today</l2>: <input class="hvAANumber" name="staminaLowWithReNat" placeholder="0" type="text"></br>',
+      '      <b>[S!!]</b><l0>进入竞技场/浴血擂台/压榨届时，含本日自然恢复的阈值</l0><l1>进入競技場/浴血擂台/壓榨屆时，含本日自然恢復的閾值</l1><l2><b></b>Stamina threshold with naturally recovers today for The Arena, Ring Of Bloog, GrindFest</l2>: <input class="hvAANumber" name="staminaLowWithReNat" placeholder="0" type="text"></br>',
       '      <input id="restoreStamina" type="checkbox"><label for="restoreStamina"><l0>战前恢复</l0><l1>戰前恢復</l1><l2>Restore stamina</l2>',
       '  </div>',
       '  <div><input id="repair" type="checkbox"><label for="repair"><b>[R!]<l0>修复装备</l0><l1>修復裝備</l1><l2>Repair Equipment</l2></b></label>: ',
@@ -2626,11 +2627,11 @@ try {
     if(staminaChecked === 1){ // succeed
         return true;
     }
-    if(staminaChecked === 0){ // failed until today ends
+    if(staminaChecked === 0){ // failed currently
       setTimeout(method, Math.floor(time(0) / _1h + 1) * _1h - time(0));
-      document.title = `[S!!]` + document.title;
-    } else { // case -1: // failed with nature recover
       document.title = `[S!]` + document.title;
+    } else { // case -1: // failed with nature recover
+      document.title = `[S!!]` + document.title;
     }
   }
 
