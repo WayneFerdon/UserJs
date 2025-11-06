@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.29
+// @version      2.90.30
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -43,6 +43,14 @@ const _1s = 1000;
 const _1m = 60 * _1s;
 const _1h = 60 * _1m;
 const _1d = 24 * _1h;
+
+const monsterStateKeys = {
+  obj: `div.btm1`,
+  lv: `div.btm2`,
+  name: `div.btm3`,
+  bars: `div.btm4>div.btm5`,
+  buffs: `div.btm6`,
+}
 
 try {
   const isFrame = window.self !== window.top;
@@ -523,6 +531,33 @@ try {
     return document.createElement(name);
   }
 
+  function getBuffTurnFromImg(buff, nanValue=NaN) {
+    if (!buff) {
+      return 0;
+    }
+    buff = buff.getAttribute('onmouseover').match(/\(.*,.*,(\s*)(.*?)\)$/)[2] * 1;
+    return isNaN(buff) ? nanValue : buff;
+  }
+
+  function getMonsterID(s) {
+    if (s.order !== undefined) {
+      return (s.order + 1) % 10;
+    } // case is monsterStatus
+    return (s + 1) % 10; // case is order
+  }
+
+  function getPlayerBuff(buff){
+    return gE(`#pane_effects>img[src*="${buff}"]`);
+  }
+
+  function getMonster(id){
+    return gE(`#mkey_${id}`);
+  }
+
+  function getMonsterBuff(id, buff){
+    return gE(`${monsterStateKeys.buffs}>img[src*="${buff}"]`, getMonster(id));
+  }
+
   function isOn(id) { // 是否可以施放技能/使用物品
     if (id * 1 > 10000) { // 使用物品
       return gE(`.bti3>div[onmouseover*="(${id})"]`);
@@ -744,8 +779,8 @@ try {
       '.tlbWARN{text-align:left;font-weight:bold;color:red;font-size:20pt;}', // 标记检测出异常的日志行
       // 怪物标号用数字替代字母，目前弃用
       // '#pane_monster{counter-reset:order;}',
-      // '.btm2>div:nth-child(1):before{font-size:23px;font-weight:bold;text-shadow:1px 1px 2px;content:counter(order);counter-increment:order;}',
-      // '.btm2>div:nth-child(1)>img{display:none;}',
+      // `${monsterStateKeys.lv}>div:nth-child(1):before{font-size:23px;font-weight:bold;text-shadow:1px 1px 2px;content:counter(order);counter-increment:order;}`,
+      // `${monsterStateKeys.lv}>div:nth-child(1)>img{display:none;}`,
     ].join('');
     globalStyle.textContent = cssContent;
     optionButton(lang);
@@ -1984,14 +2019,6 @@ try {
     }
   }
 
-  function getBuffTurnFromImg(buff, nanValue=NaN) {
-    if (!buff) {
-      return 0;
-    }
-    buff = buff.getAttribute('onmouseover').match(/\(.*,.*,(\s*)(.*?)\)$/)[2] * 1;
-    return isNaN(buff) ? nanValue : buff;
-  }
-
   function checkCondition(parms) {
     if (typeof parms === 'undefined') {
       return true;
@@ -2023,7 +2050,7 @@ try {
         return isOn(id) ? 1 : 0;
       },
       buffTurn(img) {
-        return getBuffTurnFromImg(gE(`#pane_effects>img[src*="${img}"]`), Infinity);
+        return getBuffTurnFromImg(getPlayerBuff(img), Infinity);
       },
     };
 
@@ -2881,7 +2908,7 @@ try {
       }
       const type = battle.roundType;
       let subtype, title;
-      const monsterNames = Array.from(gE('div.btm3>div>div', 'all')).map(monster => monster.innerHTML);
+      const monsterNames = Array.from(gE(`${monsterStateKeys.name}>div>div`, 'all')).map(monster => monster.innerHTML);
       const lang = g('lang') * 1;
       const info = battleInfoList[type];
       switch (type) {
@@ -2977,13 +3004,6 @@ try {
         return;
       }
     }
-  }
-
-  function getMonsterID(s) {
-    if (s.order !== undefined) {
-      return (s.order + 1) % 10;
-    } // case is monsterStatus
-    return (s + 1) % 10; // case is order
   }
 
   /**
@@ -3122,7 +3142,7 @@ try {
       g('timeNow', timeNow);
       const monsterDead = gE('img[src*="nbardead"]', 'all').length;
       g('monsterAlive', g('monsterAll') - monsterDead);
-      const bossDead = gE('div.btm1[style*="opacity"] div.btm2[style*="background"]', 'all').length;
+      const bossDead = gE(`${monsterStateKeys.obj}[style*="opacity"] ${monsterStateKeys.lv}[style*="background"]`, 'all').length;
       g('bossAlive', g('bossAll') - bossDead);
       const battleLog = gE('#textlog>tbody>tr>td', 'all');
       if (g('option').recordUsage) {
@@ -3251,11 +3271,11 @@ try {
     if (window.location.hash !== '') {
       goto();
     }
-    g('monsterAll', gE('div.btm1', 'all').length);
+    g('monsterAll', gE(monsterStateKeys.obj, 'all').length);
     const monsterDead = gE('img[src*="nbardead"]', 'all').length;
     g('monsterAlive', g('monsterAll') - monsterDead);
-    g('bossAll', gE('div.btm2[style^="background"]', 'all').length);
-    const bossDead = gE('div.btm1[style*="opacity"] div.btm2[style*="background"]', 'all').length;
+    g('bossAll', gE(`${monsterStateKeys.lv}[style^="background"]`, 'all').length);
+    const bossDead = gE(`${monsterStateKeys.obj}[style*="opacity"] ${monsterStateKeys.lv}[style*="background"]`, 'all').length;
     g('bossAlive', g('bossAll') - bossDead);
     const battleLog = gE('#textlog>tbody>tr>td', 'all');
     if (!battle.roundType) {
@@ -3318,8 +3338,8 @@ try {
     if (battleLog[battleLog.length - 1].textContent.match('Initializing')) {
       const monsterStatus = [];
       let order = 0;
-      const monsterNames = Array.from(gE('div.btm3>div>div', 'all')).map(monster => monster.innerText);
-      const monsterLvs = Array.from(gE('div.btm2>div>div', 'all')).map(monster => monster.innerText);
+      const monsterNames = Array.from(gE(`${monsterStateKeys.name}>div>div`, 'all')).map(monster => monster.innerText);
+      const monsterLvs = Array.from(gE(`${monsterStateKeys.lv}>div>div`, 'all')).map(monster => monster.innerText);
       const monsterDB = getValue('monsterDB', true) ?? {};
       const monsterMID = getValue('monsterMID', true) ?? {};
       const oldDB = JSON.stringify(monsterDB);
@@ -3369,7 +3389,7 @@ try {
         battle.roundNow = 1;
         battle.roundAll = 1;
       }
-    } else if (!battle.monsterStatus || battle.monsterStatus.length !== gE('div.btm2', 'all').length) {
+    } else if (!battle.monsterStatus || battle.monsterStatus.length !== gE(monsterStateKeys.lv, 'all').length) {
       battle.roundNow = 1;
       battle.roundAll = 1;
     }
@@ -3406,7 +3426,7 @@ try {
 
   function countMonsterHP() { // 统计敌人血量
     let i, j;
-    const monsterHp = gE('div.btm4>div.btm5:nth-child(1)', 'all');
+    const monsterHp = gE(`${monsterStateKeys.bars}:nth-child(1)`, 'all');
     let battle = getValue('battle', true);
     const monsterStatus = battle.monsterStatus;
     const hpArray = [];
@@ -3476,7 +3496,7 @@ try {
         img: 'wpn_bleed',
       },
     };
-    const monsterBuff = gE('div.btm6', 'all');
+    const monsterBuff = gE(monsterStateKeys.buffs, 'all');
     const hpMin = Math.min.apply(null, hpArray);
     const yggdrasilExtraWeight = g('option').YggdrasilExtraWeight;
     const unreachableWeight = g('option').unreachableWeight;
@@ -3489,7 +3509,7 @@ try {
       }
       let weight = baseHpRatio * Math.log10(monsterStatus[i].hpNow / hpMin); // > 0 生命越低权重越低优先级越高
       monsterStatus[i].hpWeight = weight;
-      const name = gE('div.btm3>div>div', monsterBuff[i].parentNode).innerText;
+      const name = gE(`${monsterStateKeys.name}>div>div`, monsterBuff[i].parentNode).innerText;
       if (yggdrasilExtraWeight && ('Yggdrasil' === name || '世界树 Yggdrasil' === name)) { // 默认设置下，任何情况都优先击杀群体大量回血的boss"Yggdrasil"
         weight += yggdrasilExtraWeight; // yggdrasilExtraWeight.defalut -1000
       }
@@ -3599,7 +3619,7 @@ try {
         continue;
       }
       for (let j = 1; j <= scrollLib[i].mult; j++) {
-        if (gE(`#pane_effects>img[src*="${scrollLib[i][`img${j}`]}${scrollFirst}"]`)) {
+        if (getPlayerBuff(scrollLib[i][`img${j}`]+scrollFirst)) {
           continue;
         }
         gE(`.bti3>div[onmouseover*="(${scrollLib[i].id})"]`).click();
@@ -3616,7 +3636,7 @@ try {
     if (!g('option').channelSkill) {
       return false;
     }
-    if (!gE('#pane_effects>img[src*="channeling"]')) {
+    if (!getPlayerBuff('channeling')) {
       return false;
     }
     const skillLib = {
@@ -3672,7 +3692,7 @@ try {
     if (g('option').channelSkill) {
       for (i = 0; i < skillPack.length; i++) {
         j = skillPack[i];
-        if (g('option').channelSkill[j] && !gE(`#pane_effects>img[src*="${skillLib[j].img}"]`) && isOn(skillLib[j].id)) {
+        if (g('option').channelSkill[j] && !getPlayerBuff(skillLib[j].img) && isOn(skillLib[j].id)) {
           gE(skillLib[j].id).click();
           return true;
         }
@@ -3705,7 +3725,7 @@ try {
         if (isNaN(buffLastTime) || buff[i].src.match(/_scroll.png$/)) {
           continue;
         } else {
-          if (spellName === 'Cloak of the Fallen' && !gE('#pane_effects>img[src*="sparklife"]') && isOn('422')) {
+          if (spellName === 'Cloak of the Fallen' && !getPlayerBuff('sparklife') && isOn('422')) {
             gE('422').click();
             return true;
           } if (spellName in name2Skill && isOn(skillLib[name2Skill[spellName]].id)) {
@@ -3779,7 +3799,7 @@ try {
     const skillPack = g('option').buffSkillOrderValue.split(',');
     for (i = 0; i < skillPack.length; i++) {
       let buff = skillPack[i];
-      if (g('option').buffSkill[buff] && checkCondition(g('option')[`buffSkill${buff}Condition`]) && !gE(`#pane_effects>img[src*="${skillLib[buff].img}"]`) && isOn(skillLib[buff].id)) {
+      if (g('option').buffSkill[buff] && checkCondition(g('option')[`buffSkill${buff}Condition`]) && !getPlayerBuff(skillLib[buff].img) && isOn(skillLib[buff].id)) {
         gE(skillLib[buff].id).click();
         return true;
       }
@@ -3807,7 +3827,7 @@ try {
       },
     };
     for (i in draughtPack) {
-      if (!gE(`#pane_effects>img[src*="${draughtPack[i].img}"]`) && g('option').buffSkill && g('option').buffSkill[i] && checkCondition(g('option')[`buffSkill${i}Condition`]) && gE(`.bti3>div[onmouseover*="(${draughtPack[i].id})"]`)) {
+      if (!getPlayerBuff(draughtPack[i].img) && g('option').buffSkill && g('option').buffSkill[i] && checkCondition(g('option')[`buffSkill${i}Condition`]) && gE(`.bti3>div[onmouseover*="(${draughtPack[i].id})"]`)) {
         gE(`.bti3>div[onmouseover*="(${draughtPack[i].id})"]`).click();
         return true;
       }
@@ -3845,7 +3865,7 @@ try {
       id: 12601,
       img: 'darkinfusion',
     }];
-    if (gE(`.bti3>div[onmouseover*="(${infusionLib[g('attackStatus')].id})"]`) && !gE(`#pane_effects>img[src*="${infusionLib[[g('attackStatus')]].img}"]`)) {
+    if (gE(`.bti3>div[onmouseover*="(${infusionLib[g('attackStatus')].id})"]`) && !getPlayerBuff(infusionLib[[g('attackStatus')]].img)) {
       gE(`.bti3>div[onmouseover*="(${infusionLib[g('attackStatus')].id})"]`).click();
       return true;
     }
@@ -3933,7 +3953,7 @@ try {
         continue;
       }
       const range = id in rangeSkills ? rangeSkills[id] : 0;
-      gE(`#mkey_${getRangeCenter(target, range).id}`).click();
+      getMonster(getRangeCenter(target, range).id).click();
       return true;
     }
   }
@@ -3951,7 +3971,7 @@ try {
         if (monsterStatus[j].hpNow / monsterStatus[j].hp >= 0.25) {
           continue;
         }
-        if (!gE(`#mkey_${getMonsterID(monsterStatus[j])} img[src*="wpn_bleed"]`)) {
+        if (!getMonsterBuff(getMonsterID(monsterStatus[j]), 'bleed')) {
           continue;
         }
         return monsterStatus[j];
@@ -4069,7 +4089,7 @@ try {
     }
 
     // 获取目标
-    let isDebuffed = (target) => gE(`img[src*="${skillLib[buff].img}"]`, gE(`#mkey_${getMonsterID(target)}>.btm6`));
+    let isDebuffed = (target) => getMonsterBuff(getMonsterID(target), skillLib[buff].img);
     let debuffByIndex = isAll && g('option')[`debuffSkill${buff}AllByIndex`];
     let monsterStatus = g('battle').monsterStatus;
     if (debuffByIndex){
@@ -4099,13 +4119,13 @@ try {
       return false;
     }
 
-    const imgs = gE('img', 'all', gE(`#mkey_${id}>.btm6`));
+    const imgs = gE('img', 'all', gE(monsterStateKeys.buffs, getMonster(id)));
     // 已有buff小于6个
     // 未开启debuff失败警告
     // buff剩余持续时间大于等于警报时间
     if (imgs.length < 6 || !g('option').debuffSkillTurnAlert || (g('option').debuffSkillTurn && getBuffTurnFromImg(imgs[imgs.length - 1]) >= g('option').debuffSkillTurn[buff])) {
       gE(skillLib[buff].id).click();
-      gE(`#mkey_${id}`).click();
+      getMonster(id).click();
       return true;
     }
 
@@ -4153,7 +4173,6 @@ try {
       4502: { 152: [0, 2, 3] },
       4503: { 153: [0, 3, 4, 4] },
     }
-
     let range = 0;
     // Spell > Offensive Magic
     const attackStatus = g('attackStatus');
@@ -4163,7 +4182,7 @@ try {
         range = 1;
       }
     } else {
-      if (g('option').etherTap && gE(`#mkey_${getMonsterID(monsterStatus[0])}>div.btm6>img[src*="coalescemana"]`) && (!gE('#pane_effects>img[onmouseover*="Ether Tap (x2)"]') || gE('#pane_effects>img[src*="wpn_et"][id*="effect_expire"]')) && checkCondition(g('option').etherTapCondition)) {
+      if (g('option').etherTap && getMonsterBuff(getMonsterID(monsterStatus[0]), 'coalescemana') && (!gE('#pane_effects>img[onmouseover*="Ether Tap (x2)"]') || getPlayerBuff(`wpn_et"][id*="effect_expire`)) && checkCondition(g('option').etherTapCondition)) {
         `pass`
       }
       else {
@@ -4188,7 +4207,7 @@ try {
         }
       }
     }
-    gE(`#mkey_${getRangeCenter(monsterStatus[0], range, !attackStatus).id}`).click();
+    getMonster(getRangeCenter(monsterStatus[0], range, !attackStatus).id).click();
     return true;
   }
 
@@ -4201,10 +4220,10 @@ try {
   function fixMonsterStatus() { // 修复monsterStatus
     // document.title = _alert(-1, 'monsterStatus错误，正在尝试修复', 'monsterStatus錯誤，正在嘗試修復', 'monsterStatus Error, trying to fix');
     const monsterStatus = [];
-    const monsterNames = Array.from(gE('div.btm3>div>div', 'all')).map(monster => monster.innerText);
-    const monsterLvs = Array.from(gE('div.btm2>div>div', 'all')).map(monster => monster.innerText);
+    const monsterNames = Array.from(gE(`${monsterStateKeys.name}>div>div`, 'all')).map(monster => monster.innerText);
+    const monsterLvs = Array.from(gE(`${monsterStateKeys.lv}>div>div`, 'all')).map(monster => monster.innerText);
     const monsterDB = getValue('monsterDB', true);
-    gE('div.btm2', 'all').forEach((monster, order) => {
+    gE(monsterStateKeys.lv, 'all').forEach((monster, order) => {
       monsterStatus.push({
         order: order,
         hp: getHPFromMonsterDB(monsterDB, monsterNames[order], monsterLvs[order]) ?? ((monster.style.background === '') ? 1000 : 100000),
@@ -4240,7 +4259,7 @@ try {
     status.forEach(s => {
       const rank = weights.indexOf(s.finWeight);
       const id = getMonsterID(s);
-      if (!gE(`#mkey_${id}`) || !gE(`#mkey_${id}>.btm3`)) {
+      if (!getMonster(id) || !gE(monsterStateKeys.name, getMonster(id))) {
         return;
       }
       if (g('option').displayWeightBackground) {
@@ -4258,12 +4277,12 @@ try {
           }
           catch {
           }
-          gE(`#mkey_${id}`).style.cssText += `background: ${colorText};`;
+          getMonster(id).style.cssText += `background: ${colorText};`;
         }
       }
-      gE(`#mkey_${id}>.btm3`).style.cssText += 'display: flex; flex-direction: row;'
+      gE(monsterStateKeys.name, getMonster(id)).style.cssText += 'display: flex; flex-direction: row;'
       if (g('option').displayWeight) {
-        gE(`#mkey_${id}>.btm3`).innerHTML += `<div style='font-weight: bolder; right:0px; position: absolute;'>[${rank}|-${-rank + weights.length - 1}|${s.finWeight.toPrecision(s.finWeight >= 1 ? 5 : 4)}]</div>`;
+        gE(monsterStateKeys.name, getMonster(id)).innerHTML += `<div style='font-weight: bolder; right:0px; position: absolute;'>[${rank}|-${-rank + weights.length - 1}|${s.finWeight.toPrecision(s.finWeight >= 1 ? 5 : 4)}]</div>`;
       }
     });
   }
@@ -4503,6 +4522,9 @@ try {
   }
 
   function matchDamageInfoFromLogText(text, isSkipUnmatched=true){
+    if(!text){
+      return undefined;
+    }
     const regList = [
       /you for (\d+) (\w+) damage/,
       /and take (\d+) (\w+) damage/,
