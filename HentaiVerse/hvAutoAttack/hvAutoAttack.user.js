@@ -769,6 +769,7 @@ try {
       '.hvAACenter{text-align:center;}',
       '.hvAATitle{font-weight:bolder;}',
       '.hvAAGoto{cursor:pointer;text-decoration:underline;}',
+      '.customizeInput{width:193px}',
       '.hvAANew{width:25px;height:25px;float:left;background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAMCAYAAACX8hZLAAAAcElEQVQ4jbVRSQ4AIQjz/59mTiZIF3twmnCwFAq4FkeFXM+5vCzohYxjPMtfxS8CN6iqQ7TfE0wrODxVbzJNgoaTo4CmbBO1ZWICouQ0DHaL259MEzaU+w8pZOdSjcUgaPJDHCbO0A2kuAiuwPGQ+wBms12x8HExTwAAAABJRU5ErkJggg==) center no-repeat transparent;}',
       '#hvAATab-Alarm input[type="text"]{width:512px;}',
       '.testAlarms>div{border:2px solid #000;}',
