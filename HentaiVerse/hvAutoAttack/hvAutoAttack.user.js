@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.27
+// @version      2.90.28
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -4429,8 +4429,7 @@ try {
       if (debug) {
         console.log(text);
       }
-      if (text.match(/you for \d+ \w+ damage/) || text.match(/(You|and) take \d+ \w+ damage/)) {
-        reg = text.match(/you for (\d+) (\w+) damage/) ?? text.match(/(You|and) take (\d+) (\w+) damage/);
+      if (reg = matchDamageInfoFromLogText(text)) {
         magic = reg[2].replace('ing', '');
         point = reg[1] * 1;
         stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
@@ -4476,8 +4475,7 @@ try {
       } else if (text.match(/absorbs \d+ points of damage from the attack into \d+ points of \w+ damage/)) {
         reg = text.match(/(.*) absorbs (\d+) points of damage from the attack into (\d+) points of (\w+) damage/);
         point = reg[2] * 1;
-        magic = parm.log[i - 1].textContent.match(/you for (\d+) (\w+) damage/) ?? parm.log[i - 1].textContent.match(/(You|and) take (\d+) (\w+) damage/);
-        magic = magic[2].replace('ing', '');
+        magic = matchDamageInfoFromLogText(parm.log[i - 1], false)[2].replace('ing', '');
         stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
         point = reg[3] * 1;
         magic = `${reg[1].replace('Your ', '')}_${reg[4]}`;
@@ -4501,6 +4499,25 @@ try {
       pauseChange();
     }
     setValue('stats', stats);
+  }
+
+  function matchDamageInfoFromLogText(text, isSkipUnmatched=true){
+    const regList = [
+      /you for (\d+) (\w+) damage/,
+      /and take (\d+) (\w+) damage/,
+      /You take (\d+) (\w+) damage/,
+      /hits you, causing (\d+) points of (\w+) damage/
+    ];
+    for (let reg of regList){
+      let match = text.match(reg);
+      if (!match) {
+        continue;
+      }
+      return match;
+    }
+    if(!isSkipUnmatched){
+      console.log(`Can't match damage info from: `, text);
+    }
   }
 
   function recordUsage2() {
