@@ -2085,7 +2085,7 @@ try {
         return getBuffTurnFromImg(getPlayerBuff(img), 0);
       },
       targetBuffTurn(img){
-        return getBuffTurnFromImg(getMonsterBuff(getMonsterID(target), 'bleed'), 0);
+        return getBuffTurnFromImg(getMonsterBuff(getMonsterID(target), img), 0);
       },
       targetHp(){
         return target.hpNow/target.hp;
@@ -3981,7 +3981,7 @@ try {
     }
     for (let i in skillOrder) {
       let skill = skillOrder[i];
-      if(!skill){
+      if(!skill || !g('option').skill[skill]){
         return;
       }
       let id = skillLib[skill];
@@ -3995,11 +3995,11 @@ try {
         continue;
       }
       g('skillOTOS')[skill]++;
-      gE(id).click();
       let target = checkCondition(g('option')[`skill${skill}Condition`], g('battle').monsterStatus);
       if(!target){
         continue;
       }
+      gE(id).click();
       const range = id in rangeSkills ? rangeSkills[id] : 0;
       getMonster(getRangeCenter(target, range).id).click();
       return true;
