@@ -82,9 +82,15 @@ Four drop down lists and one button are visible in the box
 
 8. `buffTurn`: time the buff last in person, format`_buffTurn_img`
 
-  **example**: the image of Protection is protection, `_buffTurn_protection,5,0` means you don't have the buff of Protection or `_buffTurn_protection,3,10` means the the buff of Protection on you last at least 10 turns
+  **example**: the image of Protection is protection, `_buffTurn_protection,5,0` means you don't have the buff of Protection or `_buffTurn_protection,3,10` means the buff of Protection on you last at least 10 turns
 
-9. blank: the value you want to put in
+9. `targetHp`、`targetMp`、`targetSp`、`targetBuffTurn`: HP%、SP%、MP%、buffRemainTime of target monster,  suffix of `_targetBuffTurn_` is same as 8.`buffTurn`（such as：`_targetBuffTurn_bleed,6,0` means remain turns of bleed buff on target monster is not equal to 0. Target that is calculating is chosen by following rules:
+    1. The highest priority monster by rank in default situations.
+    2. Weapon skills (OFC, T1~T3, etc.), Offensive Spell skills (Tire2, Tire3): by each condition > for each ranked target > find the target fit all sub-condition in the condition and cast to it. Such as the pic below: condition for Merciful Blow: only cast to targets which with hp below 25% and a bleed buff.
+    
+    ![example](https://github.com/user-attachments/assets/da181eac-e634-41ad-97a7-ff59a7b28b6d)
+
+10. blank: the value you want to put in
 
 #### Example
 
@@ -188,3 +194,4 @@ In this example, the script will attack enemy 1 next.
 
 * Old
 1. see [README_Chinese#更新历史](https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README.md#更新历史)
+
