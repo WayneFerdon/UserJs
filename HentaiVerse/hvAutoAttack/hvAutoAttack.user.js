@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.30
+// @version      2.90.31
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -395,6 +395,32 @@ try {
         option[itemArray[0]] ??= {};
         option[itemArray[0]][itemArray[1]] ??= option[aliasDict[key]];
       }
+    }
+    // 迁移旧版本最后的慈悲条件为可配置条件
+    const mercifulBlowCondition = option.skillT3Condition ?? {"0":[]};
+    const size = Object.keys(mercifulBlowCondition).length;
+    if (option.mercifulBlowStrict){
+      option.mercifulBlow = false;
+      option.mercifulBlowStrict = false;
+      for(let id in mercifulBlowCondition){
+        const condition = mercifulBlowCondition[id];
+        condition.push("fightingStyle,5,2");
+        condition.push("targetHp,2,0.25");
+        condition.push("_targetBuffTurn_bleed,1,0");
+      }
+    } else if(option.mercifulBlow) {
+      option.mercifulBlow = false;
+      const newCondition = {};
+      for(let id in mercifulBlowCondition){
+        const condition = mercifulBlowCondition[id];
+        newCondition[id] = condition;
+        newCondition[(id*1+size).toString()] = [...condition];
+        newCondition[(id*1+size).toString()].push("fightingStyle,6,2");
+        condition.push("fightingStyle,5,2");
+        condition.push("targetHp,2,0.25");
+        condition.push("_targetBuffTurn_bleed,1,0");
+      }
+      option.skillT3Condition = newCondition;
     }
     if(isFrame){
       g('option', option);
@@ -1078,7 +1104,7 @@ try {
       '  <input id="skillOrder_OFC" type="checkbox"><label for="skillOrder_OFC"><l0>友情小马砲</l0><l1>友情小馬砲</l1><l2>OFC</l2></label><input id="skillOrder_FRD" type="checkbox"><label for="skillOrder_FRD"><l0>龙吼</l0><l1>龍吼</l1><l2>FRD</l2></label><input id="skillOrder_T3" type="checkbox"><label for="skillOrder_T3">T3</label><input id="skillOrder_T2" type="checkbox"><label for="skillOrder_T2">T2</label><input id="skillOrder_T1" type="checkbox"><label for="skillOrder_T1">T1</label></div>',
       '  <div><input id="skill_OFC" type="checkbox"><label for="skill_OFC"><l0>友情小马砲</l0><l1>友情小馬砲</l1><l2>OFC</l2></label>: <input id="skillOTOS_OFC" type="checkbox"><label for="skillOTOS_OFC"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label>{{skillOFCCondition}}</div>',
       '  <div><input id="skill_FRD" type="checkbox"><label for="skill_FRD"><l0>龙吼</l0><l1>龍吼</l1><l2>FRD</l2></label>: <input id="skillOTOS_FRD" type="checkbox"><label for="skillOTOS_FRD"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label>{{skillFRDCondition}}</div>',
-      '  <div><input id="skill_T3" type="checkbox"><label for="skill_T3"><l0>3阶（如果有）</l0><l1>3階（如果有）</l1><l2>T3(if exist)</l2></label>: <input id="skillOTOS_T3" type="checkbox"><label for="skillOTOS_T3"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label><br><input id="mercifulBlow" type="checkbox"><label for="mercifulBlow"><l0>最后的慈悲(MB)：优先攻击满足条件的敌人 (25% HP, 流血)</l0><l1>最後的慈悲(MB)：優先攻擊滿足條件的敵人 (25% HP, 流血)</l1><l2>Merciful Blow: Attack the enemy which has 25% HP and is bleeding first</l2><br><input id="mercifulBlowStrict" type="checkbox"><label for="mercifulBlowStrict"><l0>最后的慈悲(MB)：只攻击满足条件的敌人 (25% HP, 流血)</l0><l1>最後的慈悲(MB)：只攻擊滿足條件的敵人 (25% HP, 流血)</l1><l2>Merciful Blow: Attack the enemy which has 25% HP and is bleeding only</l2></label>{{skillT3Condition}}</div>',
+      '  <div><input id="skill_T3" type="checkbox"><label for="skill_T3"><l0>3阶（如果有）</l0><l1>3階（如果有）</l1><l2>T3(if exist)</l2></label>: <input id="skillOTOS_T3" type="checkbox"><label for="skillOTOS_T3"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label><br>{{skillT3Condition}}</div>',
       '  <div><input id="skill_T2" type="checkbox"><label for="skill_T2"><l0>2阶（如果有）</l0><l1>2階（如果有）</l1><l2>T2(if exist)</l2></label>: <input id="skillOTOS_T2" type="checkbox"><label for="skillOTOS_T2"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label>{{skillT2Condition}}</div>',
       '  <div><input id="skill_T1" type="checkbox"><label for="skill_T1"><l0>1阶</l0><l1>1階</l1><l2>T1</l2></label>: <input id="skillOTOS_T1" type="checkbox"><label for="skillOTOS_T1"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label>{{skillT1Condition}}</div></div>',
 
@@ -1798,6 +1824,11 @@ try {
       '<option value="">- - - -</option>',
       '<option value="_isCd_">isCd</option>',
       '<option value="_buffTurn_">buffTurn</option>',
+      '<option value="">- - - -</option>',
+      '<option value="_targetBuffTurn_">targetBuffTurn</option>',
+      '<option value="targetHp">targetHp</option>',
+      '<option value="targetMp">targetMp</option>',
+      '<option value="targetSp">targetSp</option>',
       '<option value=""></option>',
     ].join('');
     customizeBox.innerHTML = [
@@ -2019,12 +2050,12 @@ try {
     }
   }
 
-  function checkCondition(parms) {
+  function checkCondition(parms, targets=undefined) {
     if (typeof parms === 'undefined') {
-      return true;
+      return g('battle').monsterStatus[0];
     }
-    let i; let j; let
-    k;
+    let i; let j; let k;
+    let target;
     const returnValue = function (str) {
       if (str.match(/^_/)) {
         const arr = str.split('_');
@@ -2050,59 +2081,74 @@ try {
         return isOn(id) ? 1 : 0;
       },
       buffTurn(img) {
-        return getBuffTurnFromImg(getPlayerBuff(img), Infinity);
+        return getBuffTurnFromImg(getPlayerBuff(img), 0);
+      },
+      targetBuffTurn(img){
+        return getBuffTurnFromImg(getMonsterBuff(getMonsterID(target), 'bleed'), 0);
+      },
+      targetHp(){
+        return target.hpNow/target.hp;
+      },
+      targetMp(){
+        return target.mpNow;
+      },
+      targetSp(){
+        return target.spNow;
       },
     };
 
+    targets ??= [g('battle').monsterStatus[0]];
     for (i in parms) {
-      let parmResult = true;
-      for (j = 0; j < parms[i].length; j++) {
-        let result = true;
-        if (!Array.isArray(parms[i])) {
-          continue;
-        }
-        k = parms[i][j].split(',');
-        const kk = k.toString();
-        k[0] = returnValue(k[0]);
-        k[2] = returnValue(k[2]);
+      for (target of targets){
+        let parmResult = true;
+        for (j = 0; j < parms[i].length; j++) {
+          let result = true;
+          if (!Array.isArray(parms[i])) {
+            continue;
+          }
+          k = parms[i][j].split(',');
+          const kk = k.toString();
+          k[0] = returnValue(k[0]);
+          k[2] = returnValue(k[2]);
 
-        if (k[0] === undefined || k[0] === null || (typeof k[0] !== "string" && isNaN(k[0]))) {
-          Debug.log(kk[0], k[0]);
-        }
-        if (k[2] === undefined || k[2] === null || (typeof k[2] !== "string" && isNaN(k[2]))) {
-          Debug.log(kk[2], k[2]);
-        }
+          if (k[0] === undefined || k[0] === null || (typeof k[0] !== "string" && isNaN(k[0]))) {
+            Debug.log(kk[0], k[0]);
+          }
+          if (k[2] === undefined || k[2] === null || (typeof k[2] !== "string" && isNaN(k[2]))) {
+            Debug.log(kk[2], k[2]);
+          }
 
-        switch (k[1]) {
-          case '1':
-            result = k[0] > k[2];
+          switch (k[1]) {
+            case '1':
+              result = k[0] > k[2];
+              break;
+            case '2':
+              result = k[0] < k[2];
+              break;
+            case '3':
+              result = k[0] >= k[2];
+              break;
+            case '4':
+              result = k[0] <= k[2];
+              break;
+            case '5':
+              result = k[0] === k[2];
+              break;
+            case '6':
+              result = k[0] !== k[2];
+              break;
+          }
+          if (!result) {
+            parmResult = false;
             break;
-          case '2':
-            result = k[0] < k[2];
-            break;
-          case '3':
-            result = k[0] >= k[2];
-            break;
-          case '4':
-            result = k[0] <= k[2];
-            break;
-          case '5':
-            result = k[0] === k[2];
-            break;
-          case '6':
-            result = k[0] !== k[2];
-            break;
+          }
         }
-        if (!result) {
-          parmResult = false;
-          break;
+        if (parmResult){
+          return target;
         }
-      }
-      if (parmResult) {
-        return true;
       }
     }
-    return false;
+    return undefined;
   }
 
   // 答题//
@@ -3427,6 +3473,8 @@ try {
   function countMonsterHP() { // 统计敌人血量
     let i, j;
     const monsterHp = gE(`${monsterStateKeys.bars}:nth-child(1)`, 'all');
+    const monsterMp = gE(`${monsterStateKeys.bars}:nth-child(2)`, 'all');
+    const monsterSp = gE(`${monsterStateKeys.bars}:nth-child(3)`, 'all');
     let battle = getValue('battle', true);
     const monsterStatus = battle.monsterStatus;
     const hpArray = [];
@@ -3436,7 +3484,9 @@ try {
         monsterStatus[i].hpNow = Infinity;
       } else {
         monsterStatus[i].isDead = false;
-        monsterStatus[i].hpNow = Math.floor(monsterStatus[i].hp * parseFloat(gE('img', monsterHp[i]).style.width) / 120 + 1);
+        monsterStatus[i].hpNow = Math.floor(monsterStatus[i].hp * parseFloat(gE('img:first-child', monsterHp[i]).style.width) / 120 + 1);
+        monsterStatus[i].mpNow = parseFloat(gE('img:first-child', monsterMp[i]).style.width) / 120;
+        monsterStatus[i].spNow = parseFloat(gE('img:first-child', monsterSp[i]).style.width) / 120;
         hpArray.push(monsterStatus[i].hpNow);
       }
     }
@@ -3933,9 +3983,6 @@ try {
       if(!skill){
         return;
       }
-      if (!checkCondition(g('option')[`skill${skill}Condition`])) {
-        continue;
-      }
       let id = skillLib[skill];
       if (!isOn(id)) {
         continue;
@@ -3948,7 +3995,7 @@ try {
       }
       g('skillOTOS')[skill]++;
       gE(id).click();
-      let target = getWeaponSkillTarget(id);
+      let target = checkCondition(g('option')[`skill${skill}Condition`], g('battle').monsterStatus);
       if(!target){
         continue;
       }
@@ -3956,31 +4003,6 @@ try {
       getMonster(getRangeCenter(target, range).id).click();
       return true;
     }
-  }
-
-  function getWeaponSkillTarget(id){
-    let target = undefined;
-    const monsterStatus = g('battle').monsterStatus;
-    if (id !== 2203) {
-      return monsterStatus[0];
-    }
-    // Merciful Blow
-    if(g('option').mercifulBlow || g('option').mercifulBlowStrict){
-      // get target with conditions (hp < 0.25 and bleeding)
-      for (let j = 0; j < monsterStatus.length; j++) {
-        if (monsterStatus[j].hpNow / monsterStatus[j].hp >= 0.25) {
-          continue;
-        }
-        if (!getMonsterBuff(getMonsterID(monsterStatus[j]), 'bleed')) {
-          continue;
-        }
-        return monsterStatus[j];
-      }
-    }
-    if(!g('option').mercifulBlowStrict){
-      return monsterStatus[0];
-    }
-    return undefined;
   }
 
   function useDeSkill() { // 自动施法DEBUFF技能
@@ -3991,7 +4013,7 @@ try {
     let skillPack = ['We', 'Im'];
     for (let i = 0; i < skillPack.length; i++) {
       if (g('option')[`debuffSkill${skillPack[i]}All`]) { // 是否启用
-        if (checkCondition(g('option')[`debuffSkill${skillPack[i]}AllCondition`])) { // 检查条件
+        if (checkCondition(g('option')[`debuffSkill${skillPack[i]}AllCondition`], g('battle').monsterStatus)) { // 检查条件
           continue;
         }
       }
@@ -4006,7 +4028,7 @@ try {
     for (let i in skillPack) {
       let buff = skillPack[i];
       if (i >= toAllCount) { // 非先全体
-        if (!buff || !checkCondition(g('option')[`debuffSkill${buff}Condition`])) { // 检查条件
+        if (!buff || !checkCondition(g('option')[`debuffSkill${buff}Condition`], g('battle').monsterStatus)) { // 检查条件
           continue;
         }
       }
@@ -4102,7 +4124,8 @@ try {
     let minRank = Number.MAX_SAFE_INTEGER;
     for (let i = 0; i < max; i++) {
       let target = buff === 'Dr' ? monsterStatus[max - i - 1] : monsterStatus[i];
-      if (target.isDead || isDebuffed(target)) {
+      target = checkCondition(g('option')[`debuffSkill${buff}Condition`], [target]);
+      if (!target || target.isDead || isDebuffed(target)) {
         continue;
       }
       const center = getRangeCenter(target, range, false, isDebuffed, debuffByIndex);
@@ -4176,21 +4199,23 @@ try {
     let range = 0;
     // Spell > Offensive Magic
     const attackStatus = g('attackStatus');
-    const monsterStatus = g('battle').monsterStatus;
+    let target = g('battle').monsterStatus[0];
     if (attackStatus === 0) {
       if (g('fightingStyle') === '1') { // 二天一流
         range = 1;
       }
     } else {
-      if (g('option').etherTap && getMonsterBuff(getMonsterID(monsterStatus[0]), 'coalescemana') && (!gE('#pane_effects>img[onmouseover*="Ether Tap (x2)"]') || getPlayerBuff(`wpn_et"][id*="effect_expire`)) && checkCondition(g('option').etherTapCondition)) {
+      if (g('option').etherTap && getMonsterBuff(getMonsterID(target), 'coalescemana') && (!gE('#pane_effects>img[onmouseover*="Ether Tap (x2)"]') || getPlayerBuff(`wpn_et"][id*="effect_expire`)) && checkCondition(g('option').etherTapCondition)) {
         `pass`
-      }
-      else {
+      } else {
         const skill = 1 * (() => {
           let lv = 3;
           for (let condition of [g('option').highSkillCondition, g('option').middleSkillCondition, undefined]) {
             let id = `1${attackStatus}${lv--}`;
-            if (checkCondition(condition) && isOn(id)) return id;
+            target = checkCondition(condition, g('battle').monsterStatus);
+            if (target && isOn(id)){
+              return id;
+            }
           }
         })();
         gE(skill)?.click();
@@ -4207,7 +4232,7 @@ try {
         }
       }
     }
-    getMonster(getRangeCenter(monsterStatus[0], range, !attackStatus).id).click();
+    getMonster(getRangeCenter(target, range, !attackStatus).id).click();
     return true;
   }
 
