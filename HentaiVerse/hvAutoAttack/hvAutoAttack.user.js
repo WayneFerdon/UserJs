@@ -4495,7 +4495,7 @@ try {
       } else if (text.match(/absorbs \d+ points of damage from the attack into \d+ points of \w+ damage/)) {
         reg = text.match(/(.*) absorbs (\d+) points of damage from the attack into (\d+) points of (\w+) damage/);
         point = reg[2] * 1;
-        magic = matchDamageInfoFromLogText(parm.log[i - 1], false)[2].replace('ing', '');
+        magic = matchDamageInfoFromLogText(parm.log[i - 1].textContent, false)[2].replace('ing', '');
         stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
         point = reg[3] * 1;
         magic = `${reg[1].replace('Your ', '')}_${reg[4]}`;
@@ -4522,9 +4522,6 @@ try {
   }
 
   function matchDamageInfoFromLogText(text, isSkipUnmatched=true){
-    if(!text){
-      return undefined;
-    }
     const regList = [
       /you for (\d+) (\w+) damage/,
       /and take (\d+) (\w+) damage/,
