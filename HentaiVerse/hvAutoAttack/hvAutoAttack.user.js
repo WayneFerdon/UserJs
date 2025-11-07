@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.31
+// @version      2.90.32
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -469,6 +469,8 @@ try {
   function setPauseUI(parent) {
     setPauseButton(parent);
     setPauseHotkey();
+    setSteppingButton(parent);
+    setSteppingHotkey(parent);
   }
 
   function setPauseButton(parent) {
@@ -484,6 +486,7 @@ try {
     button.className = 'pauseChange';
     button.onclick = pauseChange;
   }
+
   function setPauseHotkey() {
     if (!g('option').pauseHotkey) {
       return;
@@ -494,6 +497,30 @@ try {
       }
       if (e.keyCode === g('option').pauseHotkeyCode) {
         pauseChange();
+      }
+    }, false);
+  }
+
+  function setSteppingButton(parent) {
+    if (!g('option').steppingButton) {
+      return;
+    }
+    const button = parent.appendChild(cE('button'));
+    button.innerHTML = '<l0>步进</l0><l1>步進</l1><l2>Stepping</l2>';
+    button.className = 'stepping';
+    button.onclick = stepping;
+  }
+
+  function setSteppingHotkey() {
+    if (!g('option').steppingHotkey) {
+      return;
+    }
+    document.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        return;
+      }
+      if (e.keyCode === g('option').steppingHotkeyCode) {
+        stepping();
       }
     }, false);
   }
@@ -869,7 +896,10 @@ try {
       '  <div><b><l0>脚本行为</l0><l1>腳本行為</l1><l2>Script Activity</l2></b>',
       '    <div><l0>暂停相关</l0><l1>暫停相關</l1><l2>Pause with</l2>: ',
       '      <input id="pauseButton" type="checkbox"><label for="pauseButton"><l0>使用按钮</l0><l1>使用按鈕</l1><l2>Button</l2></label>; ',
-      '      <input id="pauseHotkey" type="checkbox"><label for="pauseHotkey"><l0>使用热键</l0><l1>使用熱鍵</l1><l2>Hotkey</l2>: <input name="pauseHotkeyStr" style="width:30px;" type="text"><input class="hvAANumber" name="pauseHotkeyCode" type="hidden" disabled="true"></label></div>',
+      '      <input id="pauseHotkey" type="checkbox"><label for="pauseHotkey"><l0>使用热键</l0><l1>使用熱鍵</l1><l2>Hotkey</l2>: <input name="pauseHotkeyStr" style="width:30px;" type="text"><input class="hvAANumber" name="pauseHotkeyCode" type="hidden" disabled="true"></label><br>',
+      '      <input id="steppingButton" type="checkbox"><label for="steppingButton"><l0>步进按钮</l0><l1>步進按鈕</l1><l2>Stepping Button</l2></label>; ',
+      '      <input id="steppingHotkey" type="checkbox"><label for="steppingHotkey"><l0>使用热键</l0><l1>使用熱鍵</l1><l2>Stepping Hotkey</l2>: <input name="steppingHotkeyStr" style="width:30px;" type="text"><input class="hvAANumber" name="steppingHotkeyCode" type="hidden" disabled="true"></label>',
+      '  </div>',
       '    <div><l0>警告相关</l0><l1>警告相關</l1><l2>To Warn</l2>: ',
       '      <input id="alert" type="checkbox"><label for="alert"><l0>音频警报</l0><l1>音頻警報</l1><l2>Audio Alarms</l2></label>; ',
       '      <input id="notification" type="checkbox"><label for="notification"><l0>桌面通知</l0><l1>桌面通知</l1><l2>Notifications</l2></label> ',
@@ -1380,6 +1410,10 @@ try {
     gE('input[name="pauseHotkeyStr"]', optionBox).onkeyup = function (e) {
       this.value = (/^[a-z]$/.test(e.key)) ? e.key.toUpperCase() : e.key;
       gE('input[name="pauseHotkeyCode"]', optionBox).value = e.keyCode;
+    };
+    gE('input[name="steppingHotkeyStr"]', optionBox).onkeyup = function (e) {
+      this.value = (/^[a-z]$/.test(e.key)) ? e.key.toUpperCase() : e.key;
+      gE('input[name="steppingHotkeyCode"]', optionBox).value = e.keyCode;
     };
     gE('.testNotification', optionBox).onclick = function () {
       _alert(0, '接下来开始预处理。\n如果询问是否允许，请选择允许', '接下來開始預處理。\n如果詢問是否允許，請選擇允許', 'Now, pretreat.\nPlease allow to receive notifications if you are asked for permission');
@@ -3042,12 +3076,14 @@ try {
     const names = g('option').battleOrderName?.split(',') ?? [];
     for (let i = 0; i < names.length; i++) {
       if(taskList[names[i]]()){
+        onSteppingDone();
         return;
       }
       delete taskList[names[i]];
     }
     for (let name in taskList) {
       if (taskList[name]()) {
+        onSteppingDone();
         return;
       }
     }
@@ -3132,6 +3168,21 @@ try {
       setValue('disabled', document.title);
       document.title = _alert(-1, 'hvAutoAttack暂停中', 'hvAutoAttack暫停中', 'hvAutoAttack Paused');
     }
+  }
+
+  function stepping() {
+    setValue('stepping', true);
+    if (getValue('disabled')) {
+      pauseChange();
+    }
+  }
+
+  function onSteppingDone(){
+    if(!getValue('stepping')){
+      return;
+    }
+    delValue('stepping');
+    pauseChange();
   }
 
   function SetExitBattleTimeout(alarm){
@@ -3241,6 +3292,7 @@ try {
           unsafeWindow.battle.clear_infopane();
           Debug.log('______________newRound', true);
           newRound(true);
+          onSteppingDone();
           onBattle();
         } catch(e) { e=>console.error(e) }
       }}
