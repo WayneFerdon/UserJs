@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.32
+// @version      2.90.33
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -469,8 +469,8 @@ try {
   function setPauseUI(parent) {
     setPauseButton(parent);
     setPauseHotkey();
-    setSteppingButton(parent);
-    setSteppingHotkey(parent);
+    setStepInButton(parent);
+    setStepInHotkey(parent);
   }
 
   function setPauseButton(parent) {
@@ -501,26 +501,26 @@ try {
     }, false);
   }
 
-  function setSteppingButton(parent) {
-    if (!g('option').steppingButton) {
+  function setStepInButton(parent) {
+    if (!g('option').stepInButton) {
       return;
     }
     const button = parent.appendChild(cE('button'));
-    button.innerHTML = '<l0>步进</l0><l1>步進</l1><l2>Stepping</l2>';
-    button.className = 'stepping';
-    button.onclick = stepping;
+    button.innerHTML = '<l0>步进</l0><l1>步進</l1><l2>StepIn</l2>';
+    button.className = 'stepIn';
+    button.onclick = stepIn;
   }
 
-  function setSteppingHotkey() {
-    if (!g('option').steppingHotkey) {
+  function setStepInHotkey() {
+    if (!g('option').stepInHotkey) {
       return;
     }
     document.addEventListener('keydown', (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
         return;
       }
-      if (e.keyCode === g('option').steppingHotkeyCode) {
-        stepping();
+      if (e.keyCode === g('option').stepInHotkeyCode) {
+        stepIn();
       }
     }, false);
   }
@@ -897,8 +897,8 @@ try {
       '    <div><l0>暂停相关</l0><l1>暫停相關</l1><l2>Pause with</l2>: ',
       '      <input id="pauseButton" type="checkbox"><label for="pauseButton"><l0>使用按钮</l0><l1>使用按鈕</l1><l2>Button</l2></label>; ',
       '      <input id="pauseHotkey" type="checkbox"><label for="pauseHotkey"><l0>使用热键</l0><l1>使用熱鍵</l1><l2>Hotkey</l2>: <input name="pauseHotkeyStr" style="width:30px;" type="text"><input class="hvAANumber" name="pauseHotkeyCode" type="hidden" disabled="true"></label><br>',
-      '      <input id="steppingButton" type="checkbox"><label for="steppingButton"><l0>步进按钮</l0><l1>步進按鈕</l1><l2>Stepping Button</l2></label>; ',
-      '      <input id="steppingHotkey" type="checkbox"><label for="steppingHotkey"><l0>使用热键</l0><l1>使用熱鍵</l1><l2>Stepping Hotkey</l2>: <input name="steppingHotkeyStr" style="width:30px;" type="text"><input class="hvAANumber" name="steppingHotkeyCode" type="hidden" disabled="true"></label>',
+      '      <input id="stepInButton" type="checkbox"><label for="stepInButton"><l0>步进按钮</l0><l1>步進按鈕</l1><l2>StepIn Button</l2></label>; ',
+      '      <input id="stepInHotkey" type="checkbox"><label for="stepInHotkey"><l0>使用热键</l0><l1>使用熱鍵</l1><l2>StepIn Hotkey</l2>: <input name="stepInHotkeyStr" style="width:30px;" type="text"><input class="hvAANumber" name="stepInHotkeyCode" type="hidden" disabled="true"></label>',
       '  </div>',
       '    <div><l0>警告相关</l0><l1>警告相關</l1><l2>To Warn</l2>: ',
       '      <input id="alert" type="checkbox"><label for="alert"><l0>音频警报</l0><l1>音頻警報</l1><l2>Audio Alarms</l2></label>; ',
@@ -1411,9 +1411,9 @@ try {
       this.value = (/^[a-z]$/.test(e.key)) ? e.key.toUpperCase() : e.key;
       gE('input[name="pauseHotkeyCode"]', optionBox).value = e.keyCode;
     };
-    gE('input[name="steppingHotkeyStr"]', optionBox).onkeyup = function (e) {
+    gE('input[name="stepInHotkeyStr"]', optionBox).onkeyup = function (e) {
       this.value = (/^[a-z]$/.test(e.key)) ? e.key.toUpperCase() : e.key;
-      gE('input[name="steppingHotkeyCode"]', optionBox).value = e.keyCode;
+      gE('input[name="stepInHotkeyCode"]', optionBox).value = e.keyCode;
     };
     gE('.testNotification', optionBox).onclick = function () {
       _alert(0, '接下来开始预处理。\n如果询问是否允许，请选择允许', '接下來開始預處理。\n如果詢問是否允許，請選擇允許', 'Now, pretreat.\nPlease allow to receive notifications if you are asked for permission');
@@ -2135,6 +2135,9 @@ try {
     targets ??= [g('battle').monsterStatus[0]];
     for (i in parms) {
       for (target of targets){
+        if (target.isDead) {
+          continue;
+        }
         let parmResult = true;
         for (j = 0; j < parms[i].length; j++) {
           let result = true;
@@ -3076,14 +3079,15 @@ try {
     const names = g('option').battleOrderName?.split(',') ?? [];
     for (let i = 0; i < names.length; i++) {
       if(taskList[names[i]]()){
-        onSteppingDone();
+        console.log(names[i]);
+        onStepInDone();
         return;
       }
       delete taskList[names[i]];
     }
     for (let name in taskList) {
       if (taskList[name]()) {
-        onSteppingDone();
+        onStepInDone();
         return;
       }
     }
@@ -3170,18 +3174,20 @@ try {
     }
   }
 
-  function stepping() {
-    setValue('stepping', true);
+  function stepIn() {
+    setValue('stepIn', true);
     if (getValue('disabled')) {
+      g('timeNow', time(0));
       pauseChange();
     }
   }
 
-  function onSteppingDone(){
-    if(!getValue('stepping')){
+  function onStepInDone(){
+    if(!getValue('stepIn')){
       return;
     }
-    delValue('stepping');
+    console.trace('onStepInDone');
+    delValue('stepIn');
     pauseChange();
   }
 
@@ -3199,22 +3205,30 @@ try {
   }
 
   function reloader() {
-    let obj; let a; let cost;
     const battleUnresponsive = {
-      'Alert': { Method: setAlarm },
-      'Reload': { Method: goto },
-      'Alt': { Method: gotoAlt }
+      'Alert': { method: setAlarm },
+      'Reload': { method: goto },
+      'Alt': { method: gotoAlt }
     }
     function clearBattleUnresponsive(){
-      Object.keys(battleUnresponsive).forEach(t=>clearTimeout(battleUnresponsive[t].Timeout));
+      Object.keys(battleUnresponsive).forEach(t=>clearTimeout(battleUnresponsive[t].timeout));
     }
+    async function onBattleUnresponsive(method) {
+      if(getValue('disabled')){
+        await pauseAsync(_1s);
+        return await onBattleUnresponsive();
+      }
+      method();
+    }
+
+    let obj; let a; let cost;
     const eventStart = cE('a');
     eventStart.id = 'eventStart';
     eventStart.onclick = function () {
       a = unsafeWindow.info;
       for(let t in g('option').battleUnresponsive) {
         if (g('option').battleUnresponsive[t]) {
-          battleUnresponsive[t].Timeout = setTimeout(battleUnresponsive[t].Method, Math.max(1, g('option').battleUnresponsiveTime[t]) * _1s);
+          battleUnresponsive[t].timeout = setTimeout(()=>onBattleUnresponsive(battleUnresponsive[t].method), Math.max(1, g('option').battleUnresponsiveTime[t]) * _1s);
         }
       }
       if (g('option').recordUsage) {
@@ -3232,6 +3246,7 @@ try {
       }
     };
     gE('body').appendChild(eventStart);
+
     const eventEnd = cE('a');
     eventEnd.id = 'eventEnd';
     eventEnd.onclick = function () {
@@ -3258,13 +3273,27 @@ try {
       if (g('option').recordUsage) {
         recordUsage2();
       }
-      if (g('battle').roundNow !== g('battle').roundAll) { // Next Round
-        if(g('option').NewRoundWaitTime){
-          setTimeout(onNewRound, g('option').NewRoundWaitTime * _1s);
-        } else {
-          onNewRound();
+      onRoundEnd();
+      async function onRoundEnd() {
+        if(getValue('disabled')){
+          await pauseAsync(_1s);
+          return await onRoundEnd();
         }
-        return;
+        if (g('battle').roundNow === g('battle').roundAll) { // Next Round
+          if (g('monsterAlive') > 0) { // Defeat
+            SetExitBattleTimeout(g('option').autoSkipDefeated ? 'SkipDefeated' : 'Defeat');
+          }
+          if (g('battle').roundNow === g('battle').roundAll) { // Victory
+            SetExitBattleTimeout('Victory');
+          }
+        } else {
+          if(g('option').NewRoundWaitTime){
+            setTimeout(onNewRound, g('option').NewRoundWaitTime * _1s);
+          } else {
+            onNewRound();
+          }
+        }
+        clearBattleUnresponsive();
 
         async function onNewRound(){ try {
           if(getValue('disabled')){
@@ -3292,20 +3321,13 @@ try {
           unsafeWindow.battle.clear_infopane();
           Debug.log('______________newRound', true);
           newRound(true);
-          onSteppingDone();
+          onStepInDone();
           onBattle();
-        } catch(e) { e=>console.error(e) }
-      }}
-
-      if (g('monsterAlive') > 0) { // Defeat
-        SetExitBattleTimeout(g('option').autoSkipDefeated ? 'SkipDefeated' : 'Defeat');
+        } catch(e) { e=>console.error(e) }}
       }
-      if (g('battle').roundNow === g('battle').roundAll) { // Victory
-        SetExitBattleTimeout('Victory');
-      }
-      clearBattleUnresponsive();
     };
     gE('body').appendChild(eventEnd);
+
     window.sessionStorage.delay = g('option').delay;
     window.sessionStorage.delay2 = g('option').delay2;
     const fakeApiCall = cE('script');
@@ -4056,6 +4078,7 @@ try {
       getMonster(getRangeCenter(target, range).id).click();
       return true;
     }
+    return false;
   }
 
   function useDeSkill() { // 自动施法DEBUFF技能
@@ -4284,6 +4307,9 @@ try {
           break;
         }
       }
+    }
+    if(!target || target.isDead){
+      return false;
     }
     getMonster(getRangeCenter(target, range, !attackStatus).id).click();
     return true;
