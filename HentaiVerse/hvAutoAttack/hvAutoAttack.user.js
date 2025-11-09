@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.35
+// @version      2.90.36
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -449,15 +449,6 @@
       return document.createElement(name);
     }
 
-    function loadIframe(iframe) {
-      return new Promise((resolve, reject) => {
-        // 监听iframe的load事件
-        iframe.onload = () => {
-          resolve("Iframe loaded successfully");
-        };
-      });
-    }
-
     function $doc(h) {
       const doc = document.implementation.createHTMLDocument('');
       doc.documentElement.innerHTML = h;
@@ -521,7 +512,7 @@
           option[itemArray[0]][itemArray[1]] ??= option[aliasDict[key]];
         }
       }
-    // 迁移旧版本最后的慈悲条件为可配置条件
+      // 迁移旧版本最后的慈悲条件为可配置条件
       const mercifulBlowCondition = option.skillT3Condition ?? { "0": [] };
       const size = Object.keys(mercifulBlowCondition).length;
       if (option.mercifulBlowStrict) {
@@ -1283,8 +1274,7 @@
         }
         const target = (e.target.tagName === 'SPAN') ? e.target : e.target.parentNode;
         const name = target.getAttribute('name');
-        let i; let
-          _html;
+        let i, _html;
         if (name === 'Drop') { // 掉落监测
           let drop = getValue('drop', true) || {};
           const dropOld = getValue('dropOld', true) || [];
@@ -1732,8 +1722,7 @@
           version: g('version'),
         };
         let inputs = gE('input,select', 'all', optionBox);
-        let itemName; let itemArray; let itemValue; let
-          i;
+        let itemName, itemArray, itemValue, i;
         for (i = 0; i < inputs.length; i++) {
           if (inputs[i].className === 'hvAADebug') {
             continue;
@@ -1809,12 +1798,10 @@
         optionBox.style.display = 'none';
       };
       if (g('option')) {
-        let i; let j; let
-          k;
+        let i, j, k;
         const _option = g('option');
         const inputs = gE('input,select', 'all', optionBox);
-        let itemName; let itemArray; let itemValue; let
-          _html;
+        let itemName, itemArray, itemValue, _html;
         for (i = 0; i < inputs.length; i++) {
           if (inputs[i].className === 'hvAADebug') {
             continue;
@@ -2122,7 +2109,7 @@
     }
 
     function checkCondition(parms, targets = undefined) {
-      let i; let j; let k; let target;
+      let i, j, k, target;
 
       targets ??= [g('battle').monsterStatus[0]];
       if (typeof parms === 'undefined') {
@@ -2409,7 +2396,7 @@
         dict[e.href ?? `newDawn`] = e;
       }
       try {
-    // if is latest version data
+        // if is latest version data
         for (let e of encounter) { }
       } catch {
         // if old versions
@@ -2580,42 +2567,33 @@
         $async.logSwitch(arguments);
         let eqps;
         if (hvVersion < 91) {
-          const doc = $doc(await $ajax.fetch('?s=Forge&ss=re'));
+          const href = `?s=Forge&ss=re`;
+          const doc = $doc(await $ajax.fetch(href));
           const json = JSON.parse((await $ajax.fetch(gE('#mainpane>script[src]', doc).src)).match(/{.*}/)[0]);
-          eqps = (await Promise.all(Array.from(gE('.eqp>[id]', 'all', doc)).map(async eqp => {
-            try {
-              const id = eqp.id.match(/\d+/)[0];
-              const condition = 1 * json[id].d.match(/Condition: \d+ \/ \d+ \((\d+)%\)/)[1];
-              if (condition > g('option').repairValue) {
-                return;
-              }
-              return gE('.messagebox_error', $doc(await $ajax.fetch(`?s=Forge&ss=re`, `select_item=${id}`)))?.innerText ? undefined : id;
-            } catch (e) { console.error(e) }
-          }))).filter(e => e);
+          eqps = await Promise.all(Array.from(gE('.eqp>[id]', 'all', doc)).map(async eqp => { try {
+            const id = eqp.id.match(/\d+/)[0];
+            const condition = 1 * json[id].d.match(/Condition: \d+ \/ \d+ \((\d+)%\)/)[1];
+            if (condition > g('option').repairValue) {
+              return;
+            }
+            const after = $doc(await $ajax.fetch(href, `select_item=${id}`));
+            return gE('.messagebox_error', )?.innerText ? undefined : id;
+          } catch (e) { console.error(e) } }));
         } else {
-          const doc = $doc(await $ajax.fetch('?s=Bazaar&ss=am&screen=repair&filter=equipped'));
-          eqps = (await Promise.all(Array.from(gE('#equiplist>table>tbody>tr:not(.eqselall):not(.eqtplabel)', 'all', doc)).map(async eqp => {
-            try {
-              const id = eqp.getAttribute('onmouseover').match(/hover_equip\((\d+)\)/)[1];
-              const condition = 1 * gE('td:last-child', eqp).childNodes[0].textContent.replace('%', '');
-              if (condition > g('option').repairValue) {
-                return;
-              }
-              const href = `?s=Bazaar&ss=am&screen=repair&filter=equipped&eqids[]=${id}`;
-              const iframe = cE('iframe');
-              iframe.src = href;
-              iframe.style.cssText += "display:none"
-              document.body.appendChild(iframe);
-              await loadIframe(iframe);
-              const doc = iframe.contentWindow.document;
-              const disabled = gE('#equipsubmit', doc).getAttribute('disabled');
-              if (disabled !== undefined && disabled !== null) {
-                return id;
-              }
-              gE('#equipform', doc).submit();
-            } catch (e) { console.error(e) }
-          }))).filter(e => e);
+          const href = `?s=Bazaar&ss=am&screen=repair&filter=equipped`;
+          const doc = $doc(await $ajax.fetch(href));
+          const token = gE('#equipform>input[name="postoken"]', doc).value;
+          eqps = await Promise.all(Array.from(gE('#equiplist>table>tbody>tr:not(.eqselall):not(.eqtplabel)', 'all', doc)).map(async eqp => { try {
+            const id = gE('input', eqp).value;
+            const condition = 1 * gE('td:last-child', eqp).textContent.replace('%', '');
+            if (condition > g('option').repairValue) {
+              return;
+            }
+            const after = $doc(await $ajax.fetch(href, `&eqids[]=${id}&postoken=${token}&replace_charms=on`));
+            return gE(`#e${id}`, after) ? id : undefined;
+          } catch (e) { console.error(e) } }));
         }
+        eqps = eqps.filter(e=>e);
         if (eqps.length) {
           console.log('eqps need repair: ', eqps);
           document.title = `[R!]` + document.title;
@@ -2883,28 +2861,12 @@
           return;
         }
         if (hvVersion < 91) {
-          writeArenaStart();
-          $ajax.open(href, `initid=${id === 'gr' ? 1 : id}&inittoken=${token}`);
-          $async.logSwitch(arguments);
-          return;
+          token = `&inittoken=${token}`;
+        } else {
+          token = `&postoken=${gE('#initform>input[name="postoken"]', $doc(await $ajax.fetch(href))).value}`;
         }
-        const iframe = cE('iframe');
-        iframe.src = href;
-        iframe.style.cssText += "display:none";
-        document.body.appendChild(iframe);
-        await loadIframe(iframe);
-        iframe.contentWindow.confirm = (message) => true; // 自动点击进入
-        iframe.contentWindow.alert = (message) => undefined;
-        for (let btn of getStartBattleButtons(iframe.contentWindow.document)) {
-          if (btn.id * 1 !== id && btn.id !== id) {
-            continue;
-          }
-          writeArenaStart();
-          btn.onclick();
-          await loadIframe(iframe);
-          goto();
-          break;
-        }
+        writeArenaStart();
+        $ajax.open(href, `initid=${id === 'gr' ? 1 : id}${token}`);
         $async.logSwitch(arguments);
       } catch (e) { console.error(e) }
     }
@@ -3194,8 +3156,8 @@
           let cew = j === i ? centralExtraWeight : 0; // cew <= 0, 增加未命中权重，降低命中权重
           let mon = msTemp[j];
           if (j < 0 || j >= msTemp.length // 超出范围
-            || mon.isDead // 死亡目标
-            || (excludeCondition && excludeCondition(mon))) { // 特殊排除判定
+              || mon.isDead // 死亡目标
+              || (excludeCondition && excludeCondition(mon))) { // 特殊排除判定
             rank += unreachableWeight - cew;
             continue;
           }
@@ -3258,7 +3220,7 @@
         method();
       }
 
-      let obj; let a; let cost;
+      let obj, a, cost;
       const eventStart = cE('a');
       eventStart.id = 'eventStart';
       eventStart.onclick = function () {
@@ -3851,8 +3813,7 @@
           img: 'absorb',
         },
       };
-      let i; let
-        j;
+      let i, j;
       const skillPack = g('option').buffSkillOrderValue.split(',');
       if (g('option').channelSkill) {
         for (i = 0; i < skillPack.length; i++) {
@@ -4011,10 +3972,10 @@
         return false;
       }
 
-      const infusionLib = [null, {
-        id: 12101,
-        img: 'fireinfusion',
-      }, {
+      const infusionLib = [ null, {
+          id: 12101,
+          img: 'fireinfusion',
+        }, {
           id: 12201,
           img: 'coldinfusion',
         }, {
@@ -4272,13 +4233,13 @@
     }
 
     function attack() { // 自动打怪
-    // 如果
-    // 1. 开启了自动以太水龙头
-    // 2. 目标怪在魔力合流状态中
-    // 3. 未获得以太水龙头*2 或 *1
-    // 4. 满足条件
-    // 使用物理普通攻击，跳过Offensive Magic
-    // 否则按照属性攻击模式释放Spell > Offensive Magic
+      // 如果
+      // 1. 开启了自动以太水龙头
+      // 2. 目标怪在魔力合流状态中
+      // 3. 未获得以太水龙头*2 或 *1
+      // 4. 满足条件
+      // 使用物理普通攻击，跳过Offensive Magic
+      // 否则按照属性攻击模式释放Spell > Offensive Magic
 
       const updateAbility = {
         4301: { //火
@@ -4472,8 +4433,7 @@
         '#EXP': 0,
         '#Credit': 0,
       };
-      let item; let name; let amount; let
-        regexp;
+      let item, name, amount, regexp;
       for (let i = 0; i < battleLog.length; i++) {
         if (/^You gain \d+ (EXP|Credit)/.test(battleLog[i].textContent)) {
           regexp = battleLog[i].textContent.match(/^You gain (\d+) (EXP|Credit)/);
@@ -4561,8 +4521,7 @@
         proficiency: { // 熟练度
         },
       };
-      let text; let magic; let point; let
-        reg;
+      let text, magic, point, reg;
       const battle = g('battle');
       if (g('monsterAlive') === 0) {
         stats.self._turn += battle.turn;
