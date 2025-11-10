@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.36
+// @version      2.90.37
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1233,9 +1233,46 @@
         '  <div><l0>记录装备的最低品质</l0><l1>記錄裝備的最低品質</l1><l2>Minimum drop quality</l2>: <select name="dropQuality"><option value="0">Crude</option><option value="1">Fair</option><option value="2">Average</option><option value="3">Superior</option><option value="4">Exquisite</option><option value="5">Magnificent</option><option value="6">Legendary</option><option value="7">Peerless</option></select></div>',
         '  <table></table></div>',
 
-        '<div class="hvAATab hvAACenter" id="hvAATab-Usage">',
-        '  <span class="hvAATitle"><l0>数据记录</l0><l1>數據記錄</l1><l2>Usage Tracking</l2></span><button class="reRecordUsage"><l01>重置</l01><l2>Reset</l2></button>',
-        '  <table></table></div>',
+        '<div class="hvAATab" id="hvAATab-Usage">',
+        '  <button class="reRecordUsage"><l0>重置数据记录</l0><l1>重置數據記錄</l1><l2>Reset Usage Tracking</l2></button><br>',
+        '  <div><b><l0>自身</l0><l1>自身</l1><l2>Self</l2></b>',
+        '  <div style="display: grid; grid-template-columns: repeat(5, 1fr);">' ,
+        '    <div style="justify-self: start;"><input id="record_turn" type="checkbox"><l0></l0><l1></l1><l2></l2>Turns</div>',
+        '    <div style="justify-self: start;"><input id="record_round" type="checkbox"><l0></l0><l1></l1><l2></l2>Rounds</div>',
+        '    <div style="justify-self: start;"><input id="record_battle" type="checkbox"><l0></l0><l1></l1><l2></l2>Battle</div>',
+        '    <div style="justify-self: start;"><input id="record_monster" type="checkbox"><l0></l0><l1></l1><l2></l2>Monster</div>',
+        '    <div style="justify-self: start;"><input id="record_boss" type="checkbox"><l0></l0><l1></l1><l2></l2>Boss</div>',
+        '    <div style="justify-self: start;"><input id="record_evade" type="checkbox"><l0>闪避</l0><l1>閃避</l1><l2>Evade</l2></div>',
+        '    <div style="justify-self: start;"><input id="record_miss" type="checkbox"><l0>未命中</l0><l1>未命中</l1><l2>Miss</l2></div>',
+        '    <div style="justify-self: start;"><input id="record_focus" type="checkbox"><l0>集中</l0><l1>集中</l1><l2>Focus</l2></div>',
+        '    <div style="justify-self: start;"><input id="record_mp" type="checkbox">MP<l0>总消耗</l0><l1>總消耗</l1><l2>Cost</l2></div>',
+        '    <div style="justify-self: start;"><input id="record_oc" type="checkbox">OC<l0>总消耗</l0><l1>總消耗</l1><l2>Cost</l2></div>',
+        '  </div>',
+        '  </div>',
+        '  <div><b><l0>操作</l0><l1>操作</l1><l2>Actions</l2></b>',
+        '  <div style="display: grid; grid-template-columns: repeat(5, 1fr);">' ,
+        '    <div style="justify-self: start;"><input id="record_restore" type="checkbox"><l0>回复 (总量)</l0><l1>回复 (總量)</l1><l2>Restore (Amount)</l2></div>',
+        '    <div style="justify-self: start;"><input id="record_items" type="checkbox"><l0>物品 (次数)</l0><l1>物品 (次數)</l1><l2>Items (Count)</l2></div>',
+        '    <div style="justify-self: start;"><input id="record_magic" type="checkbox"><l0>技能 (次数)</l0><l1>技能 (次數)</l1><l2>Magic (Count)</l2></div>',
+        '    <div style="justify-self: start;"><input id="record_damage" type="checkbox"><l0>伤害 (总量)</l0><l1>傷害 (總量)</l1><l2>Damage (Amount)</l2></div>',
+        '    <div style="justify-self: start;"><input id="record_proficiency" type="checkbox"><l0>熟练度 (总量)</l0><l1>熟練度 (總量)</l1><l2>Proficiency (Amount)</l2></div>',
+        '  </div>',
+        '  </div>',
+        '  <div><b><input id="record_hurt" type="checkbox"><l0>受伤 (总量)</l0><l1>受傷 (總量)</l1><l2>Hurt (Amount)</l2></b>',
+        '  <div style="display: grid; grid-template-columns: repeat(5, 1fr);">' ,
+        '    <div style="justify-self: start;"><input id="record_hurtavg" type="checkbox"><l0>平均</l0><l1>平均</l1><l2>Avg</l2></div>',
+        '    <div style="justify-self: start;"><input id="record_hurtcount" type="checkbox"><l0>次数</l0><l1>次數</l1><l2>Count</l2></div>',
+        '    <div style="justify-self: start;"><input id="record_hurttotal" type="checkbox"><l0>总量</l0><l1>總量</l1><l2>Total</l2></div>',
+        '    <div style="justify-self: start;"><input id="record_hurtmavg" type="checkbox"><l0>法术平均</l0><l1>法術平均</l1><l2>Magic Avg</l2></div>',
+        '    <div style="justify-self: start;"><input id="record_hurtmcount" type="checkbox"><l0>法术次数</l0><l1>法術次數</l1><l2>Magic Count</l2></div>',
+        '    <div style="justify-self: start;"><input id="record_hurtmtotal" type="checkbox"><l0>法术总量</l0><l1>法術總量</l1><l2>Magic Total</l2></div>',
+        '    <div style="justify-self: start;"><input id="record_hurtpavg" type="checkbox"><l0>物理平均</l0><l1>物理平均</l1><l2>Physical Avg</l2></div>',
+        '    <div style="justify-self: start;"><input id="record_hurtpcount" type="checkbox"><l0>物理次数</l0><l1>物理次數</l1><l2>Physical Count</l2></div>',
+        '    <div style="justify-self: start;"><input id="record_hurtptotal" type="checkbox"><l0>物理总量</l0><l1>物理總量</l1><l2>Physical Total</l2></div>',
+        '  </div>',
+        '  </div>',
+        '  <table></table>',
+        '</div>',
 
         '<div class="hvAATab hvAACenter" id="hvAATab-Tools">',
         '  <div><span class="hvAATitle"><l0>当前状况</l0><l1>當前狀況</l1><l2>Current status</l2></span>: ',
@@ -1320,13 +1357,13 @@
           let stats = getValue('stats', true) || {};
           const statsOld = getValue('statsOld', true) || [];
           const translation = {
-            self: '<l0>自身 (次数)</l0><l1>自身 (次數)</l1><l2>Self (Frequency)</l2>',
+            self: '<l0>自身</l0><l1>自身</l1><l2>Self</l2>',
             restore: '<l0>回复 (总量)</l0><l1>回复 (總量)</l1><l2>Restore (Amount)</l2>',
             items: '<l0>物品 (次数)</l0><l1>物品 (次數)</l1><l2>Items (Frequency)</l2>',
             magic: '<l0>技能 (次数)</l0><l1>技能 (次數)</l1><l2>Magic (Frequency)</l2>',
             damage: '<l0>伤害 (总量)</l0><l1>傷害 (總量)</l1><l2>Damage (Amount)</l2>',
-            hurt: '<l0>受伤 (总量)</l0><l1>受傷 (總量)</l1><l2>Loss (Amount)</l2>',
             proficiency: '<l0>熟练度 (总量)</l0><l1>熟練度 (總量)</l1><l2>Proficiency (Amount)</l2>',
+            hurt: '<l0>受伤 (总量)</l0><l1>受傷 (總量)</l1><l2>Loss (Amount)</l2>',
           };
           _html = '<tbody>';
           if (statsOld.length === 0 || (statsOld.length === 1 && !getValue('stats', true))) {
@@ -2613,7 +2650,7 @@
         return;
       }
       const staminaChecked = checkStamina(condition.staminaLow, condition.staminaCost);
-      console.log("staminaChecked", condition.staminaLow, condition.staminaCost, staminaChecked);
+      console.log(`stamina check done:\n${condition.staminaLow ? `low: ${condition.staminaLow}\n` : ''}${condition.staminaCost ? `cost: ${condition.staminaCost}\n` : ''}status: ${staminaChecked === 1 ? 'succeed' : staminaChecked === 0 ? 'failed' : 'failed with nature recover'}`);
       if (staminaChecked === 1) { // succeed
         return true;
       }
@@ -3973,24 +4010,24 @@
       }
 
       const infusionLib = [ null, {
-          id: 12101,
-          img: 'fireinfusion',
-        }, {
-          id: 12201,
-          img: 'coldinfusion',
-        }, {
-          id: 12301,
-          img: 'elecinfusion',
-        }, {
-          id: 12401,
-          img: 'windinfusion',
-        }, {
-          id: 12501,
-          img: 'holyinfusion',
-        }, {
-          id: 12601,
-          img: 'darkinfusion',
-        }];
+        id: 12101,
+        img: 'fireinfusion',
+      }, {
+        id: 12201,
+        img: 'coldinfusion',
+      }, {
+        id: 12301,
+        img: 'elecinfusion',
+      }, {
+        id: 12401,
+        img: 'windinfusion',
+      }, {
+        id: 12501,
+        img: 'holyinfusion',
+      }, {
+        id: 12601,
+        img: 'darkinfusion',
+      }];
       if (gE(`.bti3>div[onmouseover*="(${infusionLib[g('attackStatus')].id})"]`) && !getPlayerBuff(infusionLib[[g('attackStatus')]].img)) {
         gE(`.bti3>div[onmouseover*="(${infusionLib[g('attackStatus')].id})"]`).click();
         return true;
@@ -4352,10 +4389,11 @@
       const sec = Math.max(1, weights.length - 1);
       const max = 360 * 2 / 3;
       const colorTextList = [];
-      if (g('option').weightBackground) {
+      const weightBG = g('option').weightBackground
+      if (weightBG) {
         status.forEach(s => {
           const rank = weights.indexOf(s.finWeight);
-          let colorText = (g('option').weightBackground[rank + 1] ?? [])[0];
+          let colorText = (weightBG[rank + 1] ?? [])[0];
           colorTextList[rank] = colorText;
         });
       }
@@ -4365,23 +4403,21 @@
         if (!getMonster(id) || !gE(monsterStateKeys.name, getMonster(id))) {
           return;
         }
-        if (g('option').displayWeightBackground) {
-          if (g('option').weightBackground) {
-            let colorText = colorTextList[rank];
-            let remainAttemp = 10; // 避免无穷递归
-            while (remainAttemp > 0 && colorText && colorText.indexOf(`<style_`) !== -1) {
-              for (let i = 0; i < colorTextList.length; i++) {
-                colorText = colorText.replace(`<style_${i + 1}>`, colorTextList[i]);
-              }
-              remainAttemp--;
+        if (g('option').displayWeightBackground && weightBG) {
+          let colorText = colorTextList[rank];
+          let remainAttemp = 10; // 避免无穷递归
+          while (remainAttemp > 0 && colorText && colorText.indexOf(`<style_`) !== -1) {
+            for (let i = 0; i < colorTextList.length; i++) {
+              colorText = colorText.replace(`<style_${i + 1}>`, colorTextList[i]);
             }
-            try {
-              colorText = eval(colorText.replace('<rank>', rank).replace('<all>', weights.length));
-            }
-            catch {
-            }
-            getMonster(id).style.cssText += `background: ${colorText};`;
+            remainAttemp--;
           }
+          try {
+            colorText = eval(colorText.replace('<rank>', rank).replace('<all>', weights.length));
+          }
+          catch {
+          }
+          getMonster(id).style.cssText += `background: ${colorText};`;
         }
         gE(monsterStateKeys.name, getMonster(id)).style.cssText += 'display: flex; flex-direction: row;'
         if (g('option').displayWeight) {
@@ -4484,144 +4520,6 @@
       }
     }
 
-    function recordUsage(parm) {
-      const stats = getValue('stats', true) || {
-        self: {
-          _startTime: time(3),
-          _turn: 0,
-          _round: 0,
-          _battle: 0,
-          _monster: 0,
-          _boss: 0,
-          evade: 0,
-          miss: 0,
-          focus: 0,
-        },
-        restore: { // 回复量
-        },
-        items: { // 物品使用次数
-        },
-        magic: { // 技能使用次数
-        },
-        damage: { // 技能攻击造成的伤害
-        },
-        hurt: { // 受到攻击造成的伤害
-          mp: 0,
-          oc: 0,
-          _avg: 0,
-          _count: 0,
-          _total: 0,
-          _mavg: 0,
-          _mcount: 0,
-          _mtotal: 0,
-          _pavg: 0,
-          _pcount: 0,
-          _ptotal: 0,
-        },
-        proficiency: { // 熟练度
-        },
-      };
-      let text, magic, point, reg;
-      const battle = g('battle');
-      if (g('monsterAlive') === 0) {
-        stats.self._turn += battle.turn;
-        stats.self._round += 1;
-        if (battle.roundNow === battle.roundAll) {
-          stats.self._battle += 1;
-        }
-      }
-      if (parm.mode === 'magic') {
-        magic = parm.magic;
-        stats.magic[magic] = (magic in stats.magic) ? stats.magic[magic] + 1 : 1;
-        stats.hurt.mp += parm.mp;
-        stats.hurt.oc += parm.oc;
-      } else if (parm.mode === 'items') {
-        stats.items[parm.item] = (parm.item in stats.items) ? stats.items[parm.item] + 1 : 1;
-      } else {
-        stats.self[parm.mode] = (parm.mode in stats.self) ? stats.self[parm.mode] + 1 : 1;
-      }
-      const debug = false;
-      let log = false;
-      for (let i = 0; i < parm.log.length; i++) {
-        if (parm.log[i].className === 'tls') {
-          break;
-        }
-        text = parm.log[i].textContent;
-        if (debug) {
-          console.log(text);
-        }
-        if (reg = matchDamageInfoFromLogText(text)) {
-          magic = reg[2].replace('ing', '');
-          point = reg[1] * 1;
-          stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
-          stats.hurt._count++;
-          stats.hurt._total += point;
-          stats.hurt._avg = Math.round(stats.hurt._total / stats.hurt._count);
-          if (magic.match(/pierc|crush|slash/)) {
-            stats.hurt._pcount++;
-            stats.hurt._ptotal += point;
-            stats.hurt._pavg = Math.round(stats.hurt._ptotal / stats.hurt._pcount);
-          } else {
-            stats.hurt._mcount++;
-            stats.hurt._mtotal += point;
-            stats.hurt._mavg = Math.round(stats.hurt._mtotal / stats.hurt._mcount);
-          }
-          if (text.match(/You ((partially )*(evade|parry|block)( and )*)+ the attack/)) {
-            stats.self.evade++;
-          }
-        } else if (text.match(/^[\w ]+ [a-z]+s [\w+ -]+ for \d+( .*)? damage/) || text.match(/^You .* for \d+ .* damage/)) {
-          reg = text.match(/for (\d+)( .*)? damage/);
-          magic = text.match(/^[\w ]+ [a-z]+s [\w+ -]+ for/) ? text.match(/^([\w ]+) [a-z]+s [\w+ -]+ for/)[1].replace(/^Your /, '') : text.match(/^You (\w+)/)[1];
-          point = reg[1] * 1;
-          stats.damage[magic] = (magic in stats.damage) ? stats.damage[magic] + point : point;
-        } else if (text.match(/Vital Theft hits .*? for \d+ damage/)) {
-          magic = 'Vital Theft';
-          point = text.match(/Vital Theft hits .*? for (\d+) damage/)[1] * 1;
-          stats.damage[magic] = (magic in stats.damage) ? stats.damage[magic] + point : point;
-        } else if (text.match(/You (evade|parry|block) the attack|misses the attack against you|(casts|uses) .* misses the attack/)) {
-          stats.self.evade++;
-        } else if (text.match(/(resists your spell|Your spell is absorbed|(evades|parries) your (attack|spell))|Your attack misses its mark|Your spell fails to connect/)) {
-          stats.self.miss++;
-        } else if (text.match(/You gain the effect Focusing/)) {
-          stats.self.focus++;
-        } else if (text.match(/^Recovered \d+ points of/) || text.match(/You are healed for \d+ Health Points/) || text.match(/You drain \d+ HP from/)) {
-          magic = (parm.mode === 'defend') ? 'defend' : text.match(/You drain \d+ HP from/) ? 'drain' : parm.magic || parm.item;
-          point = text.match(/\d+/)[0] * 1;
-          stats.restore[magic] = (magic in stats.restore) ? stats.restore[magic] + point : point;
-        } else if (text.match(/(restores|drain) \d+ points of/)) {
-          reg = text.match(/^(.*) restores (\d+) points of (\w+)/) || text.match(/^You (drain) (\d+) points of (\w+)/);
-          magic = reg[1];
-          point = reg[2] * 1;
-          stats.restore[magic] = (magic in stats.restore) ? stats.restore[magic] + point : point;
-        } else if (text.match(/absorbs \d+ points of damage from the attack into \d+ points of \w+ damage/)) {
-          reg = text.match(/(.*) absorbs (\d+) points of damage from the attack into (\d+) points of (\w+) damage/);
-          point = reg[2] * 1;
-          magic = matchDamageInfoFromLogText(parm.log[i - 1].textContent, false)[2].replace('ing', '');
-          stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
-          point = reg[3] * 1;
-          magic = `${reg[1].replace('Your ', '')}_${reg[4]}`;
-          stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
-        } else if (text.match(/You gain .* proficiency/)) {
-          reg = text.match(/You gain ([\d.]+) points of (.*?) proficiency/);
-          magic = reg[2];
-          point = reg[1] * 1;
-          stats.proficiency[magic] = (magic in stats.proficiency) ? stats.proficiency[magic] + point : point;
-          stats.proficiency[magic] = stats.proficiency[magic].toFixed(3) * 1;
-        } else if (text.trim() === '' || text.match(/You (gain |cast |use |are Victorious|have reached Level|have obtained the title|do not have enough MP)/) || text.match(/Cooldown|has expired|Spirit Stance|gains the effect|insufficient Spirit|Stop beating dead ponies| defeat |Clear Bonus|brink of defeat|Stop \w+ing|Spawned Monster| drop(ped|s) |defeated/)) {
-          // nothing;
-        } else if (debug) {
-          log = true;
-          setAudioAlarm('Error');
-          console.log(text);
-        }
-      }
-      if (debug && log) {
-        console.table(stats);
-        pauseChange();
-      }
-      setValue('stats', stats);
-    }
-
     function matchDamageInfoFromLogText(text, isSkipUnmatched = true) {
       const regList = [
         /you for (\d+) (\w+) damage/,
@@ -4641,10 +4539,210 @@
       }
     }
 
+    function recordUsage(parm) {
+      const filter = g('option').record;
+      if (!filter) {
+        return;
+      }
+      const stats = getValue('stats', true) || {};
+      stats.self ??= { _startTime: time(3) };
+      stats.self._turn = filter.turn ? stats.self._turn ?? 0 : undefined;
+      stats.self._round = filter.round ? stats.self._round ?? 0 : undefined;
+      stats.self._battle = filter.battle ? stats.self._battle ?? 0 : undefined;
+      stats.self._monster = filter.monster ? stats.self._monster ?? 0 : undefined;
+      stats.self._boss = filter.boss ? stats.self._boss ?? 0 : undefined;
+      stats.self.evade = filter.evade ? stats.self.evade ?? 0 : undefined;
+      stats.self.miss = filter.miss ? stats.self.miss ?? 0 : undefined;
+      stats.self.focus = filter.focus ? stats.self.focus ?? 0 : undefined;
+      stats.self.mp = filter.mp ? stats.self.mp ?? 0 : undefined;
+      stats.self.oc = filter.oc ? stats.self.oc ?? 0 : undefined;
+      stats.restore = filter.restore ? stats.restore ?? {} : undefined; // 回复量
+      stats.items = filter.items ? stats.items ?? {} : undefined; // 物品使用次数
+      stats.magic = filter.magic ? stats.magic ?? {} : undefined; // 技能使用次数
+      stats.damage = filter.damage ? stats.damage ?? {} : undefined; // 技能攻击造成的伤害
+      stats.proficiency = filter.proficiency ? stats.proficiency ?? {} : undefined; // 熟练度
+      stats.hurt = filter.hurt ? stats.hurt ?? {} : undefined; // 受到攻击造成的伤害
+      if (filter.hurt) {
+        stats.hurt._avg = filter.hurtavg ? stats.hurt._avg ?? 0 : undefined;
+        stats.hurt._count = filter.hurtcount ? stats.hurt._count ?? 0 : undefined;
+        stats.hurt._total = filter.hurttotal ? stats.hurt._total ?? 0 : undefined;
+        stats.hurt._mavg = filter.hurtmavg ? stats.hurt._mavg ?? 0 : undefined;
+        stats.hurt._mcount = filter.hurtmcount ? stats.hurt._mcount ?? 0 : undefined;
+        stats.hurt._mtotal = filter.hurtmtotal ? stats.hurt._mtotal ?? 0 : undefined;
+        stats.hurt._pavg = filter.hurtpavg ? stats.hurt._pavg ?? 0 : undefined;
+        stats.hurt._pcount = filter.hurtpcount ? stats.hurt._pcount ?? 0 : undefined;
+        stats.hurt._ptotal = filter.hurtptotal ? stats.hurt._ptotal ?? 0 : undefined;
+      }
+      let text, magic, point, reg;
+      const battle = g('battle');
+      if (g('monsterAlive') === 0) {
+        if (filter.turn) {
+          stats.self._turn += battle.turn;
+        }
+        if (filter.round) {
+          stats.self._round += 1;
+        }
+        if (filter.battle) {
+          if (battle.roundNow === battle.roundAll) {
+            stats.self._battle += 1;
+          }
+        }
+      }
+      if (parm.mode === 'magic') {
+        magic = parm.magic;
+        if (filter.magic) {
+          stats.magic[magic] = (magic in stats.magic) ? stats.magic[magic] + 1 : 1;
+        }
+        if (filter.mp) {
+          stats.self.mp += parm.mp;
+        }
+        if (filter.oc) {
+          stats.self.oc += parm.oc;
+        }
+      } else if (parm.mode === 'items') {
+        if (filter.items) {
+          stats.items[parm.item] = (parm.item in stats.items) ? stats.items[parm.item] + 1 : 1;
+        }
+      } else {
+        if (filter[parm.mode]) {
+          stats.self[parm.mode] = (parm.mode in stats.self) ? stats.self[parm.mode] + 1 : 1;
+        }
+      }
+
+      const debug = false;
+      let log = false;
+      for (let i = 0; i < parm.log.length; i++) {
+        if (parm.log[i].className === 'tls') {
+          break;
+        }
+        text = parm.log[i].textContent;
+        if (debug) {
+          console.log(text);
+        }
+        if (reg = matchDamageInfoFromLogText(text)) {
+          magic = reg[2].replace('ing', '');
+          point = reg[1] * 1;
+          if (filter.hurt) {
+            stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
+            if (filter.hurtcount || filter.hurtavg) {
+              stats.hurt._count++;
+            }
+            if (filter.hurttotal || filter.hurtavg) {
+              stats.hurt._total += point;
+            }
+            if (filter.hurtavg) {
+              stats.hurt._avg = Math.round(stats.hurt._total / stats.hurt._count);
+            }
+            if (magic.match(/pierc|crush|slash/)) {
+              if (filter.hurtpcount || filter.hurtpavg) {
+                stats.hurt._pcount++;
+              }
+              if (filter.hurtptotal || filter.hurtpavg) {
+                stats.hurt._ptotal += point;
+              }
+              if (filter.hurtpavg) {
+                stats.hurt._pavg = Math.round(stats.hurt._ptotal / stats.hurt._pcount);
+              }
+            } else {
+              if (filter.hurtmcount || filter.hurtmavg) {
+                stats.hurt._mcount++;
+              }
+              if (filter.hurtmtotal || filter.hurtmavg) {
+                stats.hurt._mtotal += point;
+              }
+              if (filter.hurtmavg) {
+                stats.hurt._mavg = Math.round(stats.hurt._mtotal / stats.hurt._mcount);
+              }
+            }
+          }
+          if (filter.evade && text.match(/You ((partially )*(evade|parry|block)( and )*)+ the attack/)) {
+            stats.self.evade++;
+          }
+        } else if (text.match(/^[\w ]+ [a-z]+s [\w+ -]+ for \d+( .*)? damage/) || text.match(/^You .* for \d+ .* damage/)) {
+          if (filter.damage) {
+            reg = text.match(/for (\d+)( .*)? damage/);
+            magic = text.match(/^[\w ]+ [a-z]+s [\w+ -]+ for/) ? text.match(/^([\w ]+) [a-z]+s [\w+ -]+ for/)[1].replace(/^Your /, '') : text.match(/^You (\w+)/)[1];
+            point = reg[1] * 1;
+            stats.damage[magic] = (magic in stats.damage) ? stats.damage[magic] + point : point;
+          }
+        } else if (text.match(/Vital Theft hits .*? for \d+ damage/)) {
+          if (filter.damage) {
+            magic = 'Vital Theft';
+            point = text.match(/Vital Theft hits .*? for (\d+) damage/)[1] * 1;
+            stats.damage[magic] = (magic in stats.damage) ? stats.damage[magic] + point : point;
+          }
+        } else if (text.match(/You (evade|parry|block) the attack|misses the attack against you|(casts|uses) .* misses the attack/)) {
+          if (filter.evade) {
+            stats.self.evade++;
+          }
+        } else if (text.match(/(resists your spell|Your spell is absorbed|(evades|parries) your (attack|spell))|Your attack misses its mark|Your spell fails to connect/)) {
+          if (filter.miss) {
+            stats.self.miss++;
+          }
+        } else if (text.match(/You gain the effect Focusing/)) {
+          if (filter.focus) {
+            stats.self.focus++;
+          }
+        } else if (text.match(/^Recovered \d+ points of/) || text.match(/You are healed for \d+ Health Points/) || text.match(/You drain \d+ HP from/)) {
+          if (filter.restore) {
+            magic = (parm.mode === 'defend') ? 'defend' : text.match(/You drain \d+ HP from/) ? 'drain' : parm.magic || parm.item;
+            point = text.match(/\d+/)[0] * 1;
+            stats.restore[magic] = (magic in stats.restore) ? stats.restore[magic] + point : point;
+          }
+        } else if (text.match(/(restores|drain) \d+ points of/)) {
+          if (filter.restore) {
+            reg = text.match(/^(.*) restores (\d+) points of (\w+)/) || text.match(/^You (drain) (\d+) points of (\w+)/);
+            magic = reg[1];
+            point = reg[2] * 1;
+            stats.restore[magic] = (magic in stats.restore) ? stats.restore[magic] + point : point;
+          }
+        } else if (text.match(/absorbs \d+ points of damage from the attack into \d+ points of \w+ damage/)) {
+          if (filter.hurt) {
+            reg = text.match(/(.*) absorbs (\d+) points of damage from the attack into (\d+) points of (\w+) damage/);
+            point = reg[2] * 1;
+            magic = matchDamageInfoFromLogText(parm.log[i - 1].textContent, false)[2].replace('ing', '');
+            stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
+            point = reg[3] * 1;
+            magic = `${reg[1].replace('Your ', '')}_${reg[4]}`;
+            stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
+          }
+        } else if (text.match(/You gain .* proficiency/)) {
+          if (filter.proficiency) {
+            reg = text.match(/You gain ([\d.]+) points of (.*?) proficiency/);
+            magic = reg[2];
+            point = reg[1] * 1;
+            stats.proficiency[magic] = (magic in stats.proficiency) ? stats.proficiency[magic] + point : point;
+            stats.proficiency[magic] = stats.proficiency[magic].toFixed(3) * 1;
+          }
+        } else if (text.trim() === '' || text.match(/You (gain |cast |use |are Victorious|have reached Level|have obtained the title|do not have enough MP)/) || text.match(/Cooldown|has expired|Spirit Stance|gains the effect|insufficient Spirit|Stop beating dead ponies| defeat |Clear Bonus|brink of defeat|Stop \w+ing|Spawned Monster| drop(ped|s) |defeated/)) {
+          // nothing;
+        } else if (debug) {
+          log = true;
+          setAudioAlarm('Error');
+          console.log(text);
+        }
+      }
+      if (debug && log) {
+        console.table(stats);
+        pauseChange();
+      }
+      if (JSON.stringify(stats) !== JSON.stringify(getValue('stats', true))) {
+        setValue('stats', stats);
+      }
+    }
+
     function recordUsage2() {
+      const filter = g('option').record;
+      if (!filter) {
+        return;
+      }
       const stats = getValue('stats', true);
-      stats.self._monster += g('monsterAll');
-      stats.self._boss += g('bossAll');
+      if (filter.monster) {
+        stats.self._monster += g('monsterAll');
+      }
+      if (filter.boss) {
+        stats.self._boss += g('bossAll');
+      }
       const battle = g('battle');
       if (g('option').recordEach && battle.roundNow === battle.roundAll) {
         const old = getValue('statsOld', true) || [];
@@ -4653,7 +4751,9 @@
         old.push(stats);
         setValue('statsOld', old);
         delValue('stats');
-      } else {
+        return;
+      }
+      if (JSON.stringify(stats) !== JSON.stringify(getValue('stats', true))) {
         setValue('stats', stats);
       }
     }
