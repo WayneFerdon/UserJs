@@ -2411,7 +2411,6 @@
           asyncSetEnergyDrinkHathperk(),
           asyncSetAbilityData(),
           updateArena(),
-          updateEncounter(g('option').encounter),
           (async () => {
             try {
               const checked = await asyncCheckRepair();
@@ -2419,7 +2418,7 @@
             } catch (e) { console.error(e) }
           })(),
         ]);
-        if (notBattleReady) {
+        if (notBattleReady || await updateEncounter(g('option').encounter)) {
           return;
         }
         if (g('option').idleArena && g('option').idleArenaValue) {
@@ -2713,7 +2712,7 @@
       try {
         if (!g('option').encounter && !g('option').encounterDisplay) {
           console.log("skip encounter check");
-          return;
+          return false;
         }
         if (getValue('disabled')) {
           await pauseAsync(_1s);
@@ -2760,6 +2759,7 @@
         let interval = cd > _1h ? _1m : (!g('option').encounterQuickCheck || cd > _1m) ? _1s : 80;
         interval = (g('option').encounterQuickCheck && cd > _1m) ? (interval - cd % interval) / 4 : interval; // 让倒计时显示更平滑
         setTimeout(() => updateEncounter(engage), interval);
+        return false;
       } catch (e) { console.error(e) }
     }
 
