@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.39
+// @version      2.90.40
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1000,8 +1000,8 @@
         '      <input id="restoreStamina" type="checkbox"><label for="restoreStamina"><l0>战前恢复</l0><l1>戰前恢復</l1><l2>Restore stamina</l2>',
         '  </div>',
         '  <div><input id="repair" type="checkbox"><label for="repair"><b>[R!]<l0>修复装备</l0><l1>修復裝備</l1><l2>Repair Equipment</l2></b></label>: ',
-        '    <l0>耐久度</l0><l1>耐久度</l1><l2>Durability</l2> ≤ <input class="hvAANumber" name="repairValue" type="text">%</div>',
-        '  <div><input id="checkSupply" type="checkbox"><b>[C!]<l0>检查物品库存</l0><l1>檢查物品庫存</l1><l2>Check is item needs supply</l2></b>: ',
+        '    <l0>耐久度</l0><l1>耐久度</l1><l2>Durability</l2> ≤ <input class="hvAANumber" name="repairValue" type="text">%; <input id="encounterRepair" type="checkbox"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></div>',
+        '  <div><input id="checkSupply" type="checkbox"><b>[C!]<l0>检查物品库存</l0><l1>檢查物品庫存</l1><l2>Check is item needs supply</l2>;</b><input id="encounterSupply" type="checkbox"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2>',
         '  <div class="hvAAcheckItems">',
         '  <input id="isCheck_11191" type="checkbox"><input class="hvAANumber" name="checkItem_11191" placeholder="0" type="text"><l0>体力药水</l0><l1>體力藥水</l1><l2>Health Potion</l2>',
         '  <input id="isCheck_11195" type="checkbox"><input class="hvAANumber" name="checkItem_11195" placeholder="0" type="text"><l0>体力长效药</l0><l1>體力長效藥</l1><l2>Health Draught</l2>',
@@ -2397,34 +2397,67 @@
           await pauseAsync(_1s);
           return await asyncOnIdle();
         }
-        let notBattleReady = false;
+        const option = g('option');
+        const ready = {
+          isChecked: () => ready.supply && ready.repair,
+        };
         const idleStart = time(0);
         await Promise.all([
-          (async () => {
-            try {
-              await asyncGetItems();
-              const checked = await asyncCheckSupply();
-              notBattleReady ||= !checked;
-            } catch (e) { console.error(e) }
-          })(),
-          asyncSetStamina(),
-          asyncSetEnergyDrinkHathperk(),
-          asyncSetAbilityData(),
+          // ability
+          (async () => { try {
+            ready.ability = await asyncSetAbilityData() || true;
+            await tryEncounter();
+          } catch (e) { console.error(e) } })(),
+          // stamina & hathperk
+          (async () => { try {
+            ready.stamina = await Promise.all([
+              asyncSetStamina(),
+              asyncSetEnergyDrinkHathperk(),
+            ]) || true;
+            await tryEncounter();
+          } catch (e) { console.error(e) } })(),
+          // item & supply
+          (async () => { try {
+            ready.item = await asyncGetItems() || true;
+            await tryEncounter();
+            ready.supply = await asyncCheckSupply();
+            await tryEncounter();
+          } catch (e) { console.error(e) } })(),
+          // repair
+          (async () => { try {
+            ready.repair = await asyncCheckRepair();
+            await tryEncounter();
+          } catch (e) { console.error(e) } })(),
+          // arena data
           updateArena(),
-          (async () => {
-            try {
-              const checked = await asyncCheckRepair();
-              notBattleReady ||= !checked;
-            } catch (e) { console.error(e) }
-          })(),
         ]);
-        if (notBattleReady || await updateEncounter(g('option').encounter)) {
+        if (!ready.isChecked()) {
           return;
         }
-        if (g('option').idleArena && g('option').idleArenaValue) {
+        if (option.idleArena && option.idleArenaValue) {
           startUpdateArena(idleStart);
         }
-        setTimeout(autoSwitchIsekai, (g('option').isekaiTime * (Math.random() * 20 + 90) / 100) * _1s - (time(0) - idleStart));
+        setTimeout(autoSwitchIsekai, (option.isekaiTime * (Math.random() * 20 + 90) / 100) * _1s - (time(0) - idleStart));
+
+        async function tryEncounter() {
+          if (ready.encounterUpdated) {
+            return;
+          }
+          if (option.encounter) {
+            switch (true) {
+              case !ready.ability:
+              case !ready.stamina:
+              case option.restoreStamina && !ready.item:
+              case option.encounterSupply && !ready.supply:
+              case option.encounterRepair && !ready.repair:
+                return;
+            }
+          }
+          ready.encounterUpdated = true;
+          $async.logSwitch(arguments);
+          await updateEncounter(option.encounter);
+          $async.logSwitch(arguments);
+        }
       } catch (e) { console.error(e) }
     }
 
