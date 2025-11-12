@@ -2397,6 +2397,7 @@
           await pauseAsync(_1s);
           return await asyncOnIdle();
         }
+        $async.logSwitch(arguments);
         const option = g('option');
         const ready = {
           isChecked: () => ready.supply && ready.repair,
@@ -2436,8 +2437,11 @@
         }
         if (option.idleArena && option.idleArenaValue) {
           startUpdateArena(idleStart);
+        } else {
+          console.log("skip arena check");
         }
         setTimeout(autoSwitchIsekai, (option.isekaiTime * (Math.random() * 20 + 90) / 100) * _1s - (time(0) - idleStart));
+        $async.logSwitch(arguments);
 
         async function tryEncounter() {
           if (ready.encounterUpdated) {
