@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.38
+// @version      2.90.39
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2285,6 +2285,16 @@
       pauseChange();
     }
 
+    function getCurrentUser() {
+      const cookie = document.cookie.split("; ");
+      for (const cookieObj of cookie) {
+        const match = cookieObj.match(/ipb_member_id=(\d+)/);
+        if (match) {
+          return match[1];
+        }
+      }
+    }
+
     // 答题//
     function riddleAlert() { // 答题警报
       if (window.opener) {
@@ -2508,17 +2518,21 @@
           return await asyncSetEnergyDrinkHathperk();
         }
         $async.logSwitch(arguments);
+        let currentID = getCurrentUser();
+        let perk = getValue('staminaHathperk') ?? {};
+        if (perk[currentID]) {
+          return;
+        }
         const html = await $ajax.fetch('https://e-hentai.org/hathperks.php');
         if (!html) {
           return;
         }
         const doc = $doc(html);
         const perks = gE('.stuffbox>table>tbody>tr', 'all', doc);
-        if (!perks) {
-          return;
+        if (perks && perks[25].innerHTML.includes('Obtained')) {
+          perk[currentID] = true;
+          setValue('staminaHathperk', perk);
         }
-        console.log(perks);
-        setValue('staminaHathperk', perks[25].innerHTML.includes('Obtained'));
         $async.logSwitch(arguments);
       } catch (e) { console.error(e) }
     }
@@ -2688,7 +2702,7 @@
       if (!items) {
         return checked;
       }
-      const recover = items[11402] ? 5 : items[11401] ? getValue('staminaHathperk') ? 20 : 10 : 0;
+      const recover = items[11402] ? 5 : items[11401] ? (getValue('staminaHathperk')??{})[getCurrentUser()] ? 20 : 10 : 0;
       if (recover && stamina <= (100 - recover)) {
         $ajax.open(window.location.href, 'recover=stamina');
         return checked;
