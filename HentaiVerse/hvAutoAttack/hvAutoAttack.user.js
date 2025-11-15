@@ -2861,6 +2861,7 @@
           arena.array = g('option').idleArenaValue?.split(',') ?? [];
           arena.array.reverse();
         }
+        arena.arrayDone = arena.arrayDone.filter(id => id === 'gr' || !Object.keys(arena.token).includes(id.toString()));
         return setValue('arena', arena);
       } catch (e) { console.error(e) }
     }
