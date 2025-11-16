@@ -2817,7 +2817,7 @@
           return ui;
         })();
 
-        const missed = count - encounter.filter(e => e.encountered && e.href);
+        const missed = count - encounter.filter(e => e.encountered && e.href).length;
         if (count === 24) {
           ui.style.cssText += 'color:orange!important;';
         } else if (!cd) {
