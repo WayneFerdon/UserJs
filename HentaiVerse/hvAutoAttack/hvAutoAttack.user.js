@@ -2406,6 +2406,7 @@
 
     async function asyncOnIdle() {
       try {
+        updateEncounter(false);
         if (getValue('disabled')) {
           await pauseAsync(_1s);
           return await asyncOnIdle();
