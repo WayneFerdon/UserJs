@@ -15,6 +15,7 @@
 // @include      http*://alt.hentaiverse.org/*
 // @include      http*://e-hentai.org/*
 // @connect        hentaiverse.org
+// @connect        alt.hentaiverse.org
 // @connect        e-hentai.org
 // @compatible   Firefox + Greasemonkey
 // @compatible   Chrome/Chromium + Tampermonkey
