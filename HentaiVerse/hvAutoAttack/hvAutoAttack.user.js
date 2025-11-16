@@ -317,8 +317,8 @@
       } else if (getValue('battle')) { //战斗中
         eventpane.style.cssText += 'color:gray;' // 链接置灰提醒
       } else { // 战斗外，自动跳转
-        $ajax.fetch(`${href}/${url}`);
-        gotoBattle();
+        loadOption();
+        $ajax.openNoFetch(`${g('option').altBattleFirst ? href.replace('hentaiverse.org', 'alt.hentaiverse.org').replave('alt.alt', 'alt') : href}/${url}`);
       }
       return false;
     }
@@ -444,15 +444,6 @@
         window.location.href = window.location.href.replace(`://${hv}`, `://${alt}`)
       } else if (!isAltOnly && window.location.host === alt) {
         window.location.href = window.location.href.replace(`://${alt}`, `://${hv}`)
-      }
-    }
-
-    async function gotoBattle() {
-      loadOption();
-      if (g('option').altBattleFirst && await $ajax.fetch(href.replace('://hentaiverse', '://alt.hentaiverse'))) {
-        gotoAlt(true);
-      } else {
-        goto();
       }
     }
 
@@ -3010,7 +3001,11 @@
         }
         writeArenaStart();
         $ajax.fetch(query, `initid=${id === 'gr' ? 1 : id}${token}`);
-        gotoBattle();
+        if (g('option').altBattleFirst && await $ajax.fetch(href.replace('://hentaiverse', '://alt.hentaiverse'))) {
+          gotoAlt(true);
+        } else {
+          goto();
+        }
         $async.logSwitch(arguments);
       } catch (e) { console.error(e) }
     }
