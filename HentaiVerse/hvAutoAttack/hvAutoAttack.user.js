@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.42
+// @version      2.90.43
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -305,7 +305,9 @@
         }
         return false;
       }
-
+      if (!eventpane) {
+        return false;
+      }
       // 减少因在恒定世界处于战斗中时打开eh触发了遭遇而导致的错失
       // 缓存当前链接，等战斗结束时再自动打开，下次打开链接时：
       // 1. 若新的遭遇未出现，进入已缓存的战斗链接
@@ -315,7 +317,8 @@
       } else if (getValue('battle')) { //战斗中
         eventpane.style.cssText += 'color:gray;' // 链接置灰提醒
       } else { // 战斗外，自动跳转
-        $ajax.openNoFetch(`${href}/${url}`);
+        $ajax.fetch(`${href}/${url}`);
+        gotoBattle();
       }
       return false;
     }
@@ -429,6 +432,29 @@
 
     // ----------methods----------
     // 通用//
+    function goto() { // 前进
+      window.location.href = window.location;
+      setTimeout(goto, 5000);
+    }
+
+    function gotoAlt(isAltOnly) {
+      const hv = 'hentaiverse.org';
+      const alt = 'alt.' + hv;
+      if (window.location.host === hv) {
+        window.location.href = window.location.href.replace(`://${hv}`, `://${alt}`)
+      } else if (!isAltOnly && window.location.host === alt) {
+        window.location.href = window.location.href.replace(`://${alt}`, `://${hv}`)
+      }
+    }
+
+    async function gotoBattle() {
+      if (g('option').altBattleFirst && await $ajax.fetch(href.replace('://hentaiverse', '://alt.hentaiverse'))) {
+        gotoAlt(true);
+      } else {
+        goto();
+      }
+    }
+
     function pauseAsync(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
     }
@@ -731,21 +757,6 @@
       }
     }
 
-    function goto() { // 前进
-      window.location.href = window.location;
-      setTimeout(goto, 5000);
-    }
-
-    function gotoAlt() {
-      const hv = 'hentaiverse.org';
-      const alt = 'alt.' + hv;
-      if (window.location.host === hv) {
-        window.location.href = window.location.href.replace(`://${hv}`, `://${alt}`)
-      } else if (window.location.host === alt) {
-        window.location.href = window.location.href.replace(`://${alt}`, `://${hv}`)
-      }
-    }
-
     function g(key, value) { // 全局变量
       const hvAA = window.hvAA || {};
       if (key === undefined && value === undefined) {
@@ -980,6 +991,7 @@
         '  </div>',
 
         '<div class="hvAATab" id="hvAATab-BattleStarter">',
+        ' <div><input id="altBattleFirst" type="checkbox"><label for="altBattleFirst"><b><l0>优先使用alt进入</l0><l1>優先使用alt進入</l1><l2>Use alt.hentaiverse as default while auto start.</l2></b></label></div>',
         ' <div><input id="encounter" type="checkbox"><label for="encounter"><b><l0>自动遭遇战</l0><l1>自動遭遇戰</l1><l2>Auto Encounter</l2></b></label><input id="encounterQuickCheck" type="checkbox"><label for="encounterQuickCheck"><l0>精准倒计时(影响性能)</l0><l1>精準(影響性能)</l1><l2>Precise encounter cd(might reduced performsance)</l2></label><input id="encounterDisplay" type="checkbox"><label for="encounterDisplay"><l0>不自动遭遇时显示倒计时</l0><l1>不自動遭遇時顯示倒計時</l1><l2>Display CountDown While Not Auto Encounter</l2></label></div>',
         '  <div><input id="idleArena" type="checkbox"><label for="idleArena"><b><l0>闲置竞技场</l0><l1>閒置競技場</l1><l2>Idle Arena</l2>: </b>',
         '    <l0>在任意页面停留</l0><l1>在任意頁面停留</l1><l2>Idle in any page for </l2><input class="hvAANumber" name="idleArenaTime" type="text"><l0>秒后，开始竞技场</l0><l1>秒後，開始競技場</l1><l2>s, start Arena</l2></label> <button class="idleArenaReset"><l01>重置</l01><l2>Reset</l2></button>;<br>',
@@ -1001,6 +1013,7 @@
         '  </div>',
         '  <div><input id="repair" type="checkbox"><label for="repair"><b>[R!]<l0>修复装备</l0><l1>修復裝備</l1><l2>Repair Equipment</l2></b></label>: ',
         '    <l0>耐久度</l0><l1>耐久度</l1><l2>Durability</l2> ≤ <input class="hvAANumber" name="repairValue" type="text">%; <input id="encounterRepair" type="checkbox"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></div>',
+        '  <div><input id="equStorage" type="checkbox"><label for="equStorage"><b>[E!]<l0>装备库存</l0><l1>裝備庫存</l1><l2>Equipment Storage</l2></b></label> ≤ <input class="hvAANumber" style="width: 32px;" name="equStorageValue" placeholder="2000" type="text">; <input id="encounterEquStorage" type="checkbox"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></div>',
         '  <div><input id="checkSupply" type="checkbox"><b>[C!]<l0>检查物品库存</l0><l1>檢查物品庫存</l1><l2>Check is item needs supply</l2>;</b><input id="encounterSupply" type="checkbox"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2>',
         '  <div class="hvAAcheckItems">',
         '  <input id="isCheck_11191" type="checkbox"><input class="hvAANumber" name="checkItem_11191" placeholder="0" type="text"><l0>体力药水</l0><l1>體力藥水</l1><l2>Health Potion</l2>',
@@ -2429,6 +2442,11 @@
             ready.repair = await asyncCheckRepair();
             await tryEncounter();
           } catch (e) { console.error(e) } })(),
+          // equipment storage
+          (async () => { try {
+            ready.storage = await asyncCheckEquStorage();
+            await tryEncounter();
+          } catch (e) { console.error(e) } })(),
           // arena data
           updateArena(),
         ]);
@@ -2454,6 +2472,7 @@
               case option.restoreStamina && !ready.item:
               case option.encounterSupply && !ready.supply:
               case option.encounterRepair && !ready.repair:
+              case option.encounterEquStorage && !ready.storage:
                 return;
             }
           }
@@ -2693,6 +2712,31 @@
       } catch (e) { console.error(e) }; return false;
     }
 
+    async function asyncCheckEquStorage() {
+      try {
+        const option = g('option');
+        if (!option.equStorage) {
+          return true;
+        }
+        if (getValue('disabled')) {
+          await pauseAsync(_1s);
+          return await asyncCheckEquStorage();
+        }
+        $async.logSwitch(arguments);
+        let count;
+        if (hvVersion < 91) {
+          const href = `?s=Character&ss=in`;
+          const doc = $doc(await $ajax.fetch(href));
+          count = gE('#eqinv_bot>div>div>div', doc).innerText.match(/: (\d+) \/ \d+/)[1];
+        } else {
+          const href = `?s=Bazaar&ss=am`;
+          const doc = $doc(await $ajax.fetch(href));
+          count = gE('#equipblurb>table>tbody>tr>td:nth-child(2)', doc).innerText;
+        }
+        return count * 1 <= option.equStorageValue;
+      } catch (e) { console.error(e) }; return false;
+    }
+
     function checkBattleReady(method, condition = {}) {
       if (getValue('disabled')) {
         setTimeout(method, _1s);
@@ -2800,7 +2844,12 @@
       } catch (e) { console.error(e) }
     }
 
-    function onEncounter() {
+    async function onEncounter() {
+      if (!(await $ajax.fetch(href))) { // perhaps network connect not available
+        await pauseAsync(_1m);
+        onEncounter();
+        return;
+      }
       if (getValue('disabled') || getValue('battle') || !checkBattleReady(onEncounter, { staminaLow: g('option').staminaEncounter })) {
         return;
       }
@@ -2870,7 +2919,7 @@
       try { // 闲置竞技场
         let id;
         let arena = getValue('arena', true);
-
+        const option = g('option');
         const writeArenaStart = function () {
           document.title = _alert(-1, '闲置竞技场开始', '閒置競技場開始', 'Idle Arena start');
           if (id !== 'gr') {
@@ -2882,7 +2931,7 @@
         }
         console.log('arena:', getValue('arena', true));
         if (arena.array.length === 0) {
-          setTimeout(autoSwitchIsekai, (g('option').isekaiTime * (Math.random() * 20 + 90) / 100) * _1s);
+          setTimeout(autoSwitchIsekai, (option.isekaiTime * (Math.random() * 20 + 90) / 100) * _1s);
           return;
         }
         $async.logSwitch(arguments);
@@ -2929,7 +2978,7 @@
         }
         staminaCost.gr += 1
 
-        let href;
+        let query;
         let token = arena.token[id];
         const cost = staminaCost[id];
         if (id === 'gr') {
@@ -2939,26 +2988,27 @@
             arena.arrayDone.push('gr');
             return;
           }
-          href = 'gr';
+          query = 'gr';
         } else if (id >= 105) {
-          href = 'rb';
+          query = 'rb';
         } else if (id >= 19) {
-          href = 'ar&page=2';
+          query = 'ar&page=2';
         } else {
-          href = 'ar';
+          query = 'ar';
         }
-        href = `?s=Battle&ss=${href}`;
-        if (!checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: g('option').encounter, staminaLow: id === 'gr' ? g('option').staminaGrindFest : undefined })) {
+        query = `?s=Battle&ss=${query}`;
+        if (!checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: option.encounter, staminaLow: id === 'gr' ? option.staminaGrindFest : undefined })) {
           $async.logSwitch(arguments);
           return;
         }
         if (hvVersion < 91) {
           token = `&inittoken=${token}`;
         } else {
-          token = `&postoken=${gE('#initform>input[name="postoken"]', $doc(await $ajax.fetch(href))).value}`;
+          token = `&postoken=${gE('#initform>input[name="postoken"]', $doc(await $ajax.fetch(query))).value}`;
         }
         writeArenaStart();
-        $ajax.open(href, `initid=${id === 'gr' ? 1 : id}${token}`);
+        $ajax.fetch(query, `initid=${id === 'gr' ? 1 : id}${token}`);
+        gotoBattle();
         $async.logSwitch(arguments);
       } catch (e) { console.error(e) }
     }
