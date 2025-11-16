@@ -448,6 +448,7 @@
     }
 
     async function gotoBattle() {
+      loadOption();
       if (g('option').altBattleFirst && await $ajax.fetch(href.replace('://hentaiverse', '://alt.hentaiverse'))) {
         gotoAlt(true);
       } else {
