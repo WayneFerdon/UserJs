@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.44
+// @version      2.90.45
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -15,7 +15,6 @@
 // @include      http*://alt.hentaiverse.org/*
 // @include      http*://e-hentai.org/*
 // @connect        hentaiverse.org
-// @connect        alt.hentaiverse.org
 // @connect        e-hentai.org
 // @compatible   Firefox + Greasemonkey
 // @compatible   Chrome/Chromium + Tampermonkey
@@ -290,7 +289,7 @@
             setEncounter(encounter);
           }
           for (let e of encounter) {
-            if (e.encountered) {
+            if (e.encountered || time(0) - e.time >= 30 * _1m) {
               continue;
             }
             url = e.href;
@@ -306,17 +305,18 @@
         }
         return false;
       }
-      if (!eventpane) {
-        return false;
-      }
       // 减少因在恒定世界处于战斗中时打开eh触发了遭遇而导致的错失
       // 缓存当前链接，等战斗结束时再自动打开，下次打开链接时：
       // 1. 若新的遭遇未出现，进入已缓存的战斗链接
       // 2. 若新的遭遇已出现，则前一次已超时失效错过，重新获取新的一次
       if (!isEngage) { // 战斗外，非自动跳转
-        eventpane.style.cssText += 'color:red;' // 链接标红提醒
+        if (eventpane) {
+          eventpane.style.cssText += 'color:red;' // 链接标红提醒
+        }
       } else if (getValue('battle')) { //战斗中
-        eventpane.style.cssText += 'color:gray;' // 链接置灰提醒
+        if (eventpane) {
+          eventpane.style.cssText += 'color:gray;' // 链接置灰提醒
+        }
       } else { // 战斗外，自动跳转
         loadOption();
         $ajax.openNoFetch(`${g('option').altBattleFirst ? href.replace('hentaiverse.org', 'alt.hentaiverse.org').replace('alt.alt', 'alt') : href}/${url}`);
@@ -2794,13 +2794,12 @@
           return await updateEncounter(engage, isInBattle);
         }
         const encounter = getEncounter();
-        const encountered = encounter.filter(e => e.encountered && e.href);
         const count = encounter.filter(e => e.href).length;
 
         const now = time(0);
         const last = encounter[0]?.time ?? getValue('lastEH', true) ?? 0; // 上次遭遇 或 上次打开EH 或 0
         let cd;
-        if (encountered.length >= 24) {
+        if (encounter.filter(e => e.href && (e.encountered || (time(0) - e.time >= 30 * _1m))).length >= 24) {
           cd = Math.floor(encounter[0].time / _1d + 1) * _1d - now;
         } else if (!last) {
           cd = 0;
@@ -2818,7 +2817,7 @@
           return ui;
         })();
 
-        const missed = count - encountered.length;
+        const missed = count - encounter.filter(e => e.encountered && e.href);
         if (count === 24) {
           ui.style.cssText += 'color:orange!important;';
         } else if (!cd) {
