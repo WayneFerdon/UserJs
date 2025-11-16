@@ -318,7 +318,7 @@
         eventpane.style.cssText += 'color:gray;' // 链接置灰提醒
       } else { // 战斗外，自动跳转
         loadOption();
-        $ajax.openNoFetch(`${g('option').altBattleFirst ? href.replace('hentaiverse.org', 'alt.hentaiverse.org').replave('alt.alt', 'alt') : href}/${url}`);
+        $ajax.openNoFetch(`${g('option').altBattleFirst ? href.replace('hentaiverse.org', 'alt.hentaiverse.org').replace('alt.alt', 'alt') : href}/${url}`);
       }
       return false;
     }
