@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.49
+// @version      2.90.50
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2914,6 +2914,7 @@
         let arena = getValue('arena', true);
         const option = g('option');
         const writeArenaStart = function () {
+          console.log('Arena Start', id);
           document.title = _alert(-1, '闲置竞技场开始', '閒置競技場開始', 'Idle Arena start');
           if (id !== 'gr') {
             arena.arrayDone.push(id);
@@ -2949,6 +2950,7 @@
           id = undefined;
         }
         if (!id) {
+          console.log('No Arena Id Available');
           setValue('arena', arena);
           $async.logSwitch(arguments);
           return;
@@ -2991,6 +2993,7 @@
         }
         query = `?s=Battle&ss=${query}`;
         if (!checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: option.encounter, staminaLow: id === 'gr' ? option.staminaGrindFest : undefined })) {
+          console.log('Check Battle Ready Failed');
           $async.logSwitch(arguments);
           return;
         }
