@@ -256,7 +256,7 @@
           if (!filtered.length) {
             encounter.unshift({ href: encounterURL, time: time(0), encountered: time(0) });
           } else {
-            filtered[0].encountered = time(0);
+            filtered[0].encountered ??= time(0);
           }
           setEncounter(encounter);
         }
