@@ -442,9 +442,9 @@
       const hv = 'hentaiverse.org';
       const alt = 'alt.' + hv;
       if (window.location.host === hv) {
-        window.location.href = window.location.href.replace(`://${hv}`, `://${alt}`)
-      } else if (!isAltOnly && window.location.host === alt) {
-        window.location.href = window.location.href.replace(`://${alt}`, `://${hv}`)
+        window.location.href = window.location.href.replace(`://${hv}`, `://${alt}`);
+      } else if (window.location.host === alt) {
+        window.location.href = isAltOnly ? window.location : window.location.href.replace(`://${alt}`, `://${hv}`);
       }
     }
 
@@ -2950,7 +2950,7 @@
           id = undefined;
         }
         if (!id) {
-          console.log('No Arena Id Available');
+          console.log('No Arena Id Available', arena);
           setValue('arena', arena);
           $async.logSwitch(arguments);
           return;
