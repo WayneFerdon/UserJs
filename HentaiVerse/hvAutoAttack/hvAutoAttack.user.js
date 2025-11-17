@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.46
+// @version      2.90.47
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -639,7 +639,7 @@
     function getKeys(objArr, prop) {
       let out = [];
       objArr.forEach((_objArr) => {
-        out = prop ? out.concat(Object.keys(_objArr[prop])) : _objArr ? out.concat(Object.keys(_objArr)) : out;
+        out = !_objArr ? out :(prop && _objArr[prop]) ? out.concat(Object.keys(_objArr[prop])) : out.concat(Object.keys(_objArr));
       });
       out = out.sort();
       for (let i = 1; i < out.length; i++) {
@@ -4443,7 +4443,7 @@
               continue;
             }
             const ability = getValue('ability', true);
-            if (ability) {
+            if (ability && ability[ab] && ability[ab].level) {
               range = ranges[ability[ab].level];
             }
             break;
