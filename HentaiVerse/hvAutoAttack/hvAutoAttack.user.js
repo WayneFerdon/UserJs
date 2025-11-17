@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.54
+// @version      2.90.55
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1009,7 +1009,7 @@
         '      <input id="restoreStamina" type="checkbox"><label for="restoreStamina"><l0>战前恢复</l0><l1>戰前恢復</l1><l2>Restore stamina</l2>',
         '  </div>',
         '  <div><input id="repair" type="checkbox"><label for="repair"><b>[R!]<l0>修复装备</l0><l1>修復裝備</l1><l2>Repair Equipment</l2></b></label>: ',
-        '    <l0>耐久度</l0><l1>耐久度</l1><l2>Durability</l2> ≤ <input class="hvAANumber" name="repairValue" type="text">%; <input id="encounterRepair" type="checkbox"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></div>',
+        '    <l0>耐久度</l0><l1>耐久度</l1><l2>Durability</l2> ≤ <input class="hvAANumber" name="repairValue" type="text">% <l0>或 压榨届耐久度</l0><l1>或 壓榨屆耐久度</l1><l2>OR Grind Fest Durability</l2> ≤ <input class="hvAANumber" name="repairValueGF" type="text">%</br><input id="encounterRepair" type="checkbox"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></div>',
         '  <div><input id="equStorage" type="checkbox"><label for="equStorage"><b>[E!]<l0>装备库存</l0><l1>裝備庫存</l1><l2>Equipment Storage</l2></b></label> ≤ <input class="hvAANumber" style="width: 32px;" name="equStorageValue" placeholder="2000" type="text">; <input id="encounterEquStorage" type="checkbox"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></div>',
         '  <div><input id="checkSupply" type="checkbox"><b>[C!]<l0>检查物品库存</l0><l1>檢查物品庫存</l1><l2>Check is item needs supply</l2>;</b><input id="encounterSupply" type="checkbox"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2>',
         '  <div class="hvAAcheckItems">',
@@ -1041,7 +1041,7 @@
         '  <input id="isCheck_13221" type="checkbox"><input class="hvAANumber" name="checkItem_13221" placeholder="0" type="text"><l0>生命卷轴</l0><l1>生命捲軸</l1><l2>Scroll of Life</l2>',
         '  <input id="isCheck_13299" type="checkbox"><input class="hvAANumber" name="checkItem_13299" placeholder="0" type="text"><l0>众神卷轴</l0><l1>眾神捲軸</l1><l2>Scroll of the Gods</l2>',
         '</div></div>',
-        '  <div><input id="checkSupplyGF" type="checkbox"><b>[C!!]<l0>压榨届使用单独的库存检查</l0><l1>壓榨屆使用單獨的庫存檢查</l1><l2>Standalone supply check for Grind Fest</l2></b>',
+        '  <div><input id="checkSupplyGF" type="checkbox"><b>[C!!]<l0>压榨届使用额外的库存检查</l0><l1>壓榨屆使用額外的庫存檢查</l1><l2>Extra supply check for Grind Fest</l2></b>',
         '  <div class="hvAAcheckItems">',
         '  <input id="isCheckGF_11191" type="checkbox"><input class="hvAANumber" name="checkItemGF_11191" placeholder="0" type="text"><l0>体力药水</l0><l1>體力藥水</l1><l2>Health Potion</l2>',
         '  <input id="isCheckGF_11195" type="checkbox"><input class="hvAANumber" name="checkItemGF_11195" placeholder="0" type="text"><l0>体力长效药</l0><l1>體力長效藥</l1><l2>Health Draught</l2>',
@@ -2675,7 +2675,7 @@
       return !needs.length;
     }
 
-    async function asyncCheckRepair() { try {
+    async function asyncCheckRepair(isGrindFestStandalone) { try {
       if (!g('option').repair) {
         return true;
       }
@@ -2685,6 +2685,11 @@
       }
       $async.logSwitch(arguments);
       let eqps;
+      const threshold = isGrindFestStandalone ? g('option').repairValueGF : g('option').repairValue;
+      if (!threshold) { // skip because default repair has been checked before idleArena>GF
+        $async.logSwitch(arguments);
+        return true;
+      }
       if (hvVersion < 91) {
         const href = `?s=Forge&ss=re`;
         const doc = $doc(await $ajax.fetch(href));
@@ -2692,7 +2697,7 @@
         eqps = await Promise.all(Array.from(gE('.eqp>[id]', 'all', doc)).map(async eqp => { try {
           const id = eqp.id.match(/\d+/)[0];
           const condition = 1 * json[id].d.match(/Condition: \d+ \/ \d+ \((\d+)%\)/)[1];
-          if (condition > g('option').repairValue) {
+          if (condition > threshold) {
             return;
           }
           const after = $doc(await $ajax.fetch(href, `select_item=${id}`));
@@ -2705,7 +2710,7 @@
         eqps = await Promise.all(Array.from(gE('#equiplist>table>tbody>tr:not(.eqselall):not(.eqtplabel)', 'all', doc)).map(async eqp => { try {
           const id = gE('input', eqp).value;
           const condition = 1 * gE('td:last-child', eqp).textContent.replace('%', '');
-          if (condition > g('option').repairValue) {
+          if (condition > threshold) {
             return;
           }
           const after = $doc(await $ajax.fetch(href, `&eqids[]=${id}&postoken=${token}&replace_charms=on`));
@@ -3013,7 +3018,7 @@
       }
       query = `?s=Battle&ss=${query}`;
 
-      if (id === 'gr' && option.checkSupplyGF && !checkSupply(true)) {
+      if (id === 'gr' && (option.checkSupplyGF && !checkSupply(true)) || (option.repairValueGF && !await asyncCheckRepair(true))) {
         console.log('Check Battle Ready Failed', 'id:', id, cost);
         $async.logSwitch(arguments);
         return;
