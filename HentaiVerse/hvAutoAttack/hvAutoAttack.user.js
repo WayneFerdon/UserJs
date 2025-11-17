@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.52
+// @version      2.90.53
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -252,8 +252,11 @@
         if (window.location.href.indexOf(`?s=Battle&ss=ba`) !== -1) {
           const encounterURL = window.location.href?.split('/')[3];
           const encounter = getEncounter();
-          if (!encounter.filter(e => e.href === encounterURL).length) {
+          const filtered = encounter.filter(e => e.href === encounterURL);
+          if (!filtered.length) {
             encounter.unshift({ href: encounterURL, time: time(0), encountered: time(0) });
+          } else {
+            filtered[0].encountered = time(0);
           }
           setEncounter(encounter);
         }
@@ -2726,7 +2729,7 @@
       if (condition.checkEncounter) {
         const encounter = getEncounter();
         if (encounter[0]?.href && !encounter[0]?.encountered) {
-          $debug.log(getEncounter());
+          console.log(getEncounter());
           return;
         }
       }
@@ -2815,9 +2818,15 @@
         ui.style.cssText += 'color:unset!important;';
       }
       ui.innerHTML = `${formatTime(cd).slice(0, 2).map(cdi => cdi.toString().padStart(2, '0')).join(`:`)}[${encounter.length ? (count >= 24 ? `☯` : count) : `✪`}${missed ? `-${missed}` : ``}]`;
-      if (engage && !cd) {
-        onEncounter();
-        return true;
+      if (engage ) {
+        if (!cd) {
+          onEncounter();
+          return true;
+        }
+        if (cd < 30* _1m && encounter[0].href && !encounter[0].encountered) {
+          $ajax.openNoFetch(encounter[0].href);
+          return true;
+        }
       }
       let interval = cd > _1h ? _1m : (!g('option').encounterQuickCheck || cd > _1m) ? _1s : 80;
       interval = (g('option').encounterQuickCheck && cd > _1m) ? (interval - cd % interval) / 4 : interval; // 让倒计时显示更平滑
