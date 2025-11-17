@@ -281,7 +281,7 @@
         if (url === undefined) { // 新一天
           encounter = [];
         }
-        encounter.unshift({ href: url + `time=${now}`, time: now });
+        encounter.unshift({ href: url, time: now });
         setEncounter(encounter);
       } else {
         if (encounter.length) {
@@ -2456,7 +2456,7 @@
       setTimeout(autoSwitchIsekai, (option.isekaiTime * (Math.random() * 20 + 90) / 100) * _1s - (time(0) - idleStart));
       $async.logSwitch(arguments);
 
-      async function tryEncounter() {
+      async function tryEncounter() { try {
         if (ready.encounterUpdated) {
           return;
         }
@@ -2475,7 +2475,7 @@
         $async.logSwitch(arguments);
         await updateEncounter(option.encounter);
         $async.logSwitch(arguments);
-      }
+      } catch (e) { console.error(e) } }
     } catch (e) { console.error(e) } }
 
     function setEncounter(encounter) {
@@ -2723,9 +2723,12 @@
         setTimeout(method, _1s);
         return;
       }
-      if (condition.checkEncounter && getEncounter()[0]?.href && !getEncounter()[0]?.encountered) {
-        $debug.log(getEncounter());
-        return;
+      if (condition.checkEncounter) {
+        const encounter = getEncounter();
+        if (encounter[0]?.href && !encounter[0]?.encountered) {
+          $debug.log(getEncounter());
+          return;
+        }
       }
       const staminaChecked = checkStamina(condition.staminaLow, condition.staminaCost);
       console.log(`stamina check done:\n${condition.staminaLow ? `low: ${condition.staminaLow}\n` : ''}${condition.staminaCost ? `cost: ${condition.staminaCost}\n` : ''}status: ${staminaChecked === 1 ? 'succeed' : staminaChecked === 0 ? 'failed' : 'failed with nature recover'}`);
@@ -2822,7 +2825,7 @@
       return false;
     } catch (e) { console.error(e) } }
 
-    async function onEncounter() {
+    async function onEncounter() { try {
       if (!(await $ajax.fetch(href))) { // perhaps network connect not available
         await pauseAsync(_1m);
         onEncounter();
@@ -2839,7 +2842,7 @@
       }
       $ajax.openNoFetch('https://e-hentai.org/news.php?encounter');
       $async.logSwitchStrict('updateEncounter', false);
-    }
+    } catch (e) { console.error(e) } }
 
     async function startUpdateArena(idleStart, startIdleArena = true) { try {
       $async.logSwitchStrict('startUpdateArena', true);
@@ -2977,7 +2980,7 @@
       }
       query = `?s=Battle&ss=${query}`;
       if (!checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: option.encounter, staminaLow: id === 'gr' ? option.staminaGrindFest : undefined })) {
-        console.log('Check Battle Ready Failed');
+        console.log('Check Battle Ready Failed', 'id:', id, cost);
         $async.logSwitch(arguments);
         return;
       }
@@ -3340,13 +3343,13 @@
       function clearBattleUnresponsive() {
         Object.keys(battleUnresponsive).forEach(t => clearTimeout(battleUnresponsive[t].timeout));
       }
-      async function onBattleUnresponsive(method) {
+      async function onBattleUnresponsive(method) { try {
         if (getValue('disabled')) {
           await pauseAsync(_1s);
           return await onBattleUnresponsive();
         }
         method();
-      }
+      } catch (e) { console.error(e) } }
 
       let obj, a, cost;
       const eventStart = cE('a');
@@ -3401,7 +3404,7 @@
           recordUsage2();
         }
         onRoundEnd();
-        async function onRoundEnd() {
+        async function onRoundEnd() { try {
           if (getValue('disabled')) {
             await pauseAsync(_1s);
             return await onRoundEnd();
@@ -3422,38 +3425,36 @@
           }
           clearBattleUnresponsive();
 
-          async function onNewRound() {
-            try {
-              if (getValue('disabled')) {
-                await pauseAsync(_1s);
-                return await onNewRound();
-              }
-              if (gE('#btcp')?.innerHTML.includes("finishbattle.png")) {
-                goto();
+          async function onNewRound() { try {
+            if (getValue('disabled')) {
+              await pauseAsync(_1s);
+              return await onNewRound();
+            }
+            if (gE('#btcp')?.innerHTML.includes("finishbattle.png")) {
+              goto();
+              return;
+            }
+            const html = await $ajax.fetch(window.location.href);
+            gE('#pane_completion').removeChild(gE('#btcp'));
+            clearBattleUnresponsive();
+            const doc = $doc(html)
+            if (gE('#riddlecounter', doc)) {
+              if (g('option').riddlePopup && !window.opener) {
+                window.open(window.location.href, 'riddleWindow', 'resizable,scrollbars,width=1241,height=707');
                 return;
               }
-              const html = await $ajax.fetch(window.location.href);
-              gE('#pane_completion').removeChild(gE('#btcp'));
-              clearBattleUnresponsive();
-              const doc = $doc(html)
-              if (gE('#riddlecounter', doc)) {
-                if (g('option').riddlePopup && !window.opener) {
-                  window.open(window.location.href, 'riddleWindow', 'resizable,scrollbars,width=1241,height=707');
-                  return;
-                }
-                goto();
-                return;
-              }
-              ['#battle_right', '#battle_left'].forEach(selector => { gE('#battle_main').replaceChild(gE(selector, doc), gE(selector)); })
-              unsafeWindow.battle = new unsafeWindow.Battle();
-              unsafeWindow.battle.clear_infopane();
-              $debug.log('______________newRound', true);
-              newRound(true);
-              onStepInDone();
-              onBattleRound();
-            } catch (e) { e => console.error(e) }
-          }
-        }
+              goto();
+              return;
+            }
+            ['#battle_right', '#battle_left'].forEach(selector => { gE('#battle_main').replaceChild(gE(selector, doc), gE(selector)); })
+            unsafeWindow.battle = new unsafeWindow.Battle();
+            unsafeWindow.battle.clear_infopane();
+            $debug.log('______________newRound', true);
+            newRound(true);
+            onStepInDone();
+            onBattleRound();
+          } catch (e) { e => console.error(e) } }
+        } catch (e) { console.error(e) } }
       };
       gE('body').appendChild(eventEnd);
 
@@ -3542,13 +3543,6 @@
         tw: { reg: /^Initializing The Tower/ },
         ba: { reg: /^Initializing random encounter/ },
       }
-      if (document.body.innerHTML.match(types.ba.reg)) {
-        const encounter = getEncounter();
-        if (encounter[0]) {
-          encounter[0].encountered = time(0);
-          setEncounter(encounter);
-        }
-      }
       const battleLog = gE('#textlog>tbody>tr>td', 'all');
       if (!battle.roundType) {
         const temp = battleLog[battleLog.length - 1].textContent;
@@ -3565,6 +3559,13 @@
           }
           battle.roundType = name;
           break;
+        }
+      }
+      if (battle.roundType === 'ba' || document.body.innerHTML.match(/Initializing random encounter/)) {
+        const encounter = getEncounter();
+        if (encounter[0]) {
+          encounter[0].encountered = time(0);
+          setEncounter(encounter);
         }
       }
       if (/You lose \d+ Stamina/.test(battleLog[0].textContent)) {
