@@ -4323,7 +4323,7 @@
         if (!ranges) {
           continue;
         }
-        if (ability && ability[ab]) {
+        if (ability && ability[ab] && ability[ab].level) {
           range = ranges[ability[ab].level];
         }
         break;
