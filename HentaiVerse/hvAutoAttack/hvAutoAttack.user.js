@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.51
+// @version      2.90.52
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -223,19 +223,20 @@
     function initAsync() {
       const $async = {
         list: [],
-        logSwitch: function (args) {
-          try {
-            const argsStr = Array.from(args).join(',');
-            const name = `${args.callee.name}${argsStr === '' ? argsStr : `(${argsStr})`}`;
-            const state = $async.list.indexOf(name) === -1;
-            if (!state) {
-              $async.list.splice($async.list.indexOf(name), 1);
-            } else {
-              $async.list.push(name);
-            }
-            console.log(`${state ? 'Start' : 'End'} ${name}\n`, JSON.parse(JSON.stringify($async.list)));
-          } catch (e) { }
-        }
+        logSwitchStrict: function (name, state) { try {
+          if (!state) {
+            $async.list.splice($async.list.indexOf(name), 1);
+          } else {
+            $async.list.push(name);
+          }
+          console.log(`${state ? 'Start' : 'End'} ${name}\n`, JSON.parse(JSON.stringify($async.list)));
+        } catch (e) { } },
+        logSwitch: function (args) { try {
+          const argsStr = Array.from(args).join(',');
+          const name = `${args.callee.name}${argsStr === '' ? argsStr : `(${argsStr})`}`;
+          const state = $async.list.indexOf(name) === -1;
+          $async.logSwitchStrict(name, state);
+        } catch (e) { } }
       }
       return $async;
     }
@@ -280,7 +281,7 @@
         if (url === undefined) { // 新一天
           encounter = [];
         }
-        encounter.unshift({ href: url, time: now });
+        encounter.unshift({ href: url + `time=${now}`, time: now });
         setEncounter(encounter);
       } else {
         if (encounter.length) {
@@ -2444,6 +2445,7 @@
         updateArena(),
       ]);
       if (!ready.isChecked()) {
+        $async.logSwitch(arguments);
         return;
       }
       if (option.idleArena && option.idleArenaValue) {
@@ -2712,6 +2714,7 @@
         const doc = $doc(await $ajax.fetch(href));
         count = gE('#equipblurb>table>tbody>tr>td:nth-child(2)', doc).innerText;
       }
+      $async.logSwitch(arguments);
       return count * 1 <= option.equStorageValue;
     } catch (e) { console.error(e) }; return false; }
 
@@ -2825,7 +2828,9 @@
         onEncounter();
         return;
       }
+      $async.logSwitchStrict('updateEncounter', true);
       if (getValue('disabled') || getValue('battle') || !checkBattleReady(onEncounter, { staminaLow: g('option').staminaEncounter })) {
+        $async.logSwitchStrict('updateEncounter', false);
         return;
       }
       setEncounter(getEncounter()); // 离开页面前保存
@@ -2833,25 +2838,26 @@
         setValue('lastHref', window.top.location.href);
       }
       $ajax.openNoFetch('https://e-hentai.org/news.php?encounter');
+      $async.logSwitchStrict('updateEncounter', false);
     }
 
-    async function startUpdateArena(idleStart, startIdleArena = true) {
-      try {
-        const now = time(0);
-        if (!idleStart) {
-          await updateArena();
-        }
-        let timeout = g('option').idleArenaTime * _1s;
-        if (idleStart) {
-          timeout -= time(0) - idleStart;
-        }
-        if (startIdleArena) {
-          setTimeout(idleArena, timeout);
-        }
-        const last = getValue('arena', true)?.date ?? now;
-        setTimeout(startUpdateArena, Math.max(0, Math.floor(last / _1d + 1) * _1d - now));
-      } catch (e) { console.error(e) }
-    }
+    async function startUpdateArena(idleStart, startIdleArena = true) { try {
+      $async.logSwitchStrict('startUpdateArena', true);
+      const now = time(0);
+      if (!idleStart) {
+        await updateArena();
+      }
+      let timeout = g('option').idleArenaTime * _1s;
+      if (idleStart) {
+        timeout -= time(0) - idleStart;
+      }
+      if (startIdleArena) {
+        setTimeout(idleArena, timeout);
+      }
+      const last = getValue('arena', true)?.date ?? now;
+      setTimeout(startUpdateArena, Math.max(0, Math.floor(last / _1d + 1) * _1d - now));
+      $async.logSwitchStrict('startUpdateArena', false);
+    } catch (e) { console.error(e) } }
 
     async function updateArena(forceUpdateToken = false) { try {
       if (getValue('disabled')) {
@@ -3522,33 +3528,30 @@
       g('bossAll', gE(`${monsterStateKeys.lv}[style^="background"]`, 'all').length);
       const bossDead = gE(`${monsterStateKeys.obj}[style*="opacity"] ${monsterStateKeys.lv}[style*="background"]`, 'all').length;
       g('bossAlive', g('bossAll') - bossDead);
+      const types = {
+        ar: {
+          reg: /^Initializing arena challenge/,
+          extra: (i) => i <= 35,
+        },
+        rb: {
+          reg: /^Initializing arena challenge/,
+          extra: (i) => i >= 105,
+        },
+        iw: { reg: /^Initializing Item World/ },
+        gr: { reg: /^Initializing Grindfest/ },
+        tw: { reg: /^Initializing The Tower/ },
+        ba: { reg: /^Initializing random encounter/ },
+      }
+      if (document.body.innerHTML.match(types.ba.reg)) {
+        const encounter = getEncounter();
+        if (encounter[0]) {
+          encounter[0].encountered = time(0);
+          setEncounter(encounter);
+        }
+      }
       const battleLog = gE('#textlog>tbody>tr>td', 'all');
       if (!battle.roundType) {
         const temp = battleLog[battleLog.length - 1].textContent;
-        const types = {
-          'ar': {
-            reg: /^Initializing arena challenge/,
-            extra: (i) => i <= 35,
-          },
-          'rb': {
-            reg: /^Initializing arena challenge/,
-            extra: (i) => i >= 105,
-          },
-          'iw': { reg: /^Initializing Item World/ },
-          'gr': { reg: /^Initializing Grindfest/ },
-          'tw': { reg: /^Initializing The Tower/ },
-          'ba': {
-            reg: /^Initializing random encounter/,
-            extra: (_) => {
-              const encounter = getEncounter();
-              if (encounter[0] && encounter[0].time >= time(0) - 0.5 * _1h) {
-                encounter[0].encountered = time(0);
-                setEncounter(encounter);
-              }
-              return true;
-            }
-          },
-        }
         battle.tower = (temp.match(/\(Floor (\d+)\)/) ?? [null])[1] * 1;
         const id = (temp.match(/\d+/) ?? [null])[0] * 1;
         battle.roundType = undefined;
