@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.48
+// @version      2.90.49
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -3000,7 +3000,7 @@
           token = `&postoken=${gE('#initform>input[name="postoken"]', $doc(await $ajax.fetch(query))).value}`;
         }
         writeArenaStart();
-        $ajax.fetch(query, `initid=${id === 'gr' ? 1 : id}${token}`);
+        await $ajax.fetch(query, `initid=${id === 'gr' ? 1 : id}${token}`);
         if (g('option').altBattleFirst && await $ajax.fetch(href.replace('://hentaiverse', '://alt.hentaiverse'))) {
           gotoAlt(true);
         } else {
