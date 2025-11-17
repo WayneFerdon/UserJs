@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.50
+// @version      2.90.51
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2397,86 +2397,84 @@
       window.location.href = `${href.slice(0, href.indexOf('.org') + 4)}/${isIsekai ? '' : 'isekai/'}`;
     }
 
-    async function asyncOnIdle() {
-      try {
-        updateEncounter(false);
-        if (getValue('disabled')) {
-          await pauseAsync(_1s);
-          return await asyncOnIdle();
-        }
-        $async.logSwitch(arguments);
-        const option = g('option');
-        const ready = {
-          isChecked: () => ready.supply && ready.repair,
-        };
-        const idleStart = time(0);
-        await Promise.all([
-          // ability
-          (async () => { try {
-            ready.ability = await asyncSetAbilityData() || true;
-            await tryEncounter();
-          } catch (e) { console.error(e) } })(),
-          // stamina & hathperk
-          (async () => { try {
-            ready.stamina = await Promise.all([
-              asyncSetStamina(),
-              asyncSetEnergyDrinkHathperk(),
-            ]) || true;
-            await tryEncounter();
-          } catch (e) { console.error(e) } })(),
-          // item & supply
-          (async () => { try {
-            ready.item = await asyncGetItems() || true;
-            await tryEncounter();
-            ready.supply = await asyncCheckSupply();
-            await tryEncounter();
-          } catch (e) { console.error(e) } })(),
-          // repair
-          (async () => { try {
-            ready.repair = await asyncCheckRepair();
-            await tryEncounter();
-          } catch (e) { console.error(e) } })(),
-          // equipment storage
-          (async () => { try {
-            ready.storage = await asyncCheckEquStorage();
-            await tryEncounter();
-          } catch (e) { console.error(e) } })(),
-          // arena data
-          updateArena(),
-        ]);
-        if (!ready.isChecked()) {
+    async function asyncOnIdle() { try {
+      updateEncounter(false);
+      if (getValue('disabled')) {
+        await pauseAsync(_1s);
+        return await asyncOnIdle();
+      }
+      $async.logSwitch(arguments);
+      const option = g('option');
+      const ready = {
+        isChecked: () => ready.supply && ready.repair,
+      };
+      const idleStart = time(0);
+      await Promise.all([
+        // ability
+        (async () => { try {
+          ready.ability = await asyncSetAbilityData() || true;
+          await tryEncounter();
+        } catch (e) { console.error(e) } })(),
+        // stamina & hathperk
+        (async () => { try {
+          ready.stamina = await Promise.all([
+            asyncSetStamina(),
+            asyncSetEnergyDrinkHathperk(),
+          ]) || true;
+          await tryEncounter();
+        } catch (e) { console.error(e) } })(),
+        // item & supply
+        (async () => { try {
+          ready.item = await asyncGetItems() || true;
+          await tryEncounter();
+          ready.supply = await asyncCheckSupply();
+          await tryEncounter();
+        } catch (e) { console.error(e) } })(),
+        // repair
+        (async () => { try {
+          ready.repair = await asyncCheckRepair();
+          await tryEncounter();
+        } catch (e) { console.error(e) } })(),
+        // equipment storage
+        (async () => { try {
+          ready.storage = await asyncCheckEquStorage();
+          await tryEncounter();
+        } catch (e) { console.error(e) } })(),
+        // arena data
+        updateArena(),
+      ]);
+      if (!ready.isChecked()) {
+        return;
+      }
+      if (option.idleArena && option.idleArenaValue) {
+        startUpdateArena(idleStart);
+      } else {
+        console.log("skip arena check");
+      }
+      setTimeout(autoSwitchIsekai, (option.isekaiTime * (Math.random() * 20 + 90) / 100) * _1s - (time(0) - idleStart));
+      $async.logSwitch(arguments);
+
+      async function tryEncounter() {
+        if (ready.encounterUpdated) {
           return;
         }
-        if (option.idleArena && option.idleArenaValue) {
-          startUpdateArena(idleStart);
-        } else {
-          console.log("skip arena check");
+        if (option.encounter) {
+          switch (true) {
+            case !ready.ability:
+            case !ready.stamina:
+            case option.restoreStamina && !ready.item:
+            case option.encounterSupply && !ready.supply:
+            case option.encounterRepair && !ready.repair:
+            case option.encounterEquStorage && !ready.storage:
+              return;
+          }
         }
-        setTimeout(autoSwitchIsekai, (option.isekaiTime * (Math.random() * 20 + 90) / 100) * _1s - (time(0) - idleStart));
+        ready.encounterUpdated = true;
         $async.logSwitch(arguments);
-
-        async function tryEncounter() {
-          if (ready.encounterUpdated) {
-            return;
-          }
-          if (option.encounter) {
-            switch (true) {
-              case !ready.ability:
-              case !ready.stamina:
-              case option.restoreStamina && !ready.item:
-              case option.encounterSupply && !ready.supply:
-              case option.encounterRepair && !ready.repair:
-              case option.encounterEquStorage && !ready.storage:
-                return;
-            }
-          }
-          ready.encounterUpdated = true;
-          $async.logSwitch(arguments);
-          await updateEncounter(option.encounter);
-          $async.logSwitch(arguments);
-        }
-      } catch (e) { console.error(e) }
-    }
+        await updateEncounter(option.encounter);
+        $async.logSwitch(arguments);
+      }
+    } catch (e) { console.error(e) } }
 
     function setEncounter(encounter) {
       return g('encounter', setValue('encounter', encounter));
@@ -2515,221 +2513,207 @@
       return getToday(Object.values(dict)).sort((x, y) => x.time < y.time ? 1 : x.time > y.time ? -1 : 0);
     }
 
-    async function asyncSetAbilityData() {
-      try {
-        if (getValue('disabled')) {
-          await pauseAsync(_1s);
-          return await asyncSetAbilityData();
-        }
-        $async.logSwitch(arguments);
-        const html = await $ajax.fetch('?s=Character&ss=ab');
-        const doc = $doc(html);
-        let ability = {};
-        await Promise.all(Array.from(gE('#ability_treelist>div>img', 'all', doc)).map(async img => {
-          try {
-            const _ = img.getAttribute('onclick')?.match(/(\?s=(.*)tree=(.*))'/);
-            const [href, type] = _ ? [_[1], _[3]] : ['?s=Character&ss=ab&tree=general', 'general'];
-            switch (type) {
-              case 'deprecating1':
-              case 'deprecating2':
-              case 'elemental':
-              case 'forbidden':
-              case 'divine':
-                break;
-              default:
-                return;
-            }
-            const html = await $ajax.fetch(href);
-            const doc = $doc(html);
-            const slots = Array.from(gE('.ability_slotbox>div>div', 'all', doc)).forEach(slot => {
-              const id = slot.id.match(/_(\d*)/)[1];
-              const parent = slot.parentNode.parentNode.parentNode;
-              ability[id] = {
-                name: gE('.fc2', parent).innerText,
-                type: type,
-                level: Array.from(gE('.aw1,.aw2,.aw3,.aw4,.aw5,.aw6,.aw7,.aw8,.aw9,.aw10', parent).children).map(div => div.style.cssText.indexOf('f.png') === -1 ? 0 : 1).reduce((x, y) => x + y),
-              }
-            });
-          } catch (e) { console.error(e) }
-        }));
-        setValue('ability', ability);
-        $async.logSwitch(arguments);
-      } catch (e) { console.error(e) }
-    }
-
-    async function asyncSetEnergyDrinkHathperk() {
-      try {
-        if (isIsekai || !g('option').restoreStamina) {
-          return;
-        }
-        if (getValue('disabled')) {
-          await pauseAsync(_1s);
-          return await asyncSetEnergyDrinkHathperk();
-        }
-        $async.logSwitch(arguments);
-        let currentID = getCurrentUser();
-        let perk = getValue('staminaHathperk') ?? {};
-        if (perk[currentID]) {
-          return;
-        }
-        const html = await $ajax.fetch('https://e-hentai.org/hathperks.php');
-        if (!html) {
-          return;
-        }
-        const doc = $doc(html);
-        const perks = gE('.stuffbox>table>tbody>tr', 'all', doc);
-        if (perks && perks[25].innerHTML.includes('Obtained')) {
-          perk[currentID] = true;
-          setValue('staminaHathperk', perk);
-        }
-        $async.logSwitch(arguments);
-      } catch (e) { console.error(e) }
-    }
-
-    async function asyncSetStamina() {
-      try {
-        if (getValue('disabled')) {
-          await pauseAsync(_1s);
-          return await asyncSetStamina();
-        }
-        $async.logSwitch(arguments);
-        const html = await $ajax.fetch(window.location.href);
-        setValue('staminaTime', Math.floor(time(0) / 1000 / 60 / 60));
-        setValue('stamina', gE('#stamina_readout .fc4.far>div', $doc(html)).textContent.match(/\d+/)[0] * 1);
-        $async.logSwitch(arguments);
-      } catch (e) { console.error(e) }
-    }
-
-    async function asyncGetItems() {
-      try {
-        if (!g('option').checkSupply && (isIsekai || !g('option').restoreStamina)) {
-          return;
-        }
-        if (getValue('disabled')) {
-          await pauseAsync(_1s);
-          return await asyncGetItems();
-        }
-        $async.logSwitch(arguments);
-        const html = await $ajax.fetch('?s=Character&ss=it');
-        const items = {};
-        for (let each of gE('.nosel.itemlist>tbody', $doc(html)).children) {
-          const name = each.children[0].children[0].innerText;
-          const id = each.children[0].children[0].getAttribute('id').split('_')[1];
-          const count = each.children[1].innerText;
-          items[id] = [name, count];
-        }
-        g('items', items);
-        $async.logSwitch(arguments);
-      } catch (e) { console.error(e) }
-    }
-
-    async function asyncCheckSupply() {
-      try {
-        if (!g('option').checkSupply) {
-          return true;
-        }
-        if (getValue('disabled')) {
-          await pauseAsync(_1s);
-          return await asyncCheckSupply();
-        }
-        $async.logSwitch(arguments);
-        const items = g('items');
-        const thresholdList = g('option').checkItem;
-        const checkList = g('option').isCheck;
-        const needs = [];
-        for (let id in checkList) {
-          const item = items[id];
-          if (!item) {
-            continue;
-          }
-          const [name, count] = item;
-          const threshold = thresholdList[id] ?? 0;
-          if ((count ?? 0) >= threshold) {
-            continue;
-          }
-          needs.push(`\n${name}(${count}<${threshold})`);
-        }
-        if (needs.length) {
-          console.log(`Needs supply:${needs}`);
-          document.title = `[C!]` + document.title;
-        }
-        $async.logSwitch(arguments);
-        return !needs.length;
-      } catch (e) { console.error(e) } return false;
-    }
-
-    async function asyncCheckRepair() {
-      try {
-        if (!g('option').repair) {
-          return true;
-        }
-        if (getValue('disabled')) {
-          await pauseAsync(_1s);
-          return await asyncCheckRepair();
-        }
-        $async.logSwitch(arguments);
-        let eqps;
-        if (hvVersion < 91) {
-          const href = `?s=Forge&ss=re`;
-          const doc = $doc(await $ajax.fetch(href));
-          const json = JSON.parse((await $ajax.fetch(gE('#mainpane>script[src]', doc).src)).match(/{.*}/)[0]);
-          eqps = await Promise.all(Array.from(gE('.eqp>[id]', 'all', doc)).map(async eqp => { try {
-            const id = eqp.id.match(/\d+/)[0];
-            const condition = 1 * json[id].d.match(/Condition: \d+ \/ \d+ \((\d+)%\)/)[1];
-            if (condition > g('option').repairValue) {
+    async function asyncSetAbilityData() { try {
+      if (getValue('disabled')) {
+        await pauseAsync(_1s);
+        return await asyncSetAbilityData();
+      }
+      $async.logSwitch(arguments);
+      const html = await $ajax.fetch('?s=Character&ss=ab');
+      const doc = $doc(html);
+      let ability = {};
+      await Promise.all(Array.from(gE('#ability_treelist>div>img', 'all', doc)).map(async img => {
+        try {
+          const _ = img.getAttribute('onclick')?.match(/(\?s=(.*)tree=(.*))'/);
+          const [href, type] = _ ? [_[1], _[3]] : ['?s=Character&ss=ab&tree=general', 'general'];
+          switch (type) {
+            case 'deprecating1':
+            case 'deprecating2':
+            case 'elemental':
+            case 'forbidden':
+            case 'divine':
+              break;
+            default:
               return;
+          }
+          const html = await $ajax.fetch(href);
+          const doc = $doc(html);
+          const slots = Array.from(gE('.ability_slotbox>div>div', 'all', doc)).forEach(slot => {
+            const id = slot.id.match(/_(\d*)/)[1];
+            const parent = slot.parentNode.parentNode.parentNode;
+            ability[id] = {
+              name: gE('.fc2', parent).innerText,
+              type: type,
+              level: Array.from(gE('.aw1,.aw2,.aw3,.aw4,.aw5,.aw6,.aw7,.aw8,.aw9,.aw10', parent).children).map(div => div.style.cssText.indexOf('f.png') === -1 ? 0 : 1).reduce((x, y) => x + y),
             }
-            const after = $doc(await $ajax.fetch(href, `select_item=${id}`));
-            return gE('.messagebox_error', )?.innerText ? undefined : id;
-          } catch (e) { console.error(e) } }));
-        } else {
-          const href = `?s=Bazaar&ss=am&screen=repair&filter=equipped`;
-          const doc = $doc(await $ajax.fetch(href));
-          const token = gE('#equipform>input[name="postoken"]', doc).value;
-          eqps = await Promise.all(Array.from(gE('#equiplist>table>tbody>tr:not(.eqselall):not(.eqtplabel)', 'all', doc)).map(async eqp => { try {
-            const id = gE('input', eqp).value;
-            const condition = 1 * gE('td:last-child', eqp).textContent.replace('%', '');
-            if (condition > g('option').repairValue) {
-              return;
-            }
-            const after = $doc(await $ajax.fetch(href, `&eqids[]=${id}&postoken=${token}&replace_charms=on`));
-            return gE(`#e${id}`, after) ? id : undefined;
-          } catch (e) { console.error(e) } }));
-        }
-        eqps = eqps.filter(e=>e);
-        if (eqps.length) {
-          console.log('eqps need repair: ', eqps);
-          document.title = `[R!]` + document.title;
-        }
-        $async.logSwitch(arguments);
-        return !eqps.length;
-      } catch (e) { console.error(e) }; return false;
-    }
+          });
+        } catch (e) { console.error(e) }
+      }));
+      setValue('ability', ability);
+      $async.logSwitch(arguments);
+    } catch (e) { console.error(e) } }
 
-    async function asyncCheckEquStorage() {
-      try {
-        const option = g('option');
-        if (!option.equStorage) {
-          return true;
+    async function asyncSetEnergyDrinkHathperk() { try {
+      if (isIsekai || !g('option').restoreStamina) {
+        return;
+      }
+      if (getValue('disabled')) {
+        await pauseAsync(_1s);
+        return await asyncSetEnergyDrinkHathperk();
+      }
+      $async.logSwitch(arguments);
+      let currentID = getCurrentUser();
+      let perk = getValue('staminaHathperk') ?? {};
+      if (perk[currentID]) {
+        return;
+      }
+      const html = await $ajax.fetch('https://e-hentai.org/hathperks.php');
+      if (!html) {
+        return;
+      }
+      const doc = $doc(html);
+      const perks = gE('.stuffbox>table>tbody>tr', 'all', doc);
+      if (perks && perks[25].innerHTML.includes('Obtained')) {
+        perk[currentID] = true;
+        setValue('staminaHathperk', perk);
+      }
+      $async.logSwitch(arguments);
+    } catch (e) { console.error(e) } }
+
+    async function asyncSetStamina() { try {
+      if (getValue('disabled')) {
+        await pauseAsync(_1s);
+        return await asyncSetStamina();
+      }
+      $async.logSwitch(arguments);
+      const html = await $ajax.fetch(window.location.href);
+      setValue('staminaTime', Math.floor(time(0) / 1000 / 60 / 60));
+      setValue('stamina', gE('#stamina_readout .fc4.far>div', $doc(html)).textContent.match(/\d+/)[0] * 1);
+      $async.logSwitch(arguments);
+    } catch (e) { console.error(e) } }
+
+    async function asyncGetItems() { try {
+      if (!g('option').checkSupply && (isIsekai || !g('option').restoreStamina)) {
+        return;
+      }
+      if (getValue('disabled')) {
+        await pauseAsync(_1s);
+        return await asyncGetItems();
+      }
+      $async.logSwitch(arguments);
+      const html = await $ajax.fetch('?s=Character&ss=it');
+      const items = {};
+      for (let each of gE('.nosel.itemlist>tbody', $doc(html)).children) {
+        const name = each.children[0].children[0].innerText;
+        const id = each.children[0].children[0].getAttribute('id').split('_')[1];
+        const count = each.children[1].innerText;
+        items[id] = [name, count];
+      }
+      g('items', items);
+      $async.logSwitch(arguments);
+    } catch (e) { console.error(e) } }
+
+    async function asyncCheckSupply() { try {
+      if (!g('option').checkSupply) {
+        return true;
+      }
+      if (getValue('disabled')) {
+        await pauseAsync(_1s);
+        return await asyncCheckSupply();
+      }
+      $async.logSwitch(arguments);
+      const items = g('items');
+      const thresholdList = g('option').checkItem;
+      const checkList = g('option').isCheck;
+      const needs = [];
+      for (let id in checkList) {
+        const item = items[id];
+        if (!item) {
+          continue;
         }
-        if (getValue('disabled')) {
-          await pauseAsync(_1s);
-          return await asyncCheckEquStorage();
+        const [name, count] = item;
+        const threshold = thresholdList[id] ?? 0;
+        if ((count ?? 0) >= threshold) {
+          continue;
         }
-        $async.logSwitch(arguments);
-        let count;
-        if (hvVersion < 91) {
-          const href = `?s=Character&ss=in`;
-          const doc = $doc(await $ajax.fetch(href));
-          count = gE('#eqinv_bot>div>div>div', doc).innerText.match(/: (\d+) \/ \d+/)[1];
-        } else {
-          const href = `?s=Bazaar&ss=am`;
-          const doc = $doc(await $ajax.fetch(href));
-          count = gE('#equipblurb>table>tbody>tr>td:nth-child(2)', doc).innerText;
-        }
-        return count * 1 <= option.equStorageValue;
-      } catch (e) { console.error(e) }; return false;
-    }
+        needs.push(`\n${name}(${count}<${threshold})`);
+      }
+      if (needs.length) {
+        console.log(`Needs supply:${needs}`);
+        document.title = `[C!]` + document.title;
+      }
+      $async.logSwitch(arguments);
+      return !needs.length;
+    } catch (e) { console.error(e) } return false; }
+
+    async function asyncCheckRepair() { try {
+      if (!g('option').repair) {
+        return true;
+      }
+      if (getValue('disabled')) {
+        await pauseAsync(_1s);
+        return await asyncCheckRepair();
+      }
+      $async.logSwitch(arguments);
+      let eqps;
+      if (hvVersion < 91) {
+        const href = `?s=Forge&ss=re`;
+        const doc = $doc(await $ajax.fetch(href));
+        const json = JSON.parse((await $ajax.fetch(gE('#mainpane>script[src]', doc).src)).match(/{.*}/)[0]);
+        eqps = await Promise.all(Array.from(gE('.eqp>[id]', 'all', doc)).map(async eqp => { try {
+          const id = eqp.id.match(/\d+/)[0];
+          const condition = 1 * json[id].d.match(/Condition: \d+ \/ \d+ \((\d+)%\)/)[1];
+          if (condition > g('option').repairValue) {
+            return;
+          }
+          const after = $doc(await $ajax.fetch(href, `select_item=${id}`));
+          return gE('.messagebox_error', )?.innerText ? undefined : id;
+        } catch (e) { console.error(e) } }));
+      } else {
+        const href = `?s=Bazaar&ss=am&screen=repair&filter=equipped`;
+        const doc = $doc(await $ajax.fetch(href));
+        const token = gE('#equipform>input[name="postoken"]', doc).value;
+        eqps = await Promise.all(Array.from(gE('#equiplist>table>tbody>tr:not(.eqselall):not(.eqtplabel)', 'all', doc)).map(async eqp => { try {
+          const id = gE('input', eqp).value;
+          const condition = 1 * gE('td:last-child', eqp).textContent.replace('%', '');
+          if (condition > g('option').repairValue) {
+            return;
+          }
+          const after = $doc(await $ajax.fetch(href, `&eqids[]=${id}&postoken=${token}&replace_charms=on`));
+          return gE(`#e${id}`, after) ? id : undefined;
+        } catch (e) { console.error(e) } }));
+      }
+      eqps = eqps.filter(e=>e);
+      if (eqps.length) {
+        console.log('eqps need repair: ', eqps);
+        document.title = `[R!]` + document.title;
+      }
+      $async.logSwitch(arguments);
+      return !eqps.length;
+    } catch (e) { console.error(e) }; return false; }
+
+    async function asyncCheckEquStorage() { try {
+      const option = g('option');
+      if (!option.equStorage) {
+        return true;
+      }
+      if (getValue('disabled')) {
+        await pauseAsync(_1s);
+        return await asyncCheckEquStorage();
+      }
+      $async.logSwitch(arguments);
+      let count;
+      if (hvVersion < 91) {
+        const href = `?s=Character&ss=in`;
+        const doc = $doc(await $ajax.fetch(href));
+        count = gE('#eqinv_bot>div>div>div', doc).innerText.match(/: (\d+) \/ \d+/)[1];
+      } else {
+        const href = `?s=Bazaar&ss=am`;
+        const doc = $doc(await $ajax.fetch(href));
+        count = gE('#equipblurb>table>tbody>tr>td:nth-child(2)', doc).innerText;
+      }
+      return count * 1 <= option.equStorageValue;
+    } catch (e) { console.error(e) }; return false; }
 
     function checkBattleReady(method, condition = {}) {
       if (getValue('disabled')) {
@@ -2783,59 +2767,57 @@
       }
     }
 
-    async function updateEncounter(engage, isInBattle) {
-      try {
-        if (!g('option').encounter && !g('option').encounterDisplay) {
-          console.log("skip encounter check");
-          return false;
-        }
-        if (getValue('disabled')) {
-          await pauseAsync(_1s);
-          return await updateEncounter(engage, isInBattle);
-        }
-        const encounter = getEncounter();
-        const count = encounter.filter(e => e.href).length;
-
-        const now = time(0);
-        const last = encounter[0]?.time ?? getValue('lastEH', true) ?? 0; // 上次遭遇 或 上次打开EH 或 0
-        let cd;
-        if (encounter.filter(e => e.href && (e.encountered || (time(0) - e.time >= 30 * _1m))).length >= 24) {
-          cd = Math.floor(encounter[0].time / _1d + 1) * _1d - now;
-        } else if (!last) {
-          cd = 0;
-        } else {
-          cd = _1h / 2 + last - now;
-        }
-        cd = Math.max(0, cd);
-        const ui = gE('.encounterUI') ?? (() => {
-          const ui = gE('body').appendChild(cE('a'));
-          ui.className = 'encounterUI';
-          ui.title = `${time(3, last)}\nEncounter Time: ${count}`;
-          if (!isInBattle) {
-            ui.href = 'https://e-hentai.org/news.php?encounter';
-          }
-          return ui;
-        })();
-
-        const missed = count - encounter.filter(e => e.encountered && e.href).length;
-        if (count === 24) {
-          ui.style.cssText += 'color:orange!important;';
-        } else if (!cd) {
-          ui.style.cssText += 'color:red!important;';
-        } else {
-          ui.style.cssText += 'color:unset!important;';
-        }
-        ui.innerHTML = `${formatTime(cd).slice(0, 2).map(cdi => cdi.toString().padStart(2, '0')).join(`:`)}[${encounter.length ? (count >= 24 ? `☯` : count) : `✪`}${missed ? `-${missed}` : ``}]`;
-        if (engage && !cd) {
-          onEncounter();
-          return true;
-        }
-        let interval = cd > _1h ? _1m : (!g('option').encounterQuickCheck || cd > _1m) ? _1s : 80;
-        interval = (g('option').encounterQuickCheck && cd > _1m) ? (interval - cd % interval) / 4 : interval; // 让倒计时显示更平滑
-        setTimeout(() => updateEncounter(engage), interval);
+    async function updateEncounter(engage, isInBattle) { try {
+      if (!g('option').encounter && !g('option').encounterDisplay) {
+        console.log("skip encounter check");
         return false;
-      } catch (e) { console.error(e) }
-    }
+      }
+      if (getValue('disabled')) {
+        await pauseAsync(_1s);
+        return await updateEncounter(engage, isInBattle);
+      }
+      const encounter = getEncounter();
+      const count = encounter.filter(e => e.href).length;
+
+      const now = time(0);
+      const last = encounter[0]?.time ?? getValue('lastEH', true) ?? 0; // 上次遭遇 或 上次打开EH 或 0
+      let cd;
+      if (encounter.filter(e => e.href && (e.encountered || (time(0) - e.time >= 30 * _1m))).length >= 24) {
+        cd = Math.floor(encounter[0].time / _1d + 1) * _1d - now;
+      } else if (!last) {
+        cd = 0;
+      } else {
+        cd = _1h / 2 + last - now;
+      }
+      cd = Math.max(0, cd);
+      const ui = gE('.encounterUI') ?? (() => {
+        const ui = gE('body').appendChild(cE('a'));
+        ui.className = 'encounterUI';
+        ui.title = `${time(3, last)}\nEncounter Time: ${count}`;
+        if (!isInBattle) {
+          ui.href = 'https://e-hentai.org/news.php?encounter';
+        }
+        return ui;
+      })();
+
+      const missed = count - encounter.filter(e => e.encountered && e.href).length;
+      if (count === 24) {
+        ui.style.cssText += 'color:orange!important;';
+      } else if (!cd) {
+        ui.style.cssText += 'color:red!important;';
+      } else {
+        ui.style.cssText += 'color:unset!important;';
+      }
+      ui.innerHTML = `${formatTime(cd).slice(0, 2).map(cdi => cdi.toString().padStart(2, '0')).join(`:`)}[${encounter.length ? (count >= 24 ? `☯` : count) : `✪`}${missed ? `-${missed}` : ``}]`;
+      if (engage && !cd) {
+        onEncounter();
+        return true;
+      }
+      let interval = cd > _1h ? _1m : (!g('option').encounterQuickCheck || cd > _1m) ? _1s : 80;
+      interval = (g('option').encounterQuickCheck && cd > _1m) ? (interval - cd % interval) / 4 : interval; // 让倒计时显示更平滑
+      setTimeout(() => updateEncounter(engage), interval);
+      return false;
+    } catch (e) { console.error(e) } }
 
     async function onEncounter() {
       if (!(await $ajax.fetch(href))) { // perhaps network connect not available
@@ -2871,150 +2853,145 @@
       } catch (e) { console.error(e) }
     }
 
-    async function updateArena(forceUpdateToken = false) {
-      try {
-        if (getValue('disabled')) {
-          await pauseAsync(_1s);
-          return await updateArena(forceUpdateToken);
-        }
-        let arena = getValue('arena', true) ?? {};
-        const isToday = arena.date && time(2, arena.date) === time(2);
-        if (forceUpdateToken || !isToday || !arena.isOptionUpdated) {
-          arena.token = {};
-          arena.sites ??= [
-            '?s=Battle&ss=gr',
-            '?s=Battle&ss=ar',
-            '?s=Battle&ss=ar&page=2',
-            '?s=Battle&ss=rb'
-          ]
-          await Promise.all(arena.sites.map(async site => {
-            try {
-              const doc = $doc(await $ajax.fetch(site));
-              getStartBattleButtons(doc).forEach(btn => { arena.token[btn.id] = btn.token ?? null; });
-            } catch (e) { console.error(e) }
-          }));
-        }
-        if (!isToday) {
-          arena.date = time(0);
-          arena.gr = g('option').idleArenaGrTime;
-          arena.arrayDone = [];
-        }
-        if (!isToday || !arena.isOptionUpdated) {
-          arena.array = g('option').idleArenaValue?.split(',') ?? [];
-          arena.array.reverse();
-        }
-        arena.arrayDone = arena.arrayDone.filter(id => id === 'gr' || !Object.keys(arena.token).includes(id.toString()));
-        return setValue('arena', arena);
-      } catch (e) { console.error(e) }
-    }
+    async function updateArena(forceUpdateToken = false) { try {
+      if (getValue('disabled')) {
+        await pauseAsync(_1s);
+        return await updateArena(forceUpdateToken);
+      }
+      let arena = getValue('arena', true) ?? {};
+      const isToday = arena.date && time(2, arena.date) === time(2);
+      if (forceUpdateToken || !isToday || !arena.isOptionUpdated) {
+        arena.token = {};
+        arena.sites ??= [
+          '?s=Battle&ss=gr',
+          '?s=Battle&ss=ar',
+          '?s=Battle&ss=ar&page=2',
+          '?s=Battle&ss=rb'
+        ]
+        await Promise.all(arena.sites.map(async site => {
+          try {
+            const doc = $doc(await $ajax.fetch(site));
+            getStartBattleButtons(doc).forEach(btn => { arena.token[btn.id] = btn.token ?? null; });
+          } catch (e) { console.error(e) }
+        }));
+      }
+      if (!isToday) {
+        arena.date = time(0);
+        arena.gr = g('option').idleArenaGrTime;
+        arena.arrayDone = [];
+      }
+      if (!isToday || !arena.isOptionUpdated) {
+        arena.array = g('option').idleArenaValue?.split(',') ?? [];
+        arena.array.reverse();
+      }
+      arena.arrayDone = arena.arrayDone.filter(id => id === 'gr' || !Object.keys(arena.token).includes(id.toString()));
+      return setValue('arena', arena);
+    } catch (e) { console.error(e) } }
 
-    async function idleArena() {
-      try { // 闲置竞技场
-        let id;
-        let arena = getValue('arena', true);
-        const option = g('option');
-        const writeArenaStart = function () {
-          console.log('Arena Start', id);
-          document.title = _alert(-1, '闲置竞技场开始', '閒置競技場開始', 'Idle Arena start');
-          if (id !== 'gr') {
-            arena.arrayDone.push(id);
-          } else {
-            arena.gr--;
-          }
-          setValue('arena', arena);
+    async function idleArena() { try { // 闲置竞技场
+      let id;
+      let arena = getValue('arena', true);
+      const option = g('option');
+      const writeArenaStart = function () {
+        console.log('Arena Start', id);
+        document.title = _alert(-1, '闲置竞技场开始', '閒置競技場開始', 'Idle Arena start');
+        if (id !== 'gr') {
+          arena.arrayDone.push(id);
+        } else {
+          arena.gr--;
         }
-        console.log('arena:', getValue('arena', true));
-        if (arena.array.length === 0) {
-          setTimeout(autoSwitchIsekai, (option.isekaiTime * (Math.random() * 20 + 90) / 100) * _1s);
-          return;
+        setValue('arena', arena);
+      }
+      console.log('arena:', getValue('arena', true));
+      if (arena.array.length === 0) {
+        setTimeout(autoSwitchIsekai, (option.isekaiTime * (Math.random() * 20 + 90) / 100) * _1s);
+        return;
+      }
+      $async.logSwitch(arguments);
+      const array = [...arena.array];
+      const RBundone = [];
+      while (array.length > 0) {
+        id = array.pop() * 1;
+        id = isNaN(id) ? 'gr' : id;
+        if (arena.arrayDone?.includes(id)) {
+          id = undefined;
+          continue;
         }
-        $async.logSwitch(arguments);
-        const array = [...arena.array];
-        const RBundone = [];
-        while (array.length > 0) {
-          id = array.pop() * 1;
-          id = isNaN(id) ? 'gr' : id;
-          if (arena.arrayDone?.includes(id)) {
-            id = undefined;
-            continue;
-          }
+        if (id in arena.token) {
+          break;
+        }
+        if (id >= 105) {
+          arena.token = (await updateArena(true)).token;
           if (id in arena.token) {
             break;
           }
-          if (id >= 105) {
-            arena.token = (await updateArena(true)).token;
-            if (id in arena.token) {
-              break;
-            }
-          }
-          id = undefined;
         }
-        if (!id) {
-          console.log('No Arena Id Available', arena);
-          setValue('arena', arena);
-          $async.logSwitch(arguments);
-          return;
-        }
-        let staminaCost = {
-          1: 2, 3: 4, 5: 6, 8: 8, 9: 10,
-          11: 12, 12: 15, 13: 20, 15: 25, 16: 30,
-          17: 35, 19: 40, 20: 45, 21: 50, 23: 55,
-          24: 60, 26: 65, 27: 70, 28: 75, 29: 80,
-          32: 85, 33: 90, 34: 95, 35: 100,
-          105: 1, 106: 1, 107: 1, 108: 1, 109: 1, 110: 1, 111: 1, 112: 1,
-          gr: arena.gr
-        }
-        let stamina = getValue('stamina');
-        const lastTime = getValue('staminaTime');
-        let timeNow = Math.floor(time(0) / 1000 / 60 / 60);
-        stamina += lastTime ? timeNow - lastTime : 0;
-        for (let id in staminaCost) {
-          staminaCost[id] *= (isIsekai ? 2 : 1) * (stamina >= 60 ? 0.03 : 0.02)
-        }
-        staminaCost.gr += 1
-
-        let query;
-        let token = arena.token[id];
-        const cost = staminaCost[id];
-        if (id === 'gr') {
-          if (arena.gr <= 0) {
-            setValue('arena', arena);
-            idleArena();
-            arena.arrayDone.push('gr');
-            return;
-          }
-          query = 'gr';
-        } else if (id >= 105) {
-          query = 'rb';
-        } else if (id >= 19) {
-          query = 'ar&page=2';
-        } else {
-          query = 'ar';
-        }
-        query = `?s=Battle&ss=${query}`;
-        if (!checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: option.encounter, staminaLow: id === 'gr' ? option.staminaGrindFest : undefined })) {
-          console.log('Check Battle Ready Failed');
-          $async.logSwitch(arguments);
-          return;
-        }
-        if (hvVersion < 91) {
-          token = `&inittoken=${token}`;
-        } else {
-          token = `&postoken=${gE('#initform>input[name="postoken"]', $doc(await $ajax.fetch(query))).value}`;
-        }
-        writeArenaStart();
-        await $ajax.fetch(query, `initid=${id === 'gr' ? 1 : id}${token}`);
-        console.log('Arena Fetch Done.', 'altBattleFirst:', g('option').altBattleFirst);
-        if (g('option').altBattleFirst && await $ajax.fetch(href.replace('://hentaiverse', '://alt.hentaiverse'))) {
-          console.log('Arena goto alt');
-          gotoAlt(true);
-        } else {
-          console.log('Arena goto');
-          goto();
-        }
+        id = undefined;
+      }
+      if (!id) {
+        console.log('No Arena Id Available', arena);
+        setValue('arena', arena);
         $async.logSwitch(arguments);
-      } catch (e) { console.error(e) }
-    }
+        return;
+      }
+      let staminaCost = {
+        1: 2, 3: 4, 5: 6, 8: 8, 9: 10,
+        11: 12, 12: 15, 13: 20, 15: 25, 16: 30,
+        17: 35, 19: 40, 20: 45, 21: 50, 23: 55,
+        24: 60, 26: 65, 27: 70, 28: 75, 29: 80,
+        32: 85, 33: 90, 34: 95, 35: 100,
+        105: 1, 106: 1, 107: 1, 108: 1, 109: 1, 110: 1, 111: 1, 112: 1,
+        gr: 0
+      }
+      let stamina = getValue('stamina');
+      const lastTime = getValue('staminaTime');
+      let timeNow = Math.floor(time(0) / 1000 / 60 / 60);
+      stamina += lastTime ? timeNow - lastTime : 0;
+      for (let id in staminaCost) {
+        staminaCost[id] *= (isIsekai ? 2 : 1) * (stamina >= 60 ? 0.03 : 0.02)
+      }
+
+      let query;
+      let token = arena.token[id];
+      const cost = staminaCost[id];
+      if (id === 'gr') {
+        if (arena.gr <= 0) {
+          setValue('arena', arena);
+          idleArena();
+          arena.arrayDone.push('gr');
+          return;
+        }
+        query = 'gr';
+      } else if (id >= 105) {
+        query = 'rb';
+      } else if (id >= 19) {
+        query = 'ar&page=2';
+      } else {
+        query = 'ar';
+      }
+      query = `?s=Battle&ss=${query}`;
+      if (!checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: option.encounter, staminaLow: id === 'gr' ? option.staminaGrindFest : undefined })) {
+        console.log('Check Battle Ready Failed');
+        $async.logSwitch(arguments);
+        return;
+      }
+      if (hvVersion < 91) {
+        token = `&inittoken=${token}`;
+      } else {
+        token = `&postoken=${gE('#initform>input[name="postoken"]', $doc(await $ajax.fetch(query))).value}`;
+      }
+      writeArenaStart();
+      await $ajax.fetch(query, `initid=${id === 'gr' ? 1 : id}${token}`);
+      console.log('Arena Fetch Done.', 'altBattleFirst:', g('option').altBattleFirst);
+      if (g('option').altBattleFirst && await $ajax.fetch(href.replace('://hentaiverse', '://alt.hentaiverse'))) {
+        console.log('Arena goto alt');
+        gotoAlt(true);
+      } else {
+        console.log('Arena goto');
+        goto();
+      }
+      $async.logSwitch(arguments);
+    } catch (e) { console.error(e) } }
 
     // 战斗中//
     function onBattleRound() { // 主程序
