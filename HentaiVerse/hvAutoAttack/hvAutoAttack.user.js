@@ -589,10 +589,10 @@
         return;
       }
       const button = parent.appendChild(cE('button'));
-      button.innerHTML = '<l0>暂停</l0><l1>暫停</l1><l2>Pause</l2>';
+      button.innerHTML = `<l0>暂停</l0><l1>暫停</l1><l2>Pause</l2>(${g('option').pauseHotkeyStr})`;
       if (getValue('disabled')) { // 如果禁用
         document.title = _alert(-1, 'hvAutoAttack暂停中', 'hvAutoAttack暫停中', 'hvAutoAttack Paused');
-        button.innerHTML = '<l0>继续</l0><l1>繼續</l1><l2>Continue</l2>';
+        button.innerHTML = `<l0>继续</l0><l1>繼續</l1><l2>Continue</l2>(${g('option').pauseHotkeyStr})`;
       }
       button.className = 'pauseChange';
       button.onclick = pauseChange;
@@ -617,7 +617,7 @@
         return;
       }
       const button = parent.appendChild(cE('button'));
-      button.innerHTML = '<l0>步进</l0><l1>步進</l1><l2>StepIn</l2>';
+      button.innerHTML = `<l0>步进</l0><l1>步進</l1><l2>StepIn</l2>(${g('option').stepInHotkeyStr})`;
       button.className = 'stepIn';
       button.onclick = stepIn;
     }
@@ -2334,7 +2334,7 @@
     function pauseChange() { // 暂停状态更改
       if (getValue('disabled')) {
         if (gE('.pauseChange')) {
-          gE('.pauseChange').innerHTML = '<l0>暂停</l0><l1>暫停</l1><l2>Pause</l2>';
+          gE('.pauseChange').innerHTML = `<l0>暂停</l0><l1>暫停</l1><l2>Pause</l2>(${g('option').pauseHotkeyStr})`;
         }
         document.title = gE('#navbar') ? 'The Hentaiverse' : getValue('disabled');
         delValue(0);
@@ -2343,7 +2343,7 @@
         }
       } else {
         if (gE('.pauseChange')) {
-          gE('.pauseChange').innerHTML = '<l0>继续</l0><l1>繼續</l1><l2>Continue</l2>';
+          gE('.pauseChange').innerHTML = `<l0>继续</l0><l1>繼續</l1><l2>Continue</l2>(${g('option').pauseHotkeyStr})`;
         }
         setValue('disabled', document.title);
         document.title = _alert(-1, 'hvAutoAttack暂停中', 'hvAutoAttack暫停中', 'hvAutoAttack Paused');
@@ -3256,7 +3256,7 @@
 
       if (getValue('disabled')) { // 如果禁用
         document.title = _alert(-1, 'hvAutoAttack暂停中', 'hvAutoAttack暫停中', 'hvAutoAttack Paused');
-        gE('#hvAABox2>button').innerHTML = '<l0>继续</l0><l1>繼續</l1><l2>Continue</l2>';
+        gE('#hvAABox2>button').innerHTML = `<l0>继续</l0><l1>繼續</l1><l2>Continue</l2>(${g('option').pauseHotkeyStr})`;
         return;
       }
       battle = getValue('battle', true);
