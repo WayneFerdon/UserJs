@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.55
+// @version      2.90.56
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -899,11 +899,11 @@
       optionBox.innerHTML = [
         '<div class="hvAACenter">',
         '  <h1 style="display:inline;">hvAutoAttack</h1>',
-        '  <a href="https://github.com/dodying/UserJs/commits/master/HentaiVerse/hvAutoAttack/hvAutoAttack.user.js" target="_blank"><l0>更新历史</l0><l1>更新歷史</l1><l2>ChangeLog</l2></a>',
-        '  <l01><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README.md" target="_blank">使用说明</a></l01><l2><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README_en.md" target="_blank">README</a></l2>',
         '  <select name="lang"><option value="0">简体中文</option><option value="1">繁體中文</option><option value="2">English</option></select>',
         (g('option')?.optionStandalone ? isIsekai ? '<l0>当前为异世界单独配置</l0><l1>當前為異世界單獨配置</l1><l2>Using Isekai standalone option</l2>' : '<l0>当前为恒定世界单独配置</l0><l1>當前為恆定世界單獨配置</l1><l2>Using Persistent standalone option</l2>' : ''),
-        '  <l2><span style="font-size:small;"><a target="_blank" href="https://greasyfork.org/forum/profile/18194/Koko191" style="color:#E3E0D1;background-color:#E3E0D1;" title="Thanks to Koko191 who give help in the translation">by Koko191</a></span></l2></div>',
+        '  </br><a href="https://github.com/dodying/UserJs/commits/master/HentaiVerse/hvAutoAttack/hvAutoAttack.user.js" target="_blank"><l0>更新历史</l0><l1>更新歷史</l1><l2>ChangeLog</l2></a>',
+        '  <l01><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README.md" target="_blank">使用说明</a></l01><l2><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README_en.md" target="_blank">README</a></l2>',
+        '  <l012><span style="font-size:small;"><a target="_blank" href="https://greasyfork.org/forum/profile/18194/Koko191" style="color:#E3E0D1;background-color:#E3E0D1;" title="Thanks to Koko191 who give help in the translation">by Koko191</a></span></l012></div>',
         '<div class="hvAATablist">',
 
         '<div class="hvAATabmenu">',
@@ -1485,9 +1485,10 @@
         if (group.length + 1 === gE('select[name="groupChoose"]>option', 'all', customizeBox).length) {
           return;
         }
-        gE('select[name="groupChoose"]', customizeBox).textContent = '';
+        const select = gE('select[name="groupChoose"]', customizeBox);
+        select.textContent = '';
         for (let i = 0; i <= group.length; i++) {
-          const option = gE('select[name="groupChoose"]', customizeBox).appendChild(cE('option'));
+          const option = select.appendChild(cE('option'));
           if (i === group.length) {
             option.value = 'new';
             option.textContent = 'new';
@@ -1515,6 +1516,7 @@
         gE('.customizeBox').style.zIndex = 5;
         gE('.customizeBox').style.top = `${position.bottom - bodyPosition.top}px`;
         gE('.customizeBox').style.left = `${position.left - bodyPosition.left}px`;
+        gE('.customizeBox').style.cssText += `display: block; height: ${gE('.customizeGroup', 'all', g('customizeTarget')).length * 30 + 30}px;`
       };
       // 标签页-主要选项
       gE('input[name="pauseHotkeyStr"]', optionBox).onkeyup = function (e) {
@@ -1969,6 +1971,7 @@
         '<option value="targetSp">targetSp</option>',
         '<option value=""></option>',
       ].join('');
+      customizeBox.style.cssText += 'display: none;';
       customizeBox.innerHTML = [
         '<span><l01><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README.md#自定义判断条件" target="_blank">?</a></l01><l2><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README_en.md#customize-condition" target="_blank">?</a></l2></span>',
         `<span class="hvAAInspect" title="off">${String.fromCharCode(0x21F1.toString(10))}</span>`,
@@ -3017,8 +3020,7 @@
         query = 'ar';
       }
       query = `?s=Battle&ss=${query}`;
-
-      if (id === 'gr' && (option.checkSupplyGF && !checkSupply(true)) || (option.repairValueGF && !await asyncCheckRepair(true))) {
+      if (id === 'gr' && ((option.checkSupplyGF && !checkSupply(true)) || (option.repairValueGF && !await asyncCheckRepair(true)))) {
         console.log('Check Battle Ready Failed', 'id:', id, cost);
         $async.logSwitch(arguments);
         return;
