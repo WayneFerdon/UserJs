@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.57
+// @version      2.90.58
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -50,6 +50,15 @@
     const _1m = 60 * _1s;
     const _1h = 60 * _1m;
     const _1d = 24 * _1h;
+    const attackStatusType = [
+      '<l0>物理</l0><l1>物理</l1><l2>Physical</l2>',
+      '<l0>火</l0><l1>火</l1><l2>Fire</l2>',
+      '<l0>冰</l0><l1>冰</l1><l2>Cold</l2>',
+      '<l0>雷</l0><l1>雷</l1><l2>Elec</l2>',
+      '<l0>风</l0><l1>風</l1><l2>Wind</l2>',
+      '<l0>圣</l0><l1>聖</l1><l2>Divine</l2>',
+      '<l0>暗</l0><l1>暗</l1><l2>Forbidden</l2>',
+    ];
     const monsterStateKeys = { obj: `div.btm1`, lv: `div.btm2`, name: `div.btm3`, bars: `div.btm4>div.btm5`, buffs: `div.btm6` }
     const [$async, $debug, $ajax] = [initAsync(), initDebug(), initAjax()];
     for (let check of [checkIsHV, checkIsWindowTop, checkOption]) {
@@ -1230,11 +1239,11 @@
 
         '<div class="hvAATab" id="hvAATab-Rule">',
         '  <span class="hvAATitle"><l0>攻击规则</l0><l1>攻擊規則</l1><l2>Attack Rule</l2></span> <l01><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README.md#攻击规则-示例" target="_blank">示例</a></l01><l2><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README_en.md#attack-rule-example" target="_blank">Example</a></l2>',
-        '  <div>1. <l0>初始血量权重=Log10(目标血量/场上最低血量)<l1>初始血量權重=Log10(目標血量/場上最低血量)</l1><l2>BaseHpWeight = BaseHpRatio*Log10(TargetHP/MaxHPOnField)</l2><br>',
+        '  <div><b>1. <l0>初始血量权重=Log10(目标血量/场上最低血量)</l0><l1>初始血量權重=Log10(目標血量/場上最低血量)</l1><l2>BaseHpWeight = BaseHpRatio*Log10(TargetHP/MaxHPOnField)</l2></b><br>',
         '    <l0>初始权重系数(>0:低血量优先;<0:高血量优先)</l0><l1>初始權重係數(>0:低血量優先;<0:高血量優先)</l1><l2>BaseHpRatio(>0:low hp first;<0:high hp first)</l2><input class="hvAANumber" name="baseHpRatio" placeholder="1" type="text" style="width:40px"><br>',
         '    <l0>不可命中目标的权重</l0><l1>不可名中目標的權重</l1><l2>Unreachable Target Weight</l2><input class="hvAANumber" name="unreachableWeight" placeholder="1000" type="text" style="width:40px"><br>',
         '    <input id="cacheMonsterHP" type="checkbox"><label for="cacheMonsterHP"><l0>启用HP缓存</l0><l1>啟用HP緩存</l1><l2>Use HP Cache</l2></label><button class="clearMonsterHPCache"><l0>清空缓存</l0><l1>清空緩存</l1><l2>Clear HP Cache</l2></button></div>',
-        '  <div>2. <l0>初始权重与下述各Buff权重相加</l0><l1>初始權重與下述各Buff權重相加</l1><l2>PW(X) = BaseHpWeight + Accumulated_Weight_of_Deprecating_Spells_In_Effect(X)</l2><br>',
+        '  <div><b>2. <l0>初始权重与下述各Buff权重相加</l0><l1>初始權重與下述各Buff權重相加</l1><l2>PW(X) = BaseHpWeight + Accumulated_Weight_of_Deprecating_Spells_In_Effect(X)</l2></b><br>',
         '    <l0>虚弱(We)</l0><l1>虛弱(We)</l1><l2>Weaken</l2>: <input class="hvAANumber" name="weight_We" placeholder="12" type="text">',
         '    <l0>致盲(Bl)</l0><l1>致盲(Bl)</l1><l2>Blind</l2>: <input class="hvAANumber" name="weight_Bl" placeholder="10" type="text">',
         '    <l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2>: <input class="hvAANumber" name="weight_Slo" placeholder="15" type="text">',
@@ -1247,10 +1256,39 @@
         '    <l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2>: <input class="hvAANumber" name="weight_Dr" placeholder="2" type="text">',
         '    <l0>魔磁网(MN)</l0><l1>魔磁網(MN)</l1><l2>MagNet</l2>: <input class="hvAANumber" name="weight_MN" placeholder="7" type="text">',
         '    <l0>眩晕(St)</l0><l1>眩暈(St)</l1><l2>Stunned</l2>: <input class="hvAANumber" name="weight_Stun" placeholder="290" type="text"><br>',
-        '    <l0>魔力合流(CM)</l0><l1>魔力合流(CM)</l1><l2>Coalesced Mana</l2>: <input class="hvAANumber" name="weight_CM" placeholder="-20" type="text"><br>',
+        '    <l0>魔力合流()</l0><l1>魔力合流(CM)</l1><l2>Coalesced Mana</l2>: <input class="hvAANumber" name="weight_CM" placeholder="-20" type="text"><br>',
+        '    <l0>焚燒的靈魂(BS)</l0><l1>焚燒的靈魂(BS)</l1><l2>Burning Soul</l2>: <input class="hvAANumber" name="weight_BS" placeholder="0" type="text">',
+        '    <l0>鮮美的靈魂(RS)</l0><l1>鮮美的靈魂(RS)</l1><l2>Ripened Soul</l2>: <input class="hvAANumber" name="weight_RS" placeholder="0" type="text"><br>',
+
+        '    <b><l0>敌方增益，暂不清楚具体效果，按0权重计算</l0><l1>敵方增益，暫不清楚具體效果，按0權重計算</l1><l2>Enemy Procs, Evvecf value unknown, weight as 0 for now.</l2>:</b><br>',
+
+        '    <l0>吸收结界(AW)</l0><l1>吸收結界(AW)</l1><l2>Absorbing Ward</l2>: <input class="hvAANumber" name="weight_AW" placeholder="0" type="text">',
+        '    <l0>姊妹们的盛怒(FoS)</l0><l1>姊妹們的盛怒(FoS)</l1><l2>Fury of the Sisters</l2>: <input class="hvAANumber" name="weight_Fos" placeholder="0" type="text"><br>',
+        '    <l0>未来的悲叹(LoF)</l0><l1>未來的悲歎(LoF)</l1><l2>Lamentations of the Future</l2>: <input class="hvAANumber" name="weight_Lof" placeholder="0" type="text">',
+        '    <l0>昔日的凄叫(SoP)</l0><l1>昔日的淒叫(SoP)</l1><l2>Screams of the Past</l2>: <input class="hvAANumber" name="weight_SoP" placeholder="0" type="text"><br>',
+        '    <l0>此刻的恸哭(WoP)</l0><l1>此刻的慟哭(WoP)</l1><l2>Wailings of the Present</l2>: <input class="hvAANumber" name="weight_WoP" placeholder="0" type="text"><br>',
+
+        '    <b><l0>降抗性和攻击模式属性相同时</l0><l1>降抗性和攻擊模式屬性相同時</l1><l2>While elements between Resistance-lower-debuff and Attack-Mode matches</l2></b>  [' + attackStatusType[g('attackStatus')] + '] : <br>',
+
+        '    <l0>灼烧的皮肤(SS)</l0><l1>燒灼的皮膚(SS)</l1><l2>Searing Skin</l2>: <input class="hvAANumber" name="weight_SS" placeholder="-14" type="text">',
+        '    <l0>冰封的肢体(FL)</l0><l1>冰封的肢體(FL)</l1><l2>Freezing Limbs</l2>: <input class="hvAANumber" name="weight_FL" placeholder="-14" type="text"><br>',
+        '    <l0>湍流的空气(TA)</l0><l1>湍流的空氣(TA)</l1><l2>Turbulent Air</l2>: <input class="hvAANumber" name="weight_TA" placeholder="-14" type="text">',
+        '    <l0>深层的烧伤(DB)</l0><l1>深層的燒傷(DB)</l1><l2>Deep Burns</l2>: <input class="hvAANumber" name="weight_DB" placeholder="-19" type="text"><br>',
+        '    <l0>崩溃的防御(BD)</l0><l1>崩潰的防禦(BD)</l1><l2>Breached Defense</l2>: <input class="hvAANumber" name="weight_BD" placeholder="-19" type="text">',
+        '    <l0>钝化的攻击(BA)</l0><l1>鈍化的攻擊(BA)</l1><l2>Blunted Attack</l2>: <input class="hvAANumber" name="weight_BA" placeholder="-14" type="text"><br>',
+
+        '    <b><l0>降抗性和攻击模式属性不相同时</l0><l1>降抗性和攻擊模式屬性不相同時</l1><l2>While elements between Resistance-lower-debuff and Attack-Mode NOT matches</l2></b>  [' + attackStatusType[g('attackStatus')] + '] : <br>',
+
+        '    <l0>灼烧的皮肤(SS)</l0><l1>燒灼的皮膚(SS)</l1><l2>Searing Skin</l2>: <input class="hvAANumber" name="weight_SS1" placeholder="5" type="text">',
+        '    <l0>冰封的肢体(FL)</l0><l1>冰封的肢體(FL)</l1><l2>Freezing Limbs</l2>: <input class="hvAANumber" name="weight_FL1" placeholder="5" type="text"><br>',
+        '    <l0>湍流的空气(TA)</l0><l1>湍流的空氣(TA)</l1><l2>Turbulent Air</l2>: <input class="hvAANumber" name="weight_TA1" placeholder="5" type="text">',
+        '    <l0>深层的烧伤(DB)</l0><l1>深層的燒傷(DB)</l1><l2>Deep Burns</l2>: <input class="hvAANumber" name="weight_DB1" placeholder="-4" type="text"><br>',
+        '    <l0>崩溃的防御(BD)</l0><l1>崩潰的防禦(BD)</l1><l2>Breached Defense</l2>: <input class="hvAANumber" name="weight_BD1" placeholder="-4" type="text">',
+        '    <l0>钝化的攻击(BA)</l0><l1>鈍化的攻擊(BA)</l1><l2>Blunted Attack</l2>: <input class="hvAANumber" name="weight_BA1" placeholder="5" type="text"><br>',
+
         '  </div>',
-        '  <div>3. PW(X) += Log10(1 + <l0>武器攻击中央目标伤害倍率(副手及冲击技能)</l0><l1>乘以武器攻擊中央目標傷害倍率(副手及衝擊技能)</l1><l2>Weapon Attack Central Target Damage Ratio (Offhand & Strike)</l2>)<br><l0>额外伤害比例：</l0><l1>額外傷害比例：</l1><l2>Extra DMG Ratio: </l2><input class="hvAANumber" name="centralExtraRatio" placeholder="0" type="text">%</div>',
-        '  <div>4. <l0>优先选择权重最低的目标</l0><l1>優先選擇權重最低的目標</l1><l2>Choose target with lowest rank first</l2><br><l0>BOSS:Yggdrasil额外权重</l0><l1>BOSS:Yggdrasil額外權重</l1><l2>BOSS:Yggdrasil Extra Weight</l2><input class="hvAANumber" name="YggdrasilExtraWeight" placeholder="-1000" type="text" style="width:40px"></div>',
+        '  <div><b>3. PW(X) += Log10(1 + <l0>武器攻击中央目标伤害倍率(副手及冲击技能)</l0><l1>乘以武器攻擊中央目標傷害倍率(副手及衝擊技能)</l1><l2>Weapon Attack Central Target Damage Ratio (Offhand & Strike)</l2>)</b><br><l0>额外伤害比例：</l0><l1>額外傷害比例：</l1><l2>Extra DMG Ratio: </l2><input class="hvAANumber" name="centralExtraRatio" placeholder="0" type="text">%</div>',
+        '  <div><b>4. <l0>优先选择权重最低的目标</l0><l1>優先選擇權重最低的目標</l1><l2>Choose target with lowest rank first</l2><br><l0>BOSS:Yggdrasil额外权重</l0><l1>BOSS:Yggdrasil額外權重</l1><l2>BOSS:Yggdrasil Extra Weight</l2><input class="hvAANumber" name="YggdrasilExtraWeight" placeholder="-1000" type="text" style="width:40px"></div>',
         '  <div><input id="displayWeight" type="checkbox"><l0>显示权重及顺序</l0><l1>顯示權重及順序</l1><l2>DIsplay Weight and order</l2>',
         '  <input id="displayWeightBackground" type="checkbox"><l0>显示优先级背景色</l0><l1>顯示優先級背景色</l1><l2>DIsplay Priority Background Color</l2>',
         '  </br><l0>CSS格式或可eval执行的公式（可用&lt;rank&gt;, &lt;all&gt;指代优先级和总优先级数量, &lt;style_x&gt;指代第x个的相同配置值），例如：</l0><l1>CSS格式或可eval執行的公式（可用&lt;rank&gt;, &lt;all&gt;指代優先級和總優先級數量, &lt;style_x&gt;指代第x個的相同配置值）：例如</l1><l2>CSS or eval executable formula(use &lt;rank&gt; and &lt;all&gt; to refer to priority rank and total rank count, &lt;style_x&gt; to refer to the same option value of option No.x)Such as: </l2><br>`hsl(${Math.round(240*&lt;rank&gt;/Math.max(1,&lt;all&gt;-1))}deg 50% 50%)`<br>',
@@ -3080,15 +3118,7 @@
         const div = gE('#hvAABox2').appendChild(cE('div'));
         div.className = 'hvAALog';
       }
-      const status = [
-        '<l0>物理</l0><l1>物理</l1><l2>Physical</l2>',
-        '<l0>火</l0><l1>火</l1><l2>Fire</l2>',
-        '<l0>冰</l0><l1>冰</l1><l2>Cold</l2>',
-        '<l0>雷</l0><l1>雷</l1><l2>Elec</l2>',
-        '<l0>风</l0><l1>風</l1><l2>Wind</l2>',
-        '<l0>圣</l0><l1>聖</l1><l2>Divine</l2>',
-        '<l0>暗</l0><l1>暗</l1><l2>Forbidden</l2>',
-      ];
+
       function getBattleTypeDisplay(isTitle) {
         const battleInfoList = {
           'gr': {
@@ -3204,7 +3234,7 @@
       const currentTurn = (battle.turn ?? 0) + 1;
 
       gE('.hvAALog').innerHTML = [
-        `<l0>攻击模式</l0><l1>攻擊模式</l1><l2>Attack Mode</l2>: ${status[g('attackStatus')]}`,
+        `<l0>攻击模式</l0><l1>攻擊模式</l1><l2>Attack Mode</l2>: ${attackStatusType[g('attackStatus')]}`,
         `${isIsekai ? '<l0>异世界</l0><l1>異世界</l1><l2>Isekai</l2>' : '<l0>恒定世界</l0><l1>恆定世界</l1><l2>Persistent</l2>'}`, // 战役模式显示
         `${getBattleTypeDisplay()}`, // 战役模式显示
         `R${battle.roundNow}/${battle.roundAll}:T${currentTurn}`,
@@ -3794,6 +3824,67 @@
           name: 'Bleeding Wound',
           img: 'wpn_bleed',
         },
+        AW: {
+          name: 'Absorbing Ward',
+          img: 'absorb',
+        },
+
+        FoS: {
+          name: 'Fury of the Sisters',
+          img: 'trio_furyofthesisters',
+        },
+        LoF: {
+          name: 'Lamentations of the Future',
+          img: 'trio_skuld',
+        },
+        SoP: {
+          name: 'Screams of the Past',
+          img: 'trio_urd',
+        },
+        WoP: {
+          name: 'Wailings of the Present',
+          img: 'trio_verdandi',
+        },
+
+        SS: {
+          name: 'Searing Skin',
+          img: 'firedot',
+          elem: 2,
+        },
+        FL: {
+          name: 'Freezing Limbs',
+          img: 'coldslow',
+          elem: 1,
+        },
+        TA: {
+          name: 'Turbulent Air',
+          img: 'windmiss',
+          elem: 4,
+        },
+        DB: {
+          name: 'Deep Burns',
+          img: 'elecweak',
+          elem: 3,
+        },
+        BD: {
+          name: 'Breached Defense',
+          img: 'holybreach',
+          elem: 6,
+        },
+        BA: {
+          name: 'Blunted Attack',
+          img: 'darknerf',
+          elem: 5,
+        },
+
+        BS: {
+          name: 'Burning Soul',
+          img: 'soulfire',
+        },
+        RS: {
+          name: 'Ripened Soul',
+          img: 'ripesoul',
+        },
       };
       const monsterBuff = gE(monsterStateKeys.buffs, 'all');
       const hpMin = Math.min.apply(null, hpArray);
@@ -3807,14 +3898,31 @@
           continue;
         }
         let weight = baseHpRatio * Math.log10(monsterStatus[i].hpNow / hpMin); // > 0 生命越低权重越低优先级越高
-        monsterStatus[i].hpWeight = weight;
+        // monsterStatus[i].hpWeight = weight;
         const name = gE(`${monsterStateKeys.name}>div>div`, monsterBuff[i].parentNode).innerText;
         if (yggdrasilExtraWeight && ('Yggdrasil' === name || '世界树 Yggdrasil' === name)) { // 默认设置下，任何情况都优先击杀群体大量回血的boss"Yggdrasil"
           weight += yggdrasilExtraWeight; // yggdrasilExtraWeight.defalut -1000
         }
+        const known = {};
         for (j in skillLib) {
-          if (gE(`img[src*="/${skillLib[j].img}"]`, monsterBuff[i])) {
-            weight += g('option').weight[j];
+          if (!gE(`img[src*="/${skillLib[j].img}"]`, monsterBuff[i])) {
+            continue;
+          }
+          known[skillLib[j].img] = skillLib[j];
+          if (skillLib[j].elem && skillLib[j].elem !== g('attackStatus')) {
+            weight += g('option').weight[`${j}1`] ?? 0;
+            continue;
+          }
+          weight += g('option').weight[j] ?? 0;
+        }
+        let unknown = gE(`img`, 'all', monsterBuff[i]);
+        if (unknown?.length) {
+          unknown = Array.from(unknown).filter(buff => {
+            const img = buff.src.match(/\/y\/e\/(.*)\.png/)[1];
+            return !(Object.keys(known).includes(img));
+          }).map(buff=>`${buff.getAttribute('onmouseover').match(/^battle.set_infopane_effect\('(.+)', '.*', .+\)/)[1]}: ${buff.src.match(/\/y\/e\/(.*)\.png/)[1]}`);
+          if (unknown.length) {
+            console.log('unsupported buff weight:', unknown);
           }
         }
         monsterStatus[i].finWeight = weight;
