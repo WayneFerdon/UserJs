@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.59
+// @version      2.90.60
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -998,7 +998,10 @@
 
         '<div class="hvAATab" id="hvAATab-BattleStarter">',
         ' <div><input id="altBattleFirst" type="checkbox"><label for="altBattleFirst"><b><l0>优先使用alt进入</l0><l1>優先使用alt進入</l1><l2>Use alt.hentaiverse as default while auto start.</l2></b></label></div>',
-        ' <div><input id="encounter" type="checkbox"><label for="encounter"><b><l0>自动遭遇战</l0><l1>自動遭遇戰</l1><l2>Auto Encounter</l2></b></label><input id="encounterQuickCheck" type="checkbox"><label for="encounterQuickCheck"><l0>精准倒计时(影响性能)</l0><l1>精準(影響性能)</l1><l2>Precise encounter cd(might reduced performsance)</l2></label><input id="encounterDisplay" type="checkbox"><label for="encounterDisplay"><l0>不自动遭遇时显示倒计时</l0><l1>不自動遭遇時顯示倒計時</l1><l2>Display CountDown While Not Auto Encounter</l2></label></div>',
+        ' <div><input id="encounter" type="checkbox"><label for="encounter"><b><l0>自动遭遇战</l0><l1>自動遭遇戰</l1><l2>Auto Encounter</l2></b></label><br>',
+        '  <input id="encounterQuickCheck" type="checkbox"><label for="encounterQuickCheck"><l0>精准倒计时(影响性能)</l0><l1>精準(影響性能)</l1><l2>Precise encounter cd(might reduced performsance)</l2></label><br>',
+        '  <input id="encounterDisplay" type="checkbox"><label for="encounterDisplay"><l0>不自动遭遇时显示倒计时</l0><l1>不自動遭遇時顯示倒計時</l1><l2>Display CountDown While Not Auto Encounter</l2><br>',
+        '  <l0>遭遇战倒计时</l0><l1>遭遇戰倒計時</l1><l2>Wait for encounter first while count down</l2> ≤ <input class="hvAANumber" name="encounterWaitCD" placeholder="0" type="text">s<l0>时优先等待</l0><l1>時優先等待</l1><l2>.</l2></div>',
         '  <div><input id="idleArena" type="checkbox"><label for="idleArena"><b><l0>闲置竞技场</l0><l1>閒置競技場</l1><l2>Idle Arena</l2>: </b>',
         '    <l0>在任意页面停留</l0><l1>在任意頁面停留</l1><l2>Idle in any page for </l2><input class="hvAANumber" name="idleArenaTime" type="text"><l0>秒后，开始竞技场</l0><l1>秒後，開始競技場</l1><l2>s, start Arena</l2></label> <button class="idleArenaReset"><l01>重置</l01><l2>Reset</l2></button>;<br>',
         '    <l0>进行的竞技场相对应等级</l0><l1>進行的競技場相對應等級</l1><l2>The levels of the Arena you want to complete</l2>:  ',
@@ -2857,7 +2860,7 @@
       }
       const encounter = getEncounter();
       const count = encounter.filter(e => e.href).length;
-
+      const option = g('option');
       const now = time(0);
       const last = encounter[0]?.time ?? getValue('lastEH', true) ?? 0; // 上次遭遇 或 上次打开EH 或 0
       let cd;
@@ -2878,30 +2881,30 @@
         }
         return ui;
       })();
-
+      const waitCD = option.encounterWaitCD ?? 0;
       const missed = count - encounter.filter(e => e.encountered && e.href).length;
       if (count === 24) {
         ui.style.cssText += 'color:orange!important;';
-      } else if (!cd) {
+      } else if (cd <= waitCD) {
         ui.style.cssText += 'color:red!important;';
       } else {
         ui.style.cssText += 'color:unset!important;';
       }
       ui.innerHTML = `${formatTime(cd).slice(0, 2).map(cdi => cdi.toString().padStart(2, '0')).join(`:`)}[${encounter.length ? (count >= 24 ? `☯` : count) : `✪`}${missed ? `-${missed}` : ``}]`;
-      if (engage ) {
+      if (engage) {
         if (!cd) {
           onEncounter();
           return true;
         }
-        if (cd < 30* _1m && encounter[0].href && !encounter[0].encountered) {
+        if (cd < 30 * _1m && encounter[0].href && !encounter[0].encountered) {
           $ajax.openNoFetch(encounter[0].href);
           return true;
         }
       }
-      let interval = cd > _1h ? _1m : (!g('option').encounterQuickCheck || cd > _1m) ? _1s : 80;
-      interval = (g('option').encounterQuickCheck && cd > _1m) ? (interval - cd % interval) / 4 : interval; // 让倒计时显示更平滑
+      let interval = cd > _1h ? _1m : (!option.encounterQuickCheck || cd > _1m) ? _1s : 80;
+      interval = (option.encounterQuickCheck && cd > _1m) ? (interval - cd % interval) / 4 : interval; // 让倒计时显示更平滑
       setTimeout(() => updateEncounter(engage), interval);
-      return false;
+      return cd <= waitCD;
     } catch (e) { console.error(e) } }
 
     async function onEncounter() { try {
