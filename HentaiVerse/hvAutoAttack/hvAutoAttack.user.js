@@ -2550,7 +2550,7 @@
         }
         ready.encounterUpdated = true;
         $async.logSwitch(arguments);
-        ready.encounter ||= await updateEncounter(option.encounter);
+        ready.encounter ||= !(await updateEncounter(option.encounter));
         $async.logSwitch(arguments);
       } catch (e) { console.error(e) } }
     } catch (e) { console.error(e) } }
