@@ -2484,7 +2484,7 @@
       $async.logSwitch(arguments);
       const option = g('option');
       const ready = {
-        isChecked: () => ready.supply && ready.repair,
+        isChecked: () => ready.supply && ready.repair && ready.encounter,
       };
       const idleStart = time(0);
       await Promise.all([
@@ -2550,7 +2550,7 @@
         }
         ready.encounterUpdated = true;
         $async.logSwitch(arguments);
-        await updateEncounter(option.encounter);
+        ready.encounter ||= await updateEncounter(option.encounter);
         $async.logSwitch(arguments);
       } catch (e) { console.error(e) } }
     } catch (e) { console.error(e) } }
