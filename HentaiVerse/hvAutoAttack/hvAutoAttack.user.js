@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.63
+// @version      2.90.64
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -471,6 +471,14 @@
 
     function pauseAsync(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function setTimeoutOrExecute(resolve, ms) {
+      if (ms) {
+        setTimeout(resolve, ms);
+        return;
+      }
+      resolve();
     }
 
     function gE(ele, mode, parent) { // 获取元素
@@ -2750,7 +2758,8 @@
         return true;
       }
       if (staminaChecked === 0) { // failed currently
-        setTimeout(method, Math.floor(time(0) / _1h + 1) * _1h - time(0));
+        const now = time(0);
+        setTimeout(method, Math.floor(now / _1h + 1) * _1h - now);
         document.title = `[S!]` + document.title;
       } else { // case -1: // failed with nature recover
         document.title = `[S!!]` + document.title;
@@ -3287,13 +3296,14 @@
       if (!range) {
         return { id: getMonsterID(target), rank: Number.MAX_SAFE_INTEGER };
       }
-      const centralExtraWeight = -1 * Math.log10(1 + (isWeaponAttack ? (g('option').centralExtraRatio / 100) ?? 0 : 0));
+      const option = g('option');
+      const centralExtraWeight = -1 * Math.log10(1 + (isWeaponAttack ? (option.centralExtraRatio / 100) ?? 0 : 0));
       let order = target.order;
       let newOrder = order;
       // sort by order to fix id
       let msTemp = JSON.parse(JSON.stringify(g('battle').monsterStatus));
       msTemp.sort(objArrSort('order'));
-      let unreachableWeight = g('option').unreachableWeight;
+      let unreachableWeight = option.unreachableWeight;
       let minRank = Number.MAX_SAFE_INTEGER;
       for (let i = order - range; i <= order + range; i++) {
         if (i < 0 || i >= msTemp.length || msTemp[i].isDead) {
@@ -3323,7 +3333,8 @@
     }
 
     function autoPause() {
-      if (g('option').autoPause && checkCondition(g('option').pauseCondition)) {
+      const option = g('option');
+      if (option.autoPause && checkCondition(option.pauseCondition)) {
         pauseChange();
         return true;
       }
@@ -3331,7 +3342,8 @@
     }
 
     function autoDefend() {
-      if (g('option').defend && checkCondition(g('option').defendCondition)) {
+      const option = g('option');
+      if (option.defend && checkCondition(option.defendCondition)) {
         gE('#ckey_defend').click();
         return true;
       }
@@ -3340,15 +3352,12 @@
 
     function setExitBattleTimeout(alarm) {
       setAlarm(alarm);
-      if (alarm === 'SkipDefeated') return;
-      delValue(1);
-      if (g('option').ExitBattleWaitTime) {
-        setTimeout(() => {
-          $ajax.open(getValue('lastHref'));
-        }, g('option').ExitBattleWaitTime * _1s);
+      const option = g('option');
+      if (alarm === 'Defeat' && !option.autoSkipDefeated) {
         return;
       }
-      $ajax.open(getValue('lastHref'));
+      delValue(1);
+      setTimeoutOrExecute(() => $ajax.open(getValue('lastHref')), option.ExitBattleWaitTime * _1s);
     }
 
     function reloader() {
@@ -3372,13 +3381,14 @@
       const eventStart = cE('a');
       eventStart.id = 'eventStart';
       eventStart.onclick = function () {
+        const option = g('option');
         a = unsafeWindow.info;
-        for (let t in g('option').battleUnresponsive) {
-          if (g('option').battleUnresponsive[t]) {
-            battleUnresponsive[t].timeout = setTimeout(() => onBattleUnresponsive(battleUnresponsive[t].method), Math.max(1, g('option').battleUnresponsiveTime[t]) * _1s);
+        for (let t in option.battleUnresponsive) {
+          if (option.battleUnresponsive[t]) {
+            battleUnresponsive[t].timeout = setTimeout(() => onBattleUnresponsive(battleUnresponsive[t].method), Math.max(1, option.battleUnresponsiveTime[t]) * _1s);
           }
         }
-        if (g('option').recordUsage) {
+        if (option.recordUsage) {
           obj = {
             mode: a.mode,
           };
@@ -3397,6 +3407,7 @@
       const eventEnd = cE('a');
       eventEnd.id = 'eventEnd';
       eventEnd.onclick = function () {
+        const option = g('option');
         const timeNow = time(0);
         g('runSpeed', (1000 / (timeNow - g('timeNow'))).toFixed(2));
         g('timeNow', timeNow);
@@ -3405,7 +3416,7 @@
         const bossDead = gE(`${monsterStateKeys.obj}[style*="opacity"] ${monsterStateKeys.lv}[style*="background"]`, 'all').length;
         g('bossAlive', g('bossAll') - bossDead);
         const battleLog = gE('#textlog>tbody>tr>td', 'all');
-        if (g('option').recordUsage) {
+        if (option.recordUsage) {
           obj.log = battleLog;
           recordUsage(obj);
         }
@@ -3414,10 +3425,10 @@
           onBattleRound();
           return;
         }
-        if (g('option').dropMonitor) {
+        if (option.dropMonitor) {
           dropMonitor(battleLog);
         }
-        if (g('option').recordUsage) {
+        if (option.recordUsage) {
           recordUsage2();
         }
         onRoundEnd();
@@ -3426,19 +3437,12 @@
             await pauseAsync(_1s);
             return await onRoundEnd();
           }
-          if (g('battle').roundNow === g('battle').roundAll) { // Next Round
-            if (g('monsterAlive') > 0) { // Defeat
-              setExitBattleTimeout(g('option').autoSkipDefeated ? 'SkipDefeated' : 'Defeat');
-            }
-            if (g('battle').roundNow === g('battle').roundAll) { // Victory
-              setExitBattleTimeout('Victory');
-            }
-          } else {
-            if (g('option').NewRoundWaitTime) {
-              setTimeout(onNewRound, g('option').NewRoundWaitTime * _1s);
-            } else {
-              onNewRound();
-            }
+          if (g('monsterAlive') > 0) { // Defeat
+            setExitBattleTimeout('Defeat');
+          } else if (g('battle').roundNow === g('battle').roundAll) { // Victory
+            setExitBattleTimeout('Victory');
+          } else { // Next Round
+            setTimeoutOrExecute(onNewRound, option.NewRoundWaitTime * _1s);
           }
           clearBattleUnresponsive();
 
