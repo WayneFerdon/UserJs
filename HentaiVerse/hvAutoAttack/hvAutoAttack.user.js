@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.64
+// @version      2.90.65
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -455,17 +455,24 @@
     // ----------methods----------
     // 通用//
     function goto() { // 前进
-      window.location.href = window.location;
+      window.location.reload();
       setTimeout(goto, 5000);
     }
 
     function gotoAlt(isAltOnly) {
       const hv = 'hentaiverse.org';
       const alt = 'alt.' + hv;
+      const current = window.location.href;
+      let next;
       if (window.location.host === hv) {
-        window.location.href = window.location.href.replace(`://${hv}`, `://${alt}`);
+        next = current.replace(`://${hv}`, `://${alt}`);
       } else if (window.location.host === alt) {
-        window.location.href = isAltOnly ? window.location : window.location.href.replace(`://${alt}`, `://${hv}`);
+        next = isAltOnly ? current : current.replace(`://${alt}`, `://${hv}`);
+      }
+      if (current === next) {
+        window.location.reload();
+      } else {
+        window.location.href = next;
       }
     }
 
@@ -605,10 +612,10 @@
         return;
       }
       const button = parent.appendChild(cE('button'));
-      button.innerHTML = `<l0>暂停</l0><l1>暫停</l1><l2>Pause</l2>(${g('option').pauseHotkeyStr})`;
+      button.innerHTML = `<l0>暂停</l0><l1>暫停</l1><l2>Pause</l2>${(g('option').pauseHotkey && g('option').pauseHotkeyStr) ? `(${g('option').pauseHotkeyStr})` : '' }`;
       if (getValue('disabled')) { // 如果禁用
         document.title = _alert(-1, 'hvAutoAttack暂停中', 'hvAutoAttack暫停中', 'hvAutoAttack Paused');
-        button.innerHTML = `<l0 style="color:red;">继续</l0><l1 style="color:red;">繼續</l1><l2 style="color:red;">Continue</l2><l012 style="color:red;">(${g('option').pauseHotkeyStr})</012>`;
+        button.innerHTML = `<l0 style="color:red;">继续</l0><l1 style="color:red;">繼續</l1><l2 style="color:red;">Continue</l2><l012 style="color:red;">${(g('option').pauseHotkey && g('option').pauseHotkeyStr) ? `(${g('option').pauseHotkeyStr})` : '' }</012>`;
       }
       button.className = 'pauseChange';
       button.onclick = pauseChange;
@@ -633,7 +640,7 @@
         return;
       }
       const button = parent.appendChild(cE('button'));
-      button.innerHTML = `<l0>步进</l0><l1>步進</l1><l2>StepIn</l2>(${g('option').stepInHotkeyStr})`;
+      button.innerHTML = `<l0>步进</l0><l1>步進</l1><l2>StepIn</l2>${(g('option').stepInHotkey && g('option').stepInHotkeyStr) ? `(${g('option').stepInHotkeyStr})` : '' }`;
       button.className = 'stepIn';
       button.onclick = stepIn;
     }
@@ -2351,7 +2358,7 @@
     function pauseChange() { // 暂停状态更改
       if (getValue('disabled')) {
         if (gE('.pauseChange')) {
-          gE('.pauseChange').innerHTML = `<l0>暂停</l0><l1>暫停</l1><l2>Pause</l2>(${g('option').pauseHotkeyStr})`;
+          gE('.pauseChange').innerHTML = `<l0>暂停</l0><l1>暫停</l1><l2>Pause</l2>${(g('option').pauseHotkey && g('option').pauseHotkeyStr) ? `(${g('option').pauseHotkeyStr})` : '' }`;
         }
         document.title = gE('#navbar') ? 'The Hentaiverse' : getValue('disabled');
         delValue(0);
@@ -2361,7 +2368,7 @@
       } else {
         console.trace('pauseChange');
         if (gE('.pauseChange')) {
-          gE('.pauseChange').innerHTML = `<l0 style="color:red;">继续</l0><l1 style="color:red;">繼續</l1><l2 style="color:red;">Continue</l2><l012 style="color:red;">(${g('option').pauseHotkeyStr})</l012>`;
+          gE('.pauseChange').innerHTML = `<l0 style="color:red;">继续</l0><l1 style="color:red;">繼續</l1><l2 style="color:red;">Continue</l2><l012 style="color:red;">${(g('option').pauseHotkey && g('option').pauseHotkeyStr) ? `(${g('option').pauseHotkeyStr})` : '' }</l012>`;
         }
         setValue('disabled', document.title);
         document.title = _alert(-1, 'hvAutoAttack暂停中', 'hvAutoAttack暫停中', 'hvAutoAttack Paused');
@@ -3206,7 +3213,7 @@
 
       if (getValue('disabled')) { // 如果禁用
         document.title = _alert(-1, 'hvAutoAttack暂停中', 'hvAutoAttack暫停中', 'hvAutoAttack Paused');
-        gE('#hvAABox2>button').innerHTML = `<l0 style="color:red;">继续</l0><l1 style="color:red;">繼續</l1><l2 style="color:red;">Continue</l2><l012 style="color:red;">(${g('option').pauseHotkeyStr})<l012>`;
+        gE('#hvAABox2>button').innerHTML = `<l0 style="color:red;">继续</l0><l1 style="color:red;">繼續</l1><l2 style="color:red;">Continue</l2><l012 style="color:red;">${(g('option').pauseHotkey && g('option').pauseHotkeyStr) ? `(${g('option').pauseHotkeyStr})` : '' }<l012>`;
         return;
       }
       battle = getValue('battle', true);
@@ -3686,7 +3693,7 @@
         if (bugLog[i].textContent.match(isBug)) {
           bugLog[i].className = 'tlbWARN';
           setTimeout(() => { // 间隔时间以避免持续刷新
-            window.location.href = window.location;// 刷新移除问题元素
+            window.location.reload();// 刷新移除问题元素
           }, 700);
         } else {
           bugLog[i].className = 'tlbQRA';
