@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.61
+// @version      2.90.62
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -341,6 +341,14 @@
       if (!isFrame) {
         return true;
       }
+      if (window.opener) {
+        if (gE('#riddlecounter')) {
+          return true;
+        }
+        window.opener.document.location.href = window.location.href;
+        window.close();
+        return false;
+      }
       if (!window.top.location.href.match(`/equip/`) && (gE('#riddlecounter') || !gE('#navbar'))) {
         if (!window.top.location.href.endsWith(`?s=Battle`)) {
           setValue('lastHref', window.top.location.href);
@@ -387,7 +395,7 @@
         return false;
       }
       if (!g('option').riddlePopup || window.opener) {
-        riddleAlert(); // 答题警报
+        setAlarm('Riddle');
         return true;
       }
       window.open(window.location.href, 'riddleWindow', 'resizable,scrollbars,width=1241,height=707');
@@ -592,7 +600,7 @@
       button.innerHTML = `<l0>暂停</l0><l1>暫停</l1><l2>Pause</l2>(${g('option').pauseHotkeyStr})`;
       if (getValue('disabled')) { // 如果禁用
         document.title = _alert(-1, 'hvAutoAttack暂停中', 'hvAutoAttack暫停中', 'hvAutoAttack Paused');
-        button.innerHTML = `<l0>继续</l0><l1>繼續</l1><l2>Continue</l2>(${g('option').pauseHotkeyStr})`;
+        button.innerHTML = `<l0 style="color:red;">继续</l0><l1 style="color:red;">繼續</l1><l2 style="color:red;">Continue</l2><l012 style="color:red;">(${g('option').pauseHotkeyStr})</012>`;
       }
       button.className = 'pauseChange';
       button.onclick = pauseChange;
@@ -938,8 +946,6 @@
         '    <input id="optionStandalone" type="checkbox"><label for="optionStandalone"><l0>两个世界使用不同的配置</l0><l1>兩個世界使用不同的配置</l1><l2>Use standalone options.</l2></label>; ',
         '    <l0><br>在任意页面停留</l0><l1><br>在任意頁面停留</l1><l2><br>Idle in any page for </l2><input class="hvAANumber" name="isekaiTime" type="text"><l0>秒后，进行跳转</l0><l1>秒後，進行跳轉</l1><l2>s, start switch check</l2></label></div>',
         '<div><b><l0>小马答题</l0><l1>小馬答題</l1><l2>RIDDLE</l2></b>: <input id="riddlePopup" type="checkbox"><label for="riddlePopup"><l0>弹窗答题</l0><l1>弹窗答题</l1><l2>POPUP a window to answer</l2></label>; <button class="testPopup"><l0>预处理</l0><l1>預處理</l1><l2>Pretreat</l2></button>',
-        '    <div><l01>内置插件</l01><l2>Built-in Plugin</l2>: <input id="riddleRadio" type="checkbox"><label for="riddleRadio">RiddleLimiter Plus</label>; </div>',
-        '    <div><l0>时间</l0><l1>時間</l1><l2>If ETR</l2> ≤ <input class="hvAANumber" name="riddleAnswerTime" placeholder="3" type="text"><l0>秒，如果输入框为空则随机生成答案并提交</l0><l1>秒，如果輸入框為空則隨機生成答案並提交</l1><l2>s and no answer has been chosen yet, a random answer will be generated and submitted</l2></div>',
         '  </div>',
         '  <div><b><l0>脚本行为</l0><l1>腳本行為</l1><l2>Script Activity</l2></b>',
         '    <div><l0>暂停相关</l0><l1>暫停相關</l1><l2>Pause with</l2>: ',
@@ -2345,8 +2351,9 @@
           onBattleRound();
         }
       } else {
+        console.trace('pauseChange');
         if (gE('.pauseChange')) {
-          gE('.pauseChange').innerHTML = `<l0>继续</l0><l1>繼續</l1><l2>Continue</l2>(${g('option').pauseHotkeyStr})`;
+          gE('.pauseChange').innerHTML = `<l0 style="color:red;">继续</l0><l1 style="color:red;">繼續</l1><l2 style="color:red;">Continue</l2><l012 style="color:red;">(${g('option').pauseHotkeyStr})</l012>`;
         }
         setValue('disabled', document.title);
         document.title = _alert(-1, 'hvAutoAttack暂停中', 'hvAutoAttack暫停中', 'hvAutoAttack Paused');
@@ -2375,75 +2382,6 @@
         const match = cookieObj.match(/ipb_member_id=(\d+)/);
         if (match) {
           return match[1];
-        }
-      }
-    }
-
-    // 答题//
-    function riddleAlert() { // 答题警报
-      if (window.opener) {
-        gE('#riddleanswer+img').onclick = function () {
-          riddleSubmit(gE('#riddleanswer').value);
-        };
-      }
-      setAlarm('Riddle');
-      const answers = ['A', 'B', 'C'];
-      document.onkeydown = function (e) {
-        gE('#hvAAAlert-Riddle')?.pause();
-        if (/^[abc]$/i.test(e.key)) {
-          riddleSubmit(e.key.toUpperCase());
-          this.onkeydown = null;
-        } else if (/^[123]$/.test(e.key)) {
-          riddleSubmit(answers[e.key - 1]);
-          this.onkeydown = null;
-        }
-      };
-      if (g('option').riddleRadio) {
-        const bar = gE('body').appendChild(cE('div'));
-        bar.className = 'answerBar';
-        answers.forEach((answer) => {
-          const button = bar.appendChild(cE('div'));
-          button.value = answer;
-          button.onclick = function () {
-            riddleSubmit(this.value);
-          };
-        });
-      }
-      const checkTime = function () {
-        let time;
-        if (typeof g('time') === 'undefined') {
-          const timeDiv = gE('#riddlecounter>div>div', 'all');
-          if (timeDiv.length === 0) {
-            return;
-          }
-          time = '';
-          for (let j = 0; j < timeDiv.length; j++) {
-            time = (timeDiv[j].style.backgroundPosition.match(/(\d+)px$/)[1] / 12).toString() + time;
-          }
-          g('time', time * 1);
-        } else {
-          time = g('time');
-          time--;
-          g('time', time);
-        }
-        document.title = time;
-        if (time <= g('option').riddleAnswerTime) {
-          riddleSubmit(gE('#riddleanswer').value || answers[parseInt(Math.random() * 3)]);
-        }
-      };
-      for (let i = 0; i < 30; i++) {
-        setTimeout(checkTime, i * _1s);
-      }
-
-      function riddleSubmit(answer) {
-        if (!window.opener) {
-          gE('#riddleanswer').value = answer;
-          gE('#riddleanswer+img').click();
-        } else {
-          $ajax.fetch(window.location.href, `riddleanswer=${answer}`).then(() => { // 待续
-            window.opener.document.location.href = window.location.href;
-            window.close();
-          }).catch(e => console.error(e));
         }
       }
     }
@@ -3259,7 +3197,7 @@
 
       if (getValue('disabled')) { // 如果禁用
         document.title = _alert(-1, 'hvAutoAttack暂停中', 'hvAutoAttack暫停中', 'hvAutoAttack Paused');
-        gE('#hvAABox2>button').innerHTML = `<l0>继续</l0><l1>繼續</l1><l2>Continue</l2>(${g('option').pauseHotkeyStr})`;
+        gE('#hvAABox2>button').innerHTML = `<l0 style="color:red;">继续</l0><l1 style="color:red;">繼續</l1><l2 style="color:red;">Continue</l2><l012 style="color:red;">(${g('option').pauseHotkeyStr})<l012>`;
         return;
       }
       battle = getValue('battle', true);
