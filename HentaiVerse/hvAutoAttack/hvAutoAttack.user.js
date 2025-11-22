@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.70
+// @version      2.90.71
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -4391,16 +4391,19 @@
           name: 'Sleep',
           id: '222',
           img: 'sleep',
+          range: { 4207: [0, 0, 1] },
         },
         Bl: {
           name: 'Blind',
           id: '231',
           img: 'blind',
+          range: { 4206: [0, 0, 1] },
         },
         Slo: {
           name: 'Slow',
           id: '221',
           img: 'slow',
+          range: { 4211: [0, 0, 0, 1, 1] },
         },
         Im: {
           name: 'Imperil',
@@ -4412,11 +4415,13 @@
           name: 'MagNet',
           id: '233',
           img: 'magnet',
+          range: { 4211: [0, 0, 0, 0, 1] },
         },
         Si: {
           name: 'Silence',
           id: '232',
           img: 'silence',
+          range: { 4211: [0, 0, 0, 1] },
         },
         Dr: {
           name: 'Drain',
@@ -4433,6 +4438,7 @@
           name: 'Confuse',
           id: '223',
           img: 'confuse',
+          range: { 4207: [0, 0, 1] },
         },
       };
       if (!isOn(skillLib[buff].id)) { // 技能不可用
