@@ -471,11 +471,12 @@
       } else if (window.location.host === alt) {
         next = isAltOnly ? current : current.replace(`://${alt}`, `://${hv}`);
       }
-      if (current === next) {
-        window.location.reload();
-      } else {
         $ajax.openNoFetch(next);
-      }
+      // if (current === next) {
+      //   goto();
+      // } else {
+      //   $ajax.openNoFetch(next);
+      // }
     }
 
     function pauseAsync(ms) {
@@ -3035,7 +3036,7 @@
       writeArenaStart();
       await $ajax.fetch(query, `initid=${id === 'gr' ? 1 : id}${token}`);
       console.log('Arena Fetch Done.', 'altBattleFirst:', g('option').altBattleFirst);
-      if (g('option').altBattleFirst && await $ajax.fetch(href.replace('://hentaiverse', '://alt.hentaiverse'))) {
+      if (g('option').altBattleFirst && await $ajax.fetch(window.location.host)) {
         console.log('Arena goto alt');
         gotoAlt(true);
       } else {
