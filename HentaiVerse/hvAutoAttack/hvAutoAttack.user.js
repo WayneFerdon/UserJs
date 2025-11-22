@@ -465,13 +465,13 @@
       const hv = 'hentaiverse.org';
       const alt = 'alt.' + hv;
       const current = window.location.href;
-      let next;
+      let next = current;
       if (window.location.host === hv) {
         next = current.replace(`://${hv}`, `://${alt}`);
       } else if (window.location.host === alt) {
         next = isAltOnly ? current : current.replace(`://${alt}`, `://${hv}`);
       }
-        $ajax.openNoFetch(next);
+      $ajax.openNoFetch(next);
       // if (current === next) {
       //   goto();
       // } else {
