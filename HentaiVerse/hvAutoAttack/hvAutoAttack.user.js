@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.68
+// @version      2.90.69
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2561,6 +2561,7 @@
       const html = await $ajax.fetch('?s=Character&ss=ab');
       const doc = $doc(html);
       let ability = {};
+      const loadSucceed = true;
       await Promise.all(Array.from(gE('#ability_treelist>div>img', 'all', doc)).map(async img => {
         try {
           const _ = img.getAttribute('onclick')?.match(/(\?s=(.*)tree=(.*))'/);
@@ -2586,9 +2587,14 @@
               level: Array.from(gE('.aw1,.aw2,.aw3,.aw4,.aw5,.aw6,.aw7,.aw8,.aw9,.aw10', parent).children).map(div => div.style.cssText.indexOf('f.png') === -1 ? 0 : 1).reduce((x, y) => x + y),
             }
           });
-        } catch (e) { console.error(e) }
+        } catch (e) {
+          console.error(e);
+          loadSucceed = false;
+        }
       }));
-      setValue('ability', ability);
+      if (loadSucceed && JSON.stringify(ability) !== JSON.stringify(getValue('ability'))) {
+        setValue('ability', ability);
+      }
       $async.logSwitch(arguments);
     } catch (e) { console.error(e) } }
 
@@ -2857,7 +2863,7 @@
           onEncounter();
           return true;
         }
-        if (cd < 30 * _1m && encounter[0].href && !encounter[0].encountered) {
+        if (cd < 30 * _1m && encounter[0]?.href && !encounter[0].encountered) {
           $ajax.openNoFetch(encounter[0].href);
           return true;
         }
