@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.69
+// @version      2.90.70
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -345,33 +345,51 @@
     }
 
     function checkIsWindowTop() {
-      if (!isFrame && !window.opener) {
-        return true;
-      }
-      if (window.opener) {
-        if (gE('#riddlecounter')) {
+      const currentUrl = window.self.location.href;
+      if (!isFrame) {
+        if (!window.opener || window.opener.closed || gE('#riddlecounter')) {
           return true;
         }
-        window.opener.document.location.href = window.location.href;
-        try {
-          window.close();
-        } catch {
-          console.log(`[Failed closing popup] opener: ${window.opener}, opener.href: ${window.opener.document.location.href}, next: ${window.location.href}`);
-        }
+        window.opener.location.href = currentUrl;
+        const isFirefox = typeof InstallTrigger !== 'undefined';
+        tryClose(3, isFirefox ? 500 : 300);
         return false;
       }
-      if (!window.top.location.href.match(`/equip/`) && (gE('#riddlecounter') || !gE('#navbar'))) {
+
+      if (gE('#riddlecounter') || gE('#battle_main')) {
         if (!window.top.location.href.endsWith(`?s=Battle`)) {
           setValue('lastHref', window.top.location.href);
         }
-        window.top.location.href = window.self.location.href;
+        window.top.location.href = currentUrl;
+        return false;
       }
-      if (window.location.href.indexOf(`?s=Battle&ss=ar`) !== -1 || window.location.href.indexOf(`?s=Battle&ss=rb`) !== -1) {
+      if (currentUrl.match(/\?s=Battle&ss=(ar|rb)/)) {
         loadOption();
         setArenaDisplay();
       }
       return false;
     }
+
+    async function safeClose(delay) {
+      try { window.close() } catch (e) { }
+      await pauseAsync(delay);
+      return !window || window.closed;
+    }
+
+    async function tryClose(attempts, delay) { try {
+      await pauseAsync(delay);
+      window.opener = null;
+      window.open('', '_self');
+      if (await safeClose(delay)) return;
+      window.location.href = 'about:blank';
+      if (await safeClose(delay)) return;
+      attempts--;
+      if (attempts <= 0) {
+        document.body.innerHTML = '<div style="padding:20px;">Auto close popup failed. Please manually close window.</div>';
+        return;
+      }
+      await tryClose(attempts, delay);
+    } catch (e) { console.error('Opener reload or popup close failed:', e) } }
 
     function checkOption() {
       g('version', GM_info ? GM_info.script.version.substr(0, 4) : scriptVersion);
