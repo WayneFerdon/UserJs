@@ -347,7 +347,7 @@
     function checkIsWindowTop() {
       const currentUrl = window.self.location.href;
       if (!isFrame) {
-        if (!window.opener || window.opener.closed || gE('#riddlecounter')) {
+        if (!window.opener || window.opener === window.self || window.opener.closed || gE('#riddlecounter')) {
           return true;
         }
         window.opener.location.href = currentUrl;
