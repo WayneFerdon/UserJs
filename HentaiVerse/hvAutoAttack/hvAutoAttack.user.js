@@ -536,10 +536,10 @@
       });
     }
 
-    function getStartBattleButtons(document = undefined) {
+    function getStartBattleButtons(doc = undefined) {
       const buttons = [];
-      document ??= window.document;
-      gE(`img[src*="startchallenge.png"], img[src*="startgrindfest.png"]`, 'all', document).forEach((btn) => {
+      doc ??= document;
+      gE(`img[src*="startchallenge.png"], img[src*="startgrindfest.png"]`, 'all', doc).forEach((btn) => {
         const onclick = btn.getAttribute('onclick');
         const key = btn.getAttribute('src').match(`${unsafeWindow.IMG_URL}(.*)/start(.*).png`)[1] === 'grindfest' ? 'gr' : undefined;
         let temp = hvVersion < 91 ? onclick.match(/init_battle\((\d+),\s*(\d+,)*'(.*?)'\)/) : onclick.match(/init_battle\((\d+)(,\d+)*\)/);
