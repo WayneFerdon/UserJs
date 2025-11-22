@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.71
+// @version      2.90.72
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -350,7 +350,12 @@
         if (!window.opener || window.opener === window.self || window.opener.closed || gE('#riddlecounter')) {
           return true;
         }
-        window.opener.location.href = currentUrl;
+        try {
+          window.opener.location.href = currentUrl;
+        } catch (e) {
+          console.log(e, `opener: ${window.opener.location.href}, current: ${currentUrl}`);
+          window.opener.location.href = window.opener.location.href;
+        }
         const isFirefox = typeof InstallTrigger !== 'undefined';
         tryClose(3, isFirefox ? 500 : 300);
         return false;
