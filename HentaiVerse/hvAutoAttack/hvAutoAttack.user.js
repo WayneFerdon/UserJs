@@ -348,7 +348,11 @@
           return true;
         }
         window.opener.document.location.href = window.location.href;
-        window.close();
+        try {
+          window.close();
+        } catch {
+          console.log(`[Failed closing popup] opener: ${window.opener}, opener.href: ${window.opener.document.location.href}, next: ${window.location.href}`);
+        }
         return false;
       }
       if (!window.top.location.href.match(`/equip/`) && (gE('#riddlecounter') || !gE('#navbar'))) {
@@ -472,11 +476,6 @@
         next = isAltOnly ? current : current.replace(`://${alt}`, `://${hv}`);
       }
       $ajax.openNoFetch(next);
-      // if (current === next) {
-      //   goto();
-      // } else {
-      //   $ajax.openNoFetch(next);
-      // }
     }
 
     function pauseAsync(ms) {
