@@ -3036,7 +3036,7 @@
       writeArenaStart();
       await $ajax.fetch(query, `initid=${id === 'gr' ? 1 : id}${token}`);
       console.log('Arena Fetch Done.', 'altBattleFirst:', g('option').altBattleFirst);
-      if (g('option').altBattleFirst && await $ajax.fetch(window.location.host)) {
+      if (g('option').altBattleFirst && await $ajax.openNoFetch(href.replace('://hentaiverse', '://alt.hentaiverse'))) {
         console.log('Arena goto alt');
         gotoAlt(true);
       } else {
