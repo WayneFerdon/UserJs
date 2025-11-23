@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.73
+// @version      2.90.74
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -347,13 +347,18 @@
     function checkIsWindowTop() {
       const currentUrl = window.self.location.href;
       if (!isFrame) {
-        if (!window.opener || window.opener === window.self || window.opener.closed || gE('#riddlecounter')) {
+        loadOption();
+        if (!g('option').riddlePopup || !window.opener || window.opener === window.self || window.opener.closed || gE('#riddlecounter')) {
           return true;
         }
         try {
           window.opener.location.href = currentUrl;
         } catch (e) {
-          console.error(e, `opener: ${window.opener.location.href}, current: ${currentUrl}`);
+          console.error(e);
+          console.error(`current: ${currentUrl}`);
+          console.error(`opener: ${window.opener}`);
+          console.error(`opener.location: ${window.opener.location}`);
+          console.error(`opener.location.href: ${window.opener.location.href}`);
           window.opener.location.href = window.opener.location.href;
         }
         const isFirefox = typeof InstallTrigger !== 'undefined';
@@ -996,7 +1001,7 @@
         '    <input id="isekai" type="checkbox"><label for="isekai"><l0>自动切换恒定世界和异世界;</l0><l1>自動切換恆定世界和異世界;</l1><l2>Auto switch between Isekai and Persistent;</l2></label>',
         '    <input id="optionStandalone" type="checkbox"><label for="optionStandalone"><l0>两个世界使用不同的配置</l0><l1>兩個世界使用不同的配置</l1><l2>Use standalone options.</l2></label>; ',
         '    <l0><br>在任意页面停留</l0><l1><br>在任意頁面停留</l1><l2><br>Idle in any page for </l2><input class="hvAANumber" name="isekaiTime" type="text"><l0>秒后，进行跳转</l0><l1>秒後，進行跳轉</l1><l2>s, start switch check</l2></label></div>',
-        '<div><b><l0>小马答题</l0><l1>小馬答題</l1><l2>RIDDLE</l2></b>: <input id="riddlePopup" type="checkbox"><label for="riddlePopup"><l0>弹窗答题</l0><l1>弹窗答题</l1><l2>POPUP a window to answer</l2></label>; <button class="testPopup"><l0>预处理</l0><l1>預處理</l1><l2>Pretreat</l2></button>',
+        '<div><b><l0>小马答题</l0><l1>小馬答題</l1><l2>RIDDLE</l2></b>: <input id="riddlePopup" type="checkbox"><label for="riddlePopup"><l0>弹窗答题(Firefox中可能导致报错)</l0><l1>弹窗答题(Firefox中可能導致報錯)</l1><l2>POPUP a window to answer(Might cause in Firefox)</l2></label>; <button class="testPopup"><l0>预处理</l0><l1>預處理</l1><l2>Pretreat</l2></button>',
         '  </div>',
         '  <div><b><l0>脚本行为</l0><l1>腳本行為</l1><l2>Script Activity</l2></b>',
         '    <div><l0>暂停相关</l0><l1>暫停相關</l1><l2>Pause with</l2>: ',
