@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.72
+// @version      2.90.73
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -353,7 +353,7 @@
         try {
           window.opener.location.href = currentUrl;
         } catch (e) {
-          console.log(e, `opener: ${window.opener.location.href}, current: ${currentUrl}`);
+          console.error(e, `opener: ${window.opener.location.href}, current: ${currentUrl}`);
           window.opener.location.href = window.opener.location.href;
         }
         const isFirefox = typeof InstallTrigger !== 'undefined';
@@ -482,7 +482,7 @@
         setValue('battleCode', `${time(1)}: ${g('battle')?.roundType?.toUpperCase()}-${g('battle')?.roundAll}`);
       }
       onBattleRound();
-      updateEncounter(false, true);
+      updateEncounter(false);
       return true;
     }
 
@@ -508,6 +508,12 @@
 
     function pauseAsync(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function waitPause(ms = _1s) {
+      while (getValue('disabled')) {
+        await pauseAsync(ms);
+      }
     }
 
     function setTimeoutOrExecute(resolve, ms) {
@@ -2396,7 +2402,6 @@
           onBattleRound();
         }
       } else {
-        console.trace('pauseChange');
         if (gE('.pauseChange')) {
           gE('.pauseChange').innerHTML = `<l0 style="color:red;">继续</l0><l1 style="color:red;">繼續</l1><l2 style="color:red;">Continue</l2><l012 style="color:red;">${(g('option').pauseHotkey && g('option').pauseHotkeyStr) ? `(${g('option').pauseHotkeyStr})` : '' }</l012>`;
         }
@@ -2459,11 +2464,8 @@
     }
 
     async function asyncOnIdle() { try {
-      updateEncounter(false);
-      if (getValue('disabled')) {
-        await pauseAsync(_1s);
-        return await asyncOnIdle();
-      }
+      await updateEncounter(false);
+      await waitPause();
       $async.logSwitch(arguments);
       const option = g('option');
       const ready = {
@@ -2576,10 +2578,7 @@
     }
 
     async function asyncSetAbilityData() { try {
-      if (getValue('disabled')) {
-        await pauseAsync(_1s);
-        return await asyncSetAbilityData();
-      }
+      await waitPause();
       $async.logSwitch(arguments);
       const html = await $ajax.fetch('?s=Character&ss=ab');
       const doc = $doc(html);
@@ -2625,10 +2624,7 @@
       if (isIsekai || !g('option').restoreStamina) {
         return;
       }
-      if (getValue('disabled')) {
-        await pauseAsync(_1s);
-        return await asyncSetEnergyDrinkHathperk();
-      }
+      await waitPause();
       $async.logSwitch(arguments);
       let currentID = getCurrentUser();
       let perk = getValue('staminaHathperk') ?? {};
@@ -2649,10 +2645,7 @@
     } catch (e) { console.error(e) } }
 
     async function asyncSetStamina() { try {
-      if (getValue('disabled')) {
-        await pauseAsync(_1s);
-        return await asyncSetStamina();
-      }
+      await waitPause();
       $async.logSwitch(arguments);
       const html = await $ajax.fetch(window.location.href);
       setValue('staminaTime', Math.floor(time(0) / 1000 / 60 / 60));
@@ -2664,10 +2657,7 @@
       if (!g('option').checkSupply && (isIsekai || !g('option').restoreStamina)) {
         return;
       }
-      if (getValue('disabled')) {
-        await pauseAsync(_1s);
-        return await asyncGetItems();
-      }
+      await waitPause();
       $async.logSwitch(arguments);
       const html = await $ajax.fetch('?s=Character&ss=it');
       const items = {};
@@ -2712,10 +2702,7 @@
       if (!g('option').repair) {
         return true;
       }
-      if (getValue('disabled')) {
-        await pauseAsync(_1s);
-        return await asyncCheckRepair();
-      }
+      await waitPause();
       $async.logSwitch(arguments);
       let eqps;
       const threshold = isGrindFestStandalone ? g('option').repairValueGF : g('option').repairValue;
@@ -2764,10 +2751,7 @@
       if (!option.equStorage) {
         return true;
       }
-      if (getValue('disabled')) {
-        await pauseAsync(_1s);
-        return await asyncCheckEquStorage();
-      }
+      await waitPause();
       $async.logSwitch(arguments);
       let count;
       if (hvVersion < 91) {
@@ -2783,11 +2767,8 @@
       return count * 1 <= option.equStorageValue;
     } catch (e) { console.error(e) }; return false; }
 
-    function checkBattleReady(method, condition = {}) {
-      if (getValue('disabled')) {
-        setTimeout(method, _1s);
-        return;
-      }
+    async function checkBattleReady(method, condition = {}) {
+      await waitPause();
       if (condition.checkEncounter) {
         const encounter = getEncounter();
         if (encounter[0]?.href && !encounter[0]?.encountered) {
@@ -2839,14 +2820,10 @@
       }
     }
 
-    async function updateEncounter(engage, isInBattle) { try {
+    async function updateEncounter(engage) { try {
       if (!g('option').encounter && !g('option').encounterDisplay) {
         console.log("skip encounter check");
         return false;
-      }
-      if (getValue('disabled')) {
-        await pauseAsync(_1s);
-        return await updateEncounter(engage, isInBattle);
       }
       const encounter = getEncounter();
       const count = encounter.filter(e => e.href).length;
@@ -2866,7 +2843,7 @@
         const ui = gE('body').appendChild(cE('a'));
         ui.className = 'encounterUI';
         ui.title = `${time(3, last)}\nEncounter Time: ${count}`;
-        if (!isInBattle) {
+        if (!gE('#battle_main')) {
           ui.href = 'https://e-hentai.org/news.php?encounter';
         }
         return ui;
@@ -2883,10 +2860,12 @@
       ui.innerHTML = `${formatTime(cd).slice(0, 2).map(cdi => cdi.toString().padStart(2, '0')).join(`:`)}[${encounter.length ? (count >= 24 ? `☯` : count) : `✪`}${missed ? `-${missed}` : ``}]`;
       if (engage) {
         if (!cd) {
+          await waitPause();
           onEncounter();
           return true;
         }
         if (cd < 30 * _1m && encounter[0]?.href && !encounter[0].encountered) {
+          await waitPause();
           $ajax.openNoFetch(encounter[0].href);
           return true;
         }
@@ -2898,13 +2877,11 @@
     } catch (e) { console.error(e) } }
 
     async function onEncounter() { try {
-      if (!(await $ajax.fetch(href))) { // perhaps network connect not available
+      while (!(await $ajax.fetch(href))) { // perhaps network connect not available
         await pauseAsync(_1m);
-        onEncounter();
-        return;
       }
       $async.logSwitchStrict('updateEncounter', true);
-      if (getValue('disabled') || getValue('battle') || !checkBattleReady(onEncounter, { staminaLow: g('option').staminaEncounter })) {
+      if (getValue('disabled') || getValue('battle') || !await checkBattleReady(onEncounter, { staminaLow: g('option').staminaEncounter })) {
         $async.logSwitchStrict('updateEncounter', false);
         return;
       }
@@ -2935,10 +2912,7 @@
     } catch (e) { console.error(e) } }
 
     async function updateArena(forceUpdateToken = false) { try {
-      if (getValue('disabled')) {
-        await pauseAsync(_1s);
-        return await updateArena(forceUpdateToken);
-      }
+      await waitPause();
       let arena = getValue('arena', true) ?? {};
       const isToday = arena.date && time(2, arena.date) === time(2);
       if (forceUpdateToken || !isToday || !arena.isOptionUpdated) {
@@ -2946,7 +2920,6 @@
         arena.sites ??= [
           '?s=Battle&ss=gr',
           '?s=Battle&ss=ar',
-          '?s=Battle&ss=ar&page=2',
           '?s=Battle&ss=rb'
         ]
         await Promise.all(arena.sites.map(async site => {
@@ -3033,9 +3006,9 @@
       }
 
       let query;
-      let token = arena.token[id];
-      const cost = staminaCost[id];
-      if (id === 'gr') {
+      if (id !== 'gr') {
+        query = id >= 105 ? 'rb' : 'ar';
+      } else {
         if (arena.gr <= 0) {
           setValue('arena', arena);
           idleArena();
@@ -3043,33 +3016,30 @@
           return;
         }
         query = 'gr';
-      } else if (id >= 105) {
-        query = 'rb';
-      } else if (id >= 19) {
-        query = 'ar&page=2';
-      } else {
-        query = 'ar';
       }
       query = `?s=Battle&ss=${query}`;
       if (id === 'gr' && ((option.checkSupplyGF && !checkSupply(true)) || (option.repairValueGF && !await asyncCheckRepair(true)))) {
+        console.log('Check gr Battle Ready Failed in supply/repair', 'id:', id);
+        $async.logSwitch(arguments);
+        return;
+      }
+      const cost = staminaCost[id];
+      if (!await checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: option.encounter, staminaLow: id === 'gr' ? option.staminaGrindFest : undefined })) {
         console.log('Check Battle Ready Failed', 'id:', id, cost);
         $async.logSwitch(arguments);
         return;
       }
-      if (!checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: option.encounter, staminaLow: id === 'gr' ? option.staminaGrindFest : undefined })) {
-        console.log('Check Battle Ready Failed', 'id:', id, cost);
-        $async.logSwitch(arguments);
-        return;
-      }
+      let token = arena.token[id];
       if (hvVersion < 91) {
         token = `&inittoken=${token}`;
       } else {
         token = `&postoken=${gE('#initform>input[name="postoken"]', $doc(await $ajax.fetch(query))).value}`;
       }
+      await waitPause();
       writeArenaStart();
       await $ajax.fetch(query, `initid=${id === 'gr' ? 1 : id}${token}`);
-      console.log('Arena Fetch Done.', 'altBattleFirst:', g('option').altBattleFirst);
-      if (g('option').altBattleFirst && await $ajax.openNoFetch(href.replace('://hentaiverse', '://alt.hentaiverse'))) {
+      console.log('Arena Fetch Done.', 'altBattleFirst:', option.altBattleFirst);
+      if (option.altBattleFirst && await $ajax.fetch(href.replace('hentaiverse.org', 'alt.hentaiverse.org').replace('alt.alt', 'alt'))) {
         console.log('Arena goto alt');
         gotoAlt(true);
       } else {
@@ -3413,10 +3383,7 @@
         Object.keys(battleUnresponsive).forEach(t => clearTimeout(battleUnresponsive[t].timeout));
       }
       async function onBattleUnresponsive(method) { try {
-        if (getValue('disabled')) {
-          await pauseAsync(_1s);
-          return await onBattleUnresponsive();
-        }
+        await waitPause();
         method();
       } catch (e) { console.error(e) } }
 
@@ -3476,10 +3443,7 @@
         }
         onRoundEnd();
         async function onRoundEnd() { try {
-          if (getValue('disabled')) {
-            await pauseAsync(_1s);
-            return await onRoundEnd();
-          }
+          await waitPause();
           if (g('monsterAlive') > 0) { // Defeat
             setExitBattleTimeout('Defeat');
           } else if (g('battle').roundNow === g('battle').roundAll) { // Victory
@@ -3490,10 +3454,7 @@
           clearBattleUnresponsive();
 
           async function onNewRound() { try {
-            if (getValue('disabled')) {
-              await pauseAsync(_1s);
-              return await onNewRound();
-            }
+            await waitPause();
             if (gE('#btcp')?.innerHTML.includes("finishbattle.png")) {
               goto();
               return;
@@ -4656,8 +4617,7 @@
           try {
             colorText = eval(colorText.replace('<rank>', rank).replace('<all>', weights.length));
           }
-          catch {
-          }
+          catch { }
           getMonster(id).style.cssText += `background: ${colorText};`;
         }
         gE(monsterStateKeys.name, getMonster(id)).style.cssText += 'display: flex; flex-direction: row;'
@@ -4999,7 +4959,7 @@
       }
     }
   } catch (e) {
-    console.log(e);
+    console.error(e);
     document.title = e;
   }
 })();
