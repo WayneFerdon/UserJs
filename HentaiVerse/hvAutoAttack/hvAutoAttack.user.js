@@ -32,7 +32,6 @@
 (function () {
   try {
     'use strict';
-
     const standalone = ['option', 'arena', 'drop', 'stats', 'staminaLostLog', 'battleCode', 'disabled', 'stamina', 'staminaTime', 'lastHref', 'battle', 'monsterDB', 'monsterMID', 'ability'];
     const sharable = ['option'];
     const excludeStandalone = { 'option': ['optionStandalone', 'version', 'lang'] };
@@ -2619,7 +2618,16 @@
           loadSucceed = false;
         }
       }));
-      if (loadSucceed && JSON.stringify(ability) !== JSON.stringify(getValue('ability'))) {
+      if (!loadSucceed) {
+        ability = getValue('ability');
+      }
+      for (let ab of Object.keys(ability)) {
+        if (typeof ability[ab] !== 'object') {
+          break;
+        }
+        ability[ab] = ability[ab].level; // old version data
+      }
+      if (JSON.stringify(ability) !== JSON.stringify(getValue('ability'))) {
         setValue('ability', ability);
       }
       $async.logSwitch(arguments);
@@ -2726,7 +2734,7 @@
             return;
           }
           const after = $doc(await $ajax.fetch(href, `select_item=${id}`));
-          return gE('.messagebox_error', )?.innerText ? undefined : id;
+          return gE('.messagebox_error', )?.innerText ? undefined : json[id].t;
         } catch (e) { console.error(e) } }));
       } else {
         const href = `?s=Bazaar&ss=am&screen=repair&filter=equipped`;
@@ -2739,12 +2747,12 @@
             return;
           }
           const after = $doc(await $ajax.fetch(href, `&eqids[]=${id}&postoken=${token}&replace_charms=on`));
-          return gE(`#e${id}`, after) ? id : undefined;
+          return gE(`#e${id}`, after) ? gE('.lc', eqp).childNodes[2].textContent : undefined;
         } catch (e) { console.error(e) } }));
       }
       eqps = eqps.filter(e=>e);
       if (eqps.length) {
-        console.log('eqps need repair: ', eqps);
+        console.log('eqps need repair: ', eqps.join('\n'));
         document.title = `[R!]` + document.title;
       }
       $async.logSwitch(arguments);
@@ -2803,7 +2811,7 @@
       const stmNR = stamina + 24 - (timeNow % 24);
       cost ??= 0;
       const stmNRChecked = !cost || stmNR - cost >= g('option').staminaLowWithReNat;
-      console.log('stamina:', stamina, '\nstamina with nature recover:', stmNR, '\nnext arena stamina cost: ', cost.toString());
+      console.log('stamina:', stamina, '\nstamina with nature recover:', stmNR, '\nnext arena stamina cost: ', cost);
       if (stamina - cost >= (low ?? g('option').staminaLow) && stmNRChecked) {
         return 1;
       }
@@ -2922,14 +2930,9 @@
       const isToday = arena.date && time(2, arena.date) === time(2);
       if (forceUpdateToken || !isToday || !arena.isOptionUpdated) {
         arena.token = {};
-        arena.sites ??= [
-          '?s=Battle&ss=gr',
-          '?s=Battle&ss=ar',
-          '?s=Battle&ss=rb'
-        ]
-        await Promise.all(arena.sites.map(async site => {
+        await Promise.all(['gr', 'ar', 'rb'].map(async site => {
           try {
-            const doc = $doc(await $ajax.fetch(site));
+            const doc = $doc(await $ajax.fetch(`?s=Battle&ss=${site}`));
             getStartBattleButtons(doc).forEach(btn => { arena.token[btn.id] = btn.token ?? null; });
           } catch (e) { console.error(e) }
         }));
@@ -3067,7 +3070,7 @@
         })
         battle.monsterStatus.sort(objArrSort('order'));
       };
-      $debug.log('onBattle', `\n`, JSON.stringify(battle, null, 4));
+      $debug.log('onBattle', `\n`, battle);
       //人物状态
       if (gE('#vbh')) {
         g('hp', gE('#vbh>div>img').offsetWidth / 500 * 100);
@@ -4440,8 +4443,8 @@
         if (!ranges) {
           continue;
         }
-        if (ability && ability[ab] && ability[ab].level) {
-          range = ranges[ability[ab].level];
+        if (ability) {
+          range = ranges[ability[ab]];
         }
         break;
       }
@@ -4560,8 +4563,8 @@
               continue;
             }
             const ability = getValue('ability', true);
-            if (ability && ability[ab] && ability[ab].level) {
-              range = ranges[ability[ab].level];
+            if (ability) {
+              range = ranges[ability[ab]];
             }
             break;
           }
