@@ -4379,7 +4379,6 @@
     function useDeSkill() { // 自动施法DEBUFF技能
       const option = g('option');
       const monsterStatus = g('battle').monsterStatus;
-      console.log(option.debuffSkillCondition, checkCondition(option.debuffSkillCondition));
       if (!option.debuffSkillSwitch || !checkCondition(option.debuffSkillCondition, monsterStatus)) { // 总开关是否开启
         return false;
       }
