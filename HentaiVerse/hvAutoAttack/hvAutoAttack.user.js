@@ -1266,6 +1266,7 @@
         '  </div>',
 
         '<div class="hvAATab" id="hvAATab-Debuff">',
+        '  <div><l0>Debuff释放条件</l0><l1>Debuff釋放條件</l1><l2>Cast debuff spells Condition</l2>{{debuffSkillCondition}}</div>',
         '  <div><input id="debuffSkillTurnAlert" type="checkbox"><label for="debuffSkillTurnAlert"><l0>剩余Turns低于阈值时警报</l0><l1>剩餘Turns低於閾值時警報</l1><l2>Alert when remain expire turns less than threshold</l2></label><br>',
         '    <l0>沉眠(Sl)</l0><l1>沉眠(Sl)</l1><l2>Sleep</l2>: <input class="hvAANumber" name="debuffSkillTurn_Sle" type="text">',
         '    <l0>致盲(Bl)</l0><l1>致盲(Bl)</l1><l2>Blind</l2>: <input class="hvAANumber" name="debuffSkillTurn_Bl" type="text">',
@@ -2097,12 +2098,13 @@
         '<option value="fightingStyle">fightingStyle</option>',
         '<option value="">- - - -</option>',
         '<option value="_isCd_">isCd</option>',
+        '<option value="_spirit">spirit</option>',
         '<option value="_buffTurn_">buffTurn</option>',
         '<option value="">- - - -</option>',
         '<option value="_targetBuffTurn_">targetBuffTurn</option>',
-        '<option value="targetHp">targetHp</option>',
-        '<option value="targetMp">targetMp</option>',
-        '<option value="targetSp">targetSp</option>',
+        '<option value="_targetHp">targetHp</option>',
+        '<option value="_targetMp">targetMp</option>',
+        '<option value="_targetSp">targetSp</option>',
         '<option value=""></option>',
       ].join('');
       customizeBox.style.cssText += 'display: none;';
@@ -2354,6 +2356,9 @@
       const func = {
         isCd(id) { // is cool down done
           return isOn(id) ? 1 : 0;
+        },
+        spirit() {
+          return gE('#ckey_spirit[src*="spirit_a"]') ? 1 : 0;
         },
         buffTurn(img) {
           return getBuffTurnFromImg(getPlayerBuff(img), 0);
@@ -4373,10 +4378,11 @@
 
     function useDeSkill() { // 自动施法DEBUFF技能
       const option = g('option');
-      if (!option.debuffSkillSwitch) { // 总开关是否开启
+      const monsterStatus = g('battle').monsterStatus;
+      console.log(option.debuffSkillCondition, checkCondition(option.debuffSkillCondition));
+      if (!option.debuffSkillSwitch || !checkCondition(option.debuffSkillCondition, monsterStatus)) { // 总开关是否开启
         return false;
       }
-      const monsterStatus = g('battle').monsterStatus;
       // 先处理特殊的 “先给全体上buff”
       let skillPack = ['We', 'Im'];
       for (let i = 0; i < skillPack.length; i++) {
