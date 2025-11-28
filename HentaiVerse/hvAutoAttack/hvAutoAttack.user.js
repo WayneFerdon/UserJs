@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.76
+// @version      2.90.77
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1254,20 +1254,20 @@
         '    <input id="buffSkillOrder_Ab" type="checkbox"><label for="buffSkillOrder_Ab"><l0>吸收(Ab)</l0><l1>吸收(Ab)</l1><l2>Absorb</l2></label>',
         '  </div>',
         '  <div><l0>Buff释放条件</l0><l1>Buff釋放條件</l1><l2>Cast spells Condition</l2>{{buffSkillCondition}}</div>',
-        '    <div><input id="buffSkill_HD" type="checkbox"><label for="buffSkill_HD"><l0>生命长效药(HD)</l0><l1>生命長效藥(HD)</l1><l2>Health Draught</l2></label>{{buffSkillHDCondition}}</div>',
-        '    <div><input id="buffSkill_MD" type="checkbox"><label for="buffSkill_MD"><l0>魔力长效药(MD)</l0><l1>魔力長效藥(MD)</l1><l2>Mana Draught</l2></label>{{buffSkillMDCondition}}</div>',
-        '    <div><input id="buffSkill_SD" type="checkbox"><label for="buffSkill_SD"><l0>灵力长效药(MD)</l0><l1>靈力長效藥(MD)</l1><l2>Spirit Draught</l2></label>{{buffSkillSDCondition}}</div>',
-        '    <div><input id="buffSkill_FV" type="checkbox"><label for="buffSkill_FV"><l0>花瓶(FV)</l0><l1>花瓶(FV)</l1><l2>Flower Vase</l2></label>{{buffSkillFVCondition}}</div>',
-        '    <div><input id="buffSkill_BG" type="checkbox"><label for="buffSkill_BG"><l0>泡泡糖(BG)</l0><l1>泡泡糖(BG)</l1><l2>Bubble-Gum</l2></label>{{buffSkillBGCondition}}</div>',
-        '    <div><input id="buffSkill_Pr" type="checkbox"><label for="buffSkill_Pr"><l0>守护(Pr)</l0><l1>守護(Pr)</l1><l2>Protection</l2></label>{{buffSkillPrCondition}}</div>',
-        '    <div><input id="buffSkill_SL" type="checkbox"><label for="buffSkill_SL"><l0>生命火花(SL)</l0><l1>生命火花(SL)</l1><l2>Spark of Life</l2></label>{{buffSkillSLCondition}}</div>',
-        '    <div><input id="buffSkill_SS" type="checkbox"><label for="buffSkill_SS"><l0>灵力盾(SS)</l0><l1>靈力盾(SS)</l1><l2>Spirit Shield</l2></label>{{buffSkillSSCondition}}</div>',
-        '    <div><input id="buffSkill_Ha" type="checkbox"><label for="buffSkill_Ha"><l0>疾速(Ha)</l0><l1>疾速(Ha)</l1><l2>Haste</l2></label>{{buffSkillHaCondition}}</div>',
-        '    <div><input id="buffSkill_AF" type="checkbox"><label for="buffSkill_AF"><l0>奥术集中(AF)</l0><l1>奧術集中(AF)</l1><l2>Arcane Focus</l2></label>{{buffSkillAFCondition}}</div>',
-        '    <div><input id="buffSkill_He" type="checkbox"><label for="buffSkill_He"><l0>穿心(He)</l0><l1>穿心(He)</l1><l2>Heartseeker</l2></label>{{buffSkillHeCondition}}</div>',
-        '    <div><input id="buffSkill_Re" type="checkbox"><label for="buffSkill_Re"><l0>细胞活化(Re)</l0><l1>細胞活化(Re)</l1><l2>Regen</l2></label>{{buffSkillReCondition}}</div>',
-        '    <div><input id="buffSkill_SV" type="checkbox"><label for="buffSkill_SV"><l0>影纱(SV)</l0><l1>影紗(SV)</l1><l2>Shadow Veil</l2></label>{{buffSkillSVCondition}}</div>',
-        '    <div><input id="buffSkill_Ab" type="checkbox"><label for="buffSkill_Ab"><l0>吸收(Ab)</l0><l1>吸收(Ab)</l1><l2>Absorb</l2></label>{{buffSkillAbCondition}}</div>',
+        '    <div><input id="buffSkill_HD" type="checkbox"><label for="buffSkill_HD"><l0>生命长效药(HD)</l0><l1>生命長效藥(HD)</l1><l2>Health Draught</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_HD" type="text"></label>{{buffSkillHDCondition}}</div>',
+        '    <div><input id="buffSkill_MD" type="checkbox"><label for="buffSkill_MD"><l0>魔力长效药(MD)</l0><l1>魔力長效藥(MD)</l1><l2>Mana Draught</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_MD" type="text"></label>{{buffSkillMDCondition}}</div>',
+        '    <div><input id="buffSkill_SD" type="checkbox"><label for="buffSkill_SD"><l0>灵力长效药(MD)</l0><l1>靈力長效藥(MD)</l1><l2>Spirit Draught</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_SD" type="text"></label>{{buffSkillSDCondition}}</div>',
+        '    <div><input id="buffSkill_FV" type="checkbox"><label for="buffSkill_FV"><l0>花瓶(FV)</l0><l1>花瓶(FV)</l1><l2>Flower Vase</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_FV" type="text"></label>{{buffSkillFVCondition}}</div>',
+        '    <div><input id="buffSkill_BG" type="checkbox"><label for="buffSkill_BG"><l0>泡泡糖(BG)</l0><l1>泡泡糖(BG)</l1><l2>Bubble-Gum</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_BG" type="text"></label>{{buffSkillBGCondition}}</div>',
+        '    <div><input id="buffSkill_Pr" type="checkbox"><label for="buffSkill_Pr"><l0>守护(Pr)</l0><l1>守護(Pr)</l1><l2>Protection</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_Pr" type="text"></label>{{buffSkillPrCondition}}</div>',
+        '    <div><input id="buffSkill_SL" type="checkbox"><label for="buffSkill_SL"><l0>生命火花(SL)</l0><l1>生命火花(SL)</l1><l2>Spark of Life</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_SL" type="text"></label>{{buffSkillSLCondition}}</div>',
+        '    <div><input id="buffSkill_SS" type="checkbox"><label for="buffSkill_SS"><l0>灵力盾(SS)</l0><l1>靈力盾(SS)</l1><l2>Spirit Shield</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_SS" type="text"></label>{{buffSkillSSCondition}}</div>',
+        '    <div><input id="buffSkill_Ha" type="checkbox"><label for="buffSkill_Ha"><l0>疾速(Ha)</l0><l1>疾速(Ha)</l1><l2>Haste</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_Ha" type="text"></label>{{buffSkillHaCondition}}</div>',
+        '    <div><input id="buffSkill_AF" type="checkbox"><label for="buffSkill_AF"><l0>奥术集中(AF)</l0><l1>奧術集中(AF)</l1><l2>Arcane Focus</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_AF" type="text"></label>{{buffSkillAFCondition}}</div>',
+        '    <div><input id="buffSkill_He" type="checkbox"><label for="buffSkill_He"><l0>穿心(He)</l0><l1>穿心(He)</l1><l2>Heartseeker</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_He" type="text"></label>{{buffSkillHeCondition}}</div>',
+        '    <div><input id="buffSkill_Re" type="checkbox"><label for="buffSkill_Re"><l0>细胞活化(Re)</l0><l1>細胞活化(Re)</l1><l2>Regen</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_Re" type="text"></label>{{buffSkillReCondition}}</div>',
+        '    <div><input id="buffSkill_SV" type="checkbox"><label for="buffSkill_SV"><l0>影纱(SV)</l0><l1>影紗(SV)</l1><l2>Shadow Veil</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_SV" type="text"></label>{{buffSkillSVCondition}}</div>',
+        '    <div><input id="buffSkill_Ab" type="checkbox"><label for="buffSkill_Ab"><l0>吸收(Ab)</l0><l1>吸收(Ab)</l1><l2>Absorb</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_Ab" type="text"></label>{{buffSkillAbCondition}}</div>',
         '  </div>',
 
         '<div class="hvAATab" id="hvAATab-Debuff">',
@@ -1295,15 +1295,15 @@
         '    <input id="debuffSkillOrder_Co" type="checkbox"><label for="debuffSkillOrder_Co"><l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2></label></div>',
         '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillWeAll" type="checkbox"><label for="debuffSkillWeAll"><l0>先给所有敌人上虚弱(We)</l0><l1>先給所有敵人上虛弱(We)</l1><l2>Weakened all enemies first.</l2></label><input id="debuffSkillWeAllByIndex" type="checkbox"><label for="debuffSkillWeAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead weight</l2></label></div>{{debuffSkillWeAllCondition}}',
         '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillImAll" type="checkbox"><label for="debuffSkillImAll"><l0>先给所有敌人上陷危(Im)</l0><l1>先給所有敵人上陷危(Im)</l1><l2>Imperiled all enemies first.</l2></label><input id="debuffSkillImAllByIndex" type="checkbox"><label for="debuffSkillImAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead weight</l2></label></div>{{debuffSkillImAllCondition}}',
-        '    <div><input id="debuffSkill_Sle" type="checkbox"><label for="debuffSkill_Sle"><l0>沉眠(Sl)</l0><l1>沉眠(Sl)</l1><l2>Sleep</l2></label>{{debuffSkillSleCondition}}</div>',
-        '    <div><input id="debuffSkill_Bl" type="checkbox"><label for="debuffSkill_Bl"><l0>致盲(Bl)</l0><l1>致盲(Bl)</l1><l2>Blind</l2></label>{{debuffSkillBlCondition}}</div>',
-        '    <div><input id="debuffSkill_Slo" type="checkbox"><label for="debuffSkill_Slo"><l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2></label>{{debuffSkillSloCondition}}</div>',
-        '    <div><input id="debuffSkill_Im" type="checkbox"><label for="debuffSkill_Im"><l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2></label>{{debuffSkillImCondition}}</div>',
-        '    <div><input id="debuffSkill_MN" type="checkbox"><label for="debuffSkill_MN"><l0>魔磁网(MN)</l0><l1>魔磁網(MN)</l1><l2>MagNet</l2></label>{{debuffSkillMNCondition}}</div>',
-        '    <div><input id="debuffSkill_Si" type="checkbox"><label for="debuffSkill_Si"><l0>沉默(Si)</l0><l1>沉默(Si)</l1><l2>Silence</l2></label>{{debuffSkillSiCondition}}</div>',
-        '    <div><input id="debuffSkill_Dr" type="checkbox"><label for="debuffSkill_Dr"><l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2></label>{{debuffSkillDrCondition}}</div>',
-        '    <div><input id="debuffSkill_We" type="checkbox"><label for="debuffSkill_We"><l0>虚弱(We)</l0><l1>虛弱(We)</l1><l2>Weaken</l2></label>{{debuffSkillWeCondition}}</div>',
-        '    <div><input id="debuffSkill_Co" type="checkbox"><label for="debuffSkill_Co"><l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2></label></label>{{debuffSkillCoCondition}}</div>',
+        '    <div><input id="debuffSkill_Sle" type="checkbox"><label for="debuffSkill_Sle"><l0>沉眠(Sl)</l0><l1>沉眠(Sl)</l1><l2>Sleep</l2> <= <input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Sle" type="text"></label>{{debuffSkillSleCondition}}</div>',
+        '    <div><input id="debuffSkill_Bl" type="checkbox"><label for="debuffSkill_Bl"><l0>致盲(Bl)</l0><l1>致盲(Bl)</l1><l2>Blind</l2> <= <input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Bl" type="text"></label>{{debuffSkillBlCondition}}</div>',
+        '    <div><input id="debuffSkill_Slo" type="checkbox"><label for="debuffSkill_Slo"><l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2> <= <input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Slo" type="text"></label>{{debuffSkillSloCondition}}</div>',
+        '    <div><input id="debuffSkill_Im" type="checkbox"><label for="debuffSkill_Im"><l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2> <= <input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Im" type="text"></label>{{debuffSkillImCondition}}</div>',
+        '    <div><input id="debuffSkill_MN" type="checkbox"><label for="debuffSkill_MN"><l0>魔磁网(MN)</l0><l1>魔磁網(MN)</l1><l2>MagNet</l2> <= <input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_MN" type="text"></label>{{debuffSkillMNCondition}}</div>',
+        '    <div><input id="debuffSkill_Si" type="checkbox"><label for="debuffSkill_Si"><l0>沉默(Si)</l0><l1>沉默(Si)</l1><l2>Silence</l2> <= <input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Si" type="text"></label>{{debuffSkillSiCondition}}</div>',
+        '    <div><input id="debuffSkill_Dr" type="checkbox"><label for="debuffSkill_Dr"><l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2> <= <input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Dr" type="text"></label>{{debuffSkillDrCondition}}</div>',
+        '    <div><input id="debuffSkill_We" type="checkbox"><label for="debuffSkill_We"><l0>虚弱(We)</l0><l1>虛弱(We)</l1><l2>Weaken</l2> <= <input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_We" type="text"></label>{{debuffSkillWeCondition}}</div>',
+        '    <div><input id="debuffSkill_Co" type="checkbox"><label for="debuffSkill_Co"><l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2> <= <input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Co" type="text"></label></label>{{debuffSkillCoCondition}}</div>',
         '  </div>',
 
         '<div class="hvAATab" id="hvAATab-Skill">',
@@ -4200,20 +4200,21 @@
           img: 'absorb',
         },
       };
-      if (!g('option').buffSkillSwitch) {
+      const option = g('option');
+      if (!option.buffSkillSwitch) {
         return false;
       }
-      if (!g('option').buffSkill) {
+      if (!option.buffSkill) {
         return false;
       }
-      if (!checkCondition(g('option').buffSkillCondition)) {
+      if (!checkCondition(option.buffSkillCondition)) {
         return false;
       }
       let i;
-      const skillPack = g('option').buffSkillOrderValue.split(',');
+      const skillPack = option.buffSkillOrderValue.split(',');
       for (i = 0; i < skillPack.length; i++) {
         let buff = skillPack[i];
-        if (g('option').buffSkill[buff] && checkCondition(g('option')[`buffSkill${buff}Condition`]) && !getPlayerBuff(skillLib[buff].img) && isOn(skillLib[buff].id)) {
+        if (option.buffSkill[buff] && checkCondition(option[`buffSkill${buff}Condition`]) && (getBuffTurnFromImg(getPlayerBuff(skillLib[buff].img)) <= (option.buffSkillThreshold ? option.buffSkillThreshold[buff] ?? 0 : 0)) && isOn(skillLib[buff].id)) {
           gE(skillLib[buff].id).click();
           return true;
         }
@@ -4495,8 +4496,14 @@
       }
 
       // 获取目标
-      let isDebuffed = (target) => getMonsterBuff(getMonsterID(target), skillLib[buff].img);
-      let debuffByIndex = isAll && g('option')[`debuffSkill${buff}AllByIndex`];
+      const option = g('option');
+
+      let isDebuffed = (target) => {
+        const current = getBuffTurnFromImg(getMonsterBuff(getMonsterID(target), skillLib[buff].img));
+        const threshold = option.debuffSkillThreshold ? option.debuffSkillThreshold[buff] ?? 0 : 0;
+        return current > threshold;
+      };
+      let debuffByIndex = isAll && option[`debuffSkill${buff}AllByIndex`];
       let monsterStatus = g('battle').monsterStatus;
       if (debuffByIndex) {
         monsterStatus = JSON.parse(JSON.stringify(monsterStatus));
@@ -4508,7 +4515,7 @@
       let minRank = Number.MAX_SAFE_INTEGER;
       for (let i = 0; i < max; i++) {
         let target = buff === 'Dr' ? monsterStatus[max - i - 1] : monsterStatus[i];
-        target = checkCondition(g('option')[`debuffSkill${buff}${isAll ? 'all' : ''}Condition`], [target]);
+        target = checkCondition(option[`debuffSkill${buff}${isAll ? 'all' : ''}Condition`], [target]);
         if (!target || target.isDead || isDebuffed(target)) {
           continue;
         }
@@ -4529,7 +4536,7 @@
       // 已有buff小于6个
       // 未开启debuff失败警告
       // buff剩余持续时间大于等于警报时间
-      if (imgs.length < 6 || !g('option').debuffSkillTurnAlert || (g('option').debuffSkillTurn && getBuffTurnFromImg(imgs[imgs.length - 1]) >= g('option').debuffSkillTurn[buff])) {
+      if (imgs.length < 6 || !option.debuffSkillTurnAlert || (option.debuffSkillTurn && getBuffTurnFromImg(imgs[imgs.length - 1]) >= option.debuffSkillTurn[buff])) {
         gE(skillLib[buff].id).click();
         clickMonster(id);
         return true;
