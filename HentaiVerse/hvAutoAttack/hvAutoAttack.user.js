@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.78
+// @version      2.90.79
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -770,6 +770,9 @@
     }
 
     function setLocal(item, value) {
+      if (JSON.stringify(getLocal(item)) === JSON.stringify(value)) {
+        return;
+      }
       if (typeof GM_setValue === 'undefined') {
         window.localStorage[`hvAA-${item}`] = (typeof value === 'string') ? value : JSON.stringify(value);
       } else {
@@ -2527,10 +2530,7 @@
         } catch (e) { console.error(e) } })(),
         // stamina & hathperk
         (async () => { try {
-          ready.stamina = await Promise.all([
-            asyncSetStamina(),
-            asyncSetEnergyDrinkHathperk(),
-          ]) || true;
+          ready.stamina = await asyncSetStamina() || true;
           await tryEncounter();
         } catch (e) { console.error(e) } })(),
         // item & supply
@@ -2664,48 +2664,44 @@
       if (!loadSucceed) {
         ability = getValue('ability');
       }
-      for (let ab of Object.keys(ability)) {
+      for (let ab in ability) {
         if (typeof ability[ab] !== 'object') {
           break;
         }
         ability[ab] = ability[ab].level; // old version data
       }
-      if (JSON.stringify(ability) !== JSON.stringify(getValue('ability'))) {
-        setValue('ability', ability);
-      }
-      $async.logSwitch(arguments);
-    } catch (e) { console.error(e) } }
-
-    async function asyncSetEnergyDrinkHathperk() { try {
-      if (isIsekai || !g('option').restoreStamina) {
-        return;
-      }
-      await waitPause();
-      $async.logSwitch(arguments);
-      let currentID = getCurrentUser();
-      let perk = getValue('staminaHathperk') ?? {};
-      if (perk[currentID]) {
-        return;
-      }
-      const html = await $ajax.fetch('https://e-hentai.org/hathperks.php');
-      if (!html) {
-        return;
-      }
-      const doc = $doc(html);
-      const perks = gE('.stuffbox>table>tbody>tr', 'all', doc);
-      if (perks && perks[25].innerHTML.includes('Obtained')) {
-        perk[currentID] = true;
-        setValue('staminaHathperk', perk);
-      }
+      setValue('ability', ability);
       $async.logSwitch(arguments);
     } catch (e) { console.error(e) } }
 
     async function asyncSetStamina() { try {
       await waitPause();
       $async.logSwitch(arguments);
-      const html = await $ajax.fetch(window.location.href);
-      setValue('staminaTime', Math.floor(time(0) / 1000 / 60 / 60));
-      setValue('stamina', gE('#stamina_readout .fc4.far>div', $doc(html)).textContent.match(/\d+/)[0] * 1);
+      const stamina = getValue('stamina') ?? {};
+      [stamina.current, stamina.perk]= await Promise.all([
+        getCurrentStamina(),
+        (async () => { try {
+          if (isIsekai || !g('option').restoreStamina) {
+            return;
+          }
+          let currentID = getCurrentUser();
+          const perk = stamina.perk ?? {};
+          if (perk[currentID]) {
+            return;
+          }
+          const html = await $ajax.fetch('https://e-hentai.org/hathperks.php');
+          if (!html) {
+            return;
+          }
+          const doc = $doc(html);
+          const perks = gE('.stuffbox>table>tbody>tr', 'all', doc);
+          if (perks && perks[25].innerHTML.includes('Obtained')) {
+            perk[currentID] = true;
+          }
+          return perk;
+        } catch(e) {console.error(e) }})()
+      ]);
+      setValue('stamina', stamina);
       $async.logSwitch(arguments);
     } catch (e) { console.error(e) } }
 
@@ -2832,7 +2828,7 @@
           return;
         }
       }
-      const staminaChecked = checkStamina(condition.staminaLow, condition.staminaCost);
+      const staminaChecked = await checkStamina(condition.staminaLow, condition.staminaCost);
       console.log(`stamina check done:\n${condition.staminaLow ? `low: ${condition.staminaLow}\n` : ''}${condition.staminaCost ? `cost: ${condition.staminaCost}\n` : ''}status: ${staminaChecked === 1 ? 'succeed' : staminaChecked === 0 ? 'failed' : 'failed with nature recover'}`);
       if (staminaChecked === 1) { // succeed
         return true;
@@ -2846,34 +2842,40 @@
       }
     }
 
-    function checkStamina(low, cost) {
-      let stamina = getValue('stamina');
-      const lastTime = getValue('staminaTime');
-      let timeNow = Math.floor(time(0) / _1h);
-      stamina += lastTime ? timeNow - lastTime : 0;
-      const stmNR = stamina + 24 - (timeNow % 24);
+    async function getCurrentStamina() { try {
+      return gE('#stamina_readout .fc4.far>div', $doc(await $ajax.fetch(window.location.href))).textContent.match(/\d+/)[0] * 1;
+    } catch(e) { console.error(e); }}
+
+    async function checkStamina(low, cost) {
+      const stamina = getValue('stamina');
+      const option = g('option');
+      let now = time(0);
+      let hours = Math.floor(now / _1h);
+      let current = await getCurrentStamina();
+      const stmNR = current + 24 - (hours % 24);
       cost ??= 0;
-      const stmNRChecked = !cost || stmNR - cost >= g('option').staminaLowWithReNat;
-      console.log('stamina:', stamina, '\nstamina with nature recover:', stmNR, '\nnext arena stamina cost: ', cost);
-      if (stamina - cost >= (low ?? g('option').staminaLow) && stmNRChecked) {
-        return 1;
-      }
+      const stmNRChecked = !cost || stmNR - cost >= option.staminaLowWithReNat;
+      console.log('stamina:', stamina, '\nstamina with nature recover:', stmNR);
+      if (current - cost >= (low ?? option.staminaLow) && stmNRChecked) return 1;
       let checked = 0;
       if (!stmNRChecked) {
         checked = -1;
       }
-      if (isIsekai || !g('option').restoreStamina) {
-        return checked;
-      }
+      // restore
+      if (isIsekai || !option.restoreStamina) return checked;
       const items = g('items');
-      if (!items) {
-        return checked;
+      if (!items) return checked;
+      const recoverItems = { 11401: true, 11402: false }
+      for (let id in recoverItems) {
+        if (!items[id]) continue;
+        const isPerk = (stamina.perk??{})[getCurrentUser()];
+        const recover = recoverItems[id] ? isPerk ? 20 : 10 : 5;
+        if (current + recover >= 100) continue; // check if overflow by (20 or 10) -> (5)
+        const recovered = gE('#stamina_readout .fc4.far>div', $doc(await $ajax.fetch(window.location.href, 'recover=stamina'))).textContent.match(/\d+/)[0] * 1;
+        goto();
+        break;
       }
-      const recover = items[11402] ? 5 : items[11401] ? (getValue('staminaHathperk')??{})[getCurrentUser()] ? 20 : 10 : 0;
-      if (recover && stamina <= (100 - recover)) {
-        $ajax.open(window.location.href, 'recover=stamina');
-        return checked;
-      }
+      return checked;
     }
 
     async function updateEncounter(engage) { try {
@@ -3048,10 +3050,7 @@
         105: 1, 106: 1, 107: 1, 108: 1, 109: 1, 110: 1, 111: 1, 112: 1,
         gr: 0
       }
-      let stamina = getValue('stamina');
-      const lastTime = getValue('staminaTime');
-      let timeNow = Math.floor(time(0) / 1000 / 60 / 60);
-      stamina += lastTime ? timeNow - lastTime : 0;
+      let stamina = await getCurrentStamina();
       for (let id in staminaCost) {
         staminaCost[id] *= (isIsekai ? 2 : 1) * (stamina >= 60 ? 0.03 : 0.02)
       }
@@ -3076,7 +3075,7 @@
       }
       const cost = staminaCost[id];
       if (!await checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: option.encounter, staminaLow: id === 'gr' ? option.staminaGrindFest : undefined })) {
-        console.log('Check Battle Ready Failed', 'id:', id, cost);
+        console.log('Check Battle Ready Failed', 'id:', id);
         $async.logSwitch(arguments);
         return;
       }
@@ -3277,7 +3276,6 @@
       g('battle').turn = currentTurn;
       battle.turn = currentTurn;
       setValue('battle', battle);
-
       killBug(); // 解决 HentaiVerse 可能出现的 bug
 
       if (g('option').autoFlee && checkCondition(g('option').fleeCondition)) {
@@ -3675,8 +3673,6 @@
         const monsterLvs = Array.from(gE(`${monsterStateKeys.lv}>div>div`, 'all')).map(monster => monster.innerText);
         const monsterDB = getValue('monsterDB', true) ?? {};
         const monsterMID = getValue('monsterMID', true) ?? {};
-        const oldDB = JSON.stringify(monsterDB);
-        const oldMID = JSON.stringify(monsterMID);
         for (let i = battleLog.length - 2; i > battleLog.length - 2 - g('monsterAll'); i--) {
           let mid = battleLog[i].textContent.match(/MID=(\d+)/)[1] * 1;
           let name = battleLog[i].textContent.match(/MID=(\d+) \((.*)\) LV/)[2];
@@ -3705,12 +3701,8 @@
           order++;
         }
         if (g('option').cacheMonsterHP) {
-          if (oldDB !== JSON.stringify(monsterDB)) {
-            setValue('monsterDB', monsterDB);
-          }
-          if (oldMID !== JSON.stringify(monsterMID)) {
-            setValue('monsterMID', monsterMID);
-          }
+          setValue('monsterDB', monsterDB);
+          setValue('monsterMID', monsterMID);
         }
         battle.monsterStatus = monsterStatus;
 
@@ -5007,9 +4999,7 @@
         console.table(stats);
         pauseChange();
       }
-      if (JSON.stringify(stats) !== JSON.stringify(getValue('stats', true))) {
-        setValue('stats', stats);
-      }
+      setValue('stats', stats);
     }
 
     function recordUsage2() {
@@ -5034,9 +5024,7 @@
         delValue('stats');
         return;
       }
-      if (JSON.stringify(stats) !== JSON.stringify(getValue('stats', true))) {
-        setValue('stats', stats);
-      }
+      setValue('stats', stats);
     }
   } catch (e) {
     console.error(e);
