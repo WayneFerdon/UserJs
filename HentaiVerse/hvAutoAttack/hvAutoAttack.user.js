@@ -4446,7 +4446,7 @@
         return false;
       }
       // 先处理特殊的 “先给全体上buff”
-      let skillPack = splitOrders(option.debuffSkillOrderAllValue, ['Sle', 'Bl', 'We', 'Si', 'Slo', 'Im', 'Co']);
+      let skillPack = splitOrders(option.debuffSkillOrderAllValue, ['Sle', 'Bl', 'We', 'Si', 'Slo', 'Dr', 'Im', 'MN', 'Co']);
       for (let i = 0; i < skillPack.length; i++) {
         if (option[`debuffSkill${skillPack[i]}All`]) { // 是否启用
           if (checkCondition(option[`debuffSkill${skillPack[i]}AllCondition`], monsterStatus)) { // 检查条件
