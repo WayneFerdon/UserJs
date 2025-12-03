@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.82
+// @version      2.90.83
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1234,7 +1234,18 @@
         '  <div><input id="item_ED" type="checkbox"><label for="item_ED"><b><l0>能量饮料(ED)</l0><l1>能量飲料(ED)</l1><l2>Energy Drink</l2></b></label>: {{itemEDCondition}}</div></div>',
 
         '<div class="hvAATab" id="hvAATab-Channel">',
-        '  <l0><b>获得引导时</b>（此时1点MP施法与150%伤害）</l0><l1><b>獲得引導時</b>（此時1點MP施法與150%傷害）</l1><l2><b>During Channeling effect</b> (1 mp spell cost and 150% spell damage)</l2>:',
+        '  <div><l0><b>获得引导时</b>（此时1点MP施法与150%伤害）</l0><l1><b>獲得引導時</b>（此時1點MP施法與150%傷害）</l1><l2><b>During Channeling effect</b> (1 mp spell cost and 150% spell damage)</l2>:</div>',
+        '  <div><b><l0>超过时不释放</l0><l1>超過時不釋放</l1><l2>Not cast if remain turns above</l2></b>: ',
+        '    <div><label for="channelThreshold_Pr"><l0>守护(Pr)</l0><l1>守護(Pr)</l1><l2>Protection</l2> >= <input class="hvAANumber" placeholder="0" name="channelThreshold_Pr" type="text"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label></div>',
+        '    <div><label for="channelThreshold_SL"><l0>生命火花(SL)</l0><l1>生命火花(SL)</l1><l2>Spark of Life</l2> >= <input class="hvAANumber" placeholder="0" name="channelThreshold_SL" type="text"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label></div>',
+        '    <div><label for="channelThreshold_SS"><l0>灵力盾(SS)</l0><l1>靈力盾(SS)</l1><l2>Spirit Shield</l2> >= <input class="hvAANumber" placeholder="0" name="channelThreshold_SS" type="text"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label></div>',
+        '    <div><label for="channelThreshold_Ha"><l0>疾速(Ha)</l0><l1>疾速(Ha)</l1><l2>Haste</l2> >= <input class="hvAANumber" placeholder="0" name="channelThreshold_Ha" type="text"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label></div>',
+        '    <div><label for="channelThreshold_AF"><l0>奥术集中(AF)</l0><l1>奧術集中(AF)</l1><l2>Arcane Focus</l2> >= <input class="hvAANumber" placeholder="0" name="channelThreshold_AF" type="text"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label></div>',
+        '    <div><label for="channelThreshold_He"><l0>穿心(He)</l0><l1>穿心(He)</l1><l2>Heartseeker</l2> >= <input class="hvAANumber" placeholder="0" name="channelThreshold_He" type="text"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label></div>',
+        '    <div><label for="channelThreshold_Re"><l0>细胞活化(Re)</l0><l1>細胞活化(Re)</l1><l2>Regen</l2> >= <input class="hvAANumber" placeholder="0" name="channelThreshold_Re" type="text"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label></div>',
+        '    <div><label for="channelThreshold_SV"><l0>影纱(SV)</l0><l1>影紗(SV)</l1><l2>Shadow Veil</l2> >= <input class="hvAANumber" placeholder="0" name="channelThreshold_SV" type="text"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label></div>',
+        '    <div><label for="channelThreshold_Ab"><l0>吸收(Ab)</l0><l1>吸收(Ab)</l1><l2>Absorb</l2> >= <input class="hvAANumber" placeholder="0" name="channelThreshold_Ab" type="text"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label></div>',
+        '  </div>',
         '  <div><b><l0>先施放引导技能</l0><l1>先施放引導技能</l1><l2>First cast</l2></b>: <br>',
         '    <l0>注意: 此处的施放顺序与</l0><l1>注意: 此處的施放順序与</l1><l2>Note: The cast order here is the same as in</l2><a class="hvAAGoto" name="hvAATab-Buff">BUFF<l01>技能</l01><l2> Spells</l2></a><l0>里的相同</l0><l1>裡的相同</l1><br>',
         '    <input id="channelSkill_SS" type="checkbox"><label for="channelSkill_SS"><l0>灵力盾(SS)</l0><l1>靈力盾(SS)</l1><l2>Spirit Shield</l2></label>',
@@ -4096,9 +4107,6 @@
       if (!option.channelSkillSwitch) {
         return false;
       }
-      if (!option.channelSkill) {
-        return false;
-      }
       if (!getPlayerBuff('channeling')) {
         return false;
       }
@@ -4148,60 +4156,58 @@
           id: '432',
           img: 'arcanemeditation',
         },
+
+        'Cloak of the Fallen': {
+          id: getPlayerBuff('sparklife') ? undefined : 422,
+        }
       };
-      let i, j;
-      const skillPack = splitOrders(option.buffSkillOrderValue, ['SS', 'SL', 'Pr', 'Ab', 'SV', 'Re', 'Ha', 'He', 'AF']);
       if (option.channelSkill) {
-        for (i = 0; i < skillPack.length; i++) {
-          j = skillPack[i];
-          if (option.channelSkill[j] && !getPlayerBuff(skillLib[j].img) && isOn(skillLib[j].id)) {
-            gE(skillLib[j].id).click();
-            return true;
-          }
+        const skillPack = splitOrders(option.buffSkillOrderValue, ['SS', 'SL', 'Pr', 'Ab', 'SV', 'Re', 'Ha', 'He', 'AF']);
+        for (const buff of skillPack) {
+          const current = getBuffTurnFromImg(getPlayerBuff(skillLib[buff].img));
+          const threshold = option.channelThreshold ? option.channelThreshold[buff] ?? 0 : 0;
+          if (threshold >= 0 && current >= threshold) continue;
+
+          if (!option.channelSkill[buff] || getPlayerBuff(skillLib[buff].img)) continue;
+
+          if (!isOn(skillLib[buff].id)) continue;
+          gE(skillLib[buff].id).click();
+          return true;
         }
       }
       if (option.channelSkill2) {
         const order = splitOrders(option.channelSkill2OrderValue);
-        for (i = 0; i < order.length; i++) {
-          if (isOn(order[i])) {
-            gE(order[i]).click();
-            return true;
+        for (const i = 0; i < order.length; i++) {
+          const id = order[id];
+          const matched = Object.keys(skillLib).filter(s=>skillLib[s].id * 1 === 1 * id);
+          if (matched) {
+            const buff = matched[0];
+            const current = getBuffTurnFromImg(getPlayerBuff(skillLib[buff].img));
+            const threshold = option.channelThreshold ? option.channelThreshold[buff] ?? 0 : 0;
+            if (threshold >= 0 && current > threshold) continue;
           }
+
+          if (!isOn(id)) continue;
+          gE(id).click();
+          return true;
         }
       }
-      const buff = gE('#pane_effects>img', 'all');
-      if (!buff.length) return false;
-      const name2Skill = {
-        'Spirit Shield': 'SS',
-        'Spark of Life': 'SL',
-        'Protection': 'Pr',
-        'Absorb': 'Ab',
-        'Shadow Veil': 'SV',
-        'Regen': 'Re',
-        'Hastened': 'Ha',
-        'Heartseeker': 'He',
-        'Arcane Focus': 'AF',
-      };
-      let id;
-      let minBuff;
-      let minTime;
-      for (i = 0; i < buff.length; i++) {
-        const spellName = buff[i].getAttribute('onmouseover').match(/'(.*?)'/)[1];
-        const buffLastTime = getBuffTurnFromImg(buff[i]);
-        if (isNaN(buffLastTime) || buff[i].src.match(/_scroll.png$/) || (minTime && buffLastTime >= minTime)) {
+      let minBuff, minTime;
+      for (const buff in skillLib) {
+        const current = getBuffTurnFromImg(getPlayerBuff(skillLib[buff].img));
+        const threshold = option.channelThreshold ? option.channelThreshold[name] ?? 0 : 0;
+        if (threshold >= 0 && current > threshold) continue;
+
+        current = isNaN(current) ? 0 : current;
+        if (getPlayerBuff(skillLib[buff].img).src.match(/_scroll.png$/) || (minTime && current >= minTime)) {
           continue;
         }
-        if (spellName === 'Cloak of the Fallen' && !getPlayerBuff('sparklife')) {
-          id = 422;
-        } else if (spellName in name2Skill) {
-          id = skillLib[name2Skill[spellName]].id;
-        }
-        if (!id || !isOn(id)) {
-          continue;
-        }
+        const id = skillLib[buff].id;
+        if (!current && !option.buffSkill[buff]) continue;
+
+        if (!isOn(id)) continue;
         minBuff = id;
-        minTime = buffLastTime;
-        break;
+        minTime = current;
       }
       if (minBuff) {
         gE(minBuff).click();
