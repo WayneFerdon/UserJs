@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.81
+// @version      2.90.82
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1260,7 +1260,7 @@
         '    <input id="channelSkill2Order_He" value="He,431" type="checkbox"><label for="channelSkill2Order_He"><l0>穿心(He)</l0><l1>穿心(He)</l1><l2>Heartseeker</l2></label>',
         '    <input id="channelSkill2Order_AF" value="AF,432" type="checkbox"><label for="channelSkill2Order_AF"><l0>奥术集中(AF)</l0><l1>奧術集中(AF)</l1><l2>Arcane Focus</l2></label>',
         '  </div></div>',
-        '  <div><l0><b>最后ReBuff</b>: 重新施放最先消失的Buff</l0><l1><b>最後ReBuff</b>: 重新施放最先消失的Buff</l1><l2><b>At last, re-cast the spells which will expire first</b></l2>.</div>',
+        '  <div><l0><b>最后ReBuff</b>: 重新施放最先将要消失的Buff</l0><l1><b>最後ReBuff</b>: 重新施放最先將要消失的Buff</l1><l2><b>At last, re-cast the spells which will expire first</b></l2>.</div>',
         '</div>',
 
         '<div class="hvAATab" id="hvAATab-Buff">',
@@ -4170,32 +4170,42 @@
         }
       }
       const buff = gE('#pane_effects>img', 'all');
-      if (buff.length > 0) {
-        const name2Skill = {
-          'Protection': 'Pr',
-          'Spark of Life': 'SL',
-          'Spirit Shield': 'SS',
-          'Hastened': 'Ha',
-          'Arcane Focus': 'AF',
-          'Heartseeker': 'He',
-          'Regen': 'Re',
-          'Shadow Veil': 'SV',
-        };
-        for (i = 0; i < buff.length; i++) {
-          const spellName = buff[i].getAttribute('onmouseover').match(/'(.*?)'/)[1];
-          const buffLastTime = getBuffTurnFromImg(buff[i]);
-          if (isNaN(buffLastTime) || buff[i].src.match(/_scroll.png$/)) {
-            continue;
-          } else {
-            if (spellName === 'Cloak of the Fallen' && !getPlayerBuff('sparklife') && isOn('422')) {
-              gE('422').click();
-              return true;
-            } if (spellName in name2Skill && isOn(skillLib[name2Skill[spellName]].id)) {
-              gE(skillLib[name2Skill[spellName]].id).click();
-              return true;
-            }
-          }
+      if (!buff.length) return false;
+      const name2Skill = {
+        'Spirit Shield': 'SS',
+        'Spark of Life': 'SL',
+        'Protection': 'Pr',
+        'Absorb': 'Ab',
+        'Shadow Veil': 'SV',
+        'Regen': 'Re',
+        'Hastened': 'Ha',
+        'Heartseeker': 'He',
+        'Arcane Focus': 'AF',
+      };
+      let id;
+      let minBuff;
+      let minTime;
+      for (i = 0; i < buff.length; i++) {
+        const spellName = buff[i].getAttribute('onmouseover').match(/'(.*?)'/)[1];
+        const buffLastTime = getBuffTurnFromImg(buff[i]);
+        if (isNaN(buffLastTime) || buff[i].src.match(/_scroll.png$/) || (minTime && buffLastTime >= minTime)) {
+          continue;
         }
+        if (spellName === 'Cloak of the Fallen' && !getPlayerBuff('sparklife')) {
+          id = 422;
+        } else if (spellName in name2Skill) {
+          id = skillLib[name2Skill[spellName]].id;
+        }
+        if (!id || !isOn(id)) {
+          continue;
+        }
+        minBuff = id;
+        minTime = buffLastTime;
+        break;
+      }
+      if (minBuff) {
+        gE(minBuff).click();
+        return true;
       }
       return false;
     }
