@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.84
+// @version      2.90.85
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1271,7 +1271,7 @@
         '    <input id="channelSkill2Order_He" value="He,431" type="checkbox"><label for="channelSkill2Order_He"><l0>穿心(He)</l0><l1>穿心(He)</l1><l2>Heartseeker</l2></label>',
         '    <input id="channelSkill2Order_AF" value="AF,432" type="checkbox"><label for="channelSkill2Order_AF"><l0>奥术集中(AF)</l0><l1>奧術集中(AF)</l1><l2>Arcane Focus</l2></label>',
         '  </div></div>',
-        '  <div><l0><b>最后ReBuff</b>: 重新施放最先将要消失的Buff</l0><l1><b>最後ReBuff</b>: 重新施放最先將要消失的Buff</l1><l2><b>At last, re-cast the spells which will expire first</b></l2>.</div>',
+        '  <div><input id="channelRebuff" type="checkbox"><l0><b>最后ReBuff</b>: 重新施放最先将要消失的Buff</l0><l1><b>最後ReBuff</b>: 重新施放最先將要消失的Buff</l1><l2><b>At last, re-cast the spells which will expire first</b></l2>.</div>',
         '</div>',
 
         '<div class="hvAATab" id="hvAATab-Buff">',
@@ -4192,26 +4192,28 @@
           return true;
         }
       }
-      let minBuff, minTime;
-      for (const buff in skillLib) {
-        const current = getBuffTurnFromImg(getPlayerBuff(skillLib[buff].img));
-        const threshold = option.channelThreshold ? option.channelThreshold[name] ?? 0 : 0;
-        if (threshold >= 0 && current > threshold) continue;
+      if (option.channelRebuff) {
+        let minBuff, minTime;
+        for (const buff in skillLib) {
+          const current = getBuffTurnFromImg(getPlayerBuff(skillLib[buff].img));
+          const threshold = option.channelThreshold ? option.channelThreshold[name] ?? 0 : 0;
+          if (threshold >= 0 && current > threshold) continue;
 
-        current = isNaN(current) ? 0 : current;
-        if (getPlayerBuff(skillLib[buff].img).src.match(/_scroll.png$/) || (minTime && current >= minTime)) {
-          continue;
+          current = isNaN(current) ? 0 : current;
+          if (getPlayerBuff(skillLib[buff].img).src.match(/_scroll.png$/) || (minTime && current >= minTime)) {
+            continue;
+          }
+          const id = skillLib[buff].id;
+          if (!current && !option.buffSkill[buff]) continue;
+
+          if (!isOn(id)) continue;
+          minBuff = id;
+          minTime = current;
         }
-        const id = skillLib[buff].id;
-        if (!current && !option.buffSkill[buff]) continue;
-
-        if (!isOn(id)) continue;
-        minBuff = id;
-        minTime = current;
-      }
-      if (minBuff) {
-        gE(minBuff).click();
-        return true;
+        if (minBuff) {
+          gE(minBuff).click();
+          return true;
+        }
       }
       return false;
     }
