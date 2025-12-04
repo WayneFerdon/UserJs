@@ -4178,7 +4178,7 @@
       if (option.channelSkill2) {
         const order = splitOrders(option.channelSkill2OrderValue);
         for (const id of order) {
-          const matched = Object.keys(skillLib).filter(s=>skillLib[s].id * 1 === 1 * id);
+          const matched = Object.keys(skillLib).filter(s => skillLib[s].id * 1 === 1 * id);
           if (matched) {
             const buff = matched[0];
             const current = getBuffTurnFromImg(getPlayerBuff(skillLib[buff].img));
@@ -4195,7 +4195,7 @@
         let minBuff, minTime;
         for (const buff in skillLib) {
           const current = getBuffTurnFromImg(getPlayerBuff(skillLib[buff].img));
-          const threshold = option.channelThreshold ? option.channelThreshold[name] ?? 0 : 0;
+          const threshold = option.channelThreshold ? option.channelThreshold[buff] ?? 0 : 0;
           if (threshold >= 0 && current > threshold) continue;
 
           current = isNaN(current) ? 0 : current;
