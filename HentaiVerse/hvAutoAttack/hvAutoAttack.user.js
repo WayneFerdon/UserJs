@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.90
+// @version      2.90.91
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -4167,9 +4167,7 @@
           const current = getBuffTurnFromImg(getPlayerBuff(skillLib[buff].img));
           const threshold = option.channelThreshold ? option.channelThreshold[buff] ?? 0 : 0;
           if (threshold > 0 && current >= threshold) continue;
-
           if (!option.channelSkill[buff] || getPlayerBuff(skillLib[buff].img)) continue;
-
           if (!isOn(skillLib[buff].id)) continue;
           gE(skillLib[buff].id).click();
           return true;
@@ -4178,14 +4176,12 @@
       if (option.channelSkill2) {
         const order = splitOrders(option.channelSkill2OrderValue);
         for (const id of order) {
-          const matched = Object.keys(skillLib).filter(s => skillLib[s].id * 1 === 1 * id);
-          if (matched) {
-            const buff = matched[0];
+          const buff = Object.keys(skillLib).find(s => skillLib[s].id * 1 === 1 * id);
+          if (buff) {
             const current = getBuffTurnFromImg(getPlayerBuff(skillLib[buff].img));
             const threshold = option.channelThreshold ? option.channelThreshold[buff] ?? 0 : 0;
             if (threshold > 0 && current > threshold) continue;
           }
-
           if (!isOn(id)) continue;
           gE(id).click();
           return true;
@@ -4203,7 +4199,7 @@
             continue;
           }
           const id = skillLib[buff].id;
-          if (!current && !option.buffSkill[buff]) continue;
+          if (!current && (!option.buffSkillSwitch || !option.buffSkill[buff])) continue;
 
           if (!isOn(id)) continue;
           minBuff = id;
@@ -4462,6 +4458,7 @@
       if (!option.debuffSkillSwitch || !checkCondition(option.debuffSkillCondition, monsterStatus)) { // 总开关是否开启
         return false;
       }
+
       // 先处理特殊的 “先给全体上buff”
       let skillPack = splitOrders(option.debuffSkillOrderAllValue, ['Sle', 'Bl', 'We', 'Si', 'Slo', 'Dr', 'Im', 'MN', 'Co']);
       for (let i = 0; i < skillPack.length; i++) {
@@ -4485,7 +4482,8 @@
             continue;
           }
         }
-        let succeed = useDebuffSkill(buff, i < toAllCount);
+        const exclusiveBuffs = undefined; i < toAllCount && g('battle').debuffAllExclusiveAtBeginDone && option.debuffAllExclusiveAtBegin ? Object.keys(option.debuffAllExclusiveAtBegin) : undefined;
+        let succeed = useDebuffSkill(buff, i < toAllCount, exclusiveBuffs);
         // 前 toAllCount 个都是先给全体上的
         if (succeed) {
           return true;
@@ -4494,7 +4492,7 @@
       return false;
     }
 
-    function useDebuffSkill(buff, isAll = false) {
+    function useDebuffSkill(buff, isAll = false, exclusiveBuffs = undefined) {
       const skillLib = {
         Sle: {
           name: 'Sleep',
@@ -4571,10 +4569,15 @@
       // 获取目标
       const option = g('option');
 
-      let isDebuffed = (target) => {
-        const current = getBuffTurnFromImg(getMonsterBuff(getMonsterID(target), skillLib[buff].img));
-        const threshold = option.debuffSkillThreshold ? option.debuffSkillThreshold[buff] ?? 0 : 0;
-        return threshold >= 0 && current > threshold;
+      let isDebuffed = (target, b) => {
+        if (b || !exclusiveBuffs) {
+          const current = getBuffTurnFromImg(getMonsterBuff(getMonsterID(target), skillLib[b ?? buff].img));
+          const threshold = option.debuffSkillThreshold ? option.debuffSkillThreshold[b ?? buff] ?? 0 : 0;
+          return threshold >= 0 && current > threshold;
+        }
+        for (const exclusive of exclusiveBuffs) {
+          if (isDebuffed(target, exclusive)) return true;
+        }
       };
       let debuffByIndex = isAll && option[`debuffSkill${buff}AllByIndex`];
       let monsterStatus = g('battle').monsterStatus;
