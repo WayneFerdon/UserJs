@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.85
+// @version      2.90.86
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -4177,8 +4177,7 @@
       }
       if (option.channelSkill2) {
         const order = splitOrders(option.channelSkill2OrderValue);
-        for (const i = 0; i < order.length; i++) {
-          const id = order[i];
+        for (const id of order) {
           const matched = Object.keys(skillLib).filter(s=>skillLib[s].id * 1 === 1 * id);
           if (matched) {
             const buff = matched[0];
