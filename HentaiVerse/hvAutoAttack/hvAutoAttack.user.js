@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.91
+// @version      2.90.92
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1316,7 +1316,7 @@
         '    <l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2>: <input class="hvAANumber" name="debuffSkillTurn_Co" type="text">',
         '    <l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2>: <input class="hvAANumber" name="debuffSkillTurn_Dr" type="text">',
         '    <l0>魔磁网(MN)</l0><l1>魔磁網(MN)</l1><l2>MagNet</l2>: <input class="hvAANumber" name="debuffSkillTurn_MN" type="text"></div>',
-        '  <div class="debuffSkillOrderAll"><l0>1. 特殊先给全体施放的顺序(未配置的按照下面的顺序)</l0><l1>特殊先給全體施放的順序(未配置的按照下面的順序)</l1><l2>Cast Order for Special Debuff all enemies first(Using order below as default if not configed)</l2>:',
+        '  <div class="debuffSkillOrderAll">1. <l0>特殊先给全体施放的顺序(未配置的按照下面的顺序)</l0><l1>特殊先給全體施放的順序(未配置的按照下面的順序)</l1><l2>Cast Order for Special Debuff all enemies first(Using order below as default if not configed)</l2>:',
         '    <input name="debuffSkillOrderAllValue" style="width:80%;" type="text" disabled="true"><br>',
         // Dr, MN无法覆盖全体
         '    <input id="debuffSkillOrderAll_Sle" type="checkbox"><label for="debuffSkillOrderAll_Sle"><l0>沉眠(Sl)</l0><l1>沉眠(Sl)</l1><l2>Sleep</l2></label>',
@@ -1330,7 +1330,20 @@
         '    <input id="debuffSkillOrderAll_Co" type="checkbox"><label for="debuffSkillOrderAll_Co"><l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2></label>',
         '  </div>',
 
-        '  <div class="debuffSkillOrder"><l0>2. 单体施放顺序(未配置的按照下面的顺序)</l0><l1>單體施放順序(未配置的按照下面的順序)</l1><l2>Cast Order for each enemy(Using order below as default if not configed)</l2>:',
+        '  <div>1.a. <l0>特殊先给全体施放时，视作覆盖的互斥Debuff</l0><l1>特殊特殊先給全體施放時，視作覆蓋的互斥Debuff</l1><l2>Exclusive debuffs during \'Cast Order for Special Debuff all enemies first\'</l2>:',
+        // Dr, MN无法覆盖全体
+        '    <input id="debuffAllExclusive_Sle" type="checkbox"><label for="debuffAllExclusive_Sle"><l0>沉眠(Sl)</l0><l1>沉眠(Sl)</l1><l2>Sleep</l2></label>',
+        '    <input id="debuffAllExclusive_Bl" type="checkbox"><label for="debuffAllExclusive_Bl"><l0>致盲(Bl)</l0><l1>致盲(Bl)</l1><l2>Blind</l2></label>',
+        '    <input id="debuffAllExclusive_We" type="checkbox"><label for="debuffAllExclusive_We"><l0>虚弱(We)</l0><l1>虛弱(We)</l1><l2>Weaken</l2></label>',
+        '    <input id="debuffAllExclusive_Si" type="checkbox"><label for="debuffAllExclusive_Si"><l0>沉默(Si)</l0><l1>沉默(Si)</l1><l2>Silence</l2></label>',
+        '    <input id="debuffAllExclusive_Slo" type="checkbox"><label for="debuffAllExclusive_Slo"><l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2></label>',
+        // '    <input id="debuffAllExclusive_Dr" type="checkbox"><label for="debuffAllExclusive_Dr"><l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2></label>',
+        '    <input id="debuffAllExclusive_Im" type="checkbox"><label for="debuffAllExclusive_Im"><l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2></label>',
+        // '    <input id="debuffAllExclusive_MN" type="checkbox"><label for="debuffAllExclusive_MN"><l0>魔磁网(MN)</l0><l1>魔磁網(MN)</l1><l2>MagNet</l2></label>',
+        '    <input id="debuffAllExclusive_Co" type="checkbox"><label for="debuffAllExclusive_Co"><l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2></label>',
+        '  </div>',
+
+        '  <div class="debuffSkillOrder">2. <l0>单体施放顺序(未配置的按照下面的顺序)</l0><l1>單體施放順序(未配置的按照下面的順序)</l1><l2>Cast Order for each enemy(Using order below as default if not configed)</l2>:',
         '    <input name="debuffSkillOrderValue" style="width:80%;" type="text" disabled="true"><br>',
         '    <input id="debuffSkillOrder_Sle" type="checkbox"><label for="debuffSkillOrder_Sle"><l0>沉眠(Sl)</l0><l1>沉眠(Sl)</l1><l2>Sleep</l2></label>',
         '    <input id="debuffSkillOrder_Bl" type="checkbox"><label for="debuffSkillOrder_Bl"><l0>致盲(Bl)</l0><l1>致盲(Bl)</l1><l2>Blind</l2></label>',
@@ -4472,18 +4485,19 @@
       }
       const toAllCount = skillPack.length;
 
+      const exclusiveBuffs = option.debuffAllExclusive ? Object.keys(option.debuffAllExclusive) : undefined;
       if (option.debuffSkill) { // 是否有启用的buff(不算两个特殊的)
         skillPack = skillPack.concat(splitOrders(option.debuffSkillOrderValue, ['Sle', 'Bl', 'We', 'Si', 'Slo', 'Dr', 'Im', 'MN', 'Co']));
       }
       for (let i in skillPack) {
         let buff = skillPack[i];
-        if (i >= toAllCount) { // 非先全体
+        const isToAll = i < toAllCount;
+        if (!isToAll) { // 非先全体
           if (!buff || !option.debuffSkill[buff] || !checkCondition(option[`debuffSkill${buff}Condition`], monsterStatus)) { // 检查条件
             continue;
           }
         }
-        const exclusiveBuffs = undefined; i < toAllCount && g('battle').debuffAllExclusiveAtBeginDone && option.debuffAllExclusiveAtBegin ? Object.keys(option.debuffAllExclusiveAtBegin) : undefined;
-        let succeed = useDebuffSkill(buff, i < toAllCount, exclusiveBuffs);
+        let succeed = useDebuffSkill(buff, isToAll, isToAll && exclusiveBuffs.includes(buff) ? exclusiveBuffs : undefined);
         // 前 toAllCount 个都是先给全体上的
         if (succeed) {
           return true;
@@ -4586,8 +4600,7 @@
         monsterStatus.sort(objArrSort('order'));
       }
       let max = isAll ? monsterStatus.length : 1;
-
-      let id;
+         let id;
       let minRank = Number.MAX_SAFE_INTEGER;
       for (let i = 0; i < max; i++) {
         let target = buff === 'Dr' ? monsterStatus[max - i - 1] : monsterStatus[i];
@@ -4612,10 +4625,12 @@
       // 已有buff小于6个
       // 未开启debuff失败警告
       // buff剩余持续时间大于等于警报时间
-      if (imgs.length < 6 || !option.debuffSkillTurnAlert || (option.debuffSkillTurn && getBuffTurnFromImg(imgs[imgs.length - 1]) >= option.debuffSkillTurn[buff])) {
+      if (imgs.length < 6) {
         gE(skillLib[buff].id).click();
         clickMonster(id);
         return true;
+      } else if (!option.debuffSkillTurnAlert || (option.debuffSkillTurn && getBuffTurnFromImg(imgs[imgs.length - 1]) >= option.debuffSkillTurn[buff])){
+        return false;
       }
 
       _alert(0, '无法正常施放DEBUFF技能，请尝试手动打怪', '無法正常施放DEBUFF技能，請嘗試手動打怪', 'Can not cast de-skills normally, continue the script?\nPlease try attack manually.');
