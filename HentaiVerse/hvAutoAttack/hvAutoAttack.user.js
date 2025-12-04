@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.89
+// @version      2.90.90
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -4166,7 +4166,7 @@
         for (const buff of skillPack) {
           const current = getBuffTurnFromImg(getPlayerBuff(skillLib[buff].img));
           const threshold = option.channelThreshold ? option.channelThreshold[buff] ?? 0 : 0;
-          if (threshold >= 0 && current >= threshold) continue;
+          if (threshold > 0 && current >= threshold) continue;
 
           if (!option.channelSkill[buff] || getPlayerBuff(skillLib[buff].img)) continue;
 
@@ -4183,7 +4183,7 @@
             const buff = matched[0];
             const current = getBuffTurnFromImg(getPlayerBuff(skillLib[buff].img));
             const threshold = option.channelThreshold ? option.channelThreshold[buff] ?? 0 : 0;
-            if (threshold >= 0 && current > threshold) continue;
+            if (threshold > 0 && current > threshold) continue;
           }
 
           if (!isOn(id)) continue;
@@ -4196,7 +4196,7 @@
         for (const buff in skillLib) {
           let current = getBuffTurnFromImg(getPlayerBuff(skillLib[buff].img));
           const threshold = option.channelThreshold ? option.channelThreshold[buff] ?? 0 : 0;
-          if (threshold >= 0 && current > threshold) continue;
+          if (threshold > 0 && current > threshold) continue;
 
           current = isNaN(current) ? 0 : current;
           if (getPlayerBuff(skillLib[buff].img)?.src.match(/_scroll.png$/) || (minTime && current >= minTime)) {
