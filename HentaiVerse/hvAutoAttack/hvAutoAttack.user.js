@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.94
+// @version      2.90.95
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2452,10 +2452,10 @@
           return gE('#ckey_spirit[src*="spirit_a"]') ? 1 : 0;
         },
         buffTurn(img) {
-          return getBuffTurnFromImg(getPlayerBuff(img), 0);
+          return getBuffTurnFromImg(getPlayerBuff(img));
         },
         targetBuffTurn(img) {
-          return getBuffTurnFromImg(getMonsterBuff(getMonsterID(target), img), 0);
+          return getBuffTurnFromImg(getMonsterBuff(getMonsterID(target), img));
         },
         targetHp() {
           return target.hpNow / target.hp;
@@ -3395,12 +3395,19 @@
       }
     }
 
-    function getBuffTurnFromImg(buff, nanValue = NaN) {
+    function getBuffTurnFromImg(buff) {
       if (!buff) {
         return 0;
       }
-      buff = buff.getAttribute('onmouseover').match(/\(.*,.*,(\s*)(.*?)\)$/)[2] * 1;
-      return isNaN(buff) ? nanValue : buff;
+      buff = buff.getAttribute('onmouseover').match(/\(.*,.*,(\s*)(.*?)\)$/)[2];
+      if (!buff) {
+        buff = 0;
+      } else if (buff ==='permanent') {
+        buff = Infinity;
+      } else {
+        buff *= 1;
+      }
+      return buff;
     }
 
     function getMonsterID(s) {
