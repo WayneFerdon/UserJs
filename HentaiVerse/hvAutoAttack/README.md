@@ -78,23 +78,24 @@
   **注意**: 由于是字符串之间的比较，所以请加上引号，如"ar"/'ar'
 
 6. `attackStatus`: 攻击模式 (`0`: Physical, `1`: Fire, `2`: Cold, `3`: Elec, `4`: Wind, `5`: Divine, `6`: Forbidden)
-7. `isCd`: 技能/物品是否cd，格式`_isCd_id`
+7. `fightingStyle`: 战斗风格 (`1`: 二天, `2`: 单手, `3`: 双手, `4`: 双持, `5`: 法杖)
+8. `isCd`: 技能/物品是否cd，格式`_isCd_id`
 
   **示例1**: Protection的id为411，则`_isCd_411,5,0`表示不可施放，`_isCd_411,5,1`表示可以施放
 
   **示例2**: ManaElixir的id为11295，则`_isCd_11295,5,0`表示不可使用，`_isCd_11295,5,1`表示可以使用
 
-8. `buffTurn`: 人物Buff剩余时间，格式`_buffTurn_img`
+9. `buffTurn`: 人物Buff剩余时间，格式`_buffTurn_img`
 
   **示例**: Protection的img为protection，则`_buffTurn_protection,5,0`表示不存在Protection的buff，`_buffTurn_protection,3,10`表示Protection的buff至少剩余10回合
 
-9. `targetHp`、`targetMp`、`targetSp`、`targetBuffTurn`: 目标怪物的HP%、SP%、MP%、buff剩余时间，`_targetBuffTurn_`后缀参照8.`buffTurn`（如：`_targetBuffTurn_bleed,6,0`表示目标bleed的buff剩余回合不等于0）。target的目标怪物遵循以下规则
+10. `targetHp`、`targetMp`、`targetSp`、`targetBuffTurn`: 目标怪物的HP%、SP%、MP%、buff剩余时间，`_targetBuffTurn_`后缀参照8.`buffTurn`（如：`_targetBuffTurn_bleed,6,0`表示目标bleed的buff剩余回合不等于0）。target的目标怪物遵循以下规则
     1. 默认情况的target均为权重优先级最高的目标
     2. 武器技能（马炮、T1~T3等）、法术技能（中阶、高阶）：按照 逐条条件判断>按权重逐个目标>满足任意一条条件内的所有子条目，则对该目标释放。例如下图最后的慈悲的条件：仅释放hp小于25%、拥有流血buff
   
     ![示例](https://github.com/user-attachments/assets/b4d0c57d-fdb1-464b-88d6-107643809339)   
 
-10. 空白(blank): 自己输入 (the value you want to put in)
+11. 空白(blank): 自己输入 (the value you want to put in)
 
 #### 示例
 
@@ -388,6 +389,7 @@
 灵感来自hoverplay，刚开始接触js，初步完成代码
 功能有：答题警报、其他警报、快捷键、自动前进、自动使用宝石、自动回复、自动使用增益技能、自动打怪
 很可惜，玩游戏不走心，一直搞不懂HVSTAT是怎么知道每个怪的血量的，直到[版本2.0](#20)
+
 
 
 
