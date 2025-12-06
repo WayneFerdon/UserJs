@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.97
+// @version      2.90.98
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -492,10 +492,24 @@
       g('runSpeed', 1);
       $debug.log('______________newRound', false);
       newRound(false);
-      if (g('option').recordEach && !getValue('battleCode')) {
-        setValue('battleCode', `${time(1)}: ${g('battle')?.roundType?.toUpperCase()}-${g('battle')?.roundAll}`);
-      }
       onBattleRound();
+      if (g('option').recordEach) {
+        const token = document.body.innerHTML.match(`var battle_token = \"(.*)\";`)[1];
+        let code = getValue('battleCode', true);
+        if (code?.token != token || !code?.r || !code?.rc) {
+          const time = code?.token === token ? code?.time ?? time(1) : time(1);
+          const type = g('battle')?.roundType?.toUpperCase();
+          const roundAll = g('battle')?.roundAll;
+          code = {
+            token: token,
+            time: time,
+            roundType: type,
+            roundAll: roundAll,
+            name: `${time}: ${type}-${roundAll}`,
+          };
+          setValue('battleCode', code);
+        }
+      }
       updateEncounter(false);
       return true;
     }
@@ -1589,7 +1603,7 @@
             }
           } else {
             if (getValue('drop')) {
-              drop.__name = getValue('battleCode');
+              drop.__name = getValue('battleCode', true).name;
               dropOld.push(drop);
             }
             dropOld.reverse();
@@ -1641,7 +1655,7 @@
             }
           } else {
             if (getValue('stats')) {
-              stats.__name = getValue('battleCode');
+              stats.__name = getValue('battleCode', true).name;
               statsOld.push(stats);
             }
             statsOld.reverse();
@@ -4899,7 +4913,7 @@
       const battle = g('battle');
       if (g('option').recordEach && battle.roundNow === battle.roundAll) {
         const old = getValue('dropOld', true) || [];
-        drop.__name = getValue('battleCode');
+        drop.__name = getValue('battleCode', true).name;
         drop['#endTime'] = time(3);
         old.push(drop);
         setValue('dropOld', old);
@@ -5133,7 +5147,7 @@
       const battle = g('battle');
       if (g('option').recordEach && battle.roundNow === battle.roundAll) {
         const old = getValue('statsOld', true) || [];
-        stats.__name = getValue('battleCode');
+        stats.__name = getValue('battleCode', true).name;
         stats.self._endTime = time(3);
         old.push(stats);
         setValue('statsOld', old);
