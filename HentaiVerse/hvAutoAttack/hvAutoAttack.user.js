@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.100
+// @version      2.90.101
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -337,7 +337,7 @@
           eventpane.style.cssText += 'color:gray;' // 链接置灰提醒
         }
       } else { // 战斗外，自动跳转
-        loadOption();
+        checkOption();
         $ajax.openNoFetch(`${g('option').altBattleFirst ? href.replace('hentaiverse.org', 'alt.hentaiverse.org').replace('alt.alt', 'alt') : href}/${url}`);
       }
       return false;
@@ -346,7 +346,7 @@
     function checkIsWindowTop() {
       const currentUrl = window.self.location.href;
       if (!isFrame) {
-        loadOption();
+        checkOption();
         if (!g('option').riddlePopup || gE('#riddlecounter')) { // 未开启使用弹窗或仍处于答题
           return true;
         }
@@ -383,7 +383,7 @@
         return false;
       }
       if (currentUrl.match(/\?s=Battle&ss=(ar|rb)/)) {
-        loadOption();
+        checkOption();
         setArenaDisplay();
       }
       return false;
@@ -640,12 +640,13 @@
       }
       for (let key in aliasDict) {
         const itemArray = key.split('_');
+        const alias = aliasDict[key];
         if (itemArray.length === 1) {
-          option[key] ??= option[aliasDict[key]];
-          option[aliasDict[key]] = undefined;
+          option[key] ??= option[alias];
+          option[alias] = undefined;
         } else {
           option[itemArray[0]] ??= {};
-          option[itemArray[0]][itemArray[1]] ??= option[aliasDict[key]];
+          option[itemArray[0]][itemArray[1]] ??= option[alias];
         }
       }
       // 迁移旧版本最后的慈悲条件为可配置条件
