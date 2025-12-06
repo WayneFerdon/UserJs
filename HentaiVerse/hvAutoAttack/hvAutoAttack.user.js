@@ -497,15 +497,15 @@
         const token = document.body.innerHTML.match(`var battle_token = \"(.*)\";`)[1];
         let code = getValue('battleCode', true);
         if (code?.token != token || !code?.r || !code?.rc) {
-          const time = code?.token === token ? code?.time ?? time(1) : time(1);
+          const now = code?.token === token ? code?.time ?? time(1) : time(1);
           const type = g('battle')?.roundType?.toUpperCase();
           const roundAll = g('battle')?.roundAll;
           code = {
             token: token,
-            time: time,
+            time: now,
             roundType: type,
             roundAll: roundAll,
-            name: `${time}: ${type}-${roundAll}`,
+            name: `${now}: ${type}-${roundAll}`,
           };
           setValue('battleCode', code);
         }
