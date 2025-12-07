@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.103
+// @version      2.90.104
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2759,47 +2759,93 @@
       $async.logSwitch(arguments);
       const html = await $ajax.fetch('?s=Character&ss=ab');
       const doc = $doc(html);
+      const abd = {
+        // 'HP Tank': { id: 1101, unlock: [0, 25, 50, 75, 100, 120, 150, 200, 250, 300], level: 0 },
+        // 'MP Tank': { id: 1102, unlock: [0, 30, 60, 90, 120, 160, 210, 260, 310, 350], level: 0 },
+        // 'SP Tank': { id: 1103, unlock: [0, 40, 80, 120, 170, 220, 270, 330, 390, 450], level: 0 },
+        // 'Better Health Pots': { id: 1104, unlock: [0, 100, 200, 300, 400], level: 0 },
+        // 'Better Mana Pots': { id: 1105, unlock: [0, 80, 140, 220, 380], level: 0 },
+        // 'Better Spirit Pots': { id: 1106, unlock: [0, 90, 160, 240, 400], level: 0 },
+        // '1H Damage': { id: 2101, unlock: [0, 100, 200], level: 0 },
+        // '1H Accuracy': { id: 2102, unlock: [50, 150], level: 0 },
+        // '1H Block': { id: 2103, unlock: [250], level: 0 },
+        // '2H Damage': { id: 2201, unlock: [0, 100, 200], level: 0 },
+        // '2H Accuracy': { id: 2202, unlock: [50, 150], level: 0 },
+        // '2H Parry': { id: 2203, unlock: [250], level: 0 },
+        // 'DW Damage': { id: 2301, unlock: [0, 100, 200], level: 0 },
+        // 'DW Accuracy': { id: 2302, unlock: [50, 150], level: 0 },
+        // 'DW Crit': { id: 2303, unlock: [250], level: 0 },
+        // 'Staff Spell Damage': { id: 2501, unlock: [0, 100, 200], level: 0 },
+        // 'Staff Accuracy': { id: 2502, unlock: hvVersion < 91 ? [50, 150, 300] : [50, 150], level: 0 },
+        // 'Staff Damage': { id: 2503, unlock: [0], level: 0 },
+        // 'Cloth Spellacc': { id: 3101, unlock: hvVersion < 91 ? [0, 120, 240] : [120], level: 0 },
+        // 'Cloth Spellcrit': { id: 3102, unlock: [0, 40, 90, 130, 190], level: 0 },
+        // 'Cloth Castspeed': { id: 3103, unlock: [150, 250], level: 0 },
+        // 'Cloth MP': { id: 3104, unlock: [0, 60, 110, 170, 230, 290, 350], level: 0 },
+        // 'Light Acc': { id: 3201, unlock: [0], level: 0 },
+        // 'Light Crit': { id: 3202, unlock: [0, 40, 90, 130, 190], level: 0 },
+        // 'Light Speed': { id: 3203, unlock: [150, 250], level: 0 },
+        // 'Light HP/MP': { id: 3204, unlock: [0, 60, 110, 170, 230, 290, 350], level: 0 },
+        // 'Heavy Crush': { id: 3301, unlock: [0, 75, 150], level: 0 },
+        // 'Heavy Prcg': { id: 3302, unlock: [0, 75, 150], level: 0 },
+        // 'Heavy Slsh': { id: 3303, unlock: [0, 75, 150], level: 0 },
+        // 'Heavy HP': { id: 3304, unlock: [0, 60, 110, 170, 230, 290, 350], level: 0 },
+        // 'Better Weaken': { id: 4201, unlock: [70, 100, 130, 190, 250], level: 0 },
+        'Faster Weaken': { id: 4202, unlock: [80, 165, 250], level: 0 },
+        // 'Better Imperil': { id: 4203, unlock: [130, 175, 230, 285, 330], level: 0 },
+        'Faster Imperil': { id: 4204, unlock: [140, 225, 310], level: 0 },
+        // 'Better Blind': { id: 4205, unlock: [110, 130, 160, 190, 220], level: 0 },
+        'Faster Blind': { id: 4206, unlock: [120, 215, 275], level: 0 },
+        'Mind Control': { id: 4207, unlock: [80, 130, 170], level: 0 },
+        'Better Silence': { id: 4211, unlock: [120, 170, 215], level: 0 },
+        'Better MagNet': hvVersion < 91 ? { id: 4212, unlock: [250, 295, 340, 370, 400], level: 0 } : undefined,
+        'Better Immobilize': hvVersion < 91 ? undefined : { id: 4212, unlock: [250, 295, 340, 370, 400], level: 0 },
+        'Better Slow': { id: 4213, unlock: [30, 50, 75, 105, 135], level: 0 },
+        // 'Better Drain': { id: 4216, unlock: [20, 50, 90], level: 0 },
+        // 'Faster Drain': { id: 4217, unlock: [30, 70, 110, 150, 200], level: 0 },
+        // 'Ether Theft': { id: 4218, unlock: [150], level: 0 },
+        // 'Spirit Theft': { id: 4219, unlock: [150], level: 0 },
+        // 'Better Haste': { id: 4102, unlock: [60, 75, 90, 110, 130], level: 0 },
+        // 'Better Shadow Veil': { id: 4103, unlock: [90, 105, 120, 135, 155], level: 0 },
+        // 'Better Absorb': { id: 4104, unlock: [40, 60, 80], level: 0 },
+        // 'Stronger Spirit': { id: 4105, unlock: [200, 220, 240, 265, 285], level: 0 },
+        // 'Better Heartseeker': { id: 4106, unlock: [140, 185, 225, 265, 305, 345, 385], level: 0 },
+        // 'Better Arcane Focus': { id: 4107, unlock: [175, 205, 245, 285, 325, 365, 405], level: 0 },
+        // 'Better Regen': { id: 4108, unlock: [50, 70, 95, 145, 195, 245, 295, 375, 445, 500], level: 0 },
+        // 'Better Cure': { id: 4109, unlock: [0, 35, 65], level: 0 },
+        // 'Better Spark': { id: 4110, unlock: [100, 125, 150], level: 0 },
+        // 'Better Protection': { id: 4101, unlock: [40, 55, 75, 95, 120], level: 0 },
+        // 'Flame Spike Shield': { id: 4111, unlock: [10, 65, 140, 220, 300], level: 0 },
+        // 'Frost Spike Shield': { id: 4112, unlock: [10, 65, 140, 220, 300], level: 0 },
+        // 'Shock Spike Shield': { id: 4113, unlock: [10, 65, 140, 220, 300], level: 0 },
+        // 'Storm Spike Shield': { id: 4114, unlock: [10, 65, 140, 220, 300], level: 0 },
+        'Conflagration': { id: 4301, unlock: [50, 100, 150, 200, 250, 300, 400], level: 0 },
+        'Cryomancy': { id: 4302, unlock: [50, 100, 150, 200, 250, 300, 400], level: 0 },
+        'Havoc': { id: 4303, unlock: [50, 100, 150, 200, 250, 300, 400], level: 0 },
+        'Tempest': { id: 4304, unlock: [50, 100, 150, 200, 250, 300, 400], level: 0 },
+        // 'Sorcery': { id: 4305, unlock: [70, 140, 210, 280, 350], level: 0 },
+        // 'Elementalism': { id: 4306, unlock: [85, 170, 255, 340, 425], level: 0 },
+        // 'Archmage': { id: 4307, unlock: [90, 180, 270, 360, 450], level: 0 },
+        'Better Corruption': { id: 4401, unlock: [75, 150], level: 0 },
+        'Better Disintegrate': { id: 4402, unlock: [175, 250], level: 0 },
+        'Better Ragnarok': { id: 4403, unlock: [250, 325, 400], level: 0 },
+        // 'Ripened Soul': { id: 4404, unlock: [150, 300, 450], level: 0 },
+        // 'Dark Imperil': { id: 4405, unlock: [175, 225, 275, 325, 375], level: 0 },
+        'Better Smite': { id: 4501, unlock: [75, 150], level: 0 },
+        'Better Banish': { id: 4502, unlock: [175, 250], level: 0 },
+        'Better Paradise': { id: 4503, unlock: [250, 325, 400], level: 0 },
+        // 'Soul Fire': { id: 4504, unlock: [150, 300, 450], level: 0 },
+        // 'Holy Imperil': { id: 4505, unlock: [175, 225, 275, 325, 375], level: 0 },
+      }
+
       let ability = {};
-      const loadSucceed = true;
-      await Promise.all(Array.from(gE('#ability_treelist>div>img', 'all', doc)).map(async img => {
-        try {
-          const _ = img.getAttribute('onclick')?.match(/(\?s=(.*)tree=(.*))'/);
-          const [href, type] = _ ? [_[1], _[3]] : ['?s=Character&ss=ab&tree=general', 'general'];
-          switch (type) {
-            case 'deprecating1':
-            case 'deprecating2':
-            case 'elemental':
-            case 'forbidden':
-            case 'divine':
-              break;
-            default:
-              return;
-          }
-          const html = await $ajax.fetch(href);
-          const doc = $doc(html);
-          const slots = Array.from(gE('.ability_slotbox>div>div', 'all', doc)).forEach(slot => {
-            const id = slot.id.match(/_(\d*)/)[1];
-            const parent = slot.parentNode.parentNode.parentNode;
-            ability[id] = {
-              name: gE('.fc2', parent).innerText,
-              type: type,
-              level: Array.from(gE('.aw1,.aw2,.aw3,.aw4,.aw5,.aw6,.aw7,.aw8,.aw9,.aw10', parent).children).map(div => div.style.cssText.indexOf('f.png') === -1 ? 0 : 1).reduce((x, y) => x + y),
-            }
-          });
-        } catch (e) {
-          console.error(e);
-          loadSucceed = false;
-        }
-      }));
-      if (!loadSucceed) {
-        ability = getValue('ability');
-      }
-      for (let ab in ability) {
-        if (typeof ability[ab] !== 'object') {
-          break;
-        }
-        ability[ab] = ability[ab].level; // old version data
-      }
+      gE('#ability_top div[onmouseover*="overability"]', 'all', doc).forEach((div) => {
+        const exec = div.getAttribute('onmouseover').match(/overability\(\d+, '([^']+)','.+?','(?:(Not Acquired|At Maximum)|Requires <strong>Level (\d+).+?)','(Not Acquired|At Maximum|Requires <strong>Level (\d+).+?)'/);
+        const name = exec[1];
+        const ab = abd[name];
+        if (!ab) return;
+        ability[ab.id] = exec[2] ? 0 : ab.unlock.indexOf(1*exec[3]) + 1;
+      });
       setValue('ability', ability);
       $async.logSwitch(arguments);
     } catch (e) { console.error(e) } }
@@ -4582,7 +4628,7 @@
           name: 'Slow',
           id: '221',
           img: 'slow',
-          range: { 4211: [0, 0, 0, 1, 1] },
+          range: { 4213: [0, 0, 0, 1, 1] },
         },
         Im: {
           name: 'Imperil',
@@ -4594,7 +4640,7 @@
           name: 'MagNet',
           id: '233',
           img: 'magnet',
-          range: { 4211: [0, 0, 0, 0, 1] },
+          range: { 4212: [0, 0, 0, 0, 1] },
         },
         Si: {
           name: 'Silence',
@@ -4632,7 +4678,7 @@
         if (!ranges) {
           continue;
         }
-        if (ability) {
+        if (ability && ability[ab]) {
           range = ranges[ability[ab]];
         }
         break;
@@ -4764,7 +4810,7 @@
               continue;
             }
             const ability = getValue('ability', true);
-            if (ability) {
+            if (ability && ability[ab]) {
               range = ranges[ability[ab]];
             }
             break;
