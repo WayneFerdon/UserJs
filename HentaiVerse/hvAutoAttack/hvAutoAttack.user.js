@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.102
+// @version      2.90.103
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -59,7 +59,7 @@
       '<l0>暗</l0><l1>暗</l1><l2>Forbidden</l2>',
     ];
     const monsterStateKeys = { obj: `div.btm1`, lv: `div.btm2`, name: `div.btm3`, bars: `div.btm4>div.btm5`, buffs: `div.btm6` }
-    const [$async, $debug, $ajax] = [initAsync(), initDebug(), initAjax()];
+    const [$async, $debug, $ajax] = [initAsync(), initDebug(), window.top.$ajax ??= unsafeWindow.$ajax ??= initAjax()];
     for (let check of [checkIsHV, checkIsWindowTop, checkOption]) {
       if (!check()) return;
     }
@@ -115,6 +115,7 @@
 
     function initAjax() {
       const $ajax = {
+        debug: false,
         interval: 300, // DO NOT DECREASE THIS NUMBER, OR IT MAY TRIGGER THE SERVER'S LIMITER AND YOU WILL GET BANNED
         max: 4,
         tid: null,
@@ -172,6 +173,7 @@
           if ($ajax.tid) {
             if (!$ajax.conn) {
               clearTimeout($ajax.tid);
+              $ajax.tid = null;
               $ajax.timer();
               $ajax.send();
             }
@@ -182,18 +184,22 @@
             }
           }
         },
+        getLast: function () {
+          const v = localStorage.getItem((isIsekai ? 'hvuti' : 'hvut') + '_last_post');
+          return v === null ? undefined : JSON.parse(v);
+        },
+        setLast: function (last) {
+          localStorage.setItem((isIsekai ? 'hvuti' : 'hvut') + '_last_post', JSON.stringify(last));
+        },
         timer: function () {
-          const _ns = isIsekai ? 'hvuti' : 'hvut';
-          function getValue(k, d, p = _ns + '_') { const v = localStorage.getItem(p + k); return v === null ? d : JSON.parse(v); }
-          function setValue(k, v, p = _ns + '_', r) { localStorage.setItem(p + k, JSON.stringify(v, r)); }
           function ontimer() {
             const now = new Date().getTime();
-            const last = getValue('last_post');
+            const last = $ajax.getLast();
             if (last && now - last >= $ajax.interval) {
               $ajax.next();
               return;
             }
-            setValue('last_post', now);
+            $ajax.setLast(now);
             $ajax.tid = null;
             $ajax.next();
           };
@@ -203,6 +209,21 @@
           GM_xmlhttpRequest($ajax.queue[$ajax.index]);
           $ajax.index++;
           $ajax.conn++;
+          if (!$ajax.debug) return;
+          const infos = $ajax.queue.map(r=>{
+            const info = {};
+            info.url = r.url;
+            if (r.data) info.data = r.data;
+            if (r.method) info.method = r.method;
+            if (r.context && JSON.stringify(r.context) !== JSON.stringify({})) info.context = r.context;
+            if (r.headers && JSON.stringify(r.headers) !== JSON.stringify({})) info.headers = r.headers;
+            return info;
+          });
+          let remain;
+          if ($ajax.index < infos.length) {
+            remain = infos.slice($ajax.index);
+          }
+          console.log('$ajax.send:', $ajax.index,'/', infos.length, infos[$ajax.index-1], remain ? 'remain:' : '', remain ?? '');
         },
         onload: function (r) {
           $ajax.conn--;
