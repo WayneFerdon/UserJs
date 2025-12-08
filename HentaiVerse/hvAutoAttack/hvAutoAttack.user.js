@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.104
+// @version      2.90.105
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -121,12 +121,14 @@
         tid: null,
         error: null,
         conn: 0,
-        index: 0,
         queue: [],
 
-        fetch: function (url, data, method, context = {}, headers = {}) {
+        insert: function (url, data, method, context = {}, headers = {}) {
+          return $ajax.fetch(url, data, method, context, headers, true);
+        },
+        fetch: function (url, data, method, context = {}, headers = {}, isInsert = false) {
           return new Promise((resolve, reject) => {
-            $ajax.add(method, url, data, resolve, reject, context, headers);
+            $ajax.add(method, url, data, resolve, reject, context, headers, isInsert);
           });
         },
         open: function (url, data, method, context = {}, headers = {}) {
@@ -142,12 +144,7 @@
           }
           return list;
         },
-        add: function (method, url, data, onload, onerror, context = {}, headers = {}) {
-          const isDuplicate = this.queue.some(req => req.method === method && req.url === url && JSON.stringify(req.data) === JSON.stringify(data));
-          if (isDuplicate) {
-            console.log('Skip duplicated fetch:', url, method, data);
-            return;
-          }
+        add: function (method, url, data, onload, onerror, context = {}, headers = {}, isInsert = false) {
           method = !data ? 'GET' : method ?? 'POST';
           if (method === 'POST') {
             headers['Content-Type'] ??= 'application/x-www-form-urlencoded';
@@ -163,11 +160,15 @@
           }
           context.onload = onload;
           context.onerror = onerror;
-          $ajax.queue.push({ method, url, data, headers, context, onload: $ajax.onload, onerror: $ajax.onerror });
+          if (isInsert) {
+            $ajax.queue.unshift({ method, url, data, headers, context, onload: $ajax.onload, onerror: $ajax.onerror });
+          } else {
+            $ajax.queue.push({ method, url, data, headers, context, onload: $ajax.onload, onerror: $ajax.onerror });
+          }
           $ajax.next();
         },
         next: function () {
-          if (!$ajax.queue[$ajax.index] || $ajax.error) {
+          if (!$ajax.queue.length || $ajax.error) {
             return;
           }
           if ($ajax.tid) {
@@ -205,25 +206,22 @@
           };
           $ajax.tid = setTimeout(ontimer, $ajax.interval);
         },
+        simplify: function (r) {
+          const info = {};
+          info.url = r.url;
+          if (r.data) info.data = r.data;
+          if (r.method) info.method = r.method;
+          if (r.context && JSON.stringify(r.context) !== JSON.stringify({})) info.context = r.context;
+          if (r.headers && JSON.stringify(r.headers) !== JSON.stringify({})) info.headers = r.headers;
+          return info;
+        },
         send: function () {
-          GM_xmlhttpRequest($ajax.queue[$ajax.index]);
-          $ajax.index++;
+          const current = $ajax.queue.shift();
+          GM_xmlhttpRequest(current);
           $ajax.conn++;
           if (!$ajax.debug) return;
-          const infos = $ajax.queue.map(r=>{
-            const info = {};
-            info.url = r.url;
-            if (r.data) info.data = r.data;
-            if (r.method) info.method = r.method;
-            if (r.context && JSON.stringify(r.context) !== JSON.stringify({})) info.context = r.context;
-            if (r.headers && JSON.stringify(r.headers) !== JSON.stringify({})) info.headers = r.headers;
-            return info;
-          });
-          let remain;
-          if ($ajax.index < infos.length) {
-            remain = infos.slice($ajax.index);
-          }
-          console.log('$ajax.send:', $ajax.index,'/', infos.length, infos[$ajax.index-1], remain ? 'remain:' : '', remain ?? '');
+          const remain = $ajax.queue.map($ajax.simplify);
+          console.log('$ajax.send:', $ajax.simplify(current), remain ? 'remain:' : '', remain ?? '');
         },
         onload: function (r) {
           $ajax.conn--;
@@ -504,6 +502,7 @@
       setPauseUI(box2);
       reloader();
       g('attackStatus', g('option').attackStatus);
+      // 1二天 2单手 3双手 4双持 5法杖
       for (let fightingStyle = 1; fightingStyle < 6; fightingStyle++) {
         if (gE(`2${fightingStyle}01`)) {
           g('fightingStyle', fightingStyle.toString());
@@ -2757,7 +2756,7 @@
     async function asyncSetAbilityData() { try {
       await waitPause();
       $async.logSwitch(arguments);
-      const html = await $ajax.fetch('?s=Character&ss=ab');
+      const html = await $ajax.insert('?s=Character&ss=ab');
       const doc = $doc(html);
       const abd = {
         // 'HP Tank': { id: 1101, unlock: [0, 25, 50, 75, 100, 120, 150, 200, 250, 300], level: 0 },
@@ -2865,7 +2864,7 @@
           if (perk[currentID]) {
             return;
           }
-          const html = await $ajax.fetch('https://e-hentai.org/hathperks.php');
+          const html = await $ajax.insert('https://e-hentai.org/hathperks.php');
           if (!html) {
             return;
           }
@@ -2887,7 +2886,7 @@
       }
       await waitPause();
       $async.logSwitch(arguments);
-      const html = await $ajax.fetch('?s=Character&ss=it');
+      const html = await $ajax.insert('?s=Character&ss=it');
       const items = {};
       for (let each of gE('.nosel.itemlist>tbody', $doc(html)).children) {
         const name = each.children[0].children[0].innerText;
@@ -2940,20 +2939,20 @@
       }
       if (hvVersion < 91) {
         const href = `?s=Forge&ss=re`;
-        const doc = $doc(await $ajax.fetch(href));
-        const json = JSON.parse((await $ajax.fetch(gE('#mainpane>script[src]', doc).src)).match(/{.*}/)[0]);
+        const doc = $doc(await $ajax.insert(href));
+        const json = JSON.parse((await $ajax.insert(gE('#mainpane>script[src]', doc).src)).match(/{.*}/)[0]);
         eqps = await Promise.all(Array.from(gE('.eqp>[id]', 'all', doc)).map(async eqp => { try {
           const id = eqp.id.match(/\d+/)[0];
           const condition = 1 * json[id].d.match(/Condition: \d+ \/ \d+ \((\d+)%\)/)[1];
           if (condition > threshold) {
             return;
           }
-          const after = $doc(await $ajax.fetch(href, `select_item=${id}`));
+          const after = $doc(await $ajax.insert(href, `select_item=${id}`));
           return gE('.messagebox_error', )?.innerText ? undefined : json[id].t;
         } catch (e) { console.error(e) } }));
       } else {
         const href = `?s=Bazaar&ss=am&screen=repair&filter=equipped`;
-        const doc = $doc(await $ajax.fetch(href));
+        const doc = $doc(await $ajax.insert(href));
         const token = gE('#equipform>input[name="postoken"]', doc).value;
         eqps = await Promise.all(Array.from(gE('#equiplist>table>tbody>tr:not(.eqselall):not(.eqtplabel)', 'all', doc)).map(async eqp => { try {
           const id = gE('input', eqp).value;
@@ -2961,7 +2960,7 @@
           if (condition > threshold) {
             return;
           }
-          const after = $doc(await $ajax.fetch(href, `&eqids[]=${id}&postoken=${token}&replace_charms=on`));
+          const after = $doc(await $ajax.insert(href, `&eqids[]=${id}&postoken=${token}&replace_charms=on`));
           return gE(`#e${id}`, after) ? gE('.lc', eqp).childNodes[2].textContent : undefined;
         } catch (e) { console.error(e) } }));
       }
@@ -2984,11 +2983,11 @@
       let count;
       if (hvVersion < 91) {
         const href = `?s=Character&ss=in`;
-        const doc = $doc(await $ajax.fetch(href));
+        const doc = $doc(await $ajax.insert(href));
         count = gE('#eqinv_bot>div>div>div', doc).innerText.match(/: (\d+) \/ \d+/)[1];
       } else {
         const href = `?s=Bazaar&ss=am`;
-        const doc = $doc(await $ajax.fetch(href));
+        const doc = $doc(await $ajax.insert(href));
         count = gE('#equipblurb>table>tbody>tr>td:nth-child(2)', doc).innerText;
       }
       $async.logSwitch(arguments);
@@ -3020,7 +3019,7 @@
     }
 
     async function getCurrentStamina() { try {
-      return gE('#stamina_readout .fc4.far>div', $doc(await $ajax.fetch(window.location.href))).textContent.match(/\d+/)[0] * 1;
+      return gE('#stamina_readout .fc4.far>div', $doc(await $ajax.insert(window.location.href))).textContent.match(/\d+/)[0] * 1;
     } catch(e) { console.error(e); }}
 
     async function checkStamina(low, cost) {
@@ -3048,7 +3047,7 @@
         const isPerk = (stamina.perk??{})[getCurrentUser()];
         const recover = recoverItems[id] ? isPerk ? 20 : 10 : 5;
         if (current + recover >= 100) continue; // check if overflow by (20 or 10) -> (5)
-        const recovered = gE('#stamina_readout .fc4.far>div', $doc(await $ajax.fetch(window.location.href, 'recover=stamina'))).textContent.match(/\d+/)[0] * 1;
+        const recovered = gE('#stamina_readout .fc4.far>div', $doc(await $ajax.insert(window.location.href, 'recover=stamina'))).textContent.match(/\d+/)[0] * 1;
         goto();
         break;
       }
@@ -3112,7 +3111,7 @@
     } catch (e) { console.error(e) } }
 
     async function onEncounter() { try {
-      while (!(await $ajax.fetch(href))) { // perhaps network connect not available
+      while (!(await $ajax.insert(href))) { // perhaps network connect not available
         await pauseAsync(_1m);
       }
       $async.logSwitchStrict('updateEncounter', true);
@@ -3154,7 +3153,7 @@
         arena.token = {};
         await Promise.all(['gr', 'ar', 'rb'].map(async site => {
           try {
-            const doc = $doc(await $ajax.fetch(`?s=Battle&ss=${site}`));
+            const doc = $doc(await $ajax.insert(`?s=Battle&ss=${site}`));
             getStartBattleButtons(doc).forEach(btn => { arena.token[btn.id] = btn.token ?? null; });
           } catch (e) { console.error(e) }
         }));
@@ -3260,13 +3259,13 @@
       if (hvVersion < 91) {
         token = `&inittoken=${token}`;
       } else {
-        token = `&postoken=${gE('#initform>input[name="postoken"]', $doc(await $ajax.fetch(query))).value}`;
+        token = `&postoken=${gE('#initform>input[name="postoken"]', $doc(await $ajax.insert(query))).value}`;
       }
       await waitPause();
       writeArenaStart();
-      await $ajax.fetch(query, `initid=${id === 'gr' ? 1 : id}${token}`);
+      await $ajax.insert(query, `initid=${id === 'gr' ? 1 : id}${token}`);
       console.log('Arena Fetch Done.', 'altBattleFirst:', option.altBattleFirst);
-      if (option.altBattleFirst && await $ajax.fetch(href.replace('hentaiverse.org', 'alt.hentaiverse.org').replace('alt.alt', 'alt'))) {
+      if (option.altBattleFirst && await $ajax.insert(href.replace('hentaiverse.org', 'alt.hentaiverse.org').replace('alt.alt', 'alt'))) {
         console.log('Arena goto alt');
         gotoAlt(true);
       } else {
@@ -3535,11 +3534,14 @@
          * 按照技能范围，获取包含原目标且范围内最终权重(finweight)之和最低的范围的中心目标
          * @param {int} id id from g('battle').monsterStatus.sort(objArrSort('finWeight'));
          * @param {int} range radius, 0 for single-target and all-targets, 1 for treble-targets, ..., n for (2n+1) targets
-         * @param {(target) => bool} excludeCondition target with id
+         * @param {(target) => number} excludeWeightRatio target with id
          * @returns
          */
-    function getRangeCenter(target, range = undefined, isWeaponAttack = false, excludeCondition = undefined, forceUseIndex = undefined) {
-      if (!range) {
+    function getRangeCenter(target, range, isWeaponAttack, excludeWeightRatio, forceUseIndex) {
+      let msTemp = JSON.parse(JSON.stringify(g('battle').monsterStatus));
+      msTemp.sort(objArrSort('order'));
+      // 0. 范围大于等于全体时，直接释放全体
+      if (!range || range <= msTemp.length) {
         return { id: getMonsterID(target), rank: Number.MAX_SAFE_INTEGER };
       }
       const option = g('option');
@@ -3547,32 +3549,46 @@
       let order = target.order;
       let newOrder = order;
       // sort by order to fix id
-      let msTemp = JSON.parse(JSON.stringify(g('battle').monsterStatus));
-      msTemp.sort(objArrSort('order'));
       let unreachableWeight = option.unreachableWeight;
       let minRank = Number.MAX_SAFE_INTEGER;
-      for (let i = order - range; i <= order + range; i++) {
-        if (i < 0 || i >= msTemp.length || msTemp[i].isDead) {
-          continue; // 无法选中
-        }
+      // 1. 以选中目标为中心，优先向上
+      // 2. 超过顶部则向下找
+      // 3. 死亡、超过底下的将被溢出抛弃
+      const up = Math.floor(range / 2);
+      const down = range - up - 1;
+      const top = Math.max(order - down, 0);
+      const bottom = Math.min(order + up, msTemp.length-1);
+      for (let i = top; i <= bottom; i++) {
+        let center = i;
         let rank = 0;
-        for (let j = i - range; j <= (i + range); j++) {
-          let cew = j === i ? centralExtraWeight : 0; // cew <= 0, 增加未命中权重，降低命中权重
-          let mon = msTemp[j];
-          if (j < 0 || j >= msTemp.length // 超出范围
-              || mon.isDead // 死亡目标
-              || (excludeCondition && excludeCondition(mon))) { // 特殊排除判定
-            rank += unreachableWeight - cew;
+        for (let inRange = center - up; inRange <= (center + down); inRange++) {
+          let cew = inRange === center ? centralExtraWeight : 0; // cew <= 0, 增加未命中权重，降低命中权重
+          let mon = msTemp[inRange];
+          if (inRange < 0 || inRange >= msTemp.length || mon.isDead) { // 超出范围 或 死亡目标
+            rank += unreachableWeight;
             continue;
           }
-          // 中心目标会受到副手及冲击攻击时，相当于有效生命值降低
-          rank += cew;
-          // 强制使用顺序而非权重时，全部使用统一的权重而非怪物状态
-          rank += forceUseIndex ? -1 : mon.finWeight;
+          if (excludeWeightRatio) {
+            // 特殊排除(ratio === 1则直接排除，0<ratio<1则优先于溢出的情况, ratio === 0 则不排除, ratio < 0 相当于增加权重?)
+            const ratio = excludeWeightRatio(mon);
+            rank += ratio * unreachableWeight;
+            if (ratio>0) {
+              continue;
+            }
+          }
+          rank += cew; // 中心目标会受到副手及冲击攻击时，相当于有效生命值降低
+          rank += forceUseIndex ? -1 : mon.finWeight; // 强制使用顺序而非权重时，全部使用统一的权重而非怪物状态
         }
-        if (rank < minRank) {
-          newOrder = i;
-          minRank = rank;
+        if (rank >= minRank) continue;
+        while (center >= 0) {
+          if (!msTemp[center].isDead) {
+            newOrder = center;
+            minRank = rank;
+            break;
+          }
+          // 中心目标死亡 且 top能达到第1个(order:0)目标，尝试往前寻找目标，通过上方溢出向下扩展来覆盖目标
+          if (top !== 0) break;
+          center--;
         }
       }
       return { id: getMonsterID(newOrder), rank: minRank };
@@ -3692,7 +3708,7 @@
               goto();
               return;
             }
-            const html = await $ajax.fetch(window.location.href);
+            const html = await $ajax.insert(window.location.href);
             gE('#pane_completion').removeChild(gE('#btcp'));
             clearBattleUnresponsive();
             const doc = $doc(html)
@@ -4516,7 +4532,7 @@
       }
 
       const skillOrder = splitOrders(option.skillOrderValue, ['OFC', 'FRD', 'T3', 'T2', 'T1']);
-      const fightStyle = g('fightingStyle');
+      const fightStyle = g('fightingStyle'); // 1二天 2单手 3双手 4双持 5法杖
       const skillLib = {
         OFC: '1111',
         FRD: '1101',
@@ -4533,9 +4549,12 @@
         '2403': 3
       }
       const rangeSkills = {
-        2101: 2,
-        2403: 2,
-        1111: 4,
+        2101: 5,
+        2302: 5,
+        2303: 5,
+        2403: 5,
+        // 1101: 20, 全体
+        // 1111: 20,
       }
       const optionSkills = option.skill;
       if (!optionSkills) {
@@ -4562,8 +4581,7 @@
           continue;
         }
         gE(id).click();
-        const range = id in rangeSkills ? rangeSkills[id] : 0;
-        clickMonster(getRangeCenter(target, range).id);
+        clickMonster(getRangeCenter(target, rangeSkills[id] ?? 1).id);
         return true;
       }
       return false;
@@ -4589,7 +4607,6 @@
       }
       const toAllCount = skillPack.length;
 
-      const exclusiveBuffs = option.debuffAllExclusive ? Object.keys(option.debuffAllExclusive) : undefined;
       if (option.debuffSkill) { // 是否有启用的buff(不算两个特殊的)
         skillPack = skillPack.concat(splitOrders(option.debuffSkillOrderValue, ['Sle', 'Bl', 'We', 'Si', 'Slo', 'Dr', 'Im', 'MN', 'Co']));
       }
@@ -4601,7 +4618,7 @@
             continue;
           }
         }
-        let succeed = useDebuffSkill(buff, isToAll, isToAll && exclusiveBuffs?.includes(buff) ? exclusiveBuffs : undefined);
+        let succeed = useDebuffSkill(buff, isToAll);
         // 前 toAllCount 个都是先给全体上的
         if (succeed) {
           return true;
@@ -4610,43 +4627,43 @@
       return false;
     }
 
-    function useDebuffSkill(buff, isAll = false, exclusiveBuffs = undefined) {
+    function useDebuffSkill(buff, isAll = false) {
       const skillLib = {
         Sle: {
           name: 'Sleep',
           id: '222',
           img: 'sleep',
-          range: { 4207: [0, 0, 1] },
+          range: { 4207: [1, 1, 2, 3] },
         },
         Bl: {
           name: 'Blind',
           id: '231',
           img: 'blind',
-          range: { 4206: [0, 0, 1] },
+          range: { 4206: [1, 1, 2, 3] },
         },
         Slo: {
           name: 'Slow',
           id: '221',
           img: 'slow',
-          range: { 4213: [0, 0, 0, 1, 1] },
+          range: { 4213: [1, 1, 2, 2, 2, 3] },
         },
         Im: {
           name: 'Imperil',
           id: '213',
           img: 'imperil',
-          range: { 4204: [0, 0, 0, 1] },
+          range: { 4204: [1, 1, 2, 3] },
         },
         MN: {
           name: 'MagNet',
           id: '233',
           img: 'magnet',
-          range: { 4212: [0, 0, 0, 0, 1] },
+          range: { 4212: [1, 1, 1, 2, 2, 3] },
         },
         Si: {
           name: 'Silence',
           id: '232',
           img: 'silence',
-          range: { 4211: [0, 0, 0, 1] },
+          range: { 4211: [1, 1, 2, 3] },
         },
         Dr: {
           name: 'Drain',
@@ -4657,20 +4674,20 @@
           name: 'Weaken',
           id: '212',
           img: 'weaken',
-          range: { 4202: [0, 0, 0, 1] },
+          range: { 4202: [1, 1, 2, 3] },
         },
         Co: {
           name: 'Confuse',
           id: '223',
           img: 'confuse',
-          range: { 4207: [0, 0, 1] },
+          range: { 4207: [1, 1, 2, 3] },
         },
       };
       if (!isOn(skillLib[buff].id)) { // 技能不可用
         return false;
       }
       // 获取范围
-      let range = 0;
+      let range = 1;
       let ab;
       const ability = getValue('ability', true);
       for (ab in skillLib[buff].range) {
@@ -4678,15 +4695,16 @@
         if (!ranges) {
           continue;
         }
-        if (ability && ability[ab]) {
-          range = ranges[ability[ab]];
-        }
+        range = ranges[ability ? ability[ab] ?? 0 : 0];
         break;
       }
-
       // 获取目标
       const option = g('option');
-
+      let exclusiveBuffs;
+      if (isAll && option.debuffAllExclusive) {
+        exclusiveBuffs = Object.keys(option.debuffAllExclusive);
+        exclusiveBuffs = exclusiveBuffs?.includes(buff) ? exclusiveBuffs : undefined
+      }
       let isDebuffed = (target, b) => {
         if (b || !exclusiveBuffs) {
           const current = getBuffTurnFromImg(getMonsterBuff(getMonsterID(target), skillLib[b ?? buff].img));
@@ -4694,7 +4712,7 @@
           return threshold >= 0 && current > threshold;
         }
         for (const exclusive of exclusiveBuffs) {
-          if (isDebuffed(target, exclusive)) return true;
+          if (isDebuffed(target, exclusive)) return 0.9;
         }
       };
       let debuffByIndex = isAll && option[`debuffSkill${buff}AllByIndex`];
@@ -4753,41 +4771,41 @@
 
       const updateAbility = {
         4301: { //火
-          111: [0, 1, 1, 2, 2, 2, 2, 2],
-          112: [0, 0, 2, 2, 2, 2, 3, 3],
-          113: [0, 0, 0, 0, 3, 4, 4, 4]
+          111: [3, 4, 4, 5, 5, 5, 5, 5],
+          112: [4, 4, 6, 6, 6, 6, 7, 7],
+          113: [7, 7, 7, 7, 8, 9, 9, 10]
         },
         4302: { //冰
-          121: [0, 1, 1, 2, 2, 2, 2, 2],
-          122: [0, 0, 2, 2, 2, 2, 3, 3],
-          123: [0, 0, 0, 0, 3, 4, 4, 4]
+          121: [3, 4, 4, 5, 5, 5, 5, 5],
+          122: [4, 4, 6, 6, 6, 6, 7, 7],
+          123: [7, 7, 7, 7, 8, 9, 9, 10]
         },
         4303: { //雷
-          131: [0, 1, 1, 2, 2, 2, 2, 2],
-          132: [0, 0, 2, 2, 2, 2, 3, 3],
-          133: [0, 0, 0, 0, 3, 4, 4, 4]
+          131: [3, 4, 4, 5, 5, 5, 5, 5],
+          132: [4, 4, 6, 6, 6, 6, 7, 7],
+          133: [7, 7, 7, 7, 8, 9, 9, 10]
         },
         4304: { //雷
-          141: [0, 1, 1, 2, 2, 2, 2, 2],
-          142: [0, 0, 2, 2, 2, 2, 3, 3],
-          143: [0, 0, 0, 0, 3, 4, 4, 4]
+          141: [3, 4, 4, 5, 5, 5, 5, 5],
+          142: [4, 4, 6, 6, 6, 6, 7, 7],
+          143: [7, 7, 7, 7, 8, 9, 9, 10]
         },
         //暗
-        4401: { 161: [0, 1, 2] },
-        4402: { 162: [0, 2, 3] },
-        4403: { 163: [0, 3, 4, 4] },
+        4401: { 161: [3, 4, 5] },
+        4402: { 162: [5, 6, 7] },
+        4403: { 163: [7, 8, 9, 10] },
         //圣
-        4501: { 151: [0, 1, 2] },
-        4502: { 152: [0, 2, 3] },
-        4503: { 153: [0, 3, 4, 4] },
+        4501: { 151: [3, 4, 5] },
+        4502: { 152: [5, 6, 7] },
+        4503: { 153: [7, 8, 9, 10] },
       }
-      let range = 0;
+      let range = 1;
       // Spell > Offensive Magic
       const attackStatus = g('attackStatus');
       let target = g('battle').monsterStatus[0];
       if (attackStatus === 0) {
         if (g('fightingStyle') === '1') { // 二天一流
-          range = 1;
+          range = 3;
         }
       } else {
         if (g('option').etherTap && getMonsterBuff(getMonsterID(target), 'coalescemana') && (!gE('#pane_effects>img[onmouseover*="Ether Tap (x2)"]') || getPlayerBuff(`wpn_et"][id*="effect_expire`)) && checkCondition(g('option').etherTapCondition)) {
@@ -4810,9 +4828,7 @@
               continue;
             }
             const ability = getValue('ability', true);
-            if (ability && ability[ab]) {
-              range = ranges[ability[ab]];
-            }
+            range = ranges[ability ? ability[ab] ?? 0 : 0];
             break;
           }
         }
