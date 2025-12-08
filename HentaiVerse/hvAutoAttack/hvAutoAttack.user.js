@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.105
+// @version      2.90.106
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -3556,12 +3556,15 @@
       // 3. 死亡、超过底下的将被溢出抛弃
       const up = Math.floor(range / 2);
       const down = range - up - 1;
-      const top = Math.max(order - down, 0);
+      const top = order <= range ? 0 : Math.max(order - down, 0);
       const bottom = Math.min(order + up, msTemp.length-1);
       for (let i = top; i <= bottom; i++) {
         let center = i;
+        if (msTemp[center].isDead) continue;
         let rank = 0;
-        for (let inRange = center - up; inRange <= (center + down); inRange++) {
+        let overflow = Math.max(up-center,0);
+        const [min, max] = [center - up + overflow, center + down + overflow];
+        for (let inRange = min; inRange <= max; inRange++) {
           let cew = inRange === center ? centralExtraWeight : 0; // cew <= 0, 增加未命中权重，降低命中权重
           let mon = msTemp[inRange];
           if (inRange < 0 || inRange >= msTemp.length || mon.isDead) { // 超出范围 或 死亡目标
@@ -3579,16 +3582,10 @@
           rank += cew; // 中心目标会受到副手及冲击攻击时，相当于有效生命值降低
           rank += forceUseIndex ? -1 : mon.finWeight; // 强制使用顺序而非权重时，全部使用统一的权重而非怪物状态
         }
-        if (rank >= minRank) continue;
-        while (center >= 0) {
-          if (!msTemp[center].isDead) {
-            newOrder = center;
-            minRank = rank;
-            break;
-          }
-          // 中心目标死亡 且 top能达到第1个(order:0)目标，尝试往前寻找目标，通过上方溢出向下扩展来覆盖目标
-          if (top !== 0) break;
-          center--;
+        if (rank < minRank) {
+          newOrder = center;
+          minRank = rank;
+          break;
         }
       }
       return { id: getMonsterID(newOrder), rank: minRank };
