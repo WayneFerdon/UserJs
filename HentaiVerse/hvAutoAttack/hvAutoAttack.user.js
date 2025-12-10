@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.106
+// @version      2.90.107
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -221,7 +221,7 @@
           $ajax.conn++;
           if (!$ajax.debug) return;
           const remain = $ajax.queue.map($ajax.simplify);
-          console.log('$ajax.send:', $ajax.simplify(current), remain ? 'remain:' : '', remain ?? '');
+          console.log('$ajax.send:', $ajax.simplify(current), remain?.length ? 'remain:' : '', remain?.length ? remain : '');
         },
         onload: function (r) {
           $ajax.conn--;
@@ -1184,14 +1184,14 @@
         '  <div><input id="equStorage" type="checkbox"><label for="equStorage"><b>[E!]<l0>装备库存</l0><l1>裝備庫存</l1><l2>Equipment Storage</l2></b></label> ≤ <input class="hvAANumber" style="width: 32px;" name="equStorageValue" placeholder="2000" type="text">; <input id="encounterEquStorage" type="checkbox"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></div>',
         '  <div><input id="checkSupply" type="checkbox"><b>[C!]<l0>检查物品库存</l0><l1>檢查物品庫存</l1><l2>Check is item needs supply</l2>;</b><input id="encounterSupply" type="checkbox"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2>',
         '  <div class="hvAAcheckItems hvAATable">',
-        '    <div><input id="isCheck_11191" type="checkbox"><input class="hvAANumber" name="checkItem_11191" placeholder="0" type="text"><l0>体力药水</l0><l1>體力藥水</l1><l2>Health Potion</l2></div>',
-        '    <div><input id="isCheck_11195" type="checkbox"><input class="hvAANumber" name="checkItem_11195" placeholder="0" type="text"><l0>体力长效药</l0><l1>體力長效藥</l1><l2>Health Draught</l2></div>',
+        '    <div><input id="isCheck_11191" type="checkbox"><input class="hvAANumber" name="checkItem_11191" placeholder="0" type="text"><l0>体力长效药</l0><l1>體力長效藥</l1><l2>Health Draught</l2></div>',
+        '    <div><input id="isCheck_11195" type="checkbox"><input class="hvAANumber" name="checkItem_11195" placeholder="0" type="text"><l0>体力药水</l0><l1>體力藥水</l1><l2>Health Potion</l2></div>',
         '    <div><input id="isCheck_11199" type="checkbox"><input class="hvAANumber" name="checkItem_11199" placeholder="0" type="text"><l0>体力秘药</l0><l1>體力秘藥</l1><l2>Health Elixir</l2></div>',
-        '    <div><input id="isCheck_11291" type="checkbox"><input class="hvAANumber" name="checkItem_11291" placeholder="0" type="text"><l0>魔力药水</l0><l1>魔力藥水</l1><l2>Mana Potion</l2></div>',
-        '    <div><input id="isCheck_11295" type="checkbox"><input class="hvAANumber" name="checkItem_11295" placeholder="0" type="text"><l0>魔力长效药</l0><l1>魔力長效藥</l1><l2>Mana Draught</l2></div>',
+        '    <div><input id="isCheck_11291" type="checkbox"><input class="hvAANumber" name="checkItem_11291" placeholder="0" type="text"><l0>魔力长效药</l0><l1>魔力長效藥</l1><l2>Mana Draught</l2></div>',
+        '    <div><input id="isCheck_11295" type="checkbox"><input class="hvAANumber" name="checkItem_11295" placeholder="0" type="text"><l0>魔力药水</l0><l1>魔力藥水</l1><l2>Mana Potion</l2></div>',
         '    <div><input id="isCheck_11299" type="checkbox"><input class="hvAANumber" name="checkItem_11299" placeholder="0" type="text"><l0>魔力秘药</l0><l1>魔力秘藥</l1><l2>Mana Elixir</l2></div>',
-        '    <div><input id="isCheck_11391" type="checkbox"><input class="hvAANumber" name="checkItem_11391" placeholder="0" type="text"><l0>灵力药水</l0><l1>靈力藥水</l1><l2>Spirit Potion</l2></div>',
-        '    <div><input id="isCheck_11395" type="checkbox"><input class="hvAANumber" name="checkItem_11395" placeholder="0" type="text"><l0>灵力长效药</l0><l1>靈力長效藥</l1><l2>Spirit Draught</l2></div>',
+        '    <div><input id="isCheck_11391" type="checkbox"><input class="hvAANumber" name="checkItem_11391" placeholder="0" type="text"><l0>灵力长效药</l0><l1>靈力長效藥</l1><l2>Spirit Draught</l2></div>',
+        '    <div><input id="isCheck_11395" type="checkbox"><input class="hvAANumber" name="checkItem_11395" placeholder="0" type="text"><l0>灵力药水</l0><l1>靈力藥水</l1><l2>Spirit Potion</l2></div>',
         '    <div><input id="isCheck_11399" type="checkbox"><input class="hvAANumber" name="checkItem_11399" placeholder="0" type="text"><l0>灵力秘药</l0><l1>靈力秘藥</l1><l2>Spirit Elixir</l2></div>',
         '    <div><input id="isCheck_19111" type="checkbox"><input class="hvAANumber" name="checkItem_19111" placeholder="0" type="text"><l0>花瓶</l0><l1>花瓶</l1><l2>Flower Vase</l2></div>',
         '    <div><input id="isCheck_19131" type="checkbox"><input class="hvAANumber" name="checkItem_19131" placeholder="0" type="text"><l0>泡泡糖</l0><l1>泡泡糖</l1><l2>Bubble-Gum</l2></div>',
@@ -1214,14 +1214,14 @@
         '</div></div>',
         '  <div><input id="checkSupplyGF" type="checkbox"><b>[C!!]<l0>压榨届使用额外的库存检查</l0><l1>壓榨屆使用額外的庫存檢查</l1><l2>Extra supply check for Grind Fest</l2></b>',
         '  <div class="hvAAcheckItems hvAATable">',
-        '    <div><input id="isCheckGF_11191" type="checkbox"><input class="hvAANumber" name="checkItemGF_11191" placeholder="0" type="text"><l0>体力药水</l0><l1>體力藥水</l1><l2>Health Potion</l2></div>',
-        '    <div><input id="isCheckGF_11195" type="checkbox"><input class="hvAANumber" name="checkItemGF_11195" placeholder="0" type="text"><l0>体力长效药</l0><l1>體力長效藥</l1><l2>Health Draught</l2></div>',
+        '    <div><input id="isCheckGF_11195" type="checkbox"><input class="hvAANumber" name="checkItemGF_11195" placeholder="0" type="text"><l0>体力药水</l0><l1>體力藥水</l1><l2>Health Potion</l2></div>',
+        '    <div><input id="isCheckGF_11191" type="checkbox"><input class="hvAANumber" name="checkItemGF_11191" placeholder="0" type="text"><l0>体力长效药</l0><l1>體力長效藥</l1><l2>Health Draught</l2></div>',
         '    <div><input id="isCheckGF_11199" type="checkbox"><input class="hvAANumber" name="checkItemGF_11199" placeholder="0" type="text"><l0>体力秘药</l0><l1>體力秘藥</l1><l2>Health Elixir</l2></div>',
-        '    <div><input id="isCheckGF_11291" type="checkbox"><input class="hvAANumber" name="checkItemGF_11291" placeholder="0" type="text"><l0>魔力药水</l0><l1>魔力藥水</l1><l2>Mana Potion</l2></div>',
-        '    <div><input id="isCheckGF_11295" type="checkbox"><input class="hvAANumber" name="checkItemGF_11295" placeholder="0" type="text"><l0>魔力长效药</l0><l1>魔力長效藥</l1><l2>Mana Draught</l2></div>',
+        '    <div><input id="isCheckGF_11295" type="checkbox"><input class="hvAANumber" name="checkItemGF_11295" placeholder="0" type="text"><l0>魔力药水</l0><l1>魔力藥水</l1><l2>Mana Potion</l2></div>',
+        '    <div><input id="isCheckGF_11291" type="checkbox"><input class="hvAANumber" name="checkItemGF_11291" placeholder="0" type="text"><l0>魔力长效药</l0><l1>魔力長效藥</l1><l2>Mana Draught</l2></div>',
         '    <div><input id="isCheckGF_11299" type="checkbox"><input class="hvAANumber" name="checkItemGF_11299" placeholder="0" type="text"><l0>魔力秘药</l0><l1>魔力秘藥</l1><l2>Mana Elixir</l2></div>',
-        '    <div><input id="isCheckGF_11391" type="checkbox"><input class="hvAANumber" name="checkItemGF_11391" placeholder="0" type="text"><l0>灵力药水</l0><l1>靈力藥水</l1><l2>Spirit Potion</l2></div>',
-        '    <div><input id="isCheckGF_11395" type="checkbox"><input class="hvAANumber" name="checkItemGF_11395" placeholder="0" type="text"><l0>灵力长效药</l0><l1>靈力長效藥</l1><l2>Spirit Draught</l2></div>',
+        '    <div><input id="isCheckGF_11395" type="checkbox"><input class="hvAANumber" name="checkItemGF_11395" placeholder="0" type="text"><l0>灵力药水</l0><l1>靈力藥水</l1><l2>Spirit Potion</l2></div>',
+        '    <div><input id="isCheckGF_11391" type="checkbox"><input class="hvAANumber" name="checkItemGF_11391" placeholder="0" type="text"><l0>灵力长效药</l0><l1>靈力長效藥</l1><l2>Spirit Draught</l2></div>',
         '    <div><input id="isCheckGF_11399" type="checkbox"><input class="hvAANumber" name="checkItemGF_11399" placeholder="0" type="text"><l0>灵力秘药</l0><l1>靈力秘藥</l1><l2>Spirit Elixir</l2></div>',
         '    <div><input id="isCheckGF_19111" type="checkbox"><input class="hvAANumber" name="checkItemGF_19111" placeholder="0" type="text"><l0>花瓶</l0><l1>花瓶</l1><l2>Flower Vase</l2></div>',
         '    <div><input id="isCheckGF_19131" type="checkbox"><input class="hvAANumber" name="checkItemGF_19131" placeholder="0" type="text"><l0>泡泡糖</l0><l1>泡泡糖</l1><l2>Bubble-Gum</l2></div>',
@@ -3277,6 +3277,7 @@
 
     // 战斗中//
     function onBattleRound() { // 主程序
+      if (!gE('#battle_main')) return;
       let battle = getValue('battle', true);
       if (!battle || !battle.roundAll) { // 修复因多个页面/世界同时读写造成缓存数据异常的情况
         battle = JSON.parse(JSON.stringify(g('battle')));
