@@ -3706,12 +3706,13 @@
           await waitPause();
           if (g('monsterAlive') > 0) { // Defeat
             setExitBattleTimeout('Defeat');
+            clearBattleUnresponsive();
           } else if (g('battle').roundNow === g('battle').roundAll) { // Victory
             setExitBattleTimeout('Victory');
+            clearBattleUnresponsive();
           } else { // Next Round
             setTimeoutOrExecute(onNewRound, option.NewRoundWaitTime * _1s);
           }
-          clearBattleUnresponsive();
 
           async function onNewRound() { try {
             await waitPause();
