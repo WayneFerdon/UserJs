@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.107
+// @version      2.90.108
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -32,7 +32,7 @@
 (function () {
   try {
     'use strict';
-    const standalone = ['option', 'arena', 'drop', 'stats', 'staminaLostLog', 'battleCode', 'disabled', 'stamina', 'staminaTime', 'lastHref', 'battle', 'monsterDB', 'monsterMID', 'ability'];
+    const standalone = ['option', 'arena', 'drop', 'stats', 'staminaLostLog', 'battleCode', 'disabled', 'stamina', 'lastHref', 'battle', 'monsterDB', 'monsterMID', 'ability'];
     const sharable = ['option'];
     const excludeStandalone = { 'option': ['optionStandalone', 'version', 'lang'] };
     const href = window.location.href;
@@ -1144,11 +1144,11 @@
         '    <div><input id="autoSkipDefeated" type="checkbox"><label for="autoSkipDefeated"><b><l0>战败自动退出战斗</l0><l1>戰敗自動退出戰鬥</l1><l2>Exit battle when defeated.</l2></b></label></div>',
         '    <div><b><l0>继续新回合延时</l0><l1>繼續新回合延時</l1><l2>New round wait time</l2></b>: <input class="hvAANumber" name="NewRoundWaitTime" placeholder="0" type="text"> <l0>(秒)</l0><l1>(秒)</l1><l2>(s)</l2></div>',
         '    <div><b><l0>战斗结束退出延时</l0><l1>戰鬥結束退出延時</l1><l2>Exit battle wait time</l2></b>: <input class="hvAANumber" name="ExitBattleWaitTime" placeholder="3" type="text"> <l0>(秒)</l0><l1>(秒)</l1><l2>(s)</l2></div>',
-        '    <div style="display: flex; flex-flow: wrap;"><b><l0>当损失精力</l0><l1>當損失精力</l1><l2>If it lost Stamina</l2></b> ≥ <input class="hvAANumber" name="staminaLose" placeholder="5" type="text">: ',
-        '    <input id="staminaPause" type="checkbox"><label for="staminaPause"><l0>脚本暂停</l0><l1>腳本暫停</l1><l2>pause script</l2></label>;',
-        '    <input id="staminaWarn" type="checkbox"><label for="staminaWarn"><l01>警告</l01><l2>warn</l2></label>; ',
-        '    <input id="staminaFlee" type="checkbox"><label for="staminaFlee"><l01>逃跑</l01><l2>flee</l2></label>',
-        '    <button class="staminaLostLog"><l0>精力损失日志</l0><l1>精力損失日誌</l1><l2>staminaLostLog</l2></button></div>',
+        // '    <div style="display: flex; flex-flow: wrap;"><b><l0>当损失精力</l0><l1>當損失精力</l1><l2>If it lost Stamina</l2></b> ≥ <input class="hvAANumber" name="staminaLose" placeholder="5" type="text">: ',
+        // '    <input id="staminaPause" type="checkbox"><label for="staminaPause"><l0>脚本暂停</l0><l1>腳本暫停</l1><l2>pause script</l2></label>;',
+        // '    <input id="staminaWarn" type="checkbox"><label for="staminaWarn"><l01>警告</l01><l2>warn</l2></label>; ',
+        // '    <input id="staminaFlee" type="checkbox"><label for="staminaFlee"><l01>逃跑</l01><l2>flee</l2></label>',
+        // '    <button class="staminaLostLog"><l0>精力损失日志</l0><l1>精力損失日誌</l1><l2>staminaLostLog</l2></button></div>',
         '    <div><b><l0>战斗页面停留</l0><l1>戰鬥頁面停留</l1><l2>If not active for </l2></b>: ',
         '      <br><input id="battleUnresponsive_Alert" type="checkbox"><label for="battleUnresponsive_Alert"><input class="hvAANumber" name="battleUnresponsiveTime_Alert" type="text"> <l0>秒，警报</l0><l1>秒，警報</l1><l2>(s), alarm</l2></label>; ',
         '      <br><input id="battleUnresponsive_Reload" type="checkbox"><label for="battleUnresponsive_Reload"><input class="hvAANumber" name="battleUnresponsiveTime_Reload" type="text"> <l0>秒，刷新页面</l0><l1>秒，刷新頁面</l1><l2>(s), reload page</l2></label>',
@@ -2852,8 +2852,9 @@
     async function asyncSetStamina() { try {
       await waitPause();
       $async.logSwitch(arguments);
-      const stamina = getValue('stamina') ?? {};
-      [stamina.current, stamina.perk]= await Promise.all([
+      const stamina = getValue('stamina', true) ?? { ratio: 1 };
+      let [last, lastTime] = [stamina.current, stamina.time];
+      [stamina.current, stamina.perk] = await Promise.all([
         getCurrentStamina(),
         (async () => { try {
           if (isIsekai || !g('option').restoreStamina) {
@@ -2876,6 +2877,14 @@
           return perk;
         } catch(e) {console.error(e) }})()
       ]);
+      stamina.time = time(0);
+      if (stamina.lastCost) {
+        last += Math.floor(stamina.time / _1h) - Math.floor(lastTime / _1h);
+        const delta = last - stamina.current;
+        stamina.ratio = delta / stamina.lastCost;
+        console.log('last stamina ratio:', stamina.ratio);
+        stamina.lastCost = undefined;
+      }
       setValue('stamina', stamina);
       $async.logSwitch(arguments);
     } catch (e) { console.error(e) } }
@@ -3023,7 +3032,7 @@
     } catch(e) { console.error(e); }}
 
     async function checkStamina(low, cost) {
-      const stamina = getValue('stamina');
+      const stamina = getValue('stamina', true);
       const option = g('option');
       let now = time(0);
       let hours = Math.floor(now / _1h);
@@ -3226,9 +3235,11 @@
         105: 1, 106: 1, 107: 1, 108: 1, 109: 1, 110: 1, 111: 1, 112: 1,
         gr: 0
       }
-      let stamina = await getCurrentStamina();
+      let stamina = getValue('stamina', true);
+      stamina.current = await getCurrentStamina();
+      stamina.time = time(0);
       for (let id in staminaCost) {
-        staminaCost[id] *= (isIsekai ? 2 : 1) * (stamina >= 60 ? 0.03 : 0.02)
+        staminaCost[id] *= (isIsekai ? 2 : 1) * (stamina.current >= 60 ? 0.03 : 0.02)
       }
 
       let query;
@@ -3250,7 +3261,7 @@
         return;
       }
       const cost = staminaCost[id];
-      if (!await checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: option.encounter, staminaLow: id === 'gr' ? option.staminaGrindFest : undefined })) {
+      if (!await checkBattleReady(idleArena, { staminaCost: cost * (stamina.ratio ?? 1), checkEncounter: option.encounter, staminaLow: id === 'gr' ? option.staminaGrindFest : undefined })) {
         console.log('Check Battle Ready Failed', 'id:', id);
         $async.logSwitch(arguments);
         return;
@@ -3265,6 +3276,8 @@
       writeArenaStart();
       await $ajax.insert(query, `initid=${id === 'gr' ? 1 : id}${token}`);
       console.log('Arena Fetch Done.', 'altBattleFirst:', option.altBattleFirst);
+      stamina.lastCost = cost;
+      setValue('stamina', stamina);
       if (option.altBattleFirst && await $ajax.insert(href.replace('hentaiverse.org', 'alt.hentaiverse.org').replace('alt.alt', 'alt'))) {
         console.log('Arena goto alt');
         gotoAlt(true);
