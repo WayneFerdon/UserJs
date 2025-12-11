@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.109
+// @version      2.90.110
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2857,18 +2857,17 @@
       [stamina.current, stamina.perk] = await Promise.all([
         getCurrentStamina(),
         (async () => { try {
+          const perk = stamina.perk ?? {};
           if (isIsekai || !g('option').restoreStamina) {
-            return;
+            return perk;
           }
           let currentID = getCurrentUser();
-          const perk = stamina.perk ?? {};
-          console.log();
           if (perk[currentID]) {
-            return;
+            return perk;
           }
           const html = await $ajax.insert('https://e-hentai.org/hathperks.php');
           if (!html) {
-            return;
+            return perk;
           }
           const doc = $doc(html);
           const perks = gE('.stuffbox>table>tbody>tr', 'all', doc);
