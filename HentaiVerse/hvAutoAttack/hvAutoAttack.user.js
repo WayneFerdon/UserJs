@@ -1802,16 +1802,16 @@
           }
         }, 3000);
       };
-      gE('.staminaLostLog', optionBox).onclick = function () {
-        const out = [];
-        const staminaLostLog = getValue('staminaLostLog', true);
-        for (const i in staminaLostLog) {
-          out.push(`${i}: ${staminaLostLog[i]}`);
-        }
-        if (window.confirm(`总共${out.length}条记录 (There are ${out.length} logs): \n${out.reverse().join('\n')}\n是否重置 (Whether to reset)?`)) {
-          setValue('staminaLostLog', {});
-        }
-      };
+      // gE('.staminaLostLog', optionBox).onclick = function () {
+      //   const out = [];
+      //   const staminaLostLog = getValue('staminaLostLog', true);
+      //   for (const i in staminaLostLog) {
+      //     out.push(`${i}: ${staminaLostLog[i]}`);
+      //   }
+      //   if (window.confirm(`总共${out.length}条记录 (There are ${out.length} logs): \n${out.reverse().join('\n')}\n是否重置 (Whether to reset)?`)) {
+      //     setValue('staminaLostLog', {});
+      //   }
+      // };
       gE('.idleArenaReset', optionBox).onclick = function () {
         if (_alert(1, '是否重置', '是否重置', 'Whether to reset')) {
           delValue('arena');
@@ -2862,6 +2862,7 @@
           }
           let currentID = getCurrentUser();
           const perk = stamina.perk ?? {};
+          console.log();
           if (perk[currentID]) {
             return;
           }
@@ -3861,19 +3862,19 @@
           setEncounter(encounter);
         }
       }
-      if (/You lose \d+ Stamina/.test(battleLog[0].textContent)) {
-        const staminaLostLog = getValue('staminaLostLog', true) || {};
-        staminaLostLog[time(3)] = battleLog[0].textContent.match(/You lose (\d+) Stamina/)[1] * 1;
-        setValue('staminaLostLog', staminaLostLog);
-        const losedStamina = battleLog[0].textContent.match(/\d+/)[0] * 1;
-        if (losedStamina >= g('option').staminaLose) {
-          setAlarm('Error');
-          if (!_alert(1, '当前Stamina过低\n或Stamina损失过多\n是否继续？', '當前Stamina過低\n或Stamina損失過多\n是否繼續？', 'Continue?\nYou either have too little Stamina or have lost too much')) {
-            pauseChange();
-            return;
-          }
-        }
-      }
+      // if (/You lose \d+ Stamina/.test(battleLog[0].textContent)) {
+      //   const staminaLostLog = getValue('staminaLostLog', true) || {};
+      //   staminaLostLog[time(3)] = battleLog[0].textContent.match(/You lose (\d+) Stamina/)[1] * 1;
+      //   setValue('staminaLostLog', staminaLostLog);
+      //   const losedStamina = battleLog[0].textContent.match(/\d+/)[0] * 1;
+      //   if (losedStamina >= g('option').staminaLose) {
+      //     setAlarm('Error');
+      //     if (!_alert(1, '当前Stamina过低\n或Stamina损失过多\n是否继续？', '當前Stamina過低\n或Stamina損失過多\n是否繼續？', 'Continue?\nYou either have too little Stamina or have lost too much')) {
+      //       pauseChange();
+      //       return;
+      //     }
+      //   }
+      // }
 
       const roundPrev = battle.roundNow;
 
