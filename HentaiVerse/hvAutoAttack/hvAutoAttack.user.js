@@ -3276,7 +3276,7 @@
       writeArenaStart();
       await $ajax.insert(query, `initid=${id === 'gr' ? 1 : id}${token}`);
       console.log('Arena Fetch Done.', 'altBattleFirst:', option.altBattleFirst);
-      stamina.lastCost = cost;
+      stamina.lastCost = id === 'gr' ? undefined : cost;
       setValue('stamina', stamina);
       if (option.altBattleFirst && await $ajax.insert(href.replace('hentaiverse.org', 'alt.hentaiverse.org').replace('alt.alt', 'alt'))) {
         console.log('Arena goto alt');
