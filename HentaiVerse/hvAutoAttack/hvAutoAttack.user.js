@@ -3261,7 +3261,7 @@
         return;
       }
       const cost = staminaCost[id];
-      if (!await checkBattleReady(idleArena, { staminaCost: cost * (stamina.ratio ?? 1), checkEncounter: option.encounter, staminaLow: id === 'gr' ? option.staminaGrindFest : undefined })) {
+      if (!await checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: option.encounter, staminaLow: id === 'gr' ? option.staminaGrindFest : undefined })) {
         console.log('Check Battle Ready Failed', 'id:', id);
         $async.logSwitch(arguments);
         return;
