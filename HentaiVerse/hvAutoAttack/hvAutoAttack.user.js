@@ -2881,11 +2881,11 @@
       if (stamina.lastCost) {
         last += Math.floor(stamina.time / _1h) - Math.floor(lastTime / _1h);
         const delta = last - stamina.current;
-        stamina.ratio = delta / stamina.lastCost;
-        console.log('last stamina ratio:', stamina.ratio);
+        stamina.ratio = Math.max(1, delta / stamina.lastCost);
         stamina.lastCost = undefined;
       }
       setValue('stamina', stamina);
+      console.log('stamina', stamina);
       $async.logSwitch(arguments);
     } catch (e) { console.error(e) } }
 
