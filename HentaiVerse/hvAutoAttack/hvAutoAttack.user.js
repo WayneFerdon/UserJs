@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.110
+// @version      2.90.111
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -362,6 +362,45 @@
       return false;
     }
 
+    // 答题//
+    async function riddleAlert() { try {
+      setAlarm('Riddle');
+      const option = g('option');
+      const answerTime = option.riddleAnswerTime ?? 0;
+      let time;
+      const timeDiv = gE('#riddlecounter>div>div', 'all');
+      while (time === undefined || time > answerTime) {
+        if (timeDiv.length === 0) {
+          await pauseAsync(_1s);
+          continue;
+        }
+        time = undefined;
+        for (let t of timeDiv) {
+          time = (t.style.backgroundPosition.match(/(\d+)px$/)[1] / 12).toString() + (time ?? '');
+        }
+        time *= 1;
+        document.title = time;
+        await pauseAsync(_1s);
+      }
+      for (let ans of gE('#riddler1>*', 'all').children) {
+        if (!ans.children[0].children[0].checked) continue;
+        console.log('riddle submit');
+        gE('#riddlesubmit').click();
+        return;
+      }
+      if (!option.riddleAnswerChoose) return;
+      // if no answer selected
+      const answers = ['aj', 'fs', 'pp', 'ra', 'rd', 'ts'];
+      answers.sort(Math.random);
+      const answer = `riddlesubmit=Submit+Answer` + answers.slice(0, option.riddleAnswerChoose ?? 0).map(ans=>`&riddleanswer[]=${ans}`).join('');
+      console.log('random submit', answer);
+      const battle = gE('#battle_main', $doc(await $ajax.fetch(window.location.href, answer)));
+      if (!battle) {
+        console.error('ERROR: Failed fetch submit.');
+      }
+      goto();
+    } catch(e) { console.error(e) }}
+
     function checkIsWindowTop() {
       const currentUrl = window.self.location.href;
       if (!isFrame) {
@@ -462,7 +501,7 @@
         return false;
       }
       if (!g('option').riddlePopup || window.opener) {
-        setAlarm('Riddle');
+        riddleAlert();
         return true;
       }
       window.open(window.location.href, 'riddleWindow', 'resizable,scrollbars,width=1241,height=707');
@@ -959,11 +998,13 @@
     }
 
     function addStyle(lang) { // CSS
-      const langStyle = gE('head').appendChild(cE('style'));
-      langStyle.className = 'hvAA-LangStyle';
-      langStyle.textContent = `l${lang}{display:inline!important;}`;
-      if (/^[01]$/.test(lang)) {
-        langStyle.textContent = `${langStyle.textContent}l01{display:inline!important;}`;
+      if (!gE('.hvAA-LangStyle')) {
+        const langStyle = gE('head').appendChild(cE('style'));
+        langStyle.className = 'hvAA-LangStyle';
+        langStyle.textContent = `l${lang}{display:inline!important;}`;
+        if (/^[01]$/.test(lang)) {
+          langStyle.textContent = `${langStyle.textContent}l01{display:inline!important;}`;
+        }
       }
       const globalStyle = gE('head').appendChild(cE('style'));
       const cssContent = [
@@ -1094,7 +1135,9 @@
         '  <div><b><l0>异世界相关</l0><l1>異世界相關</l1><l2>Isekai</l2></b>: ',
         '    <input id="optionStandalone" type="checkbox"><label for="optionStandalone"><l0>两个世界使用不同的配置</l0><l1>兩個世界使用不同的配置</l1><l2>Use standalone options.</l2></label>; ',
         '    <br><input id="isekai" type="checkbox"><l0>在任意页面停留</l0><l1>在任意頁面停留</l1><l2>While idle in any page for </l2><input class="hvAANumber" name="isekaiTime" type="text"><l0>秒后，自动切换恒定世界和异世界</l0><l1>秒後，自動切換恆定世界和異世界</l1><l2>s, auto switch between Isekai and Persistent</l2></label></div>',
-        '<div><b><l0>小马答题</l0><l1>小馬答題</l1><l2>RIDDLE</l2></b>: <input id="riddlePopup" type="checkbox"><label for="riddlePopup"><l0>弹窗答题(Firefox中可能导致报错)</l0><l1>弹窗答题(Firefox中可能導致報錯)</l1><l2>POPUP a window to answer(Might cause in Firefox)</l2></label>; <button class="testPopup"><l0>预处理</l0><l1>預處理</l1><l2>Pretreat</l2></button>',
+        '  <div>',
+        '    <b><l0>小马答题</l0><l1>小馬答題</l1><l2>RIDDLE</l2></b>: <input id="riddlePopup" type="checkbox"><label for="riddlePopup"><l0>弹窗答题(Firefox中可能导致报错)</l0><l1>弹窗答题(Firefox中可能導致報錯)</l1><l2>POPUP a window to answer(Might cause in Firefox)</l2></label>; <button class="testPopup"><l0>预处理</l0><l1>預處理</l1><l2>Pretreat</l2></button>',
+        '    <div><l0>时间</l0><l1>時間</l1><l2>If ETR</l2> ≤ <input class="hvAANumber" name="riddleAnswerTime" placeholder="3" type="text"><l0>秒，如果输入框为空则随机选中</l0><l1>秒，如果輸入框為空則隨機選中</l1><l2>s and no answer has been chosen yet, random </l2> <input class="hvAANumber" name="riddleAnswerChoose" placeholder="0" type="text"><l0>个答案并提交(请注意提交错误的答案可能比不提交或只提交一个正确选项的惩罚更重)</l0><l1>个答案並提交(請注意提交錯誤的答案可能比不提交或只提交一個正確選項的懲罰更重)</l1><l2>answers will be generated and submitted.(Notice that submit wrong answers might causing more punishment than submit nothing or single correct one)</l2></div>',
         '  </div>',
         '  <div><b><l0>脚本行为</l0><l1>腳本行為</l1><l2>Script Activity</l2></b>',
         '    <div>',
@@ -2975,7 +3018,7 @@
       }
       eqps = eqps.filter(e=>e);
       if (eqps.length) {
-        console.log('eqps need repair: ', eqps.join('\n'));
+        console.log('eqps need repair:\n', eqps.join('\n '));
         document.title = `[R!]` + document.title;
       }
       $async.logSwitch(arguments);
