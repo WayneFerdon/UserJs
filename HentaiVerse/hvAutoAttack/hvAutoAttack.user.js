@@ -392,7 +392,7 @@
       // if no answer selected
       const answers = ['aj', 'fs', 'pp', 'ra', 'rd', 'ts'];
       answers.sort(Math.random);
-      const answer = `riddlesubmit=Submit+Answer` + answers.slice(0, option.riddleAnswerChoose ?? 0).map(ans=>`&riddleanswer[]=${ans}`).join('');
+      const answer = `riddlesubmit=Submit+Answer` + answers.slice(0, Math.max(0, Math.min(6, option.riddleAnswerChoose ?? 0))).map(ans=>`&riddleanswer[]=${ans}`).join('');
       console.log('random submit', answer);
       const battle = gE('#battle_main', $doc(await $ajax.fetch(window.location.href, answer)));
       if (!battle) {
