@@ -169,6 +169,14 @@
 | Infusion of Storms / windinfusion | Infusion of Divinity / holyinfusion | Infusion of Darkness / darkinfusion |
 | Scroll of Swiftness / haste_scroll | - | - |
 | Flower Vase / flowers | Bubble-Gum / gum | - |
+| Sleep / sleep | Blind / blind | Slow / slow |
+| Imperil / imperil | MagNet / magnet | Silence / silence |
+| Drain / drainhp | Weaken / weaken | Confuse / confuse |
+| Coalesced Mana / coalescemana | Stunned / stun / wpn_stun | Penetrated Armor / ap / wpn_ap |
+| Bleeding Wound / bleed / wpn_bleed | Absorbing Ward / absorb | Fury of the Sisters / trio_furyofthesisters |
+| Lamentations of the Future / trio_skuld | Screams of the Past / trio_urd | Wailings of the Present / trio_verdandi | Searing Skin / firedot | Freezing Limbs / coldslow |
+| Turbulent Air / windmiss | Deep Burns / elecweak | Breached Defense / holybreach |
+| Blunted Attack / darknerf | Burning Soul / soulfire | Ripened Soul / ripesoul |
 
 ***
 
@@ -389,6 +397,7 @@
 灵感来自hoverplay，刚开始接触js，初步完成代码
 功能有：答题警报、其他警报、快捷键、自动前进、自动使用宝石、自动回复、自动使用增益技能、自动打怪
 很可惜，玩游戏不走心，一直搞不懂HVSTAT是怎么知道每个怪的血量的，直到[版本2.0](#20)
+
 
 
 
