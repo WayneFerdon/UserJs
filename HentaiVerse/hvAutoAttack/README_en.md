@@ -163,6 +163,14 @@ The following is a schematic diagram of the circuit diagram
 | Infusion of Storms / windinfusion | Infusion of Divinity / holyinfusion | Infusion of Darkness / darkinfusion |
 | Scroll of Swiftness / haste_scroll | - | - |
 | Flower Vase / flowers | Bubble-Gum / gum | - |
+| Sleep / sleep | Blind / blind | Slow / slow |
+| Imperil / imperil | MagNet / magnet | Silence / silence |
+| Drain / drainhp | Weaken / weaken | Confuse / confuse |
+| Coalesced Mana / coalescemana | Stunned / stun / wpn_stun | Penetrated Armor / ap / wpn_ap |
+| Bleeding Wound / bleed / wpn_bleed | Absorbing Ward / absorb | Fury of the Sisters / trio_furyofthesisters |
+| Lamentations of the Future / trio_skuld | Screams of the Past / trio_urd | Wailings of the Present / trio_verdandi | Searing Skin / firedot | Freezing Limbs / coldslow |
+| Turbulent Air / windmiss | Deep Burns / elecweak | Breached Defense / holybreach |
+| Blunted Attack / darknerf | Burning Soul / soulfire | Ripened Soul / ripesoul |
 
 ***
 
@@ -195,5 +203,6 @@ In this example, the script will attack enemy 1 next.
 
 * Old
 1. see [README_Chinese#更新历史](https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README.md#更新历史)
+
 
 
