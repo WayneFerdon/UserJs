@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.114
+// @version      2.90.115
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1346,18 +1346,22 @@
 
         '  <div class="battleOrder"><b><l0>战斗执行顺序(未配置的按照下面的顺序)</l0><l1>戰鬥執行順序(未配置的按照下面的順序)</l1><l2>Battal Order(Using order below as default if not configed)</l2></b>: <input name="battleOrderName" style="width:80%;" type="text" disabled="true"><input name="battleOrderValue" style="width:80%;" type="hidden" disabled="true"><br>',
         '    <div class="hvAATable" style="display:grid; grid-template-columns:repeat(4, 1fr);">',
-        '      <div><input id="battleOrder_autoPause" value="Pause,2" type="checkbox"><label for="battleOrder_autoPause"><l0>自动暂停</l0><l1>自動暫停</l1><l2>Auto Pause</l2></label></div>',
-        '      <div><input id="battleOrder_autoRecover" value="Rec,1" type="checkbox"><label for="battleOrder_autoRecover"><l0>恢复技能</l0><l1>恢復技能</l1><l2>Cure Skills</l2></label></div>',
-        '      <div><input id="battleOrder_autoDefend" value="Def,4" type="checkbox"><label for="battleOrder_autoDefend"><l0>自动防御</l0><l1>自動防禦</l1><l2>Auto Defence</l2></label></div>',
-        '      <div><input id="battleOrder_useScroll" value="Scroll,5" type="checkbox"><label for="battleOrder_useScroll"><l0>使用卷轴</l0><l1>使用捲軸</l1><l2>Use Scroll</l2></label><br></div>',
-        '      <div><input id="battleOrder_useChannelSkill" value="Channel,6" type="checkbox"><label for="battleOrder_useChannelSkill"><l0>引导技能</l0><l1>引導技能</l1><l2>Channel Skill</l2></label></div>',
-        '      <div><input id="battleOrder_useBuffSkill" value="Buff,7" type="checkbox"><label for="battleOrder_useBuffSkill"><l0>Buff技能</l0><l1>Buff技能</l1><l2>Buff Skills</l2></label></div>',
-        '      <div><input id="battleOrder_useInfusions" value="Infus,8" type="checkbox"><label for="battleOrder_useInfusions"><l0>使用魔药</l0><l1>使用魔藥</l1><l2>Infusions</l2></label></div>',
-        '      <div><input id="battleOrder_useDeSkill" value="Debuff,9" type="checkbox"><label for="battleOrder_useDeSkill"><l0>Debuff技能</l0><l1>Debuff技能</l1><l2>Debuff Skills</l2></label><br></div>',
-        '      <div><input id="battleOrder_autoFocus" value="Focus,10" type="checkbox"><label for="battleOrder_autoFocus"><l0>自动集中</l0><l1>自動集中</l1><l2>Focus</l2></label></div>',
-        '      <div><input id="battleOrder_autoSS" value="SS,3" type="checkbox"><label for="battleOrder_autoSS"><l0>灵动架式</l0><l1>靈動架式</l1><l2>Auto Sprite</l2></label></div>',
-        '      <div><input id="battleOrder_autoSkill" value="Skill,11" type="checkbox"><label for="battleOrder_autoSkill"><l0>释放技能</l0><l1>釋放技能</l1><l2>Auto Skill</l2></label></div>',
-        '      <div><input id="battleOrder_attack" value="Atk,12" type="checkbox"><label for="battleOrder_attack"><l0>自动攻击</l0><l1>自動攻擊</l1><l2>Attack</l2></label></div>',
+        '      <div><input id="battleOrder_autoPause" value="Pause" type="checkbox"><label for="battleOrder_autoPause"><l0>自动暂停</l0><l1>自動暫停</l1><l2>Auto Pause</l2></label></div>',
+        '      <div><input id="battleOrder_autoCure" value="Cure" type="checkbox"><label for="battleOrder_autoCure"><l0>使用治疗</l0><l1>使用治療</l1><l2>Cure</l2></label></div>',
+        '      <div><input id="battleOrder_autoSSDisable" value="SSDisable" type="checkbox"><label for="battleOrder_autoSSDisable"><l0>关闭灵动架式</l0><l1>關閉靈動架式</l1><l2>Disable Sprite</l2></label></div>',
+
+        '      <div><input id="battleOrder_autoRecover" value="Rec" type="checkbox"><label for="battleOrder_autoRecover"><l0>恢复(含治疗)</l0><l1>恢復(含治療)</l1><l2>Recover(& cure)</l2></label></div>',
+        '      <div><input id="battleOrder_useScroll" value="Scroll" type="checkbox"><label for="battleOrder_useScroll"><l0>使用卷轴</l0><l1>使用捲軸</l1><l2>Use Scroll</l2></label><br></div>',
+        '      <div><input id="battleOrder_useInfusions" value="Infus" type="checkbox"><label for="battleOrder_useInfusions"><l0>使用魔药</l0><l1>使用魔藥</l1><l2>Infusions</l2></label></div>',
+        '      <div><input id="battleOrder_autoDefend" value="Def" type="checkbox"><label for="battleOrder_autoDefend"><l0>自动防御</l0><l1>自動防禦</l1><l2>Auto Defence</l2></label></div>',
+        '      <div><input id="battleOrder_useChannelSkill" value="Channel" type="checkbox"><label for="battleOrder_useChannelSkill"><l0>引导技能</l0><l1>引導技能</l1><l2>Channel Skill</l2></label></div>',
+        '      <div><input id="battleOrder_useBuffSkill" value="Buff" type="checkbox"><label for="battleOrder_useBuffSkill"><l0>Buff技能</l0><l1>Buff技能</l1><l2>Buff Skills</l2></label></div>',
+        '      <div><input id="battleOrder_useDeSkill" value="Debuff" type="checkbox"><label for="battleOrder_useDeSkill"><l0>Debuff技能</l0><l1>Debuff技能</l1><l2>Debuff Skills</l2></label><br></div>',
+        '      <div><input id="battleOrder_autoFocus" value="Focus" type="checkbox"><label for="battleOrder_autoFocus"><l0>自动集中</l0><l1>自動集中</l1><l2>Focus</l2></label></div>',
+
+        '      <div><input id="battleOrder_autoSS" value="SS" type="checkbox"><label for="battleOrder_autoSS"><l0>灵动架式(开&关)</l0><l1>靈動架式(開&關)</l1><l2>On & Off Sprite</l2></label></div>',
+        '      <div><input id="battleOrder_autoSkill" value="Skill" type="checkbox"><label for="battleOrder_autoSkill"><l0>释放技能</l0><l1>釋放技能</l1><l2>Auto Skill</l2></label></div>',
+        '      <div><input id="battleOrder_attack" value="Atk" type="checkbox"><label for="battleOrder_attack"><l0>自动攻击</l0><l1>自動攻擊</l1><l2>Attack</l2></label></div>',
         '    </div></div>',
         '    <div><input id="infusionSwitch" type="checkbox"><b><l0>使用魔药(与攻击模式相同)</l0><l1>使用魔藥(與攻擊模式相同)</l1><l2>Use Infusion(same as attack mode)</l2></b>{{infusionCondition}}</div>',
         '    <div><label for="middleSkillCondition"><b><l0>中阶魔法技能使用条件</l0><l1>中階魔法技能使用條件</l1><l2>Conditions for 2nd Tier Offensive Magic</l2></b>: {{middleSkillCondition}}</label></div>',
@@ -2077,12 +2081,12 @@
         if (e.target.tagName !== 'INPUT' && e.target.type !== 'checkbox') {
           return;
         }
-        const valueArray = e.target.value.split(',');
+        const value = e.target.value;
         let name = gE('input[name="battleOrderName"]').value;
         if (e.target.checked) {
-          name = name + ((name) ? `,${valueArray[0]}` : valueArray[0]);
+          name = name + ((name) ? `,${value}` : value);
         } else {
-          name = name.replace(new RegExp(`(^|,)${valueArray[0]}(,|$)`), '$2').replace(/^,/, '');
+          name = name.replace(new RegExp(`(^|,)${value}(,|$)`), '$2').replace(/^,/, '');
         }
         gE('input[name="battleOrderName"]').value = name;
       };
@@ -2738,61 +2742,61 @@
       };
       const func = {
         ar() {
-          return g('battle').roundType === 'ar';
+          return g('battle').roundType === 'ar' ? 1 : 0;
         },
         gr() {
-          return g('battle').roundType === 'gr';
+          return g('battle').roundType === 'gr' ? 1 : 0;
         },
         tw() {
-          return g('battle').roundType === 'tw';
+          return g('battle').roundType === 'tw' ? 1 : 0;
         },
         rb() {
-          return g('battle').roundType === 'rb';
+          return g('battle').roundType === 'rb' ? 1 : 0;
         },
         iw() {
-          return g('battle').roundType === 'iw';
+          return g('battle').roundType === 'iw' ? 1 : 0;
         },
         ba() {
-          return g('battle').roundType === 'ba';
+          return g('battle').roundType === 'ba' ? 1 : 0;
         },
         isRoundType(t) {
-          return g('battle').roundType === t;
+          return g('battle').roundType === t ? 1 : 0;
         },
         phys() {
-          return g('attackStatus') === 0 ? 1 : 0;
+          return g('attackStatus') * 1 === 0 ? 1 : 0;
         },
         fire() {
-          return g('attackStatus') * 1 === 10 ? 1 : 0;
+          return g('attackStatus') * 1 === 1 ? 1 : 0;
         },
         cold() {
-          return g('attackStatus') * 1 === 20 ? 1 : 0;
+          return g('attackStatus') * 1 === 2 ? 1 : 0;
         },
         elec() {
-          return g('attackStatus') * 1 === 30 ? 1 : 0;
+          return g('attackStatus') * 1 === 3 ? 1 : 0;
         },
         wind() {
-          return g('attackStatus') * 1 === 40 ? 1 : 0;
+          return g('attackStatus') * 1 === 4 ? 1 : 0;
         },
         divi() {
-          return g('attackStatus') * 1 === 50 ? 1 : 0;
+          return g('attackStatus') * 1 === 5 ? 1 : 0;
         },
         forb() {
-          return g('attackStatus') * 1 === 60 ? 1 : 0;
+          return g('attackStatus') * 1 === 6 ? 1 : 0;
         },
         nt() {
-          return g('fightingStyle') * 1 === 10 ? 1 : 0;
+          return g('fightingStyle') * 1 === 1 ? 1 : 0;
         },
         onehanded() {
-          return g('fightingStyle') * 1 === 20 ? 1 : 0;
+          return g('fightingStyle') * 1 === 2 ? 1 : 0;
         },
         twohanded() {
-          return g('fightingStyle') * 1 === 30 ? 1 : 0;
+          return g('fightingStyle') * 1 === 3 ? 1 : 0;
         },
         dw() {
-          return g('fightingStyle') * 1 === 40 ? 1 : 0;
+          return g('fightingStyle') * 1 === 4 ? 1 : 0;
         },
         staff() {
-          return g('fightingStyle') * 1 === 50 ? 1 : 0;
+          return g('fightingStyle') * 1 === 5 ? 1 : 0;
         },
         isCd(id) { // is cool down done
           return isOn(id) ? 1 : 0;
@@ -2875,8 +2879,10 @@
               parmResult = false;
               break;
             }
+            console.log(k, result);
           }
           if (parmResult) {
+            console.log(parms[i], parmResult);
             return target;
           }
         }
@@ -3790,7 +3796,8 @@
       }
       const taskList = {
         'Pause': autoPause,
-        'Rec': autoRecover,
+        'Cure': ()=>autoRecover(true),
+        'Rec': ()=>autoRecover(false),
         'Def': autoDefend,
         'Scroll': useScroll,
         'Channel': useChannelSkill,
@@ -3798,7 +3805,8 @@
         'Infus': useInfusions,
         'Debuff': useDeSkill,
         'Focus': autoFocus,
-        'SS': autoSS,
+        'SS': ()=>autoSS(true),
+        'SSDisable': ()=>autoSS(false),
         'Skill': autoSkill,
         'Atk': attack,
       };
@@ -3806,6 +3814,7 @@
       for (let i = 0; i < names.length; i++) {
         if (taskList[names[i]]()) {
           onStepInDone();
+          console.log(names[i]);
           return;
         }
         delete taskList[names[i]];
@@ -3813,6 +3822,7 @@
       for (let name in taskList) {
         if (taskList[name]()) {
           onStepInDone();
+          console.log(name);
           return;
         }
       }
@@ -4459,17 +4469,22 @@
       g('battle', battle);
     }
 
-    function autoRecover() { // 自动回血回魔
+    function autoRecover(isCureOnly) { // 自动回血回魔
       const option = g('option');
       if (!option.item) {
         return false;
       }
       const name = splitOrders(option.itemOrderName, ['FC', 'HE', 'LE', 'HG', 'HP', 'Cure', 'MG', 'MP', 'ME', 'SG', 'SP', 'SE', 'Mystic', 'CC', 'ED']);
       const order = splitOrders(option.itemOrderValue, [11199, 11501, 10005, 11195, 311, 10006, 11295, 11299, 10007, 11395, 11399, 10008, 11402, 11401]);
+      const cures = [11199, 11501, 10005, 11195, 311, 10006];
       for (let i = 0; i < name.length; i++) {
         let id = order[i];
+        if (isCureOnly && !(id in cures)){
+          continue;
+        }
         if (option.item[name[i]] && checkCondition(option[`item${name[i]}Condition`]) && isOn(id)) {
           (gE(`.bti3>div[onmouseover*="(${id})"]`) ?? gE(id)).click();
+        console.log('rec', name[i],option[`item${name[i]}Condition`], checkCondition(option[`item${name[i]}Condition`]));
           return true;
         }
       }
@@ -4742,6 +4757,7 @@
         const threshold = option.buffSkillThreshold ? option.buffSkillThreshold[buff] ?? 0 : 0;
         if (threshold >= 0 && current > threshold) continue;
         gE(skillLib[buff].id).click();
+        console.log(buff);
         return true;
       }
       const draughtPack = {
@@ -4769,6 +4785,7 @@
       for (i in draughtPack) {
         if (!getPlayerBuff(draughtPack[i].img) && option.buffSkill && option.buffSkill[i] && checkCondition(option[`buffSkill${i}Condition`]) && gE(`.bti3>div[onmouseover*="(${draughtPack[i].id})"]`)) {
           gE(`.bti3>div[onmouseover*="(${draughtPack[i].id})"]`).click();
+          console.log(draughtPack[i]);
           return true;
         }
       }
@@ -4822,14 +4839,19 @@
       return false;
     }
 
-    function autoSS() {
+    function autoSS(isDisableOnly) {
       const textSP = gE('#vrs') ?? gE('#dvrs');
       const spValue = textSP.childNodes[0].textContent * 1;
       if (spValue <= 1) {
         return false;
       }
       const option = g('option');
-      if ((option.turnOnSS && checkCondition(option.turnOnSSCondition) && !gE('#ckey_spirit[src*="spirit_a"]')) || (option.turnOffSS && checkCondition(option.turnOffSSCondition) && gE('#ckey_spirit[src*="spirit_a"]'))) {
+      const enabled = gE('#ckey_spirit[src*="spirit_a"]');
+      if (
+        (!isDisableOnly && option.turnOnSS && checkCondition(option.turnOnSSCondition) && !enabled)
+        ||
+        (option.turnOffSS && checkCondition(option.turnOffSSCondition) && enabled)
+      ) {
         gE('#ckey_spirit').click();
         return true;
       }
