@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.112
+// @version      2.90.113
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -59,7 +59,7 @@
       '<l0>暗</l0><l1>暗</l1><l2>Forbidden</l2>',
     ];
     const monsterStateKeys = { obj: `div.btm1`, lv: `div.btm2`, name: `div.btm3`, bars: `div.btm4>div.btm5`, buffs: `div.btm6` }
-    const [$async, $debug, $ajax] = [initAsync(), initDebug(), window.top.$ajax ??= unsafeWindow.$ajax ??= initAjax()];
+    const [$RPN, $async, $debug, $ajax] = [initRPN(), initAsync(), initDebug(), window.top.$ajax ??= unsafeWindow.$ajax ??= initAjax()];
     for (let check of [checkIsHV, checkIsWindowTop, checkOption]) {
       if (!check()) return;
     }
@@ -70,6 +70,191 @@
     setTimeout(goto, 5 * _1m);
 
     // ----------Process Steps----------
+    function initRPN() {
+      const $RPN = {
+        operators: {
+          '>=': { precedence : 0, func: (a, b) => a >= b ? 1 : 0 },
+          '<=': { precedence : 0, func: (a, b) => a <= b ? 1 : 0 },
+          '==': { precedence : 0, func: (a, b) => a == b ? 1 : 0 },
+          '!=': { precedence : 0, func: (a, b) => a != b ? 1 : 0 },
+          '&&': { precedence : -1, func: (a, b) => a && b ? 1 : 0 },
+          '||': { precedence : -1, func: (a, b) => a || b ? 1 : 0 },
+          '**': { precedence:3, func: (a,b) => Math.pow(a, b)},
+          '!': { precedence : -1, func: (a) => a ? 0 : 1 },
+          '+': { precedence : 1, func: (a, b) => a + b },
+          '-': { precedence : 1, func: (a, b) => a - b },
+          '*': { precedence : 2, func: (a, b) => a * b },
+          '/': { precedence : 2, func: (a, b) => a / b },
+          '%': { precedence : 2, func: (a, b) => a % b },
+          '>': { precedence : 0, func: (a, b) => a > b ? 1 : 0 },
+          '<': { precedence : 0, func: (a, b) => a < b ? 1 : 0 },
+        },
+
+        multiCharOperators: ['>=', '<=', '==', '!=', '&&', '||', '**'],
+
+        isOperator(token) {
+          return token in $RPN.operators || $RPN.multiCharOperators.includes(token);
+        },
+
+        isMultiCharOperator(token) {
+          return $RPN.multiCharOperators.includes(token);
+        },
+
+        hasHigherPrecedence(op1, op2) {
+          return $RPN.operators[op1].precedence >= $RPN.operators[op2].precedence;
+        },
+
+        tokenize(expression) {
+          const tokens = [];
+          let i = 0;
+
+          while (i < expression.length) {
+            const ch = expression[i];
+
+            if (ch === ' ') {
+              i++;
+              continue;
+            }
+
+            if (ch === '(' || ch === ')') {
+              tokens.push(ch);
+              i++;
+              continue;
+            }
+
+            let isMultiChar = false;
+            for (const op of $RPN.multiCharOperators) {
+              if (expression.startsWith(op, i)) {
+                tokens.push(op);
+                i += op.length;
+                isMultiChar = true;
+                break;
+              }
+            }
+            if (isMultiChar) continue;
+
+            if ($RPN.isOperator(ch)) {
+              tokens.push(ch);
+              i++;
+              continue;
+            }
+
+            if (/[0-9]/.test(ch)) {
+              let num = '';
+              while (i < expression.length && /[0-9.]/.test(expression[i])) {
+                num += expression[i];
+                i++;
+              }
+              tokens.push(parseFloat(num));
+              continue;
+            }
+
+            if (/[a-zA-Z_]/.test(ch)) {
+              let varName = '';
+              while (i < expression.length && /[a-zA-Z0-9_]/.test(expression[i])) {
+                varName += expression[i];
+                i++;
+              }
+              tokens.push(varName);
+              continue;
+            }
+
+            throw new Error(`Unknown character: ${ch}`);
+          }
+
+          return tokens;
+        },
+
+        infixToPostfix(infixTokens) {
+          const output = [];
+          const stack = [];
+
+          for (const token of infixTokens) {
+            if (typeof token === 'number' || /[a-zA-Z_]/.test(token[0])) {
+              output.push(token);
+            }
+            else if (token === '(') {
+              stack.push(token);
+            }
+            else if (token === ')') {
+              while (stack.length && stack[stack.length - 1] !== '(') {
+                output.push(stack.pop());
+              }
+              stack.pop();
+            }
+            else if ($RPN.isOperator(token)) {
+              while (
+                stack.length &&
+                stack[stack.length - 1] !== '(' &&
+                $RPN.hasHigherPrecedence(stack[stack.length - 1], token)
+              ) {
+                output.push(stack.pop());
+              }
+              stack.push(token);
+            }
+          }
+
+          while (stack.length) {
+            output.push(stack.pop());
+          }
+
+          return output;
+        },
+
+        evaluatePostfix(postfixTokens, resolver) {
+          const stack = [];
+
+          for (const token of postfixTokens) {
+            if (typeof token === 'number') {
+              stack.push(token);
+            }
+            else if (typeof token === 'string' && /[a-zA-Z_]/.test(token[0])) {
+              const value = resolver ? resolver(token) : token;
+              stack.push(value);
+            }
+            else {
+              let a, b;
+              if (stack.length < 2) {
+                if (token === '-') {
+                  b = stack.pop();
+                  a = 0;
+                } else if (token === '!') {
+                  a = stack.pop();
+                  b = undefined;
+                } else {
+                  throw new Error('Wrong Expression.');
+                }
+              } else {
+                b = stack.pop();
+                a = stack.pop();
+              }
+
+              let result;
+              if (token in $RPN.operators) {
+                result = $RPN.operators[token].func(a, b);
+              } else {
+                throw new Error(`Unknow operator: ${token}`);
+              }
+              stack.push(result);
+            }
+          }
+
+          if (stack.length !== 1) {
+            throw new Error('Wrong Expression.');
+          }
+
+          return stack[0];
+        },
+
+        evaluate(expression, variableHandler = null) {
+          const tokens = $RPN.tokenize(expression);
+          const postfix = $RPN.infixToPostfix(tokens);
+          return $RPN.evaluatePostfix(postfix, variableHandler);
+        }
+      };
+      return $RPN;
+    }
+
     function initDebug() {
       const $debug = {
         Stack: class extends Error {
@@ -2274,6 +2459,13 @@
         '<option value="roundLeft">roundLeft</option>',
         '<option value="roundType">roundType</option>',
         '<option value="turn">turn</option>',
+        '<option value="_isRoundType_">isRoundType</option>',
+        '<option value="_ba">ba</option>',
+        '<option value="_gr">gr</option>',
+        '<option value="_iw">iw</option>',
+        '<option value="_ar">ar</option>',
+        '<option value="_rb">rb</option>',
+        '<option value="_tw">tw</option>',
         '<option value="">- - - -</option>',
         '<option value="attackStatus">attackStatus</option>',
         '<option value="fightingStyle">fightingStyle</option>',
@@ -2294,7 +2486,7 @@
         `<span class="hvAAInspect" title="off">${String.fromCharCode(0x21F1.toString(10))}</span>`,
         '<select name="groupChoose"></select>',
         `<select name="statusA">${statusOption}</select>`,
-        '<select name="compareAB"><option value="1">＞</option><option value="2">＜</option><option value="3">≥</option><option value="4">≤</option><option value="5">＝</option><option value="6">≠</option></select>',
+        '<select name="compareAB"><option value="&gt;">&gt;</option><option value="&lt;">&lt;</option><option value="&gt;=">≥(&gt;=)</option><option value="&lt;=">≤(&lt;=)</option><option value="=">＝</option><option value="!=">≠(!=,<>,~=)</option></select>',
         `<select name="statusB">${statusOption}</select>`,
         '<button class="groupAdd">ADD</button>',
       ].join(' ');
@@ -2348,7 +2540,7 @@
         input.type = 'text';
         input.className = 'customizeInput';
         input.name = `${target.getAttribute('name')}_${groupChoose - 1}`;
-        input.value = `${selects[1].value},${selects[2].value},${selects[3].value}`;
+        input.value = `${selects[1].value} ${selects[2].value} ${selects[3].value}`;
       };
 
       function attr(target) {
@@ -2518,8 +2710,6 @@
         if (str.match(/^_/)) {
           const arr = str.split('_');
           return func[arr[1]](...[...arr].splice(2));
-        } if (str.match(/^'.*?'$|^".*?"$/)) {
-          return str.substr(1, str.length - 2);
         } if (isNaN(str * 1)) {
           const paramList = str.split('.');
           let result;
@@ -2530,11 +2720,32 @@
             }
             result = result[key]
           }
-          return isNaN(result * 1) ? result : (result * 1);
+          return isNaN(result * 1) ? result ?? str : (result * 1);
         }
         return str * 1;
       };
       const func = {
+        ar() {
+          return g('battle').roundType === 'ar';
+        },
+        gr() {
+          return g('battle').roundType === 'gr';
+        },
+        tw() {
+          return g('battle').roundType === 'tw';
+        },
+        rb() {
+          return g('battle').roundType === 'rb';
+        },
+        iw() {
+          return g('battle').roundType === 'iw';
+        },
+        ba() {
+          return g('battle').roundType === 'ba';
+        },
+        isRoundType(t) {
+          return g('battle').roundType === t;
+        },
         isCd(id) { // is cool down done
           return isOn(id) ? 1 : 0;
         },
@@ -2568,38 +2779,50 @@
             if (!Array.isArray(parms[i])) {
               continue;
             }
-            k = parms[i][j].replace(' ', '').split(',');
-            const kk = k.toString();
-            k[0] = returnValue(k[0]);
-            k[2] = returnValue(k[2]);
-
-            if (k[0] === undefined || k[0] === null || (typeof k[0] !== "string" && isNaN(k[0]))) {
-              $debug.log(kk[0], k[0]);
-            }
-            if (k[2] === undefined || k[2] === null || (typeof k[2] !== "string" && isNaN(k[2]))) {
-              $debug.log(kk[2], k[2]);
-            }
-
-            switch (k[1]) {
-              case '1':
-                result = k[0] > k[2];
-                break;
-              case '2':
-                result = k[0] < k[2];
-                break;
-              case '3':
-                result = k[0] >= k[2];
-                break;
-              case '4':
-                result = k[0] <= k[2];
-                break;
-              case '5':
-                result = k[0] === k[2];
-                break;
-              case '6':
-                result = k[0] !== k[2];
-                break;
-            }
+            k = parms[i][j].replace(/,\s*(.*)\s*,/, (match, p1) => {
+              switch (p1) {
+                case '>':
+                case '1':
+                  return '>';
+                case '<':
+                case '2':
+                  return '<';
+                case '≥':
+                case '>=':
+                case '3':
+                  return '>=';
+                case '≤':
+                case '<=':
+                case '4':
+                  return '<=';
+                case '=':
+                case '==':
+                case '===':
+                case '5':
+                  return '==';
+                case '≠':
+                case '~=':
+                case '<>':
+                case '!=':
+                case '6':
+                  return '!=';
+              }
+            }).replace(/(?<![=!~><])=(?!=)|≥|≤|≠|~=|<>/g, (match) => {
+              switch (match) {
+                case '≥':
+                  return '>=';
+                case '≤':
+                  return '<=';
+                case '=':
+                case '===':
+                  return '==';
+                case '≠':
+                case '~=':
+                case '<>':
+                  return '!=';
+              }
+            }).replace(/'|"/g, '');
+            result = $RPN.evaluate(k, returnValue);
             if (!result) {
               parmResult = false;
               break;
