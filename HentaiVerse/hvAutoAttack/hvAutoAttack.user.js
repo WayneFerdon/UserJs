@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.113
+// @version      2.90.114
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2468,7 +2468,19 @@
         '<option value="_tw">tw</option>',
         '<option value="">- - - -</option>',
         '<option value="attackStatus">attackStatus</option>',
+        '<option value="_phys">phys</option>',
+        '<option value="_fire">fire</option>',
+        '<option value="_cold">cold</option>',
+        '<option value="_elec">elec</option>',
+        '<option value="_wind">wind</option>',
+        '<option value="_divi">divi</option>',
+        '<option value="_forb">forb</option>',
         '<option value="fightingStyle">fightingStyle</option>',
+        '<option value="_nt">nt</option>',
+        '<option value="_1h">1h</option>',
+        '<option value="_2h">2h</option>',
+        '<option value="_dw">dw</option>',
+        '<option value="_staff">staff</option>',
         '<option value="">- - - -</option>',
         '<option value="_isCd_">isCd</option>',
         '<option value="_spirit">spirit</option>',
@@ -2746,6 +2758,42 @@
         isRoundType(t) {
           return g('battle').roundType === t;
         },
+        phys() {
+          return g('attackStatus') === 0 ? 1 : 0;
+        },
+        fire() {
+          return g('attackStatus') * 1 === 10 ? 1 : 0;
+        },
+        cold() {
+          return g('attackStatus') * 1 === 20 ? 1 : 0;
+        },
+        elec() {
+          return g('attackStatus') * 1 === 30 ? 1 : 0;
+        },
+        wind() {
+          return g('attackStatus') * 1 === 40 ? 1 : 0;
+        },
+        divi() {
+          return g('attackStatus') * 1 === 50 ? 1 : 0;
+        },
+        forb() {
+          return g('attackStatus') * 1 === 60 ? 1 : 0;
+        },
+        nt() {
+          return g('fightingStyle') * 1 === 10 ? 1 : 0;
+        },
+        onehanded() {
+          return g('fightingStyle') * 1 === 20 ? 1 : 0;
+        },
+        twohanded() {
+          return g('fightingStyle') * 1 === 30 ? 1 : 0;
+        },
+        dw() {
+          return g('fightingStyle') * 1 === 40 ? 1 : 0;
+        },
+        staff() {
+          return g('fightingStyle') * 1 === 50 ? 1 : 0;
+        },
         isCd(id) { // is cool down done
           return isOn(id) ? 1 : 0;
         },
@@ -2821,7 +2869,7 @@
                 case '<>':
                   return '!=';
               }
-            }).replace(/'|"/g, '');
+            }).replace(/'|"/g, '').replace('_1h', '_onehanded').replace('_2h', '_twohanded');
             result = $RPN.evaluate(k, returnValue);
             if (!result) {
               parmResult = false;
