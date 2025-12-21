@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.115
+// @version      2.90.116
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2879,10 +2879,8 @@
               parmResult = false;
               break;
             }
-            console.log(k, result);
           }
           if (parmResult) {
-            console.log(parms[i], parmResult);
             return target;
           }
         }
@@ -3814,7 +3812,6 @@
       for (let i = 0; i < names.length; i++) {
         if (taskList[names[i]]()) {
           onStepInDone();
-          console.log(names[i]);
           return;
         }
         delete taskList[names[i]];
@@ -3822,7 +3819,6 @@
       for (let name in taskList) {
         if (taskList[name]()) {
           onStepInDone();
-          console.log(name);
           return;
         }
       }
@@ -4475,16 +4471,15 @@
         return false;
       }
       const name = splitOrders(option.itemOrderName, ['FC', 'HE', 'LE', 'HG', 'HP', 'Cure', 'MG', 'MP', 'ME', 'SG', 'SP', 'SE', 'Mystic', 'CC', 'ED']);
-      const order = splitOrders(option.itemOrderValue, [11199, 11501, 10005, 11195, 311, 10006, 11295, 11299, 10007, 11395, 11399, 10008, 11402, 11401]);
-      const cures = [11199, 11501, 10005, 11195, 311, 10006];
+      const order = splitOrders(option.itemOrderValue, [313, 11199, 11501, 10005, 11195, 311, 10006, 11295, 11299, 10007, 11395, 11399, 10008, 11402, 11401]);
+      const cures = [313, 11199, 11501, 10005, 11195, 311];
       for (let i = 0; i < name.length; i++) {
         let id = order[i];
-        if (isCureOnly && !(id in cures)){
+        if (isCureOnly && !cures.includes(id)){
           continue;
         }
         if (option.item[name[i]] && checkCondition(option[`item${name[i]}Condition`]) && isOn(id)) {
           (gE(`.bti3>div[onmouseover*="(${id})"]`) ?? gE(id)).click();
-        console.log('rec', name[i],option[`item${name[i]}Condition`], checkCondition(option[`item${name[i]}Condition`]));
           return true;
         }
       }
@@ -4757,7 +4752,6 @@
         const threshold = option.buffSkillThreshold ? option.buffSkillThreshold[buff] ?? 0 : 0;
         if (threshold >= 0 && current > threshold) continue;
         gE(skillLib[buff].id).click();
-        console.log(buff);
         return true;
       }
       const draughtPack = {
@@ -4785,7 +4779,6 @@
       for (i in draughtPack) {
         if (!getPlayerBuff(draughtPack[i].img) && option.buffSkill && option.buffSkill[i] && checkCondition(option[`buffSkill${i}Condition`]) && gE(`.bti3>div[onmouseover*="(${draughtPack[i].id})"]`)) {
           gE(`.bti3>div[onmouseover*="(${draughtPack[i].id})"]`).click();
-          console.log(draughtPack[i]);
           return true;
         }
       }
