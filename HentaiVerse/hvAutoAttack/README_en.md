@@ -49,6 +49,8 @@ Scripts get information through text, and if you have not yet modified the font,
 
 Each area with a red dotted border can be set to a customize condition.
 
+Customizable Formula is support now, such as `hp > mp` or `2 * ( hp + mp ) > sp`, supported operators: `+` `-` `*` `/` `%` `&&` `||` `!` `>` `<` `>=`(`≥`) `<=`(`≤`) `==`(`=`,`===`) `!=`(`≠`,`~=`,`<>`), logical operators returns 0 or 1 (as false or true)
+
 * If these areas are left blank (a condition is not set), then it's equivalent to true.
 
 When the mouse moves in these areas, a box is displayed in the upper right corner. (When the mouse out, the box disappears)
@@ -59,9 +61,11 @@ Four drop down lists and one button are visible in the box
 
 * Drop-down List 2/4: comparison value A / comparison value B
 
-* Drop-down List 3: only support comparison operator (`1`: >, `2`: <, `3`: ≥, `4`: ≤, `5`: =, `6`: ≠)
+* Drop-down List 3: operator
 
-* Button ADD: Generates an input box with a value of `A,Comparison-Operator,B`
+* Button ADD: Generates an input box with a value of `A Operator B` 
+
+* Legacy version condition such as `A,Comparison-Operator,B` is still supported, Comparison-Operator: (`1`: >, `2`: <, `3`: ≥, `4`: ≤, `5`: =, `6`: ≠)
 
 #### Comparison Value
 
@@ -69,29 +73,30 @@ Four drop down lists and one button are visible in the box
 2. `oc`: Overcharge, 0-250
 3. `monsterAll`/`monsterAlive`/`bossAll`/`bossAlive`: amount of all monster/boss (alive)
 4. `roundNow`/`roundAll`/`roundLeft`
-5. `roundType`: Battle Type (`ar`: The Arena, `rb`: Ring of Blood, `gr`: GrindFest, `iw`: Item World, `ba`: Random Encounter)
+5. `isRoundType`、`ar`、`ba`、`iw`、`tw`、`gr`、`rb`: is current round type as the target type, such as: both `_isRoundType_ar` and `_ar` returns `is currently in The Arena`
+6. `roundType`: Battle Type (`ar`: The Arena, `rb`: Ring of Blood, `gr`: GrindFest, `iw`: Item World, `ba`: Random Encounter, `tw`: The Tower)
 
-  (**Note**: Because comparison between strings, please add quotation, such as `"ar"`/`'ar'`)
+  (**Note**: Because comparison between strings, please add quotation while using legacy version condition `A,Comparison-Operator,B` , such as `"ar"`/`'ar'`)
 
-6. `attackStatus`: Attack Mode (`0`: Physical, `1`: Fire, `2`: Cold, `3`: Elec, `4`: Wind, `5`: Divine, `6`: Forbidden)
-7. `fightingStyle`: Fighting Style (`1`: Niten, `2`: 1H, `3`: 2H, `4`: DW, `5`: Staff)
-8. `isCd`: whether the skill/item is cooldowning, format: `_isCd_id`
+7. `attackStatus`: Attack Mode (`0`: Physical, `1`: Fire, `2`: Cold, `3`: Elec, `4`: Wind, `5`: Divine, `6`: Forbidden)
+8. `fightingStyle`: Fighting Style (`1`: Niten, `2`: 1H, `3`: 2H, `4`: DW, `5`: Staff)
+9. `isCd`: whether the skill/item is cooldowning, format: `_isCd_id`
 
   **example 1**: the id of Protection is 411 , `_isCd_411,5,0` means Protection can't be casted or `_isCd_411,5,1` means Protection can be casted
 
   **example 2**: the id of ManaElixir is 11295, `_isCd_11295,5,0` means ManaElixir can't be used or `_isCd_11295,5,1` means ManaElixir can be used
 
-9. `buffTurn`: time the buff last in person, format`_buffTurn_img`
+10. `buffTurn`: time the buff last in person, format`_buffTurn_img`
 
   **example**: the image of Protection is protection, `_buffTurn_protection,5,0` means you don't have the buff of Protection or `_buffTurn_protection,3,10` means the buff of Protection on you last at least 10 turns
 
-10. `targetHp`、`targetMp`、`targetSp`、`targetBuffTurn`: HP%、SP%、MP%、buffRemainTime of target monster,  suffix of `_targetBuffTurn_` is same as 8.`buffTurn`（such as：`_targetBuffTurn_bleed,6,0` means remain turns of bleed buff on target monster is not equal to 0. Target that is calculating is chosen by following rules:
+11. `targetHp`、`targetMp`、`targetSp`、`targetBuffTurn`: HP%、SP%、MP%、buffRemainTime of target monster,  suffix of `_targetBuffTurn_` is same as 8.`buffTurn`（such as：`_targetBuffTurn_bleed,6,0` means remain turns of bleed buff on target monster is not equal to 0. Target that is calculating is chosen by following rules:
     1. The highest priority monster by rank in default situations.
     2. Weapon skills (OFC, T1~T3, etc.), Offensive Spell skills (Tire2, Tire3): by each condition > for each ranked target > find the target fit all sub-condition in the condition and cast to it. Such as the pic below: condition for Merciful Blow: only cast to targets which with hp below 25% and a bleed buff.
     
     ![example](https://github.com/user-attachments/assets/da181eac-e634-41ad-97a7-ff59a7b28b6d)
 
-11. blank: the value you want to put in
+12. blank: the value you want to put in
 
 #### Example
 
@@ -203,6 +208,7 @@ In this example, the script will attack enemy 1 next.
 
 * Old
 1. see [README_Chinese#更新历史](https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README.md#更新历史)
+
 
 
 
