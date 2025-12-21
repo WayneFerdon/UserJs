@@ -78,19 +78,19 @@ Four drop down lists and one button are visible in the box
 
   (**Note**: Because comparison between strings, please add quotation while using legacy version condition `A,Comparison-Operator,B` , such as `"ar"`/`'ar'`)
 
-7. `attackStatus`: Attack Mode (`0`: Physical, `1`: Fire, `2`: Cold, `3`: Elec, `4`: Wind, `5`: Divine, `6`: Forbidden)
-8. `fightingStyle`: Fighting Style (`1`: Niten, `2`: 1H, `3`: 2H, `4`: DW, `5`: Staff)
+7. `attackStatus`: Attack Mode (`0`: Physical, `1`: Fire, `2`: Cold, `3`: Elec, `4`: Wind, `5`: Divine, `6`: Forbidden). Or use `_phys`, `_fire`, `_cold`, `_elec`, `_wind`, `_divi`, `_forb` as `if current attack mode is ...`, such as `_phys` equals `attackStatus == 0`
+8. `fightingStyle`: Fighting Style (`1`: Niten, `2`: 1H, `3`: 2H, `4`: DW, `5`: Staff). Or use `_nt`, `_1h`, `_2h`, `_dw`, `_staff` as `if current fighting style is ...`, such as `_nt` equals `fightStyle == 1`
 9. `isCd`: whether the skill/item is cooldowning, format: `_isCd_id`
 
-  **example 1**: the id of Protection is 411 , `_isCd_411,5,0` means Protection can't be casted or `_isCd_411,5,1` means Protection can be casted
+  **example 1**: the id of Protection is 411 , `!_isCd_411` means Protection can't be casted or `_isCd_411` means Protection can be casted
 
-  **example 2**: the id of ManaElixir is 11295, `_isCd_11295,5,0` means ManaElixir can't be used or `_isCd_11295,5,1` means ManaElixir can be used
+  **example 2**: the id of ManaElixir is 11295, `!_isCd_11295` means ManaElixir can't be used or `_isCd_11295` means ManaElixir can be used
 
 10. `buffTurn`: time the buff last in person, format`_buffTurn_img`
 
-  **example**: the image of Protection is protection, `_buffTurn_protection,5,0` means you don't have the buff of Protection or `_buffTurn_protection,3,10` means the buff of Protection on you last at least 10 turns
+  **example**: the image of Protection is protection, `_buffTurn_protection == 0` means you don't have the buff of Protection or `_buffTurn_protection >= 10` means the buff of Protection on you last at least 10 turns
 
-11. `targetHp`、`targetMp`、`targetSp`、`targetBuffTurn`: HP%、SP%、MP%、buffRemainTime of target monster,  suffix of `_targetBuffTurn_` is same as 8.`buffTurn`（such as：`_targetBuffTurn_bleed,6,0` means remain turns of bleed buff on target monster is not equal to 0. Target that is calculating is chosen by following rules:
+11. `targetHp`、`targetMp`、`targetSp`、`targetBuffTurn`: HP%、SP%、MP%、buffRemainTime of target monster,  suffix of `_targetBuffTurn_` is same as 8.`buffTurn`（such as：`_targetBuffTurn_bleed != 0` means remain turns of bleed buff on target monster is not equal to 0. Target that is calculating is chosen by following rules:
     1. The highest priority monster by rank in default situations.
     2. Weapon skills (OFC, T1~T3, etc.), Offensive Spell skills (Tire2, Tire3): by each condition > for each ranked target > find the target fit all sub-condition in the condition and cast to it. Such as the pic below: condition for Merciful Blow: only cast to targets which with hp below 25% and a bleed buff.
     
@@ -208,6 +208,7 @@ In this example, the script will attack enemy 1 next.
 
 * Old
 1. see [README_Chinese#更新历史](https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README.md#更新历史)
+
 
 
 
