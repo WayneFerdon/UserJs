@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.119
+// @version      2.90.120
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1341,11 +1341,11 @@
         '    <div><l0>延迟</l0><l1>延遲</l1><l2>Delay</l2>: 1. <l0>Buff/Debuff/其他技能</l0><l1>Buff/Debuff/其他技能</l1><l2>Skills&BUFF/DEBUFF Spells</l2>: <input class="hvAANumber" name="delay" placeholder="200" type="text">ms 2. <l01>其他</l01><l2>Other</l2>: <input class="hvAANumber" name="delay2" placeholder="30" type="text">ms (',
         '      <l0>说明: 单位毫秒，且在设定值基础上取其的50%-150%进行延迟，0表示不延迟</l0><l1>說明: 單位毫秒，且在設定值基礎上取其的50%-150%進行延遲，0表示不延遲</l1><l2>Note: unit milliseconds, and based on the set value multiply 50% -150% to delay, 0 means no delay</l2>)</div>',
         '  </div>',
-        '  <div id="attackStatus" style="color:red;"><b>*<l0>攻击模式</l0><l1>攻擊模式</l1><l2>Attack Mode</l2></b>:',
-        '    <select class="hvAANumber" name="attackStatus"><option value="-1"></option><option value="0">物理 / Physical</option><option value="1">火 / Fire</option><option value="2">冰 / Cold</option><option value="3">雷 / Elec</option><option value="4">风 / Wind</option><option value="5">圣 / Divine</option><option value="6">暗 / Forbidden</option></select></div>',
+        '  <div id="attackStatus" style="color:red;"><b>*<l0>默认攻击模式</l0><l1>默認攻擊模式</l1><l2>Default Attack Mode</l2></b>:',
+        '    <select class="hvAANumber" name="attackStatus"><option value="-1"></option><option value="0">物理 / Physical</option><option value="1">火 / Fire</option><option value="2">冰 / Cold</option><option value="3">雷 / Elec</option><option value="4">风 / 風 / Wind</option><option value="5">圣 / 聖 / Divine</option><option value="6">暗 / Forbidden</option></select></div>',
 
         '  <div><b><l0>战斗执行顺序(未配置的按照下面的顺序)</l0><l1>戰鬥執行順序(未配置的按照下面的順序)</l1><l2>Battal Order(Using order below as default if not configed)</l2></b>: <input id="battleOrderDefaultOnly" type="checkbox"><label for="battleOrderDefaultOnly">(<l0>只使用默认顺序</l0><l1>只使用默認順序</l1><l2>Default order only</l2>)</label>',
-        '    <div class="battleOrder"><input name="battleOrderName" style="width:80%;" type="text" disabled="true"><input name="battleOrderValue" style="width:80%;" type="hidden" disabled="true"><br>',
+        '    <div class="battleOrder"><input name="battleOrderName" style="width:80%;" type="text" disabled="true"><br>',
         '      <div class="hvAATable" style="display:grid; grid-template-columns:repeat(4, 1fr);">',
         '        <div><input id="battleOrder_autoPause" value="Pause" type="checkbox"><label for="battleOrder_autoPause"><l0>自动暂停</l0><l1>自動暫停</l1><l2>Auto Pause</l2></label></div>',
         '        <div><input id="battleOrder_autoCure" value="Cure" type="checkbox"><label for="battleOrder_autoCure"><l0>使用治疗</l0><l1>使用治療</l1><l2>Cure</l2></label></div>',
@@ -1363,7 +1363,27 @@
         '       <div><input id="battleOrder_autoSkill" value="Skill" type="checkbox"><label for="battleOrder_autoSkill"><l0>释放技能</l0><l1>釋放技能</l1><l2>Auto Skill</l2></label></div>',
         '       <div><input id="battleOrder_attack" value="Atk" type="checkbox"><label for="battleOrder_attack"><l0>自动攻击</l0><l1>自動攻擊</l1><l2>Attack</l2></label></div>',
         '    </div></div></div>',
-        '    <div><input id="infusionSwitch" type="checkbox"><b><l0>使用魔药(与攻击模式相同)</l0><l1>使用魔藥(與攻擊模式相同)</l1><l2>Use Infusion(same as attack mode)</l2></b>{{infusionCondition}}</div>',
+        '    <div><input id="infusionSwitch" type="checkbox"><b><l0>使用魔药(与默认攻击模式相同)</l0><l1>使用魔藥(與默認攻擊模式相同)</l1><l2>Use Infusion(same as default attack mode)</l2></b>{{infusionCondition}}</div>',
+
+        '  <div><b><l0>次要攻击模式顺序(未配置的按照下面的顺序)</l0><l1>次要攻擊模式順序(未配置的按照下面的順序)</l1><l2>Attack Mode Order(Using order below as default if not configed)</l2></b>:',
+        '    <div class="attackStatusOrder"><input name="attackStatusOrderName" style="width:80%;" type="text" disabled="true"><input name="attackStatusOrderValue" style="width:80%;" type="hidden" disabled="true"><br>',
+        '      <div class="hvAATable" style="display:grid; grid-template-columns:repeat(7, 1fr);">',
+        '        <div><input id="attackStatusOrder_0" value="Phys,0" type="checkbox"><label for="attackStatusOrder_0"><l0>物理</l0><l1>物理</l1><l2>Physical</l2></label></div>',
+        '        <div><input id="attackStatusOrder_1" value="Fire,1" type="checkbox"><label for="attackStatusOrder_1"><l0>火</l0><l1>火</l1><l2>Fire</l2></label></div>',
+        '        <div><input id="attackStatusOrder_2" value="Cold,2" type="checkbox"><label for="attackStatusOrder_2"><l0>冰</l0><l1>冰</l1><l2>Cold</l2></label></div>',
+        '        <div><input id="attackStatusOrder_3" value="Elec,3" type="checkbox"><label for="attackStatusOrder_3"><l0>雷</l0><l1>雷</l1><l2>Elec</l2></label></div>',
+        '        <div><input id="attackStatusOrder_4" value="Wind,4" type="checkbox"><label for="attackStatusOrder_4"><l0>风</l0><l1>風</l1><l2>Wind</l2></label></div>',
+        '        <div><input id="attackStatusOrder_5" value="Divi,5" type="checkbox"><label for="attackStatusOrder_5"><l0>圣</l0><l1>聖</l1><l2>Divine</l2></label></div>',
+        '        <div><input id="attackStatusOrder_6" value="Forb,6" type="checkbox"><label for="attackStatusOrder_6"><l0>暗</l0><l1>暗</l1><l2>Forbidden</l2></label></div>',
+        '    </div></div></div>',
+
+        '    <div><input id="attackStatusSwitch_0" type="checkbox"><label for="attackStatusSwitch_0"><b><l0>攻击模式 物理</l0><l1>攻擊模式 物理</l1><l2>Attack Mode: Physical</l2></b>: {{attackStatusSwitchCondition_0}}</label></div>',
+        '    <div><input id="attackStatusSwitch_1" type="checkbox"><label for="attackStatusSwitch_1"><b><l0>攻击模式 火</l0><l1>攻擊模式 火</l1><l2>Attack Mode: Fire</l2></b>: {{attackStatusSwitchCondition_1}}</label></div>',
+        '    <div><input id="attackStatusSwitch_2" type="checkbox"><label for="attackStatusSwitch_2"><b><l0>攻击模式 冰</l0><l1>攻擊模式 冰</l1><l2>Attack Mode: Cold</l2></b>: {{attackStatusSwitchCondition_2}}</label></div>',
+        '    <div><input id="attackStatusSwitch_3" type="checkbox"><label for="attackStatusSwitch_3"><b><l0>攻击模式 雷</l0><l1>攻擊模式 雷</l1><l2>Attack Mode: Elec</l2></b>: {{attackStatusSwitchCondition_3}}</label></div>',
+        '    <div><input id="attackStatusSwitch_4" type="checkbox"><label for="attackStatusSwitch_4"><b><l0>攻击模式 风</l0><l1>攻擊模式 風</l1><l2>Attack Mode: Wind</l2></b>: {{attackStatusSwitchCondition_4}}</label></div>',
+        '    <div><input id="attackStatusSwitch_5" type="checkbox"><label for="attackStatusSwitch_5"><b><l0>攻击模式 圣</l0><l1>攻擊模式 聖</l1><l2>Attack Mode: Divine</l2></b>: {{attackStatusSwitchCondition_5}}</label></div>',
+        '    <div><input id="attackStatusSwitch_6" type="checkbox"><label for="attackStatusSwitch_6"><b><l0>攻击模式 暗</l0><l1>攻擊模式 暗</l1><l2>Attack Mode: Forbidden</l2></b>: {{attackStatusSwitchCondition_6}}</label></div>',
         '    <div><label for="lowSkillCondition"><b><l0>低阶魔法技能使用条件</l0><l1>低階魔法技能使用條件</l1><l2>Conditions for 1st Tier Offensive Magic</l2></b>: {{lowSkillCondition}}</label></div>',
         '    <div><label for="middleSkillCondition"><b><l0>中阶魔法技能使用条件</l0><l1>中階魔法技能使用條件</l1><l2>Conditions for 2nd Tier Offensive Magic</l2></b>: {{middleSkillCondition}}</label></div>',
         '    <div><label for="highSkillCondition"><b><l0>高阶魔法技能使用条件</l0><l1>高階魔法技能使用條件</l1><l2>Conditions for 3rd Tier Offensive Magic</l2></b>: {{highSkillCondition}}</label></div>',
@@ -2076,6 +2096,24 @@
         }
         gE('input[name="idleArenaLevels"]').value = levels;
         gE('input[name="idleArenaValue"]').value = value;
+      };
+
+      gE('.attackStatusOrder', optionBox).onclick = function (e) {
+        if (e.target.tagName !== 'INPUT' && e.target.type !== 'checkbox') {
+          return;
+        }
+        const valueArray = e.target.value.split(',');
+        let levels = gE('input[name="attackStatusOrderName"]').value;
+        let { value } = gE('input[name="attackStatusOrderValue"]');
+        if (e.target.checked) {
+          levels = levels + ((levels) ? `,${valueArray[0]}` : valueArray[0]);
+          value = value + ((value) ? `,${valueArray[1]}` : valueArray[1]);
+        } else {
+          levels = levels.replace(new RegExp(`(^|,)${valueArray[0]}(,|$)`), '$2').replace(/^,/, '');
+          value = value.replace(new RegExp(`(^|,)${valueArray[1]}(,|$)`), '$2').replace(/^,/, '');
+        }
+        gE('input[name="attackStatusOrderName"]').value = levels;
+        gE('input[name="attackStatusOrderValue"]').value = value;
       };
 
       gE('.battleOrder', optionBox).onclick = function (e) {
@@ -5105,14 +5143,25 @@
     }
 
     function attack() { // 自动打怪
-      // 如果
-      // 1. 开启了自动以太水龙头
-      // 2. 目标怪在魔力合流状态中
-      // 3. 未获得以太水龙头*2 或 *1
-      // 4. 满足条件
-      // 使用物理普通攻击，跳过Offensive Magic
-      // 否则按照属性攻击模式释放Spell > Offensive Magic
+      let range = g('fightingStyle') === '1' ? 3 : 1;
+      const option = g('option');
+      const monsters = g('battle').monsterStatus;
 
+      let attackStatusOrder = option.attackStatusOrderValue?.split(',').map(x=>x*1) ?? [];
+      attackStatusOrder = attackStatusOrder.concat([0,1,2,3,4,5,6].filter(x=> !(attackStatusOrder.includes(x))));
+      if (option.attackStatusSwitch) {
+        const conditions = option.attackStatusSwitchCondition ?? {};
+        for (const status of attackStatusOrder) {
+          if (!option.attackStatusSwitch[status]) continue;
+          if (!checkCondition(conditions[status], monsters)) continue;
+          if (!onAttack(range, status)) continue;
+          break;
+        }
+      }
+      onAttack(range, g('attackStatus'));
+    }
+
+    function onAttack(range, attackStatus) {
       const updateAbility = {
         4301: { //火
           111: [3, 4, 4, 5, 5, 5, 5, 5],
@@ -5143,10 +5192,16 @@
         4502: { 152: [5, 6, 7] },
         4503: { 153: [7, 8, 9, 10] },
       }
-      let range = g('fightingStyle') === '1' ? 3 : 1;
-      // Spell > Offensive Magic
+
+      // 如果
+      // 1. 开启了自动以太水龙头
+      // 2. 目标怪在魔力合流状态中
+      // 3. 未获得以太水龙头*2 或 *1
+      // 4. 满足条件
+      // 使用物理普通攻击，跳过Offensive Magic
+      // 否则按照属性攻击模式释放Spell > Offensive Magic
+
       const option = g('option');
-      const attackStatus = g('attackStatus');
       const monsters = g('battle').monsterStatus;
       let target = monsters[0];
       const tryAttack = () => {
