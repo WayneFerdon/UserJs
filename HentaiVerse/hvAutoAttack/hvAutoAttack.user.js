@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.118
+// @version      2.90.119
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1364,6 +1364,7 @@
         '       <div><input id="battleOrder_attack" value="Atk" type="checkbox"><label for="battleOrder_attack"><l0>自动攻击</l0><l1>自動攻擊</l1><l2>Attack</l2></label></div>',
         '    </div></div></div>',
         '    <div><input id="infusionSwitch" type="checkbox"><b><l0>使用魔药(与攻击模式相同)</l0><l1>使用魔藥(與攻擊模式相同)</l1><l2>Use Infusion(same as attack mode)</l2></b>{{infusionCondition}}</div>',
+        '    <div><label for="lowSkillCondition"><b><l0>低阶魔法技能使用条件</l0><l1>低階魔法技能使用條件</l1><l2>Conditions for 1st Tier Offensive Magic</l2></b>: {{lowSkillCondition}}</label></div>',
         '    <div><label for="middleSkillCondition"><b><l0>中阶魔法技能使用条件</l0><l1>中階魔法技能使用條件</l1><l2>Conditions for 2nd Tier Offensive Magic</l2></b>: {{middleSkillCondition}}</label></div>',
         '    <div><label for="highSkillCondition"><b><l0>高阶魔法技能使用条件</l0><l1>高階魔法技能使用條件</l1><l2>Conditions for 3rd Tier Offensive Magic</l2></b>: {{highSkillCondition}}</label></div>',
         '    <div><input id="etherTap" type="checkbox"><label for="etherTap"><b><l0>以太水龙头</l0><l1>以太水龍頭</l1><l2>Ether Tap</l2></b></label>: {{etherTapCondition}}</div>',
@@ -5142,45 +5143,57 @@
         4502: { 152: [5, 6, 7] },
         4503: { 153: [7, 8, 9, 10] },
       }
-      let range = 1;
+      let range = g('fightingStyle') === '1' ? 3 : 1;
       // Spell > Offensive Magic
+      const option = g('option');
       const attackStatus = g('attackStatus');
-      let target = g('battle').monsterStatus[0];
-      if (attackStatus === 0) {
-        if (g('fightingStyle') === '1') { // 二天一流
-          range = 3;
+      const monsters = g('battle').monsterStatus;
+      let target = monsters[0];
+      const tryAttack = () => {
+        if (!target || target.isDead) {
+          return false;
         }
-      } else {
-        if (g('option').etherTap && getMonsterBuff(getMonsterID(target), 'coalescemana') && (!gE('#pane_effects>img[onmouseover*="Ether Tap (x2)"]') || getPlayerBuff(`wpn_et"][id*="effect_expire`)) && checkCondition(g('option').etherTapCondition)) {
-          `pass`
-        } else {
-          const skill = 1 * (() => {
-            let lv = 3;
-            for (let condition of [g('option').highSkillCondition, g('option').middleSkillCondition, undefined]) {
-              let id = `1${attackStatus}${lv--}`;
-              target = checkCondition(condition, g('battle').monsterStatus);
-              if (target && isOn(id)) {
-                return id;
-              }
-            }
-          })();
-          gE(skill)?.click();
-          for (let ab in updateAbility) {
-            const ranges = updateAbility[ab][skill];
-            if (!ranges) {
-              continue;
-            }
-            const ability = getValue('ability', true);
-            range = ranges[ability ? ability[ab] ?? 0 : 0];
-            break;
+        clickMonster(getRangeCenter(target, range, !attackStatus).id);
+        return true;
+      };
+      // 1. physical
+      if (attackStatus === 0) {
+        return tryAttack();
+      }
+
+      // 2. etherTap
+      if (option.etherTap && getMonsterBuff(getMonsterID(target), 'coalescemana')
+          && (!gE('#pane_effects>img[onmouseover*="Ether Tap (x2)"]') || getPlayerBuff(`wpn_et"][id*="effect_expire`))
+          && checkCondition(option.etherTapCondition)) {
+        return tryAttack();
+      }
+      // 2.5 try check skill condition
+      const skill = 1 * (() => {
+        let lv = 3;
+        for (let condition of [option.highSkillCondition, option.middleSkillCondition, option.lowSkillCondition]) {
+          let id = `1${attackStatus}${lv--}`;
+          target = checkCondition(condition, monsters);
+          if (target && isOn(id)) {
+            return id;
           }
         }
+      })();
+      // 3. no skill available
+      if (!skill) {
+        return tryAttack();
       }
-      if (!target || target.isDead) {
-        return false;
+      // 4. cast skill
+      for (let ab in updateAbility) {
+        const ranges = updateAbility[ab][skill];
+        if (!ranges) {
+          continue;
+        }
+        const ability = getValue('ability', true);
+        range = ranges[ability ? ability[ab] ?? 0 : 0];
+        break;
       }
-      clickMonster(getRangeCenter(target, range, !attackStatus).id);
-      return true;
+      gE(skill)?.click();
+      return tryAttack();
     }
 
     function getHPFromMonsterDB(mdb, name, lv) {
