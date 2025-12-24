@@ -5155,10 +5155,10 @@
           if (!option.attackStatusSwitch[status]) continue;
           if (!checkCondition(conditions[status], monsters)) continue;
           if (!onAttack(range, status)) continue;
-          break;
+          return true;
         }
       }
-      onAttack(range, g('attackStatus'));
+      return onAttack(range, g('attackStatus'));
     }
 
     function onAttack(range, attackStatus) {
