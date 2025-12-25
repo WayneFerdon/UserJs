@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.120
+// @version      2.90.121
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1377,13 +1377,13 @@
         '        <div><input id="attackStatusOrder_6" value="Forb,6" type="checkbox"><label for="attackStatusOrder_6"><l0>暗</l0><l1>暗</l1><l2>Forbidden</l2></label></div>',
         '    </div></div></div>',
 
-        '    <div><input id="attackStatusSwitch_0" type="checkbox"><label for="attackStatusSwitch_0"><b><l0>攻击模式 物理</l0><l1>攻擊模式 物理</l1><l2>Attack Mode: Physical</l2></b>: {{attackStatusSwitchCondition_0}}</label></div>',
-        '    <div><input id="attackStatusSwitch_1" type="checkbox"><label for="attackStatusSwitch_1"><b><l0>攻击模式 火</l0><l1>攻擊模式 火</l1><l2>Attack Mode: Fire</l2></b>: {{attackStatusSwitchCondition_1}}</label></div>',
-        '    <div><input id="attackStatusSwitch_2" type="checkbox"><label for="attackStatusSwitch_2"><b><l0>攻击模式 冰</l0><l1>攻擊模式 冰</l1><l2>Attack Mode: Cold</l2></b>: {{attackStatusSwitchCondition_2}}</label></div>',
-        '    <div><input id="attackStatusSwitch_3" type="checkbox"><label for="attackStatusSwitch_3"><b><l0>攻击模式 雷</l0><l1>攻擊模式 雷</l1><l2>Attack Mode: Elec</l2></b>: {{attackStatusSwitchCondition_3}}</label></div>',
-        '    <div><input id="attackStatusSwitch_4" type="checkbox"><label for="attackStatusSwitch_4"><b><l0>攻击模式 风</l0><l1>攻擊模式 風</l1><l2>Attack Mode: Wind</l2></b>: {{attackStatusSwitchCondition_4}}</label></div>',
-        '    <div><input id="attackStatusSwitch_5" type="checkbox"><label for="attackStatusSwitch_5"><b><l0>攻击模式 圣</l0><l1>攻擊模式 聖</l1><l2>Attack Mode: Divine</l2></b>: {{attackStatusSwitchCondition_5}}</label></div>',
-        '    <div><input id="attackStatusSwitch_6" type="checkbox"><label for="attackStatusSwitch_6"><b><l0>攻击模式 暗</l0><l1>攻擊模式 暗</l1><l2>Attack Mode: Forbidden</l2></b>: {{attackStatusSwitchCondition_6}}</label></div>',
+        '    <div><input id="attackStatusSwitch_0" type="checkbox"><label for="attackStatusSwitch_0"><b><l0>攻击模式 物理</l0><l1>攻擊模式 物理</l1><l2>Attack Mode: Physical</l2></b>: {{attackStatusSwitchCondition0}}</label></div>',
+        '    <div><input id="attackStatusSwitch_1" type="checkbox"><label for="attackStatusSwitch_1"><b><l0>攻击模式 火</l0><l1>攻擊模式 火</l1><l2>Attack Mode: Fire</l2></b>: {{attackStatusSwitchCondition1}}</label></div>',
+        '    <div><input id="attackStatusSwitch_2" type="checkbox"><label for="attackStatusSwitch_2"><b><l0>攻击模式 冰</l0><l1>攻擊模式 冰</l1><l2>Attack Mode: Cold</l2></b>: {{attackStatusSwitchCondition2}}</label></div>',
+        '    <div><input id="attackStatusSwitch_3" type="checkbox"><label for="attackStatusSwitch_3"><b><l0>攻击模式 雷</l0><l1>攻擊模式 雷</l1><l2>Attack Mode: Elec</l2></b>: {{attackStatusSwitchCondition3}}</label></div>',
+        '    <div><input id="attackStatusSwitch_4" type="checkbox"><label for="attackStatusSwitch_4"><b><l0>攻击模式 风</l0><l1>攻擊模式 風</l1><l2>Attack Mode: Wind</l2></b>: {{attackStatusSwitchCondition4}}</label></div>',
+        '    <div><input id="attackStatusSwitch_5" type="checkbox"><label for="attackStatusSwitch_5"><b><l0>攻击模式 圣</l0><l1>攻擊模式 聖</l1><l2>Attack Mode: Divine</l2></b>: {{attackStatusSwitchCondition5}}</label></div>',
+        '    <div><input id="attackStatusSwitch_6" type="checkbox"><label for="attackStatusSwitch_6"><b><l0>攻击模式 暗</l0><l1>攻擊模式 暗</l1><l2>Attack Mode: Forbidden</l2></b>: {{attackStatusSwitchCondition6}}</label></div>',
         '    <div><label for="lowSkillCondition"><b><l0>低阶魔法技能使用条件</l0><l1>低階魔法技能使用條件</l1><l2>Conditions for 1st Tier Offensive Magic</l2></b>: {{lowSkillCondition}}</label></div>',
         '    <div><label for="middleSkillCondition"><b><l0>中阶魔法技能使用条件</l0><l1>中階魔法技能使用條件</l1><l2>Conditions for 2nd Tier Offensive Magic</l2></b>: {{middleSkillCondition}}</label></div>',
         '    <div><label for="highSkillCondition"><b><l0>高阶魔法技能使用条件</l0><l1>高階魔法技能使用條件</l1><l2>Conditions for 3rd Tier Offensive Magic</l2></b>: {{highSkillCondition}}</label></div>',
@@ -5150,10 +5150,10 @@
       let attackStatusOrder = option.attackStatusOrderValue?.split(',').map(x=>x*1) ?? [];
       attackStatusOrder = attackStatusOrder.concat([0,1,2,3,4,5,6].filter(x=> !(attackStatusOrder.includes(x))));
       if (option.attackStatusSwitch) {
-        const conditions = option.attackStatusSwitchCondition ?? {};
         for (const status of attackStatusOrder) {
+          const condition = option[`attackStatusSwitchCondition${status}`] ?? {};
           if (!option.attackStatusSwitch[status]) continue;
-          if (!checkCondition(conditions[status], monsters)) continue;
+          if (!checkCondition(condition, monsters)) continue;
           if (!onAttack(range, status)) continue;
           return true;
         }
