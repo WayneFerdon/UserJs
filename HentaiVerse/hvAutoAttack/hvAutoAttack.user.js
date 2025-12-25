@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.121
+// @version      2.90.122
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -149,9 +149,9 @@
               continue;
             }
 
-            if (/[a-zA-Z_]/.test(ch)) {
+            if (/[a-zA-Z_.]/.test(ch)) {
               let varName = '';
-              while (i < expression.length && /[a-zA-Z0-9_]/.test(expression[i])) {
+              while (i < expression.length && /[a-zA-Z0-9_.]/.test(expression[i])) {
                 varName += expression[i];
                 i++;
               }
@@ -159,7 +159,7 @@
               continue;
             }
 
-            throw new Error(`Unknown character: ${ch}`);
+            throw new Error(`Unknown character: ${ch} from ${expression}`);
           }
 
           return tokens;
@@ -208,7 +208,7 @@
             if (typeof token === 'number') {
               stack.push(token);
             }
-            else if (typeof token === 'string' && /[a-zA-Z_]/.test(token[0])) {
+            else if (typeof token === 'string' && /[a-zA-Z_.]/.test(token[0])) {
               const value = resolver ? resolver(token) : token;
               stack.push(value);
             }
@@ -2756,7 +2756,6 @@
 
     function checkCondition(parms, targets = undefined) {
       let i, j, k, target;
-
       targets ??= [g('battle').monsterStatus[0]];
       if (typeof parms === 'undefined') {
         return targets[0];
@@ -2775,6 +2774,7 @@
             }
             result = result[key]
           }
+          result ??= 0;
           return isNaN(result * 1) ? result ?? str : (result * 1);
         }
         return str * 1;
@@ -4170,6 +4170,16 @@
 
     function newRound(isNew) { // New Round
       let battle = isNew ? {} : getValue('battle', true);
+      if (isNew) {
+        console.log('isNew')
+        setValue('skillOTOS', {
+          OFC: 0,
+          FRD: 0,
+          T3: 0,
+          T2: 0,
+          T1: 0,
+        });
+      }
       if (!battle) {
         battle = JSON.parse(JSON.stringify(g('battle') ?? {}));
         battle.monsterStatus?.sort(objArrSort('order'));
@@ -4297,14 +4307,6 @@
       }
       battle.roundLeft = battle.roundAll - battle.roundNow;
       setValue('battle', battle);
-
-      g('skillOTOS', {
-        OFC: 0,
-        FRD: 0,
-        T3: 0,
-        T2: 0,
-        T1: 0,
-      });
     }
 
     function killBug() { // 在 HentaiVerse 发生导致 turn 损失的 bug 时发出警告并移除问题元素: https://ehwiki.org/wiki/HentaiVerse_Bugs_%26_Errors#Combat
@@ -4954,10 +4956,12 @@
         if (g('oc') < (id in skillOC ? skillOC[id] : 2)) {
           continue;
         }
-        if (option.skillOTOS && option.skillOTOS[skill] && g('skillOTOS')[skill] >= 1) {
+        const skillOTOS = getValue('skillOTOS', true);
+        if (option.skillOTOS && option.skillOTOS[skill] && skillOTOS[skill] >= 1) {
           continue;
         }
-        g('skillOTOS')[skill]++;
+        skillOTOS[skill]++;
+        setValue('skillOTOS', skillOTOS);
         let target = checkCondition(option[`skill${skill}Condition`], g('battle').monsterStatus);
         if (!target) {
           continue;
@@ -5146,7 +5150,6 @@
       let range = g('fightingStyle') === '1' ? 3 : 1;
       const option = g('option');
       const monsters = g('battle').monsterStatus;
-
       let attackStatusOrder = option.attackStatusOrderValue?.split(',').map(x=>x*1) ?? [];
       attackStatusOrder = attackStatusOrder.concat([0,1,2,3,4,5,6].filter(x=> !(attackStatusOrder.includes(x))));
       if (option.attackStatusSwitch) {
@@ -5248,7 +5251,14 @@
         break;
       }
       gE(skill)?.click();
-      return tryAttack();
+      if (tryAttack()) {
+        const skillOTOS = getValue('skillOTOS', true);
+        skillOTOS[skill] ??= 0;
+        skillOTOS[skill]++;
+        setValue('skillOTOS', skillOTOS);
+        return true;
+      }
+      return false;
     }
 
     function getHPFromMonsterDB(mdb, name, lv) {
