@@ -75,8 +75,8 @@
         operators: {
           '>=': { precedence : 0, func: (a, b) => a >= b ? 1 : 0 },
           '<=': { precedence : 0, func: (a, b) => a <= b ? 1 : 0 },
-          '==': { precedence : 0, func: (a, b) => a == b ? 1 : 0 },
-          '!=': { precedence : 0, func: (a, b) => a != b ? 1 : 0 },
+          '==': { precedence : 0, func: (a, b) => a === b ? 1 : 0 },
+          '!=': { precedence : 0, func: (a, b) => a !== b ? 1 : 0 },
           '&&': { precedence : -1, func: (a, b) => a && b ? 1 : 0 },
           '||': { precedence : -1, func: (a, b) => a || b ? 1 : 0 },
           '**': { precedence:3, func: (a,b) => Math.pow(a, b)},
