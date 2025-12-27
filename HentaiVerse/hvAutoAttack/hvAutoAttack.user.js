@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.123
+// @version      2.90.124
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -149,9 +149,9 @@
               continue;
             }
 
-            if (/[a-zA-Z_.]/.test(ch)) {
+            if (/[a-zA-Z_.'"]/.test(ch)) {
               let varName = '';
-              while (i < expression.length && /[a-zA-Z0-9_.]/.test(expression[i])) {
+              while (i < expression.length && /[a-zA-Z0-9_.'"]/.test(expression[i])) {
                 varName += expression[i];
                 i++;
               }
@@ -170,7 +170,7 @@
           const stack = [];
 
           for (const token of infixTokens) {
-            if (typeof token === 'number' || /[a-zA-Z_]/.test(token[0])) {
+            if (typeof token === 'number' || /[a-zA-Z_'"]/.test(token[0])) {
               output.push(token);
             }
             else if (token === '(') {
@@ -203,13 +203,13 @@
 
         evaluatePostfix(postfixTokens, resolver) {
           const stack = [];
-
           for (const token of postfixTokens) {
             if (typeof token === 'number') {
               stack.push(token);
             }
-            else if (typeof token === 'string' && /[a-zA-Z_.]/.test(token[0])) {
-              const value = resolver ? resolver(token) : token;
+            else if (typeof token === 'string' && /[a-zA-Z_.'"]/.test(token[0])) {
+              let value = resolver ? resolver(token) : token;
+              if (typeof value === 'string' && value[0] !== "'" && value[0] != '"') value = `'${value}'`;
               stack.push(value);
             }
             else {
@@ -2766,15 +2766,16 @@
           return func[arr[1]](...[...arr].splice(2));
         } if (isNaN(str * 1)) {
           const paramList = str.split('.');
-          let result;
+          let result, isInData;
           for (let key of paramList) {
             if (!result) {
               result = (g('battle') ?? getValue('battle', true))[key] ?? g(key) ?? getValue(key) ?? g('option')?.[key];
+              isInData = result;
               continue;
             }
             result = result[key]
           }
-          result ??= 0;
+          result ??= isInData ? 0 : result;
           return isNaN(result * 1) ? result ?? str : (result * 1);
         }
         return str * 1;
@@ -2912,7 +2913,7 @@
                 case '<>':
                   return '!=';
               }
-            }).replace(/'|"/g, '').replace('_1h', '_onehanded').replace('_2h', '_twohanded');
+            }).replace('_1h', '_onehanded').replace('_2h', '_twohanded');
             result = $RPN.evaluate(k, returnValue);
             if (!result) {
               parmResult = false;
@@ -4171,14 +4172,7 @@
     function newRound(isNew) { // New Round
       let battle = isNew ? {} : getValue('battle', true);
       if (isNew) {
-        console.log('isNew')
-        setValue('skillOTOS', {
-          OFC: 0,
-          FRD: 0,
-          T3: 0,
-          T2: 0,
-          T1: 0,
-        });
+        setValue('skillOTOS', {});
       }
       if (!battle) {
         battle = JSON.parse(JSON.stringify(g('battle') ?? {}));
@@ -4956,7 +4950,8 @@
         if (g('oc') < (id in skillOC ? skillOC[id] : 2)) {
           continue;
         }
-        const skillOTOS = getValue('skillOTOS', true);
+        const skillOTOS = getValue('skillOTOS', true) ?? {};
+        skillOTOS[skill] ??= 0;
         if (option.skillOTOS && option.skillOTOS[skill] && skillOTOS[skill] >= 1) {
           continue;
         }
@@ -5252,7 +5247,7 @@
       }
       gE(skill)?.click();
       if (tryAttack()) {
-        const skillOTOS = getValue('skillOTOS', true);
+        const skillOTOS = getValue('skillOTOS', true) ?? {};
         skillOTOS[skill] ??= 0;
         skillOTOS[skill]++;
         setValue('skillOTOS', skillOTOS);
