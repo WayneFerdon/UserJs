@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.124
+// @version      2.90.125
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -3240,8 +3240,10 @@
       if (stamina.lastCost) {
         last += Math.floor(stamina.time / _1h) - Math.floor(lastTime / _1h);
         const delta = last - stamina.current;
-        stamina.ratio = Math.max(1, delta / stamina.lastCost);
-        stamina.lastCost = undefined;
+        if (delta !== 0) {
+          stamina.ratio = Math.max(1, delta / stamina.lastCost);
+          stamina.lastCost = undefined;
+        }
       }
       setValue('stamina', stamina);
       console.log('stamina', stamina, last, stamina.current, lastCost, stamina.ratio);
@@ -4298,6 +4300,7 @@
 
       if (roundPrev !== battle.roundNow) {
         battle.turn = 0;
+        setValue('skillOTOS', {});
       }
       battle.roundLeft = battle.roundAll - battle.roundNow;
       setValue('battle', battle);
