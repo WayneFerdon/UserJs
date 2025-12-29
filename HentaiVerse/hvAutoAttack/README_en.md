@@ -80,9 +80,9 @@ Four drop down lists and one button are visible in the box
 
 7. `attackStatus`: Attack Mode (`0`: Physical, `1`: Fire, `2`: Cold, `3`: Elec, `4`: Wind, `5`: Divine, `6`: Forbidden). Or use `_phys`, `_fire`, `_cold`, `_elec`, `_wind`, `_divi`, `_forb` as `if current attack mode is ...`, such as `_phys` equals `attackStatus == 0`。
    - Value acquired above is the default Attack Mode, to get current Attack Mode after calculating Secondary Attack Mode, use suffix `Cur` ( and prefix `_` for `attackStatus`), such as：`_attackStatusCur`,`_physCur`, `_fireCur`, `_coldCur`, `_elecCur`, `_windCur`, `_diviCur`, `_forbCur`
-     - Value getting steps：
+     - current value getting by:
        - During `Secondary Attack`, return `current attempting mode` 
-       - If configed any current condition in `Secondary Attack Mode`, returns `mode that the condition is in`. Such as: In conditions of `Attack mode Fire`, `_fireCur` is as `true`，`_windCur` is as `false`
+         - If configed any current condition in `Secondary Attack Mode`, returns `mode that the condition is in`. Such as: In conditions of `Attack mode Fire`, `_fireCur` is as `true`，`_windCur` is as `false`
        - In other options, attack will be simulated until the spell is callable ( cache the successfully simulated mode into a temp variable and returns it)
 8. `fightingStyle`: Fighting Style (`1`: Niten, `2`: 1H, `3`: 2H, `4`: DW, `5`: Staff). Or use `_nt`, `_1h`, `_2h`, `_dw`, `_staff` as `if current fighting style is ...`, such as `_nt` equals `fightStyle == 1`
 9. `isCd`: whether the skill/item is cooldowning, format: `_isCd_id`
@@ -213,6 +213,7 @@ In this example, the script will attack enemy 1 next.
 
 * Old
 1. see [README_Chinese#更新历史](https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README.md#更新历史)
+
 
 
 
