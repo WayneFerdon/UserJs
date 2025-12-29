@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.125
+// @version      2.90.126
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2518,6 +2518,14 @@
         '<option value="_wind">wind</option>',
         '<option value="_divi">divi</option>',
         '<option value="_forb">forb</option>',
+        '<option value="attackStatusCurrent">attackStatusCurrent</option>',
+        '<option value="_physCur">physCur</option>',
+        '<option value="_fireCur">fireCur</option>',
+        '<option value="_coldCur">coldCur</option>',
+        '<option value="_elecCur">elecCur</option>',
+        '<option value="_windCur">windCur</option>',
+        '<option value="_diviCur">diviCur</option>',
+        '<option value="_forbCur">forbCur</option>',
         '<option value="fightingStyle">fightingStyle</option>',
         '<option value="_nt">nt</option>',
         '<option value="_1h">1h</option>',
@@ -2823,6 +2831,29 @@
         forb() {
           return g('attackStatus') * 1 === 6 ? 1 : 0;
         },
+
+        physCur() {
+          return getCurrentAttackStatus() * 1 === 0 ? 1 : 0;
+        },
+        fireCur() {
+          return getCurrentAttackStatus() * 1 === 1 ? 1 : 0;
+        },
+        coldCur() {
+          return getCurrentAttackStatus() * 1 === 2 ? 1 : 0;
+        },
+        elecCur() {
+          return getCurrentAttackStatus() * 1 === 3 ? 1 : 0;
+        },
+        windCur() {
+          return getCurrentAttackStatus() * 1 === 4 ? 1 : 0;
+        },
+        diviCur() {
+          return getCurrentAttackStatus() * 1 === 5 ? 1 : 0;
+        },
+        forbCur() {
+          return getCurrentAttackStatus() * 1 === 6 ? 1 : 0;
+        },
+
         nt() {
           return g('fightingStyle') * 1 === 1 ? 1 : 0;
         },
@@ -3240,7 +3271,7 @@
       if (stamina.lastCost) {
         last += Math.floor(stamina.time / _1h) - Math.floor(lastTime / _1h);
         const delta = last - stamina.current;
-        if (delta !== 0) {
+        if (delta !== 0 && stamina.lastCost > 0.06 ) {
           stamina.ratio = Math.max(1, delta / stamina.lastCost);
           stamina.lastCost = undefined;
         }
@@ -5144,7 +5175,16 @@
       return true;
     }
 
-    function attack() { // 自动打怪
+    function getCurrentAttackStatus() {
+      if (g('attackStatusCurrent') === undefined) {
+        attack(true);
+      }
+      const current = g('attackStatusCurrent');
+      g('attackStatusCurrent', undefined);
+      return current;
+    }
+
+    function attack(selectStatusOnly=false) { // 自动打怪
       let range = g('fightingStyle') === '1' ? 3 : 1;
       const option = g('option');
       const monsters = g('battle').monsterStatus;
@@ -5152,17 +5192,19 @@
       attackStatusOrder = attackStatusOrder.concat([0,1,2,3,4,5,6].filter(x=> !(attackStatusOrder.includes(x))));
       if (option.attackStatusSwitch) {
         for (const status of attackStatusOrder) {
+          g('attackStatusCurrent', status);
           const condition = option[`attackStatusSwitchCondition${status}`] ?? {};
           if (!option.attackStatusSwitch[status]) continue;
           if (!checkCondition(condition, monsters)) continue;
-          if (!onAttack(range, status)) continue;
+          if (!onAttack(range, status, selectStatusOnly)) continue;
           return true;
         }
       }
-      return onAttack(range, g('attackStatus'));
+      g('attackStatusCurrent', 0);
+      return onAttack(range, g('attackStatus'), selectStatusOnly);
     }
 
-    function onAttack(range, attackStatus) {
+    function onAttack(range, attackStatus, selectStatusOnly=false) {
       const updateAbility = {
         4301: { //火
           111: [3, 4, 4, 5, 5, 5, 5, 5],
@@ -5205,9 +5247,15 @@
       const option = g('option');
       const monsters = g('battle').monsterStatus;
       let target = monsters[0];
-      const tryAttack = () => {
+      const tryAttack = (skill) => {
         if (!target || target.isDead) {
           return false;
+        }
+        if (selectStatusOnly) {
+          return true;
+        }
+        if (skill) {
+          gE(skill)?.click();
         }
         clickMonster(getRangeCenter(target, range, !attackStatus).id);
         return true;
@@ -5248,15 +5296,14 @@
         range = ranges[ability ? ability[ab] ?? 0 : 0];
         break;
       }
-      gE(skill)?.click();
-      if (tryAttack()) {
-        const skillOTOS = getValue('skillOTOS', true) ?? {};
-        skillOTOS[skill] ??= 0;
-        skillOTOS[skill]++;
-        setValue('skillOTOS', skillOTOS);
-        return true;
+      if (!tryAttack(skill)) {
+        return false;
       }
-      return false;
+      const skillOTOS = getValue('skillOTOS', true) ?? {};
+      skillOTOS[skill] ??= 0;
+      skillOTOS[skill]++;
+      setValue('skillOTOS', skillOTOS);
+      return true;
     }
 
     function getHPFromMonsterDB(mdb, name, lv) {
