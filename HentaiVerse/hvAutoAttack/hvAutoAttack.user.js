@@ -2518,7 +2518,7 @@
         '<option value="_wind">wind</option>',
         '<option value="_divi">divi</option>',
         '<option value="_forb">forb</option>',
-        '<option value="attackStatusCurrent">attackStatusCurrent</option>',
+        '<option value="_attackStatusCur">attackStatusCur</option>',
         '<option value="_physCur">physCur</option>',
         '<option value="_fireCur">fireCur</option>',
         '<option value="_coldCur">coldCur</option>',
@@ -2831,7 +2831,9 @@
         forb() {
           return g('attackStatus') * 1 === 6 ? 1 : 0;
         },
-
+        attackStatusCur() {
+          return getCurrentAttackStatus() * 1;
+        },
         physCur() {
           return getCurrentAttackStatus() * 1 === 0 ? 1 : 0;
         },
