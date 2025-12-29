@@ -81,7 +81,8 @@
 
   **注意**: 由于是字符串之间的比较，所以用旧版本格式`比较值A,比较运算符,比较值B`时请加上引号，如"ar"/'ar'
 
-7. `attackStatus`: 攻击模式 (`0`: Physical, `1`: Fire, `2`: Cold, `3`: Elec, `4`: Wind, `5`: Divine, `6`: Forbidden)。 或使用 `_phys`, `_fire`, `_cold`, `_elec`, `_wind`, `_divi`, `_forb` 表示 `当前 attack mode 是否为 ...`，例如 `_phys` 等价于 `attackStatus == 0`
+7. `attackStatus`: 攻击模式 (`0`: Physical, `1`: Fire, `2`: Cold, `3`: Elec, `4`: Wind, `5`: Divine, `6`: Forbidden)。 或使用 `_phys`, `_fire`, `_cold`, `_elec`, `_wind`, `_divi`, `_forb` 表示 `当前 attack mode 是否为 ...`，例如 `_phys` 等价于 `attackStatus == 0`。
+   - 获取到的是默认攻击模式，可加后缀`Cur`来表示判断次要模式后的攻击模式（直接获取当前`attackStatus`需要加`_`前缀），即：`_attackStatusCur`,`_physCur`, `_fireCur`, `_coldCur`, `_elecCur`, `_windCur`, `_diviCur`, `_forbCur`
 8. `fightingStyle`: 战斗风格 (`1`: 二天, `2`: 单手, `3`: 双手, `4`: 双持, `5`: 法杖)。 或使用 `_nt`, `_1h`, `_2h`, `_dw`, `_staff` 表示 `当前 fighting style 是否为 ...`，例如 `_nt` 等价于 `fightStyle == 1`
 9. `isCd`: 技能/物品是否cd，格式`_isCd_id`
 
@@ -401,6 +402,7 @@
 灵感来自hoverplay，刚开始接触js，初步完成代码
 功能有：答题警报、其他警报、快捷键、自动前进、自动使用宝石、自动回复、自动使用增益技能、自动打怪
 很可惜，玩游戏不走心，一直搞不懂HVSTAT是怎么知道每个怪的血量的，直到[版本2.0](#20)
+
 
 
 
