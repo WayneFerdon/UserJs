@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.128
+// @version      2.90.129
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -416,7 +416,7 @@
             r.context.onerror?.();
           } else if (text === 'state lock limiter in effect') {
             if ($ajax.error !== text) {
-              // popup(`<p style="color: #f00; font-weight: bold;">${text}</p><p>Your connection speed is so fast that <br>you have reached the maximum connection limit.</p><p>Try again later.</p>`);
+              popup(`<p style="color: #f00; font-weight: bold;">${text}</p><p>Your connection speed is so fast that <br>you have reached the maximum connection limit.</p><p>Try again later.</p>`);
               console.error(`${text}\nYour connection speed is so fast that you have reached the maximum connection limit. Try again later.`)
             }
             $ajax.error = text;
@@ -835,6 +835,29 @@
       return doc;
     }
 
+    function popup(text) {
+      if (!g('option').popup) return;
+      const popupWindow = cE('div');
+      popupWindow.style.cssText += 'position:fixed;top:0;left:0;width:1236px;height:702px;padding:3px 100% 100% 3px;background-color:#0006;z-index:1001;cursor:pointer;display:flex;justify-content:center;align-items:center;'
+      popupWindow.addEventListener('click', r);
+      document.body.appendChild(popupWindow);
+      const display = cE('div');
+      display.innerText = text;
+      display.style.cssText += 'min-width:400px;min-height:100px;max-width:100%;max-height:100%;padding:10px;background-color:#fff;border:1px solid;display:flex;flex-direction:column;justify-content:center;font-size:10pt;color:#333;';
+      popupWindow.appendChild(display);
+      document.addEventListener('keydown', r);
+      return display;
+
+      function r(e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (e.button !== 0 && !['Enter', ' ', 'Escape'].includes(e.key)) {
+          return;
+        }
+        popupWindow.remove();
+        document.removeEventListener('keydown', r);
+      }
+    }
     function setArenaDisplay() {
       if (!g('option').obscureNotIdleArena) {
         return;
@@ -1369,12 +1392,12 @@
         '    <div class="attackStatusOrder"><input name="attackStatusOrderName" style="width:80%;" type="text" disabled="true"><input name="attackStatusOrderValue" style="width:80%;" type="hidden" disabled="true"><br>',
         '      <div class="hvAATable" style="display:grid; grid-template-columns:repeat(7, 1fr);">',
         '        <div><input id="attackStatusOrder_0" value="Phys,0" type="checkbox"><label for="attackStatusOrder_0"><l0>物理</l0><l1>物理</l1><l2>Physical</l2></label></div>',
-        '        <div><input id="attackStatusOrder_1" value="Fire,1" type="checkbox"><label for="attackStatusOrder_1"><l0>火</l0><l1>火</l1><l2>Fire</l2></label></div>',
-        '        <div><input id="attackStatusOrder_2" value="Cold,2" type="checkbox"><label for="attackStatusOrder_2"><l0>冰</l0><l1>冰</l1><l2>Cold</l2></label></div>',
-        '        <div><input id="attackStatusOrder_3" value="Elec,3" type="checkbox"><label for="attackStatusOrder_3"><l0>雷</l0><l1>雷</l1><l2>Elec</l2></label></div>',
-        '        <div><input id="attackStatusOrder_4" value="Wind,4" type="checkbox"><label for="attackStatusOrder_4"><l0>风</l0><l1>風</l1><l2>Wind</l2></label></div>',
         '        <div><input id="attackStatusOrder_5" value="Divi,5" type="checkbox"><label for="attackStatusOrder_5"><l0>圣</l0><l1>聖</l1><l2>Divine</l2></label></div>',
         '        <div><input id="attackStatusOrder_6" value="Forb,6" type="checkbox"><label for="attackStatusOrder_6"><l0>暗</l0><l1>暗</l1><l2>Forbidden</l2></label></div>',
+        '        <div><input id="attackStatusOrder_1" value="Fire,1" type="checkbox"><label for="attackStatusOrder_1"><l0>火</l0><l1>火</l1><l2>Fire</l2></label></div>',
+        '        <div><input id="attackStatusOrder_2" value="Cold,2" type="checkbox"><label for="attackStatusOrder_2"><l0>冰</l0><l1>冰</l1><l2>Cold</l2></label></div>',
+        '        <div><input id="attackStatusOrder_4" value="Wind,4" type="checkbox"><label for="attackStatusOrder_4"><l0>风</l0><l1>風</l1><l2>Wind</l2></label></div>',
+        '        <div><input id="attackStatusOrder_3" value="Elec,3" type="checkbox"><label for="attackStatusOrder_3"><l0>雷</l0><l1>雷</l1><l2>Elec</l2></label></div>',
         '    </div></div></div>',
 
         '    <div><input id="attackStatusSwitch_0" type="checkbox"><label for="attackStatusSwitch_0"><b><l0>攻击模式 物理</l0><l1>攻擊模式 物理</l1><l2>Attack Mode: Physical</l2></b>: {{attackStatusSwitchCondition0}}</label></div>',
@@ -1409,6 +1432,7 @@
         '  </div>',
 
         '<div class="hvAATab" id="hvAATab-BattleStarter">',
+        ' <div><input id="popup" type="checkbox"><label for="popup"><l0>进入失败时窗口内弹窗提示</l0><l1>進入失敗時窗口內彈窗提示</l1><l2>In-window popup while failed start</l2></label>; </div>',
         ' <div><input id="altBattleFirst" type="checkbox"><label for="altBattleFirst"><b><l0>优先使用alt进入</l0><l1>優先使用alt進入</l1><l2>Use alt.hentaiverse as default while auto start.</l2></b></label></div>',
         ' <div><input id="encounter" type="checkbox"><label for="encounter"><b><l0>自动遭遇战</l0><l1>自動遭遇戰</l1><l2>Auto Encounter</l2></b></label><br>',
         '  <input id="encounterQuickCheck" type="checkbox"><label for="encounterQuickCheck"><l0>精准倒计时(影响性能)</l0><l1>精準(影響性能)</l1><l2>Precise encounter cd(might reduced performsance)</l2></label><br>',
@@ -3302,12 +3326,13 @@
     } catch (e) { console.error(e) } }
 
     function checkSupply(isGFStandalone) {
-      if (!g('option').checkSupply) {
+      const option = g('option');
+      if (!option.checkSupply) {
         return true;
       }
       const items = g('items');
-      const thresholdList = isGFStandalone ? g('option').checkItemGF : g('option').checkItem;
-      const checkList = isGFStandalone ? g('option').isCheckGF : g('option').isCheck;
+      const thresholdList = isGFStandalone ? option.checkItemGF : option.checkItem;
+      const checkList = isGFStandalone ? option.isCheckGF : option.isCheck;
       const needs = [];
       for (let id in checkList) {
         const item = items[id];
@@ -3324,18 +3349,31 @@
       if (needs.length) {
         console.log(`Needs supply:${needs}`);
         document.title = `[C!${isGFStandalone ? '!' : ''}]` + document.title;
+        switch(option.lang * 1) {
+            case 0:
+            popup(`消耗品${isGFStandalone ? '(压榨届独立配置)' : ''}不足:\n${needs}`);
+            break
+            case 1:
+            popup(`消耗品${isGFStandalone ? '(壓榨屆獨立配置)' : ''}不足:\n${needs}`);
+            break
+            case 2:
+            default:
+            popup(`Failed supply check${isGFStandalone ? ' for Grindfest standalone' : ''}:\n${needs}`);
+            break
+        }
       }
       return !needs.length;
     }
 
     async function asyncCheckRepair(isGrindFestStandalone) { try {
-      if (!g('option').repair) {
+      const option = g('option');
+      if (!option.repair) {
         return true;
       }
       await waitPause();
       $async.logSwitch(arguments);
       let eqps;
-      const threshold = isGrindFestStandalone ? g('option').repairValueGF : g('option').repairValue;
+      const threshold = isGrindFestStandalone ? option.repairValueGF : option.repairValue;
       if (!threshold) { // skip because default repair has been checked before idleArena>GF
         $async.logSwitch(arguments);
         return true;
@@ -3369,7 +3407,19 @@
       }
       eqps = eqps.filter(e=>e);
       if (eqps.length) {
-        console.log('eqps need repair:\n', eqps.join('\n '));
+        console.log('equips need repair:\n', eqps.join('\n '));
+        switch(option.lang * 1) {
+            case 0:
+            popup(`装备需要修理:\n${eqps.join('\n ')}`);
+            break
+            case 1:
+            popup(`裝備需要修理:\n${eqps.join('\n ')}`);
+            break
+            case 2:
+            default:
+            popup(`Equips need repair:\n${eqps.join('\n ')}`);
+            break
+        }
         document.title = `[R!]` + document.title;
       }
       $async.logSwitch(arguments);
@@ -3415,8 +3465,21 @@
       if (staminaChecked === 0) { // failed currently
         const now = time(0);
         setTimeout(method, Math.floor(now / _1h + 1) * _1h - now);
+        // popup('Failed stamina check for now.');
         document.title = `[S!]` + document.title;
       } else { // case -1: // failed with nature recover
+        switch(option.lang * 1) {
+            case 0:
+            popup('当日精力不足(含自然恢复)');
+            break
+            case 1:
+            popup('當日精力不足(含自然恢復)');
+            break
+            case 2:
+            default:
+            popup('Failed stamina check with nature recover.');
+            break
+        }
         document.title = `[S!!]` + document.title;
       }
     }
@@ -5191,7 +5254,7 @@
       const option = g('option');
       const monsters = g('battle').monsterStatus;
       let attackStatusOrder = option.attackStatusOrderValue?.split(',').map(x=>x*1) ?? [];
-      attackStatusOrder = attackStatusOrder.concat([0,1,2,3,4,5,6].filter(x=> !(attackStatusOrder.includes(x))));
+      attackStatusOrder = attackStatusOrder.concat([0,6,5,1,2,4,3].filter(x=> !(attackStatusOrder.includes(x))));
       if (option.attackStatusSwitch) {
         for (const status of attackStatusOrder) {
           const condition = option[`attackStatusSwitchCondition${status}`] ?? {};
