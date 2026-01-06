@@ -79,8 +79,8 @@
           '!=': { precedence : 0, func: (a, b) => a !== b ? 1 : 0 },
           '&&': { precedence : -1, func: (a, b) => a && b ? 1 : 0 },
           '||': { precedence : -1, func: (a, b) => a || b ? 1 : 0 },
-          '**': { precedence:3, func: (a,b) => Math.pow(a, b)},
-          '!': { precedence : -1, func: (a) => a ? 0 : 1 },
+          '**': { precedence:3, func: (a, b) => Math.pow(a, b)},
+          '!': { precedence : -2, func: (a) => a ? 0 : 1 },
           '+': { precedence : 1, func: (a, b) => a + b },
           '-': { precedence : 1, func: (a, b) => a - b },
           '*': { precedence : 2, func: (a, b) => a * b },
@@ -168,29 +168,36 @@
         infixToPostfix(infixTokens) {
           const output = [];
           const stack = [];
-
           for (const token of infixTokens) {
-            if (typeof token === 'number' || /[a-zA-Z_'"]/.test(token[0])) {
-              output.push(token);
+            switch(true) {
+              case typeof token === 'number' || /[a-zA-Z_'"]/.test(token[0]):
+                output.push(token);
+                break;
+              case token === '(':
+                stack.push(token);
+                break;
+              case token === ')':
+                while (stack.length && stack[stack.length - 1] !== '(') {
+                  output.push(stack.pop());
+                }
+                stack.pop();
+                break;
+              case $RPN.isOperator(token):
+                while (
+                  stack.length &&
+                  stack[stack.length - 1] !== '(' &&
+                  $RPN.hasHigherPrecedence(stack[stack.length - 1], token) &&
+                  $RPN.operators[token].func.length !== 1
+                ) {
+                  output.push(stack.pop());
+                }
+                stack.push(token);
+                break;
+              default:
+                break;
             }
-            else if (token === '(') {
-              stack.push(token);
-            }
-            else if (token === ')') {
-              while (stack.length && stack[stack.length - 1] !== '(') {
-                output.push(stack.pop());
-              }
-              stack.pop();
-            }
-            else if ($RPN.isOperator(token)) {
-              while (
-                stack.length &&
-                stack[stack.length - 1] !== '(' &&
-                $RPN.hasHigherPrecedence(stack[stack.length - 1], token)
-              ) {
-                output.push(stack.pop());
-              }
-              stack.push(token);
+            if (!$RPN.isOperator(token) && stack.length && $RPN.isOperator(stack[stack.length - 1]) && $RPN.operators[stack[stack.length - 1]].func.length === 1) {
+              output.push(stack.pop());
             }
           }
 
@@ -206,37 +213,38 @@
           for (const token of postfixTokens) {
             if (typeof token === 'number') {
               stack.push(token);
+              continue;
             }
-            else if (typeof token === 'string' && /[a-zA-Z_.'"]/.test(token[0])) {
+            if (typeof token === 'string' && /[a-zA-Z_.'"]/.test(token[0])) {
               let value = resolver ? resolver(token) : token;
               if (typeof value === 'string' && value[0] !== "'" && value[0] != '"') value = `'${value}'`;
               stack.push(value);
+              continue;
             }
-            else {
-              let a, b;
-              if (stack.length < 2) {
-                if (token === '-') {
-                  b = stack.pop();
-                  a = 0;
-                } else if (token === '!') {
-                  a = stack.pop();
-                  b = undefined;
-                } else {
-                  throw new Error('Wrong Expression.');
-                }
-              } else {
+            let a, b;
+            if ($RPN.operators[token].func.length === 1) {
+              a = stack.pop();
+              b = undefined;
+            }
+            else if (stack.length < 2) {
+              if (token === '-') {
                 b = stack.pop();
-                a = stack.pop();
-              }
-
-              let result;
-              if (token in $RPN.operators) {
-                result = $RPN.operators[token].func(a, b);
+                a = 0;
               } else {
-                throw new Error(`Unknow operator: ${token}`);
+                throw new Error('Wrong Expression.');
               }
-              stack.push(result);
+            } else {
+              b = stack.pop();
+              a = stack.pop();
             }
+
+            let result;
+            if (token in $RPN.operators) {
+              result = $RPN.operators[token].func(a, b);
+            } else {
+              throw new Error(`Unknow operator: ${token}`);
+            }
+            stack.push(result);
           }
 
           if (stack.length !== 1) {
