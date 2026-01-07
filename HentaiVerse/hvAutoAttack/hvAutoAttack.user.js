@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.132
+// @version      2.90.133
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -5188,6 +5188,7 @@
       }
       // 获取目标
       const option = g('option');
+      const excludedRatio = 0.9
       let exclusiveBuffs;
       if (isAll && option.debuffAllExclusive) {
         exclusiveBuffs = Object.keys(option.debuffAllExclusive);
@@ -5200,7 +5201,7 @@
           return threshold >= 0 && current > threshold;
         }
         for (const exclusive of exclusiveBuffs) {
-          if (isDebuffed(target, exclusive)) return 0.9;
+          if (isDebuffed(target, exclusive)) return excludedRatio;
         }
       };
       let debuffByIndex = isAll && option[`debuffSkill${buff}AllByIndex`];
@@ -5212,13 +5213,16 @@
       let max = isAll ? monsterStatus.length : 1;
       let id;
       let minRank = Number.MAX_SAFE_INTEGER;
+      const condition = option[`debuffSkill${buff}${isAll ? 'All' : ''}Condition`];target => checkCondition(condition, [target]);
+      const excludeCondition = target => checkCondition(condition, [target]) ? isDebuffed(target) : excludedRatio;
       for (let i = 0; i < max; i++) {
         let target = buff === 'Dr' ? monsterStatus[max - i - 1] : monsterStatus[i];
-        target = checkCondition(option[`debuffSkill${buff}${isAll ? 'All' : ''}Condition`], [target]);
+        target = checkCondition(condition, [target]);
         if (!target || target.isDead || isDebuffed(target)) {
           continue;
         }
-        const center = getRangeCenter(target, range, false, isDebuffed, debuffByIndex);
+        const center = getRangeCenter(target, range, false, excludeCondition, debuffByIndex);
+        console.log(buff, target, center)
         if (!id || center.rank < minRank) {
           minRank = center.rank;
           id = center.id;
