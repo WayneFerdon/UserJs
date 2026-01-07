@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.133
+// @version      2.90.134
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2573,6 +2573,7 @@
         '<option value="_targetHp">targetHp</option>',
         '<option value="_targetMp">targetMp</option>',
         '<option value="_targetSp">targetSp</option>',
+        '<option value="_targetRank">targetRank</option>',
         '<option value=""></option>',
       ].join('');
       customizeBox.style.cssText += 'display: none;';
@@ -2914,6 +2915,9 @@
         },
         targetBuffTurn(img) {
           return getBuffTurnFromImg(getMonsterBuff(getMonsterID(target), img));
+        },
+        targetRank() {
+          return g('battle').monsterStatus.indexOf(target);
         },
         targetHp() {
           return target.hpNow / target.hp;
@@ -5222,7 +5226,6 @@
           continue;
         }
         const center = getRangeCenter(target, range, false, excludeCondition, debuffByIndex);
-        console.log(buff, target, center)
         if (!id || center.rank < minRank) {
           minRank = center.rank;
           id = center.id;
