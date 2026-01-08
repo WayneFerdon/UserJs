@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.135
+// @version      2.90.136
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -32,7 +32,7 @@
 (function () {
   try {
     'use strict';
-    const standalone = ['option', 'arena', 'drop', 'stats', 'staminaLostLog', 'battleCode', 'disabled', 'stamina', 'lastHref', 'battle', 'monsterDB', 'monsterMID', 'ability'];
+    const standalone = ['option', 'arena', 'drop', 'stats', 'staminaLostLog', 'battleCode', 'disabled', 'stepIn', 'stamina', 'lastHref', 'battle', 'monsterDB', 'monsterMID', 'ability'];
     const sharable = ['option'];
     const excludeStandalone = { 'option': ['optionStandalone', 'version', 'lang'] };
     const href = window.location.href;
@@ -4027,7 +4027,7 @@
       let msTemp = JSON.parse(JSON.stringify(g('battle').monsterStatus));
       msTemp.sort(objArrSort('order'));
       // 0. 范围大于等于全体时，直接释放全体
-      if (!range || range <= msTemp.length) {
+      if (!range || range >= msTemp.length) {
         return { id: getMonsterID(target), rank: Number.MAX_SAFE_INTEGER };
       }
       const option = g('option');
@@ -5207,6 +5207,7 @@
         for (const exclusive of exclusiveBuffs) {
           if (isDebuffed(target, exclusive)) return excludedRatio;
         }
+        return 0;
       };
       let debuffByIndex = isAll && option[`debuffSkill${buff}AllByIndex`];
       let monsterStatus = g('battle').monsterStatus;
