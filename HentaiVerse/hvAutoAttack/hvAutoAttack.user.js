@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.136
+// @version      2.90.137
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2984,6 +2984,7 @@
               }
             }).replace('_1h', '_onehanded').replace('_2h', '_twohanded');
             result = $RPN.evaluate(k, returnValue);
+            // console.trace(k, result);
             if (!result) {
               parmResult = false;
               break;
@@ -4042,35 +4043,37 @@
       // 3. 死亡、超过底下的将被溢出抛弃
       const up = Math.floor(range / 2);
       const down = range - up - 1;
-      const top = order <= range ? 0 : Math.max(order - down, 0);
+      const top = order < range ? 0 : Math.max(order - down, 0);
       const bottom = Math.min(order + up, msTemp.length-1);
+      // console.log(target, order, up, down, top, bottom)
       for (let i = top; i <= bottom; i++) {
         let center = i;
         if (msTemp[center].isDead) continue;
-        let rank = 0;
+        let weight = 0;
         let overflow = Math.max(up-center,0);
         const [min, max] = [center - up + overflow, center + down + overflow];
         for (let inRange = min; inRange <= max; inRange++) {
           let cew = inRange === center ? centralExtraWeight : 0; // cew <= 0, 增加未命中权重，降低命中权重
           let mon = msTemp[inRange];
           if (inRange < 0 || inRange >= msTemp.length || mon.isDead) { // 超出范围 或 死亡目标
-            rank += unreachableWeight;
+            weight += unreachableWeight;
             continue;
           }
           if (excludeWeightRatio) {
             // 特殊排除(ratio === 1则直接排除，0<ratio<1则优先于溢出的情况, ratio === 0 则不排除, ratio < 0 相当于增加权重?)
             const ratio = excludeWeightRatio(mon);
-            rank += ratio * unreachableWeight;
+            weight += ratio * unreachableWeight;
             if (ratio>0) {
               continue;
             }
           }
-          rank += cew; // 中心目标会受到副手及冲击攻击时，相当于有效生命值降低
-          rank += forceUseIndex ? -1 : mon.finWeight; // 强制使用顺序而非权重时，全部使用统一的权重而非怪物状态
+          weight += cew; // 中心目标会受到副手及冲击攻击时，相当于有效生命值降低
+          weight += forceUseIndex ? -1 : mon.finWeight; // 强制使用顺序而非权重时，全部使用统一的权重而非怪物状态
         }
-        if (rank < minRank) {
+        // console.log(`centerOrder: ${center}, weight: ${weight}`);
+        if (weight < minRank) {
           newOrder = center;
-          minRank = rank;
+          minRank = weight;
           break;
         }
       }
@@ -5222,11 +5225,14 @@
       const excludeCondition = target => checkCondition(condition, [target]) ? isDebuffed(target) : excludedRatio;
       for (let i = 0; i < max; i++) {
         let target = buff === 'Dr' ? monsterStatus[max - i - 1] : monsterStatus[i];
+        // console.log(buff, target)
         target = checkCondition(condition, [target]);
+        // console.log(buff, target)
         if (!target || target.isDead || isDebuffed(target)) {
           continue;
         }
         const center = getRangeCenter(target, range, false, excludeCondition, debuffByIndex);
+        // console.log(buff, center, id, minRank)
         if (!id || center.rank < minRank) {
           minRank = center.rank;
           id = center.id;
@@ -5236,6 +5242,7 @@
       if (id === undefined) {
         return false;
       }
+      // console.log(buff, id, getMonster(id), monsterStatus)
       const imgs = gE('img', 'all', gE(monsterStateKeys.buffs, getMonster(id)));
       // 已有buff小于6个
       // 未开启debuff失败警告
