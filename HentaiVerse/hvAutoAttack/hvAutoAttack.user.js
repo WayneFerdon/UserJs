@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.138
+// @version      2.90.139
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -846,7 +846,7 @@
     function popup(text) {
       if (!g('option').popup) return;
       const popupWindow = cE('div');
-      popupWindow.style.cssText += 'position:fixed;top:0;left:0;width:1236px;height:702px;padding:3px 100% 100% 3px;background-color:#0006;z-index:1001;cursor:pointer;display:flex;justify-content:center;align-items:center;'
+      popupWindow.style.cssText += 'position:fixed;top:0;left:0;width:100%;height:100%;background-color:#0006;z-index:1001;cursor:pointer;display:flex;justify-content:center;align-items:center;'
       popupWindow.addEventListener('click', r);
       document.body.appendChild(popupWindow);
       const display = cE('div');
@@ -857,6 +857,11 @@
       return display;
 
       function r(e) {
+        switch(true) {
+            case e.key?.length >=2 && e.key?.includes('F'): return;
+            case e.ctrlKey: return;
+            default: break;
+        }
         e.preventDefault();
         e.stopImmediatePropagation();
         if (e.button !== 0 && !['Enter', ' ', 'Escape'].includes(e.key)) {
@@ -2984,7 +2989,6 @@
               }
             }).replace('_1h', '_onehanded').replace('_2h', '_twohanded');
             result = $RPN.evaluate(k, returnValue);
-            // console.trace(k, result);
             if (!result) {
               parmResult = false;
               break;
@@ -4045,7 +4049,6 @@
       const down = range - up - 1;
       const top = order < range ? 0 : Math.max(order - down, 0);
       const bottom = Math.min(order + up, msTemp.length-1);
-      // console.log(target, order, up, down, top, bottom)
       for (let i = top; i <= bottom; i++) {
         let center = i;
         if (msTemp[center].isDead) continue;
@@ -4070,7 +4073,6 @@
           weight += cew; // 中心目标会受到副手及冲击攻击时，相当于有效生命值降低
           weight += forceUseIndex ? -1 : mon.finWeight; // 强制使用顺序而非权重时，全部使用统一的权重而非怪物状态
         }
-        // console.log(`centerOrder: ${center}, weight: ${weight}`);
         if (weight < minWeight) {
           newOrder = center;
           minWeight = weight;
@@ -5225,14 +5227,11 @@
       const excludeCondition = target => checkCondition(condition, [target]) ? isDebuffed(target) : excludedRatio;
       for (let i = 0; i < max; i++) {
         let target = buff === 'Dr' ? monsterStatus[max - i - 1] : monsterStatus[i];
-        // console.log(buff, target)
         target = checkCondition(condition, [target]);
-        // console.log(buff, target)
         if (!target || target.isDead || isDebuffed(target)) {
           continue;
         }
         const center = getRangeCenter(target, range, false, excludeCondition, debuffByIndex);
-        // console.log(buff, center, id, minWeight)
         if (!id || center.weight < minWeight) {
           minWeight = center.weight;
           id = center.id;
@@ -5242,7 +5241,6 @@
       if (id === undefined) {
         return false;
       }
-      // console.log(buff, id, getMonster(id), monsterStatus)
       const imgs = gE('img', 'all', gE(monsterStateKeys.buffs, getMonster(id)));
       // 已有buff小于6个
       // 未开启debuff失败警告
