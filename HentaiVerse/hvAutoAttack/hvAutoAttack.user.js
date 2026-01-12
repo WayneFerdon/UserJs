@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.140
+// @version      2.90.141
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1431,6 +1431,7 @@
         '    <div><input id="autoPause" type="checkbox"><label for="autoPause"><b><l0>自动暂停</l0><l1>自動暫停</l1><l2>Pause</l2></b></label>: {{pauseCondition}}</div>',
         '    <div><input id="autoFlee" type="checkbox"><label for="autoFlee"><b><l0>自动逃跑</l0><l1>自動逃跑</l1><l2>Flee</l2></b></label>: {{fleeCondition}}</div>',
         '    <div><input id="autoSkipDefeated" type="checkbox"><label for="autoSkipDefeated"><b><l0>战败自动退出战斗</l0><l1>戰敗自動退出戰鬥</l1><l2>Exit battle when defeated.</l2></b></label></div>',
+        '    <div><input id="nativeNewRound" type="checkbox"><label for="nativeNewRound"><b><l0>使用原生方式进入新回合</l0><l1>使用原生方式進入新回合</l1><l2>Native new round</l2></b></label></div>',
         '    <div><b><l0>继续新回合延时</l0><l1>繼續新回合延時</l1><l2>New round wait time</l2></b>: <input class="hvAANumber" name="NewRoundWaitTime" placeholder="0" type="text"> <l0>(秒)</l0><l1>(秒)</l1><l2>(s)</l2></div>',
         '    <div><b><l0>战斗结束退出延时</l0><l1>戰鬥結束退出延時</l1><l2>Exit battle wait time</l2></b>: <input class="hvAANumber" name="ExitBattleWaitTime" placeholder="3" type="text"> <l0>(秒)</l0><l1>(秒)</l1><l2>(s)</l2></div>',
         // '    <div style="display: flex; flex-flow: wrap;"><b><l0>当损失精力</l0><l1>當損失精力</l1><l2>If it lost Stamina</l2></b> ≥ <input class="hvAANumber" name="staminaLose" placeholder="5" type="text">: ',
@@ -3502,13 +3503,16 @@
       const option = g('option');
       console.log(`stamina check done:\nlow: ${condition.staminaLow ?? option.staminaLow}\n${condition.staminaCost ? `cost: ${condition.staminaCost}\n` : ''}status: ${staminaChecked === 1 ? 'succeed' : staminaChecked === 0 ? 'failed' : `failed with nature recover ${option.staminaLowWithReNat}`}`);
       if (staminaChecked === 1) { // succeed
+        document.title = document.title.replace(`[S!]`, '');
         return true;
       }
       if (staminaChecked === 0) { // failed currently
         const now = time(0);
         setTimeout(method, Math.floor(now / _1h + 1) * _1h - now);
         // popup('Failed stamina check for now.');
-        document.title = `[S!]` + document.title;
+        if (!document.title.includes(`[S!]`)) {
+          document.title = `[S!]` + document.title;
+        }
       } else { // case -1: // failed with nature recover
         switch(option.lang * 1) {
             case 0:
@@ -4223,7 +4227,6 @@
               return;
             }
             const html = await $ajax.insert(window.location.href);
-            gE('#pane_completion').removeChild(gE('#btcp'));
             clearBattleUnresponsive();
             const doc = $doc(html)
             if (gE('#riddlecounter', doc)) {
@@ -4234,6 +4237,12 @@
               goto();
               return;
             }
+            if (option.nativeNewRound) {
+              onStepInDone();
+              gE('#btcp').click();
+              return;
+            }
+            gE('#pane_completion').removeChild(gE('#btcp'));
             ['#battle_right', '#battle_left'].forEach(selector => { gE('#battle_main').replaceChild(gE(selector, doc), gE(selector)); })
             unsafeWindow.battle = undefined;
             await loadUnsafeWindowBattle();
