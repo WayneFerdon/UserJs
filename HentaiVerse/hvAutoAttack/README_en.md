@@ -103,6 +103,15 @@ Four drop down lists and one button are visible in the box
         ![example](https://github.com/user-attachments/assets/da181eac-e634-41ad-97a7-ff59a7b28b6d)
     
     2. `_targetBuffTurn` returns the value as same as the ranked order given by Attack Rule (0~9, smaller number as higher priority)
+12. `targetName`/`targetBossType`: name and boss type for target monster
+    1. `_targetName` returns a string of the target name (**Note**: Because comparison between strings, please add quotation while using legacy version condition `A,Comparison-Operator,B` , such as `"Konata"`/`'Konata'`)
+    2. `_targetBossType` is determined by name:
+        1. `Manbearpig`、`White Bunneh`、`Mithra`、`Dalek`: 1 (BOSS)
+        2. `Konata`、`Mikuru Asahina`、`Ryouko Asakura`、`Yuki Nagato`: 2 (Legendaries)
+        3. `Skuld`、`Urd`、`Verdandi`、`Yggdrasil`: 3 (Trio and the Tree)
+        4. `Rhaegal`、`Viserion`、`Drogon`: 4 (A Dance with Dragons)
+        5. `Real Life`、`Invisible Pink Unicorn`、`Flying Spaghetti Monster`: 5 (Gods)
+        6. others: 0 (not boss)
 
 13. blank: the value you want to put in
 
@@ -216,6 +225,7 @@ In this example, the script will attack enemy 1 next.
 
 * Old
 1. see [README_Chinese#更新历史](https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README.md#更新历史)
+
 
 
 
