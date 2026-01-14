@@ -33,7 +33,7 @@
   try {
     'use strict';
     const standalone = ['option', 'arena', 'stamina', 'lastHref', 'ability', 'drop', 'stats', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS'];
-    const localStorage = ['stats', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS'];
+    const localStorage = ['drop', 'stats', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS'];
     const sharable = ['option'];
     const excludeStandalone = { 'option': ['optionStandalone', 'version', 'lang'] };
     const href = window.location.href;
