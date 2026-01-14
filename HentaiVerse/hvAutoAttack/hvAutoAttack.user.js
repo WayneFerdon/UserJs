@@ -218,7 +218,12 @@
             }
             if (typeof token === 'string' && /[a-zA-Z_.'"]/.test(token[0])) {
               let value = resolver ? resolver(token) : token;
-              if (typeof value === 'string' && value[0] !== "'" && value[0] != '"') value = `'${value}'`;
+              if (typeof value === 'string') {
+                if (value[0] !== `"` && value[0] != `'`) value = `'${value}'`;
+                else if (value[0] === `"` && value[value.length-1] === `"`) {
+                  value = `'${value.slice(1,value.length-1)}'`;
+                }
+              }
               stack.push(value);
               continue;
             }
