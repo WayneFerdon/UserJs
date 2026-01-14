@@ -79,7 +79,7 @@
 5. `isRoundType`、`ar`、`ba`、`iw`、`tw`、`gr`、`rb`: 当前是否是某战役模式，例如`_isRoundType_ar`或`_ar`均返回 `当前是否是The Arena`
 6. `roundType`: 战役模式 (`ar`: The Arena, `rb`: Ring of Blood, `gr`: GrindFest, `iw`: Item World, `ba`: Random Encounter, `tw`: The Tower)
 
-  **注意**: 由于是字符串之间的比较，所以用旧版本格式`比较值A,比较运算符,比较值B`时请加上引号，如"ar"/'ar'
+  **注意**: 字符串之间的比较会自动去除最外层的引号，如`"ar"`/`'ar'`均和`ar`一致
 
 7. `attackStatus`: 攻击模式 (`0`: Physical, `1`: Fire, `2`: Cold, `3`: Elec, `4`: Wind, `5`: Divine, `6`: Forbidden)。 或使用 `_phys`, `_fire`, `_cold`, `_elec`, `_wind`, `_divi`, `_forb` 表示 `当前 attack mode 是否为 ...`，例如 `_phys` 等价于 `attackStatus == 0`。
    - 获取到的是默认攻击模式，可加后缀`Cur`来表示判断次要模式后的攻击模式（直接获取当前`attackStatus`需要加`_`前缀），即：`_attackStatusCur`,`_physCur`, `_fireCur`, `_coldCur`, `_elecCur`, `_windCur`, `_diviCur`, `_forbCur`
@@ -106,7 +106,7 @@
 
     2. `_targetRank`和攻击规则给出的顺序值相同（0~9，数字越小，优先级越高）
 12. `targetName`、`targetBossType`: 目标怪物的名称、Boss类型。
-    1. `_targetName`返回目标的名称字符串（**注意**: 由于是字符串之间的比较，所以请使用下划线`_`代替空格` `且在用旧版本格式`比较值A,比较运算符,比较值B`时加上引号，如`'Yugi_Nagato'`/`"Yugi_Nagato"`）
+    1. `_targetName`返回目标的名称字符串（**注意**: 字符串之间的比较会自动去除最外层的引号，且请使用下划线`_`代替空格` `，如`Yugi_Nagato`/`'Yugi_Nagato'`/`"Yugi_Nagato"`）
     2. 其中类Boss型`_targetBossType`根据 名称进行判断:
         1. `Manbearpig`、`White Bunneh`、`Mithra`、`Dalek`: 1 (BOSS)
         2. `Konata`、`Mikuru Asahina`、`Ryouko Asakura`、`Yuki Nagato`: 2 (Legendaries)
@@ -417,6 +417,7 @@
 灵感来自hoverplay，刚开始接触js，初步完成代码
 功能有：答题警报、其他警报、快捷键、自动前进、自动使用宝石、自动回复、自动使用增益技能、自动打怪
 很可惜，玩游戏不走心，一直搞不懂HVSTAT是怎么知道每个怪的血量的，直到[版本2.0](#20)
+
 
 
 
