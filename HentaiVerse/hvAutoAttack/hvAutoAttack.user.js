@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.142
+// @version      2.90.143
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2587,6 +2587,8 @@
         '<option value="_targetMp">targetMp</option>',
         '<option value="_targetSp">targetSp</option>',
         '<option value="_targetRank">targetRank</option>',
+        '<option value="_targetName">targetName</option>',
+        '<option value="_targetBossType">targetBossType</option>',
         '<option value=""></option>',
       ].join('');
       customizeBox.style.cssText += 'display: none;';
@@ -2931,6 +2933,40 @@
         },
         targetRank() {
           return Object.entries(g('battle').monsterStatus).find(([k, v]) => v.order === target.order)[0] * 1;
+        },
+        targetName() {
+          const mon = getMonster(target.order+1)
+          return gE(`${monsterStateKeys.lv}[style*="background"]`, mon) ? gE(`.btm3>div>div`, mon).innerText : undefined;
+        },
+        targetBossType() {
+          const name = func.targetName();
+          switch(name) {
+            case 'Manbearpig':
+            case 'White Bunneh':
+            case 'Mithra':
+            case 'Dalek':
+              return 1; // BOSS
+            case 'Konata':
+            case 'Mikuru Asahina':
+            case 'Ryouko Asakura':
+            case 'Yuki Nagato':
+              return 2; // Legendaries
+            case 'Skuld':
+            case 'Urd':
+            case 'Verdandi':
+            case 'Yggdrasil':
+              return 3; // Trio and the Tree
+            case 'Rhaegal':
+            case 'Viserion':
+            case 'Drogon':
+              return 4; // A Dance with Dragons
+            case 'Real Life':
+            case 'Invisible Pink Unicorn':
+            case 'Flying Spaghetti Monster':
+              return 5; // Gods
+            default:
+              return 0;
+          }
         },
         targetHp() {
           return target.hpNow / target.hp;
