@@ -76,7 +76,7 @@ Four drop down lists and one button are visible in the box
 5. `isRoundType`、`ar`、`ba`、`iw`、`tw`、`gr`、`rb`: is current round type as the target type, such as: both `_isRoundType_ar` and `_ar` returns `is currently in The Arena`
 6. `roundType`: Battle Type (`ar`: The Arena, `rb`: Ring of Blood, `gr`: GrindFest, `iw`: Item World, `ba`: Random Encounter, `tw`: The Tower)
 
-  (**Note**: Because comparison between strings, please add quotation while using legacy version condition `A,Comparison-Operator,B` , such as `"ar"`/`'ar'`)
+  (**Note**: Comparison between strings will automatically remove the outermost quotation marks, such as `"ar"`/`'ar'` is as same as `ar`
 
 7. `attackStatus`: Attack Mode (`0`: Physical, `1`: Fire, `2`: Cold, `3`: Elec, `4`: Wind, `5`: Divine, `6`: Forbidden). Or use `_phys`, `_fire`, `_cold`, `_elec`, `_wind`, `_divi`, `_forb` as `if current attack mode is ...`, such as `_phys` equals `attackStatus == 0`。
    - Value acquired above is the default Attack Mode, to get current Attack Mode after calculating Secondary Attack Mode, use suffix `Cur` ( and prefix `_` for `attackStatus`), such as：`_attackStatusCur`,`_physCur`, `_fireCur`, `_coldCur`, `_elecCur`, `_windCur`, `_diviCur`, `_forbCur`
@@ -104,7 +104,7 @@ Four drop down lists and one button are visible in the box
     
     2. `_targetBuffTurn` returns the value as same as the ranked order given by Attack Rule (0~9, smaller number as higher priority)
 12. `targetName`/`targetBossType`: name and boss type for target monster
-    1. `_targetName` returns a string of the target name (**Note**: Because comparison between strings, please replace space` ` with underline`_` and add quotation while using legacy version condition `A,Comparison-Operator,B`, such as `'Yugi_Nagato'`/`"Yugi_Nagato"`）
+    1. `_targetName` returns a string of the target name (**Note**: Comparison between strings will automatically remove the outermost quotation marks, meanwhile **please replace space` ` with underline`_`**, such as `Yugi_Nagato`/`'Yugi_Nagato'`/`"Yugi_Nagato"`)
     2. `_targetBossType` is determined by name:
         1. `Manbearpig`、`White Bunneh`、`Mithra`、`Dalek`: 1 (BOSS)
         2. `Konata`、`Mikuru Asahina`、`Ryouko Asakura`、`Yuki Nagato`: 2 (Legendaries)
@@ -225,6 +225,7 @@ In this example, the script will attack enemy 1 next.
 
 * Old
 1. see [README_Chinese#更新历史](https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README.md#更新历史)
+
 
 
 
