@@ -105,6 +105,15 @@
         ![示例](https://github.com/user-attachments/assets/b4d0c57d-fdb1-464b-88d6-107643809339)
 
     2. `_targetRank`和攻击规则给出的顺序值相同（0~9，数字越小，优先级越高）
+12. `targetName`、`targetBossType`: 目标怪物的名称、Boss类型。
+    1. `_targetName`返回目标的名称字符串（**注意**: 由于是字符串之间的比较，所以用旧版本格式`比较值A,比较运算符,比较值B`时请加上引号，如"Konata"/'Konata'）
+    2. 其中类Boss型`_targetBossType`根据 名称进行判断:
+        1. `Manbearpig`、`White Bunneh`、`Mithra`、`Dalek`: 1 (BOSS)
+        2. `Konata`、`Mikuru Asahina`、`Ryouko Asakura`、`Yuki Nagato`: 2 (Legendaries)
+        3. `Skuld`、`Urd`、`Verdandi`、`Yggdrasil`: 3 (Trio and the Tree)
+        4. `Rhaegal`、`Viserion`、`Drogon`: 4 (A Dance with Dragons)
+        5. `Real Life`、`Invisible Pink Unicorn`、`Flying Spaghetti Monster`: 5 (Gods)
+        6. 其他: 0 (非boss)
 
 13. 空白(blank): 自己输入 (the value you want to put in)
 
@@ -408,6 +417,7 @@
 灵感来自hoverplay，刚开始接触js，初步完成代码
 功能有：答题警报、其他警报、快捷键、自动前进、自动使用宝石、自动回复、自动使用增益技能、自动打怪
 很可惜，玩游戏不走心，一直搞不懂HVSTAT是怎么知道每个怪的血量的，直到[版本2.0](#20)
+
 
 
 
