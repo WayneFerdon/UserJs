@@ -1168,7 +1168,6 @@
         window.localStorage.removeItem(`hvAA-${key}`);
         return;
       }
-      console.log(key, isLocalStorage, GM_getValue(key), window.localStorage[key])
       if (isLocalStorage) {
         window.localStorage.removeItem(`hvAA-${key}`);
       }
