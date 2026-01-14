@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.141
+// @version      2.90.142
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -32,7 +32,8 @@
 (function () {
   try {
     'use strict';
-    const standalone = ['option', 'arena', 'drop', 'stats', 'staminaLostLog', 'battleCode', 'disabled', 'stepIn', 'stamina', 'lastHref', 'battle', 'monsterDB', 'monsterMID', 'ability'];
+    const standalone = ['option', 'arena', 'stamina', 'lastHref', 'ability', 'drop', 'stats', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS'];
+    const localStorage = ['stats', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS'];
     const sharable = ['option'];
     const excludeStandalone = { 'option': ['optionStandalone', 'version', 'lang'] };
     const href = window.location.href;
@@ -1091,45 +1092,57 @@
       }
     }
 
-    function setLocal(item, value) {
-      if (JSON.stringify(getLocal(item)) === JSON.stringify(value)) {
+    function setLocal(key, value, isLocalStroage) {
+      if (JSON.stringify(getLocal(key)) === JSON.stringify(value)) {
         return;
       }
-      if (typeof GM_setValue === 'undefined') {
-        window.localStorage[`hvAA-${item}`] = (typeof value === 'string') ? value : JSON.stringify(value);
+      if (typeof GM_setValue === 'undefined' || isLocalStroage) {
+        window.localStorage[`hvAA-${key}`] = (typeof value === 'string') ? value : JSON.stringify(value);
       } else {
-        GM_setValue(item, value);
+        GM_setValue(key, value);
       }
     }
 
-    function setValue(item, value) { // 储存数据
-      if (!standalone.includes(item)) {
-        setLocal(item, value);
+    function setValue(key, value) { // 储存数据
+      const isLocalStorage = localStorage.includes(key);
+      if (!standalone.includes(key)) {
+        setLocal(key, value, isLocalStorage);
         return value;
       }
-      setLocal(`${current}_${item}`, value);
-      if (sharable.includes(item) && !getValue('option').optionStandalone) {
-        setLocal(`${other}_${item}`, value);
+      setLocal(`${current}_${key}`, value, isLocalStorage);
+      if (sharable.includes(key) && !getValue('option').optionStandalone) {
+        setLocal(`${other}_${key}`, value, isLocalStorage);
       }
       return value;
     }
 
-    function getLocal(item, toJSON) {
-      if (typeof GM_getValue === 'undefined' || !GM_getValue(item, null)) {
-        item = `hvAA-${item}`;
-        return (item in window.localStorage) ? ((toJSON) ? JSON.parse(window.localStorage[item]) : window.localStorage[item]) : null;
+    function getLocal(key, isLocalStorage, toJSON) {
+      if (typeof GM_getValue === 'undefined' || !GM_getValue(key, null)) {
+        key = `hvAA-${key}`;
+        return (key in window.localStorage) ? (toJSON ? JSON.parse(window.localStorage[key]) : window.localStorage[key]) : null;
       }
-      return GM_getValue(item, null);
+      let value = GM_getValue(key, null);
+      if (!isLocalStorage) {
+        return value;
+      }
+      key = `hvAA-${key}`;
+      if (!(key in window.localStorage)) {
+        return value;
+      }
+      value = window.localStorage[key];
+      value = toJSON ? JSON.parse(value) : value;
+      return value
     }
 
     function getValue(key, toJSON) { // 读取数据
+      const isLocalStorage = localStorage.includes(key);
       if (!standalone.includes(key)) {
-        return getLocal(key, toJSON);
+        return getLocal(key, isLocalStorage, toJSON);
       }
-      let otherWorldItem = getLocal(`${other}_${key}`);
+      let otherWorldItem = getLocal(`${other}_${key}`, isLocalStorage);
       // 将旧的数据迁移到新的数据
-      if (!getLocal(`${current}_${key}`)) {
-        let itemExisted = getLocal(key);
+      if (!getLocal(`${current}_${key}`, isLocalStorage)) {
+        let itemExisted = getLocal(key, isLocalStorage);
         if (!itemExisted && sharable.includes(key)) {
           itemExisted = otherWorldItem;
         }
@@ -1138,32 +1151,37 @@
         }
         itemExisted = JSON.parse(JSON.stringify(itemExisted));
         setLocal(`${current}_${key}`, itemExisted);
-        delLocal(key);
+        delLocal(key, isLocalStorage);
       }
       if (Object.keys(excludeStandalone).includes(key)) {
-        otherWorldItem ??= getLocal(`${current}_${key}`) ?? {};
+        otherWorldItem ??= getLocal(`${current}_${key}`, isLocalStorage) ?? {};
         for (let i of excludeStandalone[key]) {
-          otherWorldItem[i] = getLocal(`${current}_${key}`)[i];
+          otherWorldItem[i] = getLocal(`${current}_${key}`, isLocalStorage)[i];
         }
       }
       setLocal(`${other}_${key}`, otherWorldItem);
-      return getLocal(`${current}_${key}`);
+      return getLocal(`${current}_${key}`, isLocalStorage, toJSON);
     }
 
-    function delLocal(key) {
+    function delLocal(key, isLocalStorage) {
       if (typeof GM_deleteValue === 'undefined') {
         window.localStorage.removeItem(`hvAA-${key}`);
         return;
       }
+      console.log(key, isLocalStorage, GM_getValue(key), window.localStorage[key])
+      if (isLocalStorage) {
+        window.localStorage.removeItem(`hvAA-${key}`);
+      }
       GM_deleteValue(key);
     }
 
-    function delValue(key) { // 删除数据
+    function delValue(key, isLocalStorage) { // 删除数据
+      isLocalStorage ||= localStorage.includes(key);
       if (standalone.includes(key)) {
         key = `${current}_${key}`;
       }
       if (typeof key === 'string') {
-        delLocal(key);
+        delLocal(key, isLocalStorage);
         return;
       }
       if (typeof key !== 'number') {
@@ -1174,7 +1192,7 @@
         1: ['battle', 'battleCode'],
       }
       for (let item of itemMap[key]) {
-        delValue(item);
+        delValue(item, isLocalStorage);
       }
     }
 
@@ -1434,11 +1452,6 @@
         '    <div><input id="nativeNewRound" type="checkbox"><label for="nativeNewRound"><b><l0>使用原生方式进入新回合</l0><l1>使用原生方式進入新回合</l1><l2>Native new round</l2></b></label></div>',
         '    <div><b><l0>继续新回合延时</l0><l1>繼續新回合延時</l1><l2>New round wait time</l2></b>: <input class="hvAANumber" name="NewRoundWaitTime" placeholder="0" type="text"> <l0>(秒)</l0><l1>(秒)</l1><l2>(s)</l2></div>',
         '    <div><b><l0>战斗结束退出延时</l0><l1>戰鬥結束退出延時</l1><l2>Exit battle wait time</l2></b>: <input class="hvAANumber" name="ExitBattleWaitTime" placeholder="3" type="text"> <l0>(秒)</l0><l1>(秒)</l1><l2>(s)</l2></div>',
-        // '    <div style="display: flex; flex-flow: wrap;"><b><l0>当损失精力</l0><l1>當損失精力</l1><l2>If it lost Stamina</l2></b> ≥ <input class="hvAANumber" name="staminaLose" placeholder="5" type="text">: ',
-        // '    <input id="staminaPause" type="checkbox"><label for="staminaPause"><l0>脚本暂停</l0><l1>腳本暫停</l1><l2>pause script</l2></label>;',
-        // '    <input id="staminaWarn" type="checkbox"><label for="staminaWarn"><l01>警告</l01><l2>warn</l2></label>; ',
-        // '    <input id="staminaFlee" type="checkbox"><label for="staminaFlee"><l01>逃跑</l01><l2>flee</l2></label>',
-        // '    <button class="staminaLostLog"><l0>精力损失日志</l0><l1>精力損失日誌</l1><l2>staminaLostLog</l2></button></div>',
         '    <div><b><l0>战斗页面停留</l0><l1>戰鬥頁面停留</l1><l2>If not active for </l2></b>: ',
         '      <br><input id="battleUnresponsive_Alert" type="checkbox"><label for="battleUnresponsive_Alert"><input class="hvAANumber" name="battleUnresponsiveTime_Alert" type="text"> <l0>秒，警报</l0><l1>秒，警報</l1><l2>(s), alarm</l2></label>; ',
         '      <br><input id="battleUnresponsive_Reload" type="checkbox"><label for="battleUnresponsive_Reload"><input class="hvAANumber" name="battleUnresponsiveTime_Reload" type="text"> <l0>秒，刷新页面</l0><l1>秒，刷新頁面</l1><l2>(s), reload page</l2></label>',
@@ -2098,16 +2111,6 @@
           }
         }, 3000);
       };
-      // gE('.staminaLostLog', optionBox).onclick = function () {
-      //   const out = [];
-      //   const staminaLostLog = getValue('staminaLostLog', true);
-      //   for (const i in staminaLostLog) {
-      //     out.push(`${i}: ${staminaLostLog[i]}`);
-      //   }
-      //   if (window.confirm(`总共${out.length}条记录 (There are ${out.length} logs): \n${out.reverse().join('\n')}\n是否重置 (Whether to reset)?`)) {
-      //     setValue('staminaLostLog', {});
-      //   }
-      // };
       gE('.idleArenaReset', optionBox).onclick = function () {
         if (_alert(1, '是否重置', '是否重置', 'Whether to reset')) {
           delValue('arena');
@@ -4376,19 +4379,6 @@
           setEncounter(encounter);
         }
       }
-      // if (/You lose \d+ Stamina/.test(battleLog[0].textContent)) {
-      //   const staminaLostLog = getValue('staminaLostLog', true) || {};
-      //   staminaLostLog[time(3)] = battleLog[0].textContent.match(/You lose (\d+) Stamina/)[1] * 1;
-      //   setValue('staminaLostLog', staminaLostLog);
-      //   const losedStamina = battleLog[0].textContent.match(/\d+/)[0] * 1;
-      //   if (losedStamina >= g('option').staminaLose) {
-      //     setAlarm('Error');
-      //     if (!_alert(1, '当前Stamina过低\n或Stamina损失过多\n是否继续？', '當前Stamina過低\n或Stamina損失過多\n是否繼續？', 'Continue?\nYou either have too little Stamina or have lost too much')) {
-      //       pauseChange();
-      //       return;
-      //     }
-      //   }
-      // }
 
       const roundPrev = battle.roundNow;
 
