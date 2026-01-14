@@ -104,7 +104,7 @@ Four drop down lists and one button are visible in the box
     
     2. `_targetBuffTurn` returns the value as same as the ranked order given by Attack Rule (0~9, smaller number as higher priority)
 12. `targetName`/`targetBossType`: name and boss type for target monster
-    1. `_targetName` returns a string of the target name (**Note**: Because comparison between strings, please add quotation while using legacy version condition `A,Comparison-Operator,B` , such as `"Konata"`/`'Konata'`)
+    1. `_targetName` returns a string of the target name (**Note**: Because comparison between strings, please add quotation while using legacy version condition `A,Comparison-Operator,B` and replace space` ` with underline`_` , such as `'Yugi_Nagato'`/`"Yugi_Nagato"`）
     2. `_targetBossType` is determined by name:
         1. `Manbearpig`、`White Bunneh`、`Mithra`、`Dalek`: 1 (BOSS)
         2. `Konata`、`Mikuru Asahina`、`Ryouko Asakura`、`Yuki Nagato`: 2 (Legendaries)
@@ -225,6 +225,7 @@ In this example, the script will attack enemy 1 next.
 
 * Old
 1. see [README_Chinese#更新历史](https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README.md#更新历史)
+
 
 
 
