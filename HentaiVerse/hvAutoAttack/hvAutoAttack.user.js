@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.144
+// @version      2.90.145
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1699,7 +1699,7 @@
         '    <input id="debuffAllExclusive_Slo" type="checkbox"><label for="debuffAllExclusive_Slo"><l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2></label>',
         '    <input id="debuffAllExclusive_Dr" type="checkbox"><label for="debuffAllExclusive_Dr"><l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2></label>',
         '    <input id="debuffAllExclusive_Im" type="checkbox"><label for="debuffAllExclusive_Im"><l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2></label>',
-        '    <input id="debuffAllExclusive_MN" type="checkbox"><label for="debuffAllExclusive_MN"><l0>魔磁网(MN)</l0><l1>魔磁網(MN)</l1><l2>MagNet</l2></label>',
+        '    <input id="debuffAllExclusive_MN" type="checkbox"><label for="debuffAllExclusive_MN"><l0>魔磁网/固定(MN)</l0><l1>魔磁網/固定(MN)</l1><l2>MagNet/Immobilize</l2></label>',
         '    <input id="debuffAllExclusive_Co" type="checkbox"><label for="debuffAllExclusive_Co"><l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2></label>',
         '  </div>',
 
@@ -1712,7 +1712,7 @@
         '    <input id="debuffSkillOrder_Slo" type="checkbox"><label for="debuffSkillOrder_Slo"><l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2></label>',
         '    <input id="debuffSkillOrder_Dr" type="checkbox"><label for="debuffSkillOrder_Dr"><l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2></label>',
         '    <input id="debuffSkillOrder_Im" type="checkbox"><label for="debuffSkillOrder_Im"><l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2></label>',
-        '    <input id="debuffSkillOrder_MN" type="checkbox"><label for="debuffSkillOrder_MN"><l0>魔磁网(MN)</l0><l1>魔磁網(MN)</l1><l2>MagNet</l2></label>',
+        '    <input id="debuffSkillOrder_MN" type="checkbox"><label for="debuffSkillOrder_MN"><l0>魔磁网/固定(MN)</l0><l1>魔磁網/固定(MN)</l1><l2>MagNet/Immobilize</l2></label>',
         '    <input id="debuffSkillOrder_Co" type="checkbox"><label for="debuffSkillOrder_Co"><l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2></label>',
         '  </div>',
         '  <div><l0>特殊先给全体施放和单体施放使用共享的阈值和各自独立的条件</l0><l1>特殊先給全體施放和單體施放使用共享的閾值和各自獨立的條件</l1><l2>Using sharing threshold and standalone conditions between special cast for debuff all enemies first and cast for debuff each enemy</l2></div>',
@@ -1723,7 +1723,7 @@
         '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillSloAll" type="checkbox"><label for="debuffSkillSloAll"><l0>先给全体上缓慢(Slo)</l0><l1>先給全體上緩慢(Slo)</l1><l2>Slow all enemies first.</l2></label><input id="debuffSkillSloAllByIndex" type="checkbox"><label for="debuffSkillSloAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label></div>{{debuffSkillSloAllCondition}}',
         '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillDrAll" type="checkbox"><label for="debuffSkillDrAll"><l0>先给全体上枯竭(Dr)</l0><l1>先給全體上枯竭(Dr)</l1><l2>Drain all enemies first.</l2></label><input id="debuffSkillDrAllByIndex" type="checkbox"><label for="debuffSkillDrAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label></div>{{debuffSkillDrAllCondition}}',
         '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillImAll" type="checkbox"><label for="debuffSkillImAll"><l0>先给全体上陷危(Im)</l0><l1>先給全體上陷危(Im)</l1><l2>Imperil all enemies first.</l2></label><input id="debuffSkillImAllByIndex" type="checkbox"><label for="debuffSkillImAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label></div>{{debuffSkillImAllCondition}}',
-        '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillMNAll" type="checkbox"><label for="debuffSkillMNAll"><l0>先给全体上魔磁网(MN)</l0><l1>先給全體上魔磁網(MN)</l1><l2>MagNet all enemies first.</l2></label><input id="debuffSkillMNAllByIndex" type="checkbox"><label for="debuffSkillMNAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label></div>{{debuffSkillMNAllCondition}}',
+        '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillMNAll" type="checkbox"><label for="debuffSkillMNAll"><l0>先给全体上魔磁网/固定(MN)</l0><l1>先給全體上魔磁網/固定(MN)</l1><l2>MagNet/Immobilize all enemies first.</l2></label><input id="debuffSkillMNAllByIndex" type="checkbox"><label for="debuffSkillMNAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label></div>{{debuffSkillMNAllCondition}}',
         '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillCoAll" type="checkbox"><label for="debuffSkillCoAll"><l0>先给全体上混乱(Co)</l0><l1>先給全體上混亂(Co)</l1><l2>Confuse all enemies first.</l2></label><input id="debuffSkillCoAllByIndex" type="checkbox"><label for="debuffSkillCoAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label></div>{{debuffSkillCoAllCondition}}',
 
         '    <div><input id="debuffSkill_Sle" type="checkbox"><label for="debuffSkill_Sle"><l0>沉眠(Sl)</l0><l1>沉眠(Sl)</l1><l2>Sleep</l2> <= <input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Sle" type="text"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label>{{debuffSkillSleCondition}}</div>',
@@ -1733,7 +1733,7 @@
         '    <div><input id="debuffSkill_Slo" type="checkbox"><label for="debuffSkill_Slo"><l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2> <= <input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Slo" type="text"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label>{{debuffSkillSloCondition}}</div>',
         '    <div><input id="debuffSkill_Dr" type="checkbox"><label for="debuffSkill_Dr"><l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2> <= <input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Dr" type="text"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label>{{debuffSkillDrCondition}}</div>',
         '    <div><input id="debuffSkill_Im" type="checkbox"><label for="debuffSkill_Im"><l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2> <= <input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Im" type="text"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label>{{debuffSkillImCondition}}</div>',
-        '    <div><input id="debuffSkill_MN" type="checkbox"><label for="debuffSkill_MN"><l0>魔磁网(MN)</l0><l1>魔磁網(MN)</l1><l2>MagNet</l2> <= <input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_MN" type="text"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label>{{debuffSkillMNCondition}}</div>',
+        '    <div><input id="debuffSkill_MN" type="checkbox"><label for="debuffSkill_MN"><l0>魔磁网/固定(MN)</l0><l1>魔磁網/固定(MN)</l1><l2>MagNet/Immobilize</l2> <= <input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_MN" type="text"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label>{{debuffSkillMNCondition}}</div>',
         '    <div><input id="debuffSkill_Co" type="checkbox"><label for="debuffSkill_Co"><l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2> <= <input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Co" type="text"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label></label>{{debuffSkillCoCondition}}</div>',
         '  </div>',
 
@@ -1785,7 +1785,7 @@
         '      <div><input class="hvAANumber" name="weight_BW" placeholder="-10" type="text" style="width: 40px;"> <l0>流血(Bl)</l0><l1>流血(Bl)</l1><l2>Bleeding Wound</l2></div>',
         '      <div><input class="hvAANumber" name="weight_Co" placeholder="300" type="text" style="width: 40px;"> <l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2></div>',
         '      <div><input class="hvAANumber" name="weight_Dr" placeholder="2" type="text" style="width: 40px;"> <l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_MN" placeholder="7" type="text" style="width: 40px;"> <l0>魔磁网(MN)</l0><l1>魔磁網(MN)</l1><l2>MagNet</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_MN" placeholder="7" type="text" style="width: 40px;"> <l0>魔磁网/固定(MN)</l0><l1>魔磁網/固定(MN)</l1><l2>MagNet/Immobilize</l2></div>',
         '      <div><input class="hvAANumber" name="weight_Stun" placeholder="290" type="text" style="width: 40px;"> <l0>眩晕(St)</l0><l1>眩暈(St)</l1><l2>Stunned</l2></div>',
         '      <div><input class="hvAANumber" name="weight_CM" placeholder="-20" type="text" style="width: 40px;"> <l0>魔力合流()</l0><l1>魔力合流(CM)</l1><l2>Coalesced Mana</l2></div>',
         '      <div><input class="hvAANumber" name="weight_BS" placeholder="0" type="text" style="width: 40px;"> <l0>焚燒的靈魂(BS)</l0><l1>焚燒的靈魂(BS)</l1><l2>Burning Soul</l2></div>',
