@@ -2940,7 +2940,7 @@
           return Object.entries(g('battle').monsterStatus).find(([k, v]) => v.order === target.order)[0] * 1;
         },
         targetName() {
-          const mon = getMonster(target.order+1)
+          const mon = getMonster(getMonsterID(target))
           return gE(`.btm3>div>div`, mon).innerText.replace(' ', '_');
         },
         targetBossType() {
