@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.145
+// @version      2.90.146
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -4079,7 +4079,7 @@
     }
 
     function getMonster(id) {
-      return gE(`#mkey_${id}`);
+      return gE(`#mkey_${id % 10}`);
     }
 
     function getMonsterBuff(id, buff) {
@@ -4333,22 +4333,22 @@
       gE('head').appendChild(fakeApiCall);
       const fakeApiResponse = cE('script');
       fakeApiResponse.textContent = `api_response = ${function (b) {
-        if (b.readyState === 4) {
-          if (b.status === 200) {
-            const a = JSON.parse(b.responseText);
-            if (a.login !== undefined) {
-              top.window.location.href = login_url;
-            } else {
-              if (a.error || a.reload) {
-                window.location.href = window.location.search;
-              }
-              return a;
-            }
-          } else {
-            window.location.href = window.location.search;
-          }
+        if (b.readyState !== 4) {
+          return false;
         }
-        return false;
+        if (b.status !== 200) {
+          window.location.href = window.location.search;
+          return false;
+        }
+        const a = JSON.parse(b.responseText);
+        if (a.login !== undefined) {
+          top.window.location.href = login_url;
+          return false;
+        }
+        if (a.error || a.reload) {
+          window.location.href = window.location.search;
+        }
+        return a;
       }.toString()}`;
       gE('head').appendChild(fakeApiResponse);
     }
