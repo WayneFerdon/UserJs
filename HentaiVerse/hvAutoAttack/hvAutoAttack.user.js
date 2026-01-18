@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.147
+// @version      2.90.148
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1268,7 +1268,7 @@
         '.hvAATab>div:nth-child(2n+1){border:1px solid #808080;background-color:#DADADA;}',
         '.hvAATab a{margin:0 2px;}',
         '.hvAATab b{font-family:Georgia,Serif;font-size:larger;}',
-        '.hvAATab input.hvAANumber{width:40px;text-align:right;}',
+        '.hvAATab input.hvAANumber{text-align:center;}',
         '#hvAABox input[type=\'checkbox\']{top: 3px;}',
         '.hvAATab ul,.hvAATab ol{margin:0;}',
         '.hvAATab label{cursor:pointer;}',
@@ -1277,13 +1277,13 @@
         '.hvAATab table>tbody>tr>*{border:1px solid #000;}',
         '#hvAATab-Drop tr>td:nth-child(1),#hvAATab-Usage tr>td:nth-child(1){text-align:left;}',
         '#hvAATab-Drop td,#hvAATab-Usage td{text-align:right;white-space:nowrap;}',
-        // '#hvAATab-Drop td:empty:before,#hvAATab-Usage td:empty:before{content:"";}',
         '.selectTable{cursor:pointer;}',
         `.selectTable:before{content:"${String.fromCharCode(0x22A0.toString(10))}";}`,
         '.hvAACenter{text-align:center;}',
         '.hvAATitle{font-weight:bolder;}',
         '.hvAAGoto{cursor:pointer;text-decoration:underline;}',
-        '.customizeInput{width:193px}',
+        'input[type="text"]{min-width:1ch}',
+        '.customizeInput{min-width:6ch}',
         '.hvAATable>* {border: 1px solid;}',
         '.hvAANew{width:25px;height:25px;float:left;background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAMCAYAAACX8hZLAAAAcElEQVQ4jbVRSQ4AIQjz/59mTiZIF3twmnCwFAq4FkeFXM+5vCzohYxjPMtfxS8CN6iqQ7TfE0wrODxVbzJNgoaTo4CmbBO1ZWICouQ0DHaL259MEzaU+w8pZOdSjcUgaPJDHCbO0A2kuAiuwPGQ+wBms12x8HExTwAAAABJRU5ErkJggg==) center no-repeat transparent;}',
         '#hvAATab-Alarm input[type="text"]{width:512px;}',
@@ -1385,12 +1385,12 @@
         '  <div><b><l0>脚本行为</l0><l1>腳本行為</l1><l2>Script Activity</l2></b>',
         '    <div>',
         '      <input id="pauseButton" type="checkbox"><label for="pauseButton"><l0>暂停按钮</l0><l1>暫停按鈕</l1><l2>Pause Button</l2></label>; ',
-        '      <input id="pauseHotkey" type="checkbox"><label for="pauseHotkey"><l0>暂停热键</l0><l1>暫停熱鍵</l1><l2>Pause Hotkey</l2>: <input name="pauseHotkeyStr" style="width:30px;" type="text"><input class="hvAANumber" name="pauseHotkeyCode" type="hidden" disabled="true"></label><br>',
+        '      <input id="pauseHotkey" type="checkbox"><label for="pauseHotkey"><l0>暂停热键</l0><l1>暫停熱鍵</l1><l2>Pause Hotkey</l2>: <input class="hvAANumber" name="pauseHotkeyStr" type="text"><input class="hvAANumber" name="pauseHotkeyCode" type="hidden" disabled="true"></label><br>',
         '      <input id="stepInButton" type="checkbox"><label for="stepInButton"><l0>步进按钮</l0><l1>步進按鈕</l1><l2>StepIn Button</l2></label>; ',
-        '      <input id="stepInHotkey" type="checkbox"><label for="stepInHotkey"><l0>步进热键</l0><l1>步進熱鍵</l1><l2>StepIn Hotkey</l2>: <input name="stepInHotkeyStr" style="width:30px;" type="text"><input class="hvAANumber" name="stepInHotkeyCode" type="hidden" disabled="true"></label>',
+        '      <input id="stepInHotkey" type="checkbox"><label for="stepInHotkey"><l0>步进热键</l0><l1>步進熱鍵</l1><l2>StepIn Hotkey</l2>: <input class="hvAANumber" name="stepInHotkeyStr" type="text"><input class="hvAANumber" name="stepInHotkeyCode" type="hidden" disabled="true"></label>',
         '  </div>',
         ' <div><input id="altButton" type="checkbox"><label for="altButton">Alt<l0>切换按钮</l0><l1>切換按鈕</l1><l2>Switch Button</l2></label>; ',
-        '      <input id="altHotkey" type="checkbox"><label for="altHotkey"><l0>热键</l0><l1>熱鍵</l1><l2>Hotkey</l2>: <input name="altHotkeyStr" style="width:30px;" type="text"><input class="hvAANumber" name="altHotkeyCode" type="hidden" disabled="true"></label></div>',
+        '      <input id="altHotkey" type="checkbox"><label for="altHotkey"><l0>热键</l0><l1>熱鍵</l1><l2>Hotkey</l2>: <input class="hvAANumber" name="altHotkeyStr" type="text"><input class="hvAANumber" name="altHotkeyCode" type="hidden" disabled="true"></label></div>',
         '    <div><l0>警告相关</l0><l1>警告相關</l1><l2>To Warn</l2>: ',
         '      <input id="alert" type="checkbox"><label for="alert"><l0>音频警报</l0><l1>音頻警報</l1><l2>Audio Alarms</l2></label>; ',
         '      <input id="notification" type="checkbox"><label for="notification"><l0>桌面通知</l0><l1>桌面通知</l1><l2>Notifications</l2></label> ',
@@ -1770,60 +1770,60 @@
         '<div class="hvAATab" id="hvAATab-Rule">',
         '  <span class="hvAATitle"><l0>攻击规则</l0><l1>攻擊規則</l1><l2>Attack Rule</l2></span> <l01><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README.md#攻击规则-示例" target="_blank">示例</a></l01><l2><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README_en.md#attack-rule-example" target="_blank">Example</a></l2>',
         '  <div><b>1. <l0>初始血量权重=Log10(目标血量/场上最低血量)</l0><l1>初始血量權重=Log10(目標血量/場上最低血量)</l1><l2>BaseHpWeight = BaseHpRatio*Log10(TargetHP/MaxHPOnField)</l2></b><br>',
-        '    <l0>初始权重系数(>0:低血量优先;<0:高血量优先)</l0><l1>初始權重係數(>0:低血量優先;<0:高血量優先)</l1><l2>BaseHpRatio(>0:low hp first;<0:high hp first)</l2><input class="hvAANumber" name="baseHpRatio" placeholder="1" type="text" style="width:40px"><br>',
-        '    <l0>不可命中目标的权重</l0><l1>不可名中目標的權重</l1><l2>Unreachable Target Weight</l2><input class="hvAANumber" name="unreachableWeight" placeholder="1000" type="text" style="width:40px"><br>',
+        '    <l0>初始权重系数(>0:低血量优先;<0:高血量优先)</l0><l1>初始權重係數(>0:低血量優先;<0:高血量優先)</l1><l2>BaseHpRatio(>0:low hp first;<0:high hp first)</l2><input class="hvAANumber" name="baseHpRatio" placeholder="1" type="text"><br>',
+        '    <l0>不可命中目标的权重</l0><l1>不可名中目標的權重</l1><l2>Unreachable Target Weight</l2><input class="hvAANumber" name="unreachableWeight" placeholder="1000" type="text"><br>',
         '    <input id="cacheMonsterHP" type="checkbox"><label for="cacheMonsterHP"><l0>启用HP缓存</l0><l1>啟用HP緩存</l1><l2>Use HP Cache</l2></label><button class="clearMonsterHPCache"><l0>清空缓存</l0><l1>清空緩存</l1><l2>Clear HP Cache</l2></button></div>',
         '  <div><b>2. <l0>初始权重与下述各Buff权重相加</l0><l1>初始權重與下述各Buff權重相加</l1><l2>PW(X) = BaseHpWeight + Accumulated_Weight_of_Deprecating_Spells_In_Effect(X)</l2></b><br>',
         '    <div class="hvAATable" style="display:grid; grid-template-columns:repeat(3, 1fr);">',
-        '      <div><input class="hvAANumber" name="weight_We" placeholder="12" type="text" style="width: 40px;"> <l0>虚弱(We)</l0><l1>虛弱(We)</l1><l2>Weaken</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_Bl" placeholder="10" type="text" style="width: 40px;"> <l0>致盲(Bl)</l0><l1>致盲(Bl)</l1><l2>Blind</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_Slo" placeholder="15" type="text" style="width: 40px;"> <l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_Si" placeholder="10" type="text" style="width: 40px;"> <l0>沉默(Si)</l0><l1>沉默(Si)</l1><l2>Silence</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_Sle" placeholder="100" type="text" style="width: 40px;"> <l0>沉眠(Sl)</l0><l1>沉眠(Sl)</l1><l2>Sleep</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_Im" placeholder="-15" type="text" style="width: 40px;"> <l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_PA" placeholder="-12" type="text" style="width: 40px;"> <l0>破甲(PA)</l0><l1>破甲(PA)</l1><l2>Penetrated Armor</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_BW" placeholder="-10" type="text" style="width: 40px;"> <l0>流血(Bl)</l0><l1>流血(Bl)</l1><l2>Bleeding Wound</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_Co" placeholder="300" type="text" style="width: 40px;"> <l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_Dr" placeholder="2" type="text" style="width: 40px;"> <l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_MN" placeholder="7" type="text" style="width: 40px;"> <l0>魔磁网/固定(MN)</l0><l1>魔磁網/固定(MN)</l1><l2>MagNet/Immobilize</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_Stun" placeholder="290" type="text" style="width: 40px;"> <l0>眩晕(St)</l0><l1>眩暈(St)</l1><l2>Stunned</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_CM" placeholder="-20" type="text" style="width: 40px;"> <l0>魔力合流()</l0><l1>魔力合流(CM)</l1><l2>Coalesced Mana</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_BS" placeholder="0" type="text" style="width: 40px;"> <l0>焚燒的靈魂(BS)</l0><l1>焚燒的靈魂(BS)</l1><l2>Burning Soul</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_RS" placeholder="0" type="text" style="width: 40px;"> <l0>鮮美的靈魂(RS)</l0><l1>鮮美的靈魂(RS)</l1><l2>Ripened Soul</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_We" placeholder="12" type="text"> <l0>虚弱(We)</l0><l1>虛弱(We)</l1><l2>Weaken</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_Bl" placeholder="10" type="text"> <l0>致盲(Bl)</l0><l1>致盲(Bl)</l1><l2>Blind</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_Slo" placeholder="15" type="text"> <l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_Si" placeholder="10" type="text"> <l0>沉默(Si)</l0><l1>沉默(Si)</l1><l2>Silence</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_Sle" placeholder="100" type="text"> <l0>沉眠(Sl)</l0><l1>沉眠(Sl)</l1><l2>Sleep</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_Im" placeholder="-15" type="text"> <l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_PA" placeholder="-12" type="text"> <l0>破甲(PA)</l0><l1>破甲(PA)</l1><l2>Penetrated Armor</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_BW" placeholder="-10" type="text"> <l0>流血(Bl)</l0><l1>流血(Bl)</l1><l2>Bleeding Wound</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_Co" placeholder="300" type="text"> <l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_Dr" placeholder="2" type="text"> <l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_MN" placeholder="7" type="text"> <l0>魔磁网/固定(MN)</l0><l1>魔磁網/固定(MN)</l1><l2>MagNet/Immobilize</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_Stun" placeholder="290" type="text"> <l0>眩晕(St)</l0><l1>眩暈(St)</l1><l2>Stunned</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_CM" placeholder="-20" type="text"> <l0>魔力合流()</l0><l1>魔力合流(CM)</l1><l2>Coalesced Mana</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_BS" placeholder="0" type="text"> <l0>焚燒的靈魂(BS)</l0><l1>焚燒的靈魂(BS)</l1><l2>Burning Soul</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_RS" placeholder="0" type="text"> <l0>鮮美的靈魂(RS)</l0><l1>鮮美的靈魂(RS)</l1><l2>Ripened Soul</l2></div>',
         '    </div>',
         '    <b><l0>降抗性和攻击模式属性相同时</l0><l1>降抗性和攻擊模式屬性相同時</l1><l2>While elements between Resistance-lower-debuff and Attack-Mode matches</l2></b>  [' + attackStatusType[g('attackStatus')] + '] : <br>',
         '    <div class="hvAATable" style="display:grid; grid-template-columns:repeat(3, 1fr);">',
-        '      <div><input class="hvAANumber" name="weight_SS" placeholder="-14" type="text" style="width: 40px;"> <l0>灼烧的皮肤(SS)</l0><l1>燒灼的皮膚(SS)</l1><l2>Searing Skin</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_FL" placeholder="-14" type="text" style="width: 40px;"> <l0>冰封的肢体(FL)</l0><l1>冰封的肢體(FL)</l1><l2>Freezing Limbs</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_TA" placeholder="-14" type="text" style="width: 40px;"> <l0>湍流的空气(TA)</l0><l1>湍流的空氣(TA)</l1><l2>Turbulent Air</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_DB" placeholder="-19" type="text" style="width: 40px;"> <l0>深层的烧伤(DB)</l0><l1>深層的燒傷(DB)</l1><l2>Deep Burns</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_BD" placeholder="-19" type="text" style="width: 40px;"> <l0>崩溃的防御(BD)</l0><l1>崩潰的防禦(BD)</l1><l2>Breached Defense</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_BA" placeholder="-14" type="text" style="width: 40px;"> <l0>钝化的攻击(BA)</l0><l1>鈍化的攻擊(BA)</l1><l2>Blunted Attack</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_SS" placeholder="-14" type="text"> <l0>灼烧的皮肤(SS)</l0><l1>燒灼的皮膚(SS)</l1><l2>Searing Skin</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_FL" placeholder="-14" type="text"> <l0>冰封的肢体(FL)</l0><l1>冰封的肢體(FL)</l1><l2>Freezing Limbs</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_TA" placeholder="-14" type="text"> <l0>湍流的空气(TA)</l0><l1>湍流的空氣(TA)</l1><l2>Turbulent Air</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_DB" placeholder="-19" type="text"> <l0>深层的烧伤(DB)</l0><l1>深層的燒傷(DB)</l1><l2>Deep Burns</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_BD" placeholder="-19" type="text"> <l0>崩溃的防御(BD)</l0><l1>崩潰的防禦(BD)</l1><l2>Breached Defense</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_BA" placeholder="-14" type="text"> <l0>钝化的攻击(BA)</l0><l1>鈍化的攻擊(BA)</l1><l2>Blunted Attack</l2></div>',
         '    </div>',
         '    <b><l0>降抗性和攻击模式属性不相同时</l0><l1>降抗性和攻擊模式屬性不相同時</l1><l2>While elements between Resistance-lower-debuff and Attack-Mode NOT matches</l2></b>  [' + attackStatusType[g('attackStatus')] + '] : <br>',
         '    <div class="hvAATable" style="display:grid; grid-template-columns:repeat(3, 1fr);">',
-        '      <div><input class="hvAANumber" name="weight_SS1" placeholder="5" type="text" style="width: 40px;"> <l0>灼烧的皮肤(SS)</l0><l1>燒灼的皮膚(SS)</l1><l2>Searing Skin</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_FL1" placeholder="5" type="text" style="width: 40px;"> <l0>冰封的肢体(FL)</l0><l1>冰封的肢體(FL)</l1><l2>Freezing Limbs</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_TA1" placeholder="5" type="text" style="width: 40px;"> <l0>湍流的空气(TA)</l0><l1>湍流的空氣(TA)</l1><l2>Turbulent Air</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_DB1" placeholder="-4" type="text" style="width: 40px;"> <l0>深层的烧伤(DB)</l0><l1>深層的燒傷(DB)</l1><l2>Deep Burns</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_BD1" placeholder="-4" type="text" style="width: 40px;"> <l0>崩溃的防御(BD)</l0><l1>崩潰的防禦(BD)</l1><l2>Breached Defense</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_BA1" placeholder="5" type="text" style="width: 40px;"> <l0>钝化的攻击(BA)</l0><l1>鈍化的攻擊(BA)</l1><l2>Blunted Attack</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_SS1" placeholder="5" type="text"> <l0>灼烧的皮肤(SS)</l0><l1>燒灼的皮膚(SS)</l1><l2>Searing Skin</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_FL1" placeholder="5" type="text"> <l0>冰封的肢体(FL)</l0><l1>冰封的肢體(FL)</l1><l2>Freezing Limbs</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_TA1" placeholder="5" type="text"> <l0>湍流的空气(TA)</l0><l1>湍流的空氣(TA)</l1><l2>Turbulent Air</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_DB1" placeholder="-4" type="text"> <l0>深层的烧伤(DB)</l0><l1>深層的燒傷(DB)</l1><l2>Deep Burns</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_BD1" placeholder="-4" type="text"> <l0>崩溃的防御(BD)</l0><l1>崩潰的防禦(BD)</l1><l2>Breached Defense</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_BA1" placeholder="5" type="text"> <l0>钝化的攻击(BA)</l0><l1>鈍化的攻擊(BA)</l1><l2>Blunted Attack</l2></div>',
         '    </div>',
         '    <b><l0>敌方增益，暂不清楚具体效果，默认按0权重计算</l0><l1>敵方增益，暫不清楚具體效果，默認按0權重計算</l1><l2>Enemy Procs, Evvecf value unknown, weight default as 0 for now.</l2>:</b><br>',
         '    <div class="hvAATable" style="display:grid; grid-template-columns:repeat(3, 1fr);">',
-        '      <div><input class="hvAANumber" name="weight_Fos" placeholder="0" type="text" style="width: 40px;"> <l0>姊妹们的盛怒(FoS)</l0><l1>姊妹們的盛怒(FoS)</l1><l2><br>Fury of the Sisters</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_Lof" placeholder="0" type="text" style="width: 40px;"> <l0>未来的悲叹(LoF)</l0><l1>未來的悲歎(LoF)</l1><l2><br>Lamentations of the Future</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_SoP" placeholder="0" type="text" style="width: 40px;"> <l0>昔日的凄叫(SoP)</l0><l1>昔日的淒叫(SoP)</l1><l2><br>Screams of the Past</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_WoP" placeholder="0" type="text" style="width: 40px;"> <l0>此刻的恸哭(WoP)</l0><l1>此刻的慟哭(WoP)</l1><l2><br>Wailings of the Present</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_AW" placeholder="0" type="text" style="width: 40px;"> <l0>吸收结界(AW)</l0><l1>吸收結界(AW)</l1><l2><br>Absorbing Ward</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_Fos" placeholder="0" type="text"> <l0>姊妹们的盛怒(FoS)</l0><l1>姊妹們的盛怒(FoS)</l1><l2><br>Fury of the Sisters</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_Lof" placeholder="0" type="text"> <l0>未来的悲叹(LoF)</l0><l1>未來的悲歎(LoF)</l1><l2><br>Lamentations of the Future</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_SoP" placeholder="0" type="text"> <l0>昔日的凄叫(SoP)</l0><l1>昔日的淒叫(SoP)</l1><l2><br>Screams of the Past</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_WoP" placeholder="0" type="text"> <l0>此刻的恸哭(WoP)</l0><l1>此刻的慟哭(WoP)</l1><l2><br>Wailings of the Present</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_AW" placeholder="0" type="text"> <l0>吸收结界(AW)</l0><l1>吸收結界(AW)</l1><l2><br>Absorbing Ward</l2></div>',
         '    </div>',
         '  </div>',
         '  <div><b>3. PW(X) += Log10(1 + <l0>武器攻击中央目标伤害倍率(副手及冲击技能)</l0><l1>乘以武器攻擊中央目標傷害倍率(副手及衝擊技能)</l1><l2>Weapon Attack Central Target Damage Ratio (Offhand & Strike)</l2>)</b><br><l0>额外伤害比例：</l0><l1>額外傷害比例：</l1><l2>Extra DMG Ratio: </l2><input class="hvAANumber" name="centralExtraRatio" placeholder="0" type="text">%</div>',
-        '  <div><b>4. <l0>优先选择权重最低的目标</l0><l1>優先選擇權重最低的目標</l1><l2>Choose target with lowest rank first</l2><br><l0>BOSS:Yggdrasil额外权重</l0><l1>BOSS:Yggdrasil額外權重</l1><l2>BOSS:Yggdrasil Extra Weight</l2></b><input class="hvAANumber" name="YggdrasilExtraWeight" placeholder="-1000" type="text" style="width:40px"></div>',
+        '  <div><b>4. <l0>优先选择权重最低的目标</l0><l1>優先選擇權重最低的目標</l1><l2>Choose target with lowest rank first</l2><br><l0>BOSS:Yggdrasil额外权重</l0><l1>BOSS:Yggdrasil額外權重</l1><l2>BOSS:Yggdrasil Extra Weight</l2></b><input class="hvAANumber" name="YggdrasilExtraWeight" placeholder="-1000" type="text"></div>',
         '  <div><input id="displayWeight" type="checkbox"><l0>显示权重及顺序</l0><l1>顯示權重及順序</l1><l2>DIsplay Weight and order</l2>',
         '  <input id="displayWeightBackground" type="checkbox"><l0>显示优先级背景色</l0><l1>顯示優先級背景色</l1><l2>DIsplay Priority Background Color</l2>',
         '  </br><l0>CSS格式或可eval执行的公式（可用&lt;rank&gt;, &lt;all&gt;指代优先级和总优先级数量, &lt;style_x&gt;指代第x个的相同配置值），例如：</l0><l1>CSS格式或可eval執行的公式（可用&lt;rank&gt;, &lt;all&gt;指代優先級和總優先級數量, &lt;style_x&gt;指代第x個的相同配置值）：例如</l1><l2>CSS or eval executable formula(use &lt;rank&gt; and &lt;all&gt; to refer to priority rank and total rank count, &lt;style_x&gt; to refer to the same option value of option No.x)Such as: </l2><br>`hsl(${Math.round(240*&lt;rank&gt;/Math.max(1,&lt;all&gt;-1))}deg 50% 50%)`<br>',
-        '  <div style="display:grid;grid-template-columns: repeat(2, 0.1fr 1fr);width:470px;">',
+        '  <div style="display:grid;grid-template-columns: repeat(1, 0.1fr 1fr);width:100%;">',
         '  <div>&nbsp;&nbsp;1.</div><div><input class="customizeInput" name="weightBackground_1" type="text"></div>',
         '  <div>&nbsp;&nbsp;2.</div><div><input class="customizeInput" name="weightBackground_2" type="text"></div>',
         '  <div>&nbsp;&nbsp;3.</div><div><input class="customizeInput" name="weightBackground_3" type="text"></div>',
@@ -2493,6 +2493,9 @@
           }
           if (inputs[i].type === 'text' || inputs[i].type === 'hidden' || inputs[i].type === 'select-one' || inputs[i].type === 'number') {
             inputs[i].value = itemValue;
+            if (inputs[i].type !== 'select-one' && !inputs[i].disabled) {
+              customizeInputAutoFit(inputs[i]);
+            }
           } else if (inputs[i].type === 'checkbox') {
             inputs[i].checked = itemValue;
           }
@@ -2511,6 +2514,7 @@
                 input.className = 'customizeInput';
                 input.name = `${itemName}_${j}`;
                 input.value = _option[itemName][j][k];
+                customizeInputAutoFit(input);
               }
             }
           }
@@ -2531,6 +2535,13 @@
           gE('.hvAABackupList', optionBox).innerHTML = _html;
         }
       }
+    }
+
+    function customizeInputAutoFit(input) {
+      input.style.cssText += `width:${input.value.length+1}ch;`
+      input.addEventListener('input', function(event) {
+      input.style.cssText += `width:${input.value.length+1}ch;`
+      });
     }
 
     function customizeBox() { // 自定义条件界面
@@ -2657,6 +2668,7 @@
         input.className = 'customizeInput';
         input.name = `${target.getAttribute('name')}_${groupChoose - 1}`;
         input.value = `${selects[1].value} ${selects[2].value} ${selects[3].value}`;
+        customizeInputAutoFit(input);
       };
 
       function attr(target) {
