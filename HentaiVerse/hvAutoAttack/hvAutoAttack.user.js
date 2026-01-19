@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.148
+// @version      2.90.149
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -33,7 +33,7 @@
   try {
     'use strict';
     const standalone = ['option', 'arena', 'stamina', 'lastHref', 'ability', 'drop', 'stats', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS'];
-    const localStorage = ['drop', 'stats', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS'];
+    const local = ['drop', 'stats', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS'];
     const sharable = ['option'];
     const excludeStandalone = { 'option': ['optionStandalone', 'version', 'lang'] };
     const href = window.location.href;
@@ -385,11 +385,11 @@
           }
         },
         getLast: function () {
-          const v = localStorage.getItem((isIsekai ? 'hvuti' : 'hvut') + '_last_post');
+          const v = window.localStorage.getItem((isIsekai ? 'hvuti' : 'hvut') + '_last_post');
           return v === null ? undefined : JSON.parse(v);
         },
         setLast: function (last) {
-          localStorage.setItem((isIsekai ? 'hvuti' : 'hvut') + '_last_post', JSON.stringify(last));
+          window.localStorage.setItem((isIsekai ? 'hvuti' : 'hvut') + '_last_post', JSON.stringify(last));
         },
         timer: function () {
           function ontimer() {
@@ -1109,7 +1109,7 @@
     }
 
     function setValue(key, value) { // 储存数据
-      const isLocalStorage = localStorage.includes(key);
+      const isLocalStorage = local.includes(key);
       if (!standalone.includes(key)) {
         setLocal(key, value, isLocalStorage);
         return value;
@@ -1140,7 +1140,7 @@
     }
 
     function getValue(key, toJSON) { // 读取数据
-      const isLocalStorage = localStorage.includes(key);
+      const isLocalStorage = local.includes(key);
       if (!standalone.includes(key)) {
         return getLocal(key, isLocalStorage, toJSON);
       }
@@ -1180,7 +1180,7 @@
     }
 
     function delValue(key, isLocalStorage) { // 删除数据
-      isLocalStorage ||= localStorage.includes(key);
+      isLocalStorage ||= local.includes(key);
       if (standalone.includes(key)) {
         key = `${current}_${key}`;
       }
@@ -3866,14 +3866,14 @@
       $debug.log('onBattle', `\n`, battle);
       //人物状态
       if (gE('#vbh')) {
-        g('hp', gE('#vbh>div>img').offsetWidth / 500 * 100);
-        g('mp', gE('#vbm>div>img').offsetWidth / 210 * 100);
-        g('sp', gE('#vbs>div>img').offsetWidth / 210 * 100);
+        g('hp', gE('#vbh>div>img').offsetWidth / gE('#vbh').offsetWidth * 100);
+        g('mp', gE('#vbm>div>img').offsetWidth / gE('#vbm').offsetWidth * 100);
+        g('sp', gE('#vbs>div>img').offsetWidth / gE('#vbs').offsetWidth * 100);
         g('oc', gE('#vcp>div>div') ? (gE('#vcp>div>div', 'all').length - gE('#vcp>div>div#vcr', 'all').length) * 25 : 0);
       } else {
-        g('hp', gE('#dvbh>div>img').offsetWidth / 418 * 100);
-        g('mp', gE('#dvbm>div>img').offsetWidth / 418 * 100);
-        g('sp', gE('#dvbs>div>img').offsetWidth / 418 * 100);
+        g('hp', gE('#dvbh>div>img').offsetWidth / gE('#dvbh').offsetWidth * 100);
+        g('mp', gE('#dvbm>div>img').offsetWidth / gE('#dvbm').offsetWidth * 100);
+        g('sp', gE('#dvbs>div>img').offsetWidth / gE('#dvbs').offsetWidth * 100);
         g('oc', gE('#dvrc').childNodes[0].textContent * 1);
       }
 
@@ -5556,9 +5556,6 @@
 
       const percentages = [barHP, barMP, barSP, barOC].filter(bar => bar).map(bar => Math.floor((gE('div>img', bar).offsetWidth / bar.offsetWidth) * 100));
       [textHP, textMP, textSP, textOC].filter(bar => bar).forEach((text, i) => {
-        const value = text.innerHTML * 1;
-        const percentage = value ? percentages[i] : 0;
-        const inner = `[${percentage.toString()}%]`;
         text.style.cssText += textOC ? `
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -5572,6 +5569,7 @@
         filter: brightness(0.2);
         text-align: left;
       `
+        const inner = `[${percentages[i].toString()}%]`;
         if (percentageDiv) {
           percentageDiv.innerHTML = inner;
           percentageDiv.style.cssText = style;
