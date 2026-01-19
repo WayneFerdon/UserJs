@@ -3866,7 +3866,6 @@
       $debug.log('onBattle', `\n`, battle);
       //人物状态
       if (gE('#vbh')) {
-        console.log(gE('#vbm>div').offsetWidth)
         g('hp', gE('#vbh>div>img').offsetWidth / 496 * 100);
         g('mp', gE('#vbm>div>img').offsetWidth / 207 * 100);
         g('sp', gE('#vbs>div>img').offsetWidth / 207 * 100);
@@ -5557,9 +5556,6 @@
       const barWidth = gE('#dvbc') ? [418, 418, 418, 418] : [496, 207, 207, undefined]
       const percentages = [barHP, barMP, barSP, barOC].filter(bar => bar).map((bar, i) => Math.floor((gE('div>img', bar).offsetWidth / barWidth[i]) * 100));
       [textHP, textMP, textSP, textOC].filter(bar => bar).forEach((text, i) => {
-        const value = text.innerHTML * 1;
-        const percentage = (value || isNaN(value)) ? percentages[i] : 0;
-        const inner = `[${percentages[i].toString()}%]`;
         text.style.cssText += textOC ? `
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -5573,6 +5569,7 @@
         filter: brightness(0.2);
         text-align: left;
       `
+        const inner = `[${percentages[i].toString()}%]`;
         if (percentageDiv) {
           percentageDiv.innerHTML = inner;
           percentageDiv.style.cssText = style;
