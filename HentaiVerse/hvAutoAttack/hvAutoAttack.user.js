@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.151
+// @version      2.90.152
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -671,15 +671,16 @@
       g('version', GM_info ? GM_info.script.version.substr(0, 4) : scriptVersion);
       if (!getValue('option')) {
         g('lang', window.prompt('请输入以下语言代码对应的数字\nPlease put in the number of your preferred language (0, 1 or 2)\n0.简体中文\n1.繁體中文\n2.English', 0) || 2);
-        addStyle(g('lang'));
+        addStyle();
         _alert(0, '请设置hvAutoAttack', '請設置hvAutoAttack', 'Please config this script');
         gE('.hvAAButton').click();
         return false;
       }
       loadOption();
-      g('lang', g('option').lang || '0');
-      addStyle(g('lang'));
-      if (g('option').version !== g('version')) {
+      const option = g('option');
+      g('lang', option.lang || '0');
+      addStyle();
+      if (option.version !== g('version')) {
         gE('.hvAAButton').click();
         if (_alert(1, 'hvAutoAttack版本更新，请重新设置\n强烈推荐【重置设置】后再设置。\n是否查看更新说明？', 'hvAutoAttack版本更新，請重新設置\n強烈推薦【重置設置】後再設置。\n是否查看更新說明？', 'hvAutoAttack version update, please reset\nIt\'s recommended to reset all configuration.\nDo you want to read the changelog?')) {
           $ajax.openNoFetch('https://github.com/dodying/UserJs/commits/master/HentaiVerse/hvAutoAttack/hvAutoAttack.user.js', true);
@@ -877,6 +878,7 @@
         document.removeEventListener('keydown', r);
       }
     }
+
     function setArenaDisplay() {
       if (!g('option').obscureNotIdleArena) {
         return;
@@ -1240,7 +1242,8 @@
       }
     }
 
-    function addStyle(lang) { // CSS
+    function addStyle() { // CSS
+      const lang = g('lang');
       if (!gE('.hvAA-LangStyle')) {
         const langStyle = gE('head').appendChild(cE('style'));
         langStyle.className = 'hvAA-LangStyle';
@@ -1326,21 +1329,16 @@
         // `${monsterStateKeys.lv}>div:nth-child(1)>img{display:none;}`,
       ].join('');
       globalStyle.textContent = cssContent;
-      optionButton(lang);
+      optionBox();
+      optionButton();
     }
 
-    function optionButton(lang) { // 配置按钮
+    function optionButton() { // 配置按钮
       if (gE('.hvAAButton')) return;
       const optionButton = gE('body').appendChild(cE('div'));
       optionButton.className = 'hvAAButton';
       optionButton.onclick = function () {
-        if (gE('#hvAABox')) {
-          gE('#hvAABox').style.display = (gE('#hvAABox').style.display === 'none') ? 'block' : 'none';
-        } else {
-          optionBox();
-          gE('#hvAATab-Main').style.zIndex = 1;
-          gE('select[name="lang"]').value = lang;
-        }
+        gE('#hvAABox').style.display = (gE('#hvAABox').style.display === 'none') ? 'block' : 'none';
       };
     }
 
@@ -1909,6 +1907,11 @@
         '  <button class="hvAAReset"><l0>重置设置</l0><l1>重置設置</l1><l2>Reset</l2></button><button class="hvAAApply"><l0>应用</l0><l1>應用</l1><l2>Apply</l2></button><button class="hvAACancel"><l01>取消</l01><l2>Cancel</l2></button>',
         '</div>',
       ].join('').replace(/{{(.*?)}}/g, '<div class="customize" name="$1"></div>');
+
+      gE('#hvAATab-Main').style.zIndex = 1;
+      optionBox.style.display = 'none';
+      gE('select[name="lang"]').value = g('lang');
+
       // 绑定事件
       gE('select[name="lang"]', optionBox).onchange = function () { // 选择语言
         gE('.hvAA-LangStyle').textContent = `l${this.value}{display:inline!important;}`;
@@ -2404,13 +2407,13 @@
             continue;
           } else if (inputs[i].className === 'hvAANumber') {
             itemName = inputs[i].name;
-            itemValue = (inputs[i].value || inputs[i].placeholder) * 1;
+            itemValue = inputs[i].value ? inputs[i].value * 1 : undefined;
             if (isNaN(itemValue)) {
               continue;
             }
           } else if (inputs[i].type === 'text' || inputs[i].type === 'hidden') {
             itemName = inputs[i].name;
-            itemValue = inputs[i].value || inputs[i].placeholder;
+            itemValue = inputs[i].value || undefined;
             if (itemValue === '') {
               continue;
             }
@@ -2427,6 +2430,12 @@
           itemArray = itemName.split('_');
           if (itemArray.length === 1) {
             _option[itemName] = itemValue;
+            if ((inputs[i].type === 'text' || inputs[i].type === 'number') && inputs[i].placeholder) {
+              if (_option[itemName] === inputs[i].placeholder || _option[itemName] === inputs[i].placeholder * 1) {
+                console.log(itemName, inputs[i].type, itemValue, inputs[i].placeholder);
+                delete _option[itemName]
+              }
+            }
           } else {
             if (!(itemArray[0] in _option)) {
               _option[itemArray[0]] = {};
@@ -2473,9 +2482,9 @@
       gE('.hvAACancel', optionBox).onclick = function () {
         optionBox.style.display = 'none';
       };
-      if (g('option')) {
+      const option = g('option');
+      if (option) {
         let i, j, k;
-        const _option = g('option');
         const inputs = gE('input,select', 'all', optionBox);
         let itemName, itemArray, itemValue, _html;
         for (i = 0; i < inputs.length; i++) {
@@ -2483,16 +2492,19 @@
             continue;
           }
           itemName = inputs[i].name || inputs[i].id;
-          if (typeof _option[itemName] !== 'undefined') {
-            itemValue = _option[itemName];
+          if (typeof option[itemName] !== 'undefined') {
+            itemValue = option[itemName];
           } else {
             itemArray = itemName.split('_');
             itemValue = '';
-            if (itemArray.length === 2 && typeof _option[itemArray[0]] === 'object' && inputs[i].className !== 'hvAACustomize' && typeof _option[itemArray[0]][itemArray[1]] !== 'undefined') {
-              itemValue = _option[itemArray[0]][itemArray[1]];
+            if (itemArray.length === 2 && typeof option[itemArray[0]] === 'object' && inputs[i].className !== 'hvAACustomize' && typeof option[itemArray[0]][itemArray[1]] !== 'undefined') {
+              itemValue = option[itemArray[0]][itemArray[1]];
             }
           }
           if (inputs[i].type === 'text' || inputs[i].type === 'hidden' || inputs[i].type === 'select-one' || inputs[i].type === 'number') {
+            if ((inputs[i].type === 'text' || inputs[i].type === 'number') && itemValue === '' && inputs[i].placeholder) {
+              option[itemName] = inputs[i].placeholder;
+            }
             inputs[i].value = itemValue;
             if (inputs[i].type !== 'select-one' && !inputs[i].disabled) {
               customizeInputAutoFit(inputs[i]);
@@ -2504,25 +2516,25 @@
         const customize = gE('.customize', 'all', optionBox);
         for (i = 0; i < customize.length; i++) {
           itemName = customize[i].getAttribute('name');
-          if (itemName in _option) {
-            for (j in _option[itemName]) {
+          if (itemName in option) {
+            for (j in option[itemName]) {
               const group = customize[i].appendChild(cE('div'));
               group.className = 'customizeGroup';
               group.innerHTML = `${j * 1 + 1}. `;
-              for (k = 0; k < _option[itemName][j].length; k++) {
+              for (k = 0; k < option[itemName][j].length; k++) {
                 const input = group.appendChild(cE('input'));
                 input.type = 'text';
                 input.className = 'customizeInput';
                 input.name = `${itemName}_${j}`;
-                input.value = _option[itemName][j][k];
+                input.value = option[itemName][j][k];
                 customizeInputAutoFit(input);
               }
             }
           }
         }
-        if (_option.quickSite) {
+        if (option.quickSite) {
           _html = '<tr class="hvAATh"><td><l0>图标</l0><l1>圖標</l1><l2>ICON</l2></td><td><l0>名称</l0><l1>名稱</l1><l2>Name</l2></td><td><l0>链接</l0><l1>鏈接</l1><l2>Link</l2></td></tr>';
-          _option.quickSite.forEach((i) => {
+          option.quickSite.forEach((i) => {
             _html = `${_html}<tr><td><input class="hvAADebug" type="text" value="${i.fav}"></td><td><input class="hvAADebug" type="text" value="${i.name}"></td><td><input class="hvAADebug" type="text" value="${i.url}"></td></tr>`;
           });
           gE('.hvAAQuickSite>table>tbody', optionBox).innerHTML = _html;
@@ -4673,7 +4685,6 @@
           continue;
         }
         let weight = baseHpRatio * Math.log10(monsterStatus[i].hpNow / hpMin); // > 0 生命越低权重越低优先级越高
-        // monsterStatus[i].hpWeight = weight;
         const name = gE(`${monsterStateKeys.name}>div>div`, monsterBuff[i].parentNode).innerText;
         if (yggdrasilExtraWeight && ('Yggdrasil' === name || '世界树 Yggdrasil' === name)) { // 默认设置下，任何情况都优先击杀群体大量回血的boss"Yggdrasil"
           weight += yggdrasilExtraWeight; // yggdrasilExtraWeight.defalut -1000
