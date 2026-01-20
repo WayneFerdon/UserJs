@@ -1285,7 +1285,7 @@
         '.hvAACenter{text-align:center;}',
         '.hvAATitle{font-weight:bolder;}',
         '.hvAAGoto{cursor:pointer;text-decoration:underline;}',
-        'input[type="text"]{min-width:1ch;max-width:calc( 100% - 10px);text-overflow:ellipsis;}',
+        'input[type="text"]{min-width:1ch;max-width:calc( 100% - 10px);text-overflow:ellipsis; width: 2ch;}',
         '.customizeInput{min-width:6ch;}',
         '.hvAATable>* {border: 1px solid;}',
         '.hvAANew{width:25px;height:25px;float:left;background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAMCAYAAACX8hZLAAAAcElEQVQ4jbVRSQ4AIQjz/59mTiZIF3twmnCwFAq4FkeFXM+5vCzohYxjPMtfxS8CN6iqQ7TfE0wrODxVbzJNgoaTo4CmbBO1ZWICouQ0DHaL259MEzaU+w8pZOdSjcUgaPJDHCbO0A2kuAiuwPGQ+wBms12x8HExTwAAAABJRU5ErkJggg==) center no-repeat transparent;}',
@@ -1383,12 +1383,12 @@
         '  <div><b><l0>脚本行为</l0><l1>腳本行為</l1><l2>Script Activity</l2></b>',
         '    <div>',
         '      <input id="pauseButton" type="checkbox"><label for="pauseButton"><l0>暂停按钮</l0><l1>暫停按鈕</l1><l2>Pause Button</l2></label>; ',
-        '      <input id="pauseHotkey" type="checkbox"><label for="pauseHotkey"><l0>暂停热键</l0><l1>暫停熱鍵</l1><l2>Pause Hotkey</l2>: <input class="hvAANumber" name="pauseHotkeyStr" type="text"><input class="hvAANumber" name="pauseHotkeyCode" type="hidden" disabled="true"></label><br>',
+        '      <input id="pauseHotkey" type="checkbox"><label for="pauseHotkey"><l0>暂停热键</l0><l1>暫停熱鍵</l1><l2>Pause Hotkey</l2>: <input class="text" name="pauseHotkeyStr" type="text"><input class="hvAANumber" name="pauseHotkeyCode" type="hidden" disabled="true"></label><br>',
         '      <input id="stepInButton" type="checkbox"><label for="stepInButton"><l0>步进按钮</l0><l1>步進按鈕</l1><l2>StepIn Button</l2></label>; ',
-        '      <input id="stepInHotkey" type="checkbox"><label for="stepInHotkey"><l0>步进热键</l0><l1>步進熱鍵</l1><l2>StepIn Hotkey</l2>: <input class="hvAANumber" name="stepInHotkeyStr" type="text"><input class="hvAANumber" name="stepInHotkeyCode" type="hidden" disabled="true"></label>',
+        '      <input id="stepInHotkey" type="checkbox"><label for="stepInHotkey"><l0>步进热键</l0><l1>步進熱鍵</l1><l2>StepIn Hotkey</l2>: <input class="text" name="stepInHotkeyStr" type="text"><input class="hvAANumber" name="stepInHotkeyCode" type="hidden" disabled="true"></label>',
         '  </div>',
         ' <div><input id="altButton" type="checkbox"><label for="altButton">Alt<l0>切换按钮</l0><l1>切換按鈕</l1><l2>Switch Button</l2></label>; ',
-        '      <input id="altHotkey" type="checkbox"><label for="altHotkey"><l0>热键</l0><l1>熱鍵</l1><l2>Hotkey</l2>: <input class="hvAANumber" name="altHotkeyStr" type="text"><input class="hvAANumber" name="altHotkeyCode" type="hidden" disabled="true"></label></div>',
+        '      <input id="altHotkey" type="checkbox"><label for="altHotkey"><l0>热键</l0><l1>熱鍵</l1><l2>Hotkey</l2>: <input class="text" name="altHotkeyStr" type="text"><input class="hvAANumber" name="altHotkeyCode" type="hidden" disabled="true"></label></div>',
         '    <div><l0>警告相关</l0><l1>警告相關</l1><l2>To Warn</l2>: ',
         '      <input id="alert" type="checkbox"><label for="alert"><l0>音频警报</l0><l1>音頻警報</l1><l2>Audio Alarms</l2></label>; ',
         '      <input id="notification" type="checkbox"><label for="notification"><l0>桌面通知</l0><l1>桌面通知</l1><l2>Notifications</l2></label> ',
@@ -2407,13 +2407,13 @@
             continue;
           } else if (inputs[i].className === 'hvAANumber') {
             itemName = inputs[i].name;
-            itemValue = inputs[i].value ? inputs[i].value * 1 : undefined;
+            itemValue = inputs[i].value ? inputs[i].value * 1 : '';
             if (isNaN(itemValue)) {
               continue;
             }
           } else if (inputs[i].type === 'text' || inputs[i].type === 'hidden') {
             itemName = inputs[i].name;
-            itemValue = inputs[i].value || undefined;
+            itemValue = inputs[i].value || '';
             if (itemValue === '') {
               continue;
             }
