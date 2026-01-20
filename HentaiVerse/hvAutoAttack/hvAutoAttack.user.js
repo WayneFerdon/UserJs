@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.150
+// @version      2.90.151
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1786,6 +1786,7 @@
         '      <div><input class="hvAANumber" name="weight_Co" placeholder="300" type="text"> <l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2></div>',
         '      <div><input class="hvAANumber" name="weight_Dr" placeholder="2" type="text"> <l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2></div>',
         '      <div><input class="hvAANumber" name="weight_MN" placeholder="7" type="text"> <l0>魔磁网/固定(MN)</l0><l1>魔磁網/固定(MN)</l1><l2>MagNet/Immobilize</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_Po" placeholder="-10" type="text"> <l0>流动毒性(Po)</l0><l1>流动毒性(Po)</l1><l2>Spreading Poison</l2></div>',
         '      <div><input class="hvAANumber" name="weight_Stun" placeholder="290" type="text"> <l0>眩晕(St)</l0><l1>眩暈(St)</l1><l2>Stunned</l2></div>',
         '      <div><input class="hvAANumber" name="weight_CM" placeholder="-20" type="text"> <l0>魔力合流()</l0><l1>魔力合流(CM)</l1><l2>Coalesced Mana</l2></div>',
         '      <div><input class="hvAANumber" name="weight_BS" placeholder="0" type="text"> <l0>焚燒的靈魂(BS)</l0><l1>焚燒的靈魂(BS)</l1><l2>Burning Soul</l2></div>',
@@ -2538,10 +2539,15 @@
     }
 
     function customizeInputAutoFit(input) {
-      input.style.cssText += `width:${input.value.length+1}ch;`
+      customizerInpuFit(input);
       input.addEventListener('input', function(event) {
-      input.style.cssText += `width:${input.value.length+1}ch;`
+        customizerInpuFit(input);
       });
+    }
+
+    function customizerInpuFit(input) {
+      let length = input.value.length || input.getAttribute('placeholder')?.length;
+      input.style.cssText += `width:${length+1}ch;`
     }
 
     function customizeBox() { // 自定义条件界面
@@ -4572,6 +4578,10 @@
           name: 'Confuse',
           img: 'confuse',
         },
+        Po: {
+          name: 'Spreading Poison',
+          img: 'poison'
+        },
         CM: {
           name: 'Coalesced Mana',
           img: 'coalescemana',
@@ -4652,9 +4662,10 @@
       };
       const monsterBuff = gE(monsterStateKeys.buffs, 'all');
       const hpMin = Math.min.apply(null, hpArray);
-      const yggdrasilExtraWeight = g('option').YggdrasilExtraWeight;
-      const unreachableWeight = g('option').unreachableWeight;
-      const baseHpRatio = g('option').baseHpRatio ?? 1;
+      const option = g('option');
+      const yggdrasilExtraWeight = option.YggdrasilExtraWeight;
+      const unreachableWeight = option.unreachableWeight;
+      const baseHpRatio = option.baseHpRatio ?? 1;
       // 权重越小，优先级越高
       for (i = 0; i < monsterStatus.length; i++) { // 死亡的排在最后（优先级最低）
         if (monsterStatus[i].isDead) {
@@ -4674,10 +4685,10 @@
           }
           known[skillLib[j].img] = skillLib[j];
           if (skillLib[j].elem && skillLib[j].elem !== g('attackStatus')) {
-            weight += g('option').weight[`${j}1`] ?? 0;
+            weight += option.weight[`${j}1`] ?? 0;
             continue;
           }
-          weight += g('option').weight[j] ?? 0;
+          weight += option.weight[j] ?? 0;
         }
         let unknown = gE(`img`, 'all', monsterBuff[i]);
         if (unknown?.length) {
