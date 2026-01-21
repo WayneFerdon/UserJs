@@ -2518,18 +2518,13 @@
             if (itemArray.length === 2 && inputs[i].className !== 'hvAACustomize') {
               option[itemArray[0]] ??= {}
               itemValue = option[itemArray[0]][itemArray[1]];
-              if (itemValue === '' || itemValue === undefined) {
-                if (inputs[i].placeholder) {
-                  itemValue = inputs[i].placeholder;
-                  const num = itemValue * 1;
-                  if ((inputs[i].type === 'number' || inputs[i].classList.contains('hvAANumber')) && !isNaN(num)) {
-                    itemValue = num;
-                  }
-                  option[itemArray[0]][itemArray[1]] = itemValue;
+              if ((itemValue === '' || itemValue === undefined) && inputs[i].placeholder) {
+                itemValue = inputs[i].placeholder;
+                const num = itemValue * 1;
+                if ((inputs[i].type === 'number' || inputs[i].classList.contains('hvAANumber')) && !isNaN(num)) {
+                  itemValue = num;
                 }
-              } else {
-              console.log(inputs[i].name,'b')
-                inputs[i].value = itemValue;
+                option[itemArray[0]][itemArray[1]] = itemValue;
               }
             }
           }
