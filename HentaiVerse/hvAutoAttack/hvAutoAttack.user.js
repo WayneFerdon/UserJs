@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.153
+// @version      2.90.154
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2435,8 +2435,8 @@
           itemArray = itemName.split('_');
           if (itemArray.length === 1) {
             _option[itemName] = itemValue;
-            if (inputs[i].placeholder && (_option[itemName] === inputs[i].placeholder || _option[itemName] === inputs[i].placeholder * 1) || (_option[itemName] === true && inputs[i].placeholder)) {
-                delete _option[itemName]
+            if (inputs[i].placeholder && (_option[itemName] === '' || _option[itemName] === inputs[i].placeholder || _option[itemName] === inputs[i].placeholder * 1) || (_option[itemName] === true && inputs[i].placeholder)) {
+              delete _option[itemName]
             }
           } else {
             if (!(itemArray[0] in _option)) {
@@ -2449,9 +2449,12 @@
               _option[itemArray[0]][itemArray[1]].push(itemValue);
             } else {
               _option[itemArray[0]][itemArray[1]] = itemValue;
-              if (inputs[i].placeholder && (_option[itemArray[0]][itemArray[1]] === inputs[i].placeholder || _option[itemArray[0]][itemArray[1]] === inputs[i].placeholder * 1 || (_option[itemArray[0]][itemArray[1]] === true && inputs[i].placeholder))) {
-                  delete _option[itemArray[0]][itemArray[1]]
+              if (inputs[i].placeholder && (_option[itemArray[0]][itemArray[1]] === '' || _option[itemArray[0]][itemArray[1]] === inputs[i].placeholder || _option[itemArray[0]][itemArray[1]] === inputs[i].placeholder * 1 || (_option[itemArray[0]][itemArray[1]] === true && inputs[i].placeholder))) {
+                delete _option[itemArray[0]][itemArray[1]]
               }
+            }
+            if (!Object.keys(_option[itemArray[0]]).length) {
+              delete _option[itemArray[0]]
             }
           }
         }
@@ -2512,13 +2515,14 @@
           } else {
             itemArray = itemName.split('_');
             itemValue = '';
-            if (itemArray.length === 2 && typeof option[itemArray[0]] === 'object' && inputs[i].className !== 'hvAACustomize' && typeof option[itemArray[0]][itemArray[1]] !== 'undefined') {
+            if (itemArray.length === 2 && inputs[i].className !== 'hvAACustomize') {
+              option[itemArray[0]] ??= {}
               itemValue = option[itemArray[0]][itemArray[1]];
-              if (itemValue === '' && inputs[i].placeholder) {
+              if ((itemValue === '' || itemValue === undefined) && inputs[i].placeholder) {
                 itemValue = inputs[i].placeholder;
                 const num = itemValue * 1;
+                itemValue = num;
                 if (inputs[i].type === 'number' && !isNaN(num)) {
-                  itemValue = num;
                 }
                 option[itemArray[0]][itemArray[1]] = itemValue;
               }
@@ -2550,6 +2554,7 @@
             });
           }
         }
+        g('option', option)
         const customize = gE('.customize', 'all', optionBox);
         for (i = 0; i < customize.length; i++) {
           itemName = customize[i].getAttribute('name');
