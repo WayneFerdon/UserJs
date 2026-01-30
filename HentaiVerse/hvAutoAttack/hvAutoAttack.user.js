@@ -1459,7 +1459,7 @@
         '    <div><input id="autoFlee" type="checkbox"><label for="autoFlee"><b><l0>自动逃跑</l0><l1>自動逃跑</l1><l2>Flee</l2></b></label>: {{fleeCondition}}</div>',
         '    <div><input id="autoSkipDefeated" type="checkbox"><label for="autoSkipDefeated"><b><l0>战败自动退出战斗</l0><l1>戰敗自動退出戰鬥</l1><l2>Exit battle when defeated.</l2></b></label></div>',
         '    <div><input id="nativeNewRound" type="checkbox"><label for="nativeNewRound"><b><l0>使用原生方式进入新回合</l0><l1>使用原生方式進入新回合</l1><l2>Native new round</l2></b></label></div>',
-        '    <div><b><l0>新回合前检查链接：</l0><l1>新回合前檢查連接：</l1><l2>Check url before new round: </l2></b><input name="checkURLBeforeNewRound" type="text"></div>',
+        '    <div><l0>新回合前检查链接：</l0><l1>新回合前檢查連接：</l1><l2>Check url before new round: </l2><input name="checkURLBeforeNewRound" type="text">; <input name="checkURLBeforeNewRoundRetry" placeholder="5" type="number"><l0>秒后重试</l0><l1>秒後重試</l1><l2>(s) to retry</l2></div>',
         '    <div><b><l0>继续新回合延时</l0><l1>繼續新回合延時</l1><l2>New round wait time</l2></b>: <input class="hvAANumber" name="NewRoundWaitTime" placeholder="0" type="number"> <l0>(秒)</l0><l1>(秒)</l1><l2>(s)</l2></div>',
         '    <div><b><l0>战斗结束退出延时</l0><l1>戰鬥結束退出延時</l1><l2>Exit battle wait time</l2></b>: <input class="hvAANumber" name="ExitBattleWaitTime" placeholder="3" type="number"> <l0>(秒)</l0><l1>(秒)</l1><l2>(s)</l2></div>',
         '    <div><b><l0>战斗页面停留</l0><l1>戰鬥頁面停留</l1><l2>If not active for </l2></b>: ',
@@ -3770,11 +3770,15 @@
     } catch (e) { console.error(e) } }
 
     async function onEncounter() { try {
-      while (!(await $ajax.insert(href))) { // perhaps network connect not available
-        await pauseAsync(_1m);
+      const option = g('option');
+      while (
+        !(await $ajax.insert(href))
+        || (option.checkURLBeforeNewRound && !(await $ajax.insert(option.checkURLBeforeNewRound)))
+      ) { // perhaps network connect not available
+        await pauseAsync(option.checkURLBeforeNewRoundRetry);
       }
       $async.logSwitchStrict('updateEncounter', true);
-      if (getValue('disabled') || getValue('battle') || !await checkBattleReady(onEncounter, { staminaLow: g('option').staminaEncounter })) {
+      if (getValue('disabled') || getValue('battle') || !await checkBattleReady(onEncounter, { staminaLow: option.staminaEncounter })) {
         $async.logSwitchStrict('updateEncounter', false);
         return;
       }
@@ -3924,7 +3928,12 @@
       }
       await waitPause();
       writeArenaStart();
-      await $ajax.insert(query, `initid=${id === 'gr' ? 1 : id}${token}`);
+      while(option.checkURLBeforeNewRound && !(await $ajax.insert(option.checkURLBeforeNewRound))) {
+        await pauseAsync(option.checkURLBeforeNewRoundRetry);
+      }
+      while(!(await $ajax.insert(query, `initid=${id === 'gr' ? 1 : id}${token}`))) {
+        await pauseAsync(option.checkURLBeforeNewRoundRetry);
+      }
       console.log('Arena Fetch Done.', 'altBattleFirst:', option.altBattleFirst);
       stamina.lastCost = id === 'gr' ? undefined : cost;
       setValue('stamina', stamina);
@@ -4384,7 +4393,7 @@
                   urlChecked = await $ajax.insert(option.checkURLBeforeNewRound);
                 } catch(e) {
                   await waitPause();
-                  await pauseAsync(_1s * 5);
+                  await pauseAsync(option.checkURLBeforeNewRoundRetry);
                 } finally {
                   if (!!urlChecked) {
                     console.log('Done url check:', !!urlChecked, option.checkURLBeforeNewRound)
