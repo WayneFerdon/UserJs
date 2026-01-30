@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.156
+// @version      2.90.157
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -32,8 +32,8 @@
 (function () {
   try {
     'use strict';
-    const standalone = ['option', 'arena', 'lastHref', 'ability', 'stamina', 'drop', 'stats', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS'];
-    const local = ['stamina', 'drop', 'stats', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS'];
+    const standalone = ['option', 'arena', 'lastHref', 'ability', 'stamina', 'drop', 'stats', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS', 'onriddle'];
+    const local = ['stamina', 'drop', 'stats', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS', 'onriddle'];
     const sharable = ['option'];
     const excludeStandalone = { 'option': ['optionStandalone', 'version', 'lang'] };
     const href = window.location.href;
@@ -367,7 +367,7 @@
           $ajax.next();
         },
         next: function () {
-          if (!$ajax.queue.length || $ajax.error) {
+          if (!$ajax.queue.length) {
             return;
           }
           if ($ajax.tid) {
@@ -420,7 +420,7 @@
           $ajax.conn++;
           if (!$ajax.debug) return;
           const remain = $ajax.queue.map($ajax.simplify);
-          console.log('$ajax.send:', $ajax.simplify(current), remain?.length ? 'remain:' : '', remain?.length ? remain : '');
+          console.log('$ajax.send:', $ajax.simplify(current), ... remain?.length ? ['remain:', remain] : []);
         },
         onload: function (r) {
           $ajax.conn--;
@@ -460,7 +460,7 @@
           } else {
             $async.list.push(name);
           }
-          console.log(`${state ? 'Start' : 'End'} ${name}\n`, JSON.parse(JSON.stringify($async.list)));
+          $debug.log(`${state ? 'Start' : 'End'} ${name}\n`, JSON.parse(JSON.stringify($async.list)));
         } catch (e) { } },
         logSwitch: function (args) { try {
           const argsStr = Array.from(args).join(',');
@@ -583,7 +583,6 @@
       }
       for (let ans of gE('#riddler1>*', 'all').children) {
         if (!ans.children[0].children[0].checked) continue;
-        console.log('riddle submit');
         gE('#riddlesubmit').click();
         return;
       }
@@ -592,7 +591,6 @@
       const answers = ['aj', 'fs', 'pp', 'ra', 'rd', 'ts'];
       answers.sort(Math.random);
       const answer = `riddlesubmit=Submit+Answer` + answers.slice(0, Math.max(0, Math.min(6, option.riddleAnswerChoose))).map(ans=>`&riddleanswer[]=${ans}`).join('');
-      console.log('random submit', answer);
       const battle = gE('#battle_main', $doc(await $ajax.fetch(window.location.href, answer)));
       if (!battle) {
         console.error('ERROR: Failed fetch submit.');
@@ -700,6 +698,7 @@
       if (!gE('#riddlecounter')) {
         return false;
       }
+      setValue('onriddle', true)
       if (!g('option').riddlePopup || window.opener) {
         riddleAlert();
         return true;
@@ -736,6 +735,12 @@
       if (!gE('#textlog')) {
         return false;
       }
+      if (getValue('onriddle', true)) {
+        console.log('onBattle clean onriddle')
+        window.history.replaceState(null, '', window.location.href);
+        delValue('onriddle', false)
+      }
+
       const box2 = gE('#battle_main').appendChild(cE('div'));
       box2.id = 'hvAABox2';
       setPauseUI(box2);
@@ -1454,6 +1459,7 @@
         '    <div><input id="autoFlee" type="checkbox"><label for="autoFlee"><b><l0>自动逃跑</l0><l1>自動逃跑</l1><l2>Flee</l2></b></label>: {{fleeCondition}}</div>',
         '    <div><input id="autoSkipDefeated" type="checkbox"><label for="autoSkipDefeated"><b><l0>战败自动退出战斗</l0><l1>戰敗自動退出戰鬥</l1><l2>Exit battle when defeated.</l2></b></label></div>',
         '    <div><input id="nativeNewRound" type="checkbox"><label for="nativeNewRound"><b><l0>使用原生方式进入新回合</l0><l1>使用原生方式進入新回合</l1><l2>Native new round</l2></b></label></div>',
+        '    <div><b><l0>新回合前检查链接：</l0><l1>新回合前檢查連接：</l1><l2>Check url before new round: </l2></b><input name="checkURLBeforeNewRound" type="text"></div>',
         '    <div><b><l0>继续新回合延时</l0><l1>繼續新回合延時</l1><l2>New round wait time</l2></b>: <input class="hvAANumber" name="NewRoundWaitTime" placeholder="0" type="number"> <l0>(秒)</l0><l1>(秒)</l1><l2>(s)</l2></div>',
         '    <div><b><l0>战斗结束退出延时</l0><l1>戰鬥結束退出延時</l1><l2>Exit battle wait time</l2></b>: <input class="hvAANumber" name="ExitBattleWaitTime" placeholder="3" type="number"> <l0>(秒)</l0><l1>(秒)</l1><l2>(s)</l2></div>',
         '    <div><b><l0>战斗页面停留</l0><l1>戰鬥頁面停留</l1><l2>If not active for </l2></b>: ',
@@ -1485,7 +1491,8 @@
         '      <l0>竞技场/浴血擂台阈值</l0><l1>競技場/浴血擂台閾值</l1><l2><b></b>Minimum stamina to auto start The Arena or Ring Of Blood</l2>: Min(85, <input class="hvAANumber" name="staminaLow" placeholder="60" type="number">)<br>',
         '      <l0>进入压榨届的最低精力</l0><l1>進入壓榨屆的最低精力</l1><l2><b></b>Minimum stamina to auto start GrindFest</l2>: <input class="hvAANumber" name="staminaGrindFest" placeholder="100" type="number"></br>',
         '      <b>[S!!]</b><l0>进入竞技场/浴血擂台/压榨届时，含本日自然恢复的阈值</l0><l1>进入競技場/浴血擂台/壓榨屆时，含本日自然恢復的閾值</l1><l2><b></b>Stamina threshold with naturally recovers today for The Arena, Ring Of Bloog, GrindFest</l2>: <input class="hvAANumber" name="staminaLowWithReNat" placeholder="0" type="number"></br>',
-        '      <input id="restoreStamina" type="checkbox"><label for="restoreStamina"><l0>战前恢复</l0><l1>戰前恢復</l1><l2>Restore stamina</l2>',
+        '      <input id="restoreStamina" type="checkbox"><label for="restoreStamina"><l0>战前恢复</l0><l1>戰前恢復</l1><l2>Restore stamina</l2></label>',
+        '      <input id="staminaRatio" type="checkbox"><label for="staminaRatio"><l0>检查惩罚倍率</l0><l1>檢查懲罰倍率</l1><l2>Check Punishment Ratio</l2></label>',
         '  </div>',
         '  <div><input id="repair" type="checkbox"><label for="repair"><b>[R!]<l0>修复装备</l0><l1>修復裝備</l1><l2>Repair Equipment</l2></b></label>: ',
         '    <l0>耐久度</l0><l1>耐久度</l1><l2>Durability</l2> ≤ <input class="hvAANumber" name="repairValue" type="number">% <l0>或 压榨届耐久度</l0><l1>或 壓榨屆耐久度</l1><l2>OR Grind Fest Durability</l2> ≤ <input class="hvAANumber" name="repairValueGF" type="number">%</br><input id="encounterRepair" type="checkbox"><label for="encounterRepair"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label></div>',
@@ -3422,12 +3429,11 @@
           if (isIsekai || !g('option').restoreStamina) {
             return perk;
           }
-          let currentID = getCurrentUser();
-          if (perk[currentID]) {
+          let currentID, html;
+          if (perk[currentID = getCurrentUser()]) {
             return perk;
           }
-          const html = await $ajax.insert('https://e-hentai.org/hathperks.php');
-          if (!html) {
+          if (!(html = await $ajax.insert('https://e-hentai.org/hathperks.php'))) {
             return perk;
           }
           const doc = $doc(html);
@@ -3440,16 +3446,29 @@
       ]);
       stamina.time = time(0);
       const lastCost = stamina.lastCost;
-      if (stamina.lastCost) {
-        last += Math.floor(stamina.time / _1h) - Math.floor(lastTime / _1h);
-        const delta = last - stamina.current;
-        if (delta !== 0 && stamina.lastCost > 0.06 ) {
-          stamina.ratio = Math.max(1, delta / stamina.lastCost);
-          stamina.lastCost = undefined;
-        }
+      if (!lastCost) {
+        $async.logSwitch(arguments);
+        return;
       }
+      last += Math.floor(stamina.time / _1h) - Math.floor(lastTime / _1h);
+      const delta = last - stamina.current;
+      if (delta === 0 || lastCost <= 0.06 ) {
+        $async.logSwitch(arguments);
+        return;
+      }
+      const ratio = Math.max(1, delta / lastCost);
+      if (stamina.ratio === ratio) {
+        $async.logSwitch(arguments);
+        return;
+      }
+      stamina.lastCost = undefined;
+      stamina.lastRatio = stamina.ratio;
+      stamina.lastRatioRaw = stamina.ratioRaw
+      stamina.ratio = ratio;
+      stamina.ratioRaw = `${delta} / ${Math.round(lastCost * 100) / 100}`
       setValue('stamina', stamina);
-      console.log('stamina', stamina, last, stamina.current, lastCost, stamina.ratio);
+
+      console.log('stamina', stamina, '\n', last, '->', stamina.current, '=', lastCost, '*', ratio);
       $async.logSwitch(arguments);
     } catch (e) { console.error(e) } }
 
@@ -3622,9 +3641,17 @@
           return;
         }
       }
-      const staminaChecked = await checkStamina(condition.staminaLow, condition.staminaCost);
       const option = g('option');
-      console.log(`stamina check done:\nlow: ${condition.staminaLow ?? option.staminaLow}\n${condition.staminaCost ? `cost: ${condition.staminaCost}\n` : ''}status: ${staminaChecked === 1 ? 'succeed' : staminaChecked === 0 ? 'failed' : `failed with nature recover ${option.staminaLowWithReNat}`}`);
+      const stamina = getValue('stamina', true);
+      const [low, lowNR, cost, ratio] = [condition.staminaLow??option.staminaLow, option.staminaLowWithReNat??0, Math.round((condition.staminaCost??0) * 100) / 100, stamina.ratio??1]
+      const checked = await checkStamina(low, cost);
+      const [staminaChecked, stmNR] = [checked.checked, checked.stmNR];
+      const [neat, neatNR] = [stamina.current-low, stmNR-lowNR];
+      console.log(
+        'stamina check succeed:', staminaChecked === 1, ... staminaChecked === -1 ? ['with nature recover', lowNR, 'stmNR:', stmNR, '(', neatNR>=0 ? '+' : '-', neatNR, ')'] : [],
+        '\nlow:', low, ... cost ? ['cost:', cost, '*', ratio, '=', cost * ratio, 'current:', stamina.current, '(', neat>=0?'+':'-', neat, ')'] : [],
+        '\nstamina:', stamina,
+      );
       if (staminaChecked === 1) { // succeed
         document.title = document.title.replace(`[S!]`, '');
         return true;
@@ -3665,17 +3692,14 @@
       let current = await getCurrentStamina();
       const stmNR = current + 24 - (hours % 24);
       cost ??= 0;
-      const stmNRChecked = !cost || stmNR - cost >= option.staminaLowWithReNat;
-      console.log('stamina:', stamina, '\nstamina with nature recover:', stmNR);
-      if (current - cost >= (low ?? option.staminaLow) && stmNRChecked) return 1;
-      let checked = 0;
-      if (!stmNRChecked) {
-        checked = -1;
+      if (option.staminaRatio) {
+        cost *= stamina.ratio
       }
-      // restore
-      if (isIsekai || !option.restoreStamina) return checked;
+      const stmNRChecked = !cost || stmNR - cost >= option.staminaLowWithReNat;
+      const result = { checked: stmNRChecked ? (current - cost >= (low ?? option.staminaLow)) ? 1 : 0 : -1, stmNR: stmNR };
+      if (result.checked === 1 || isIsekai || !option.restoreStamina) return result;
       const items = g('items');
-      if (!items) return checked;
+      if (!items) return result;
       const recoverItems = { 11401: true, 11402: false }
       for (let id in recoverItems) {
         if (!items[id]) continue;
@@ -3686,7 +3710,7 @@
         goto();
         break;
       }
-      return checked;
+      return result;
     }
 
     async function updateEncounter(engage) { try {
@@ -4269,7 +4293,10 @@
         'Alt': { method: gotoAlt }
       }
       function clearBattleUnresponsive() {
-        Object.keys(battleUnresponsive).forEach(t => clearTimeout(battleUnresponsive[t].timeout));
+        Object.keys(battleUnresponsive).forEach(t => {
+          if (!battleUnresponsive[t].timeout) return;
+          clearTimeout(battleUnresponsive[t].timeout)
+        });
       }
       async function onBattleUnresponsive(method) { try {
         await waitPause();
@@ -4349,11 +4376,30 @@
               goto();
               return;
             }
-            const html = await $ajax.insert(window.location.href);
             clearBattleUnresponsive();
+            let urlChecked;
+            if (option.checkURLBeforeNewRound) {
+              while (!urlChecked) {
+                try {
+                  urlChecked = await $ajax.insert(option.checkURLBeforeNewRound);
+                } catch(e) {
+                  await waitPause();
+                  await pauseAsync(_1s * 5);
+                } finally {
+                  if (!!urlChecked) {
+                    console.log('Done url check:', !!urlChecked, option.checkURLBeforeNewRound)
+                  } else {
+                    console.error('Failed connect ', option.checkURLBeforeNewRound);
+                  }
+                }
+              }
+            }
+            const html = await $ajax.insert(window.location.href);
             const doc = $doc(html)
             if (gE('#riddlecounter', doc)) {
-              if (g('option').riddlePopup && !window.opener) {
+              console.log('url check:', option.checkURLBeforeNewRound, '\n', urlChecked)
+              console.log(getValue('stamina', true))
+              if (option.riddlePopup && !window.opener) {
                 window.open(window.location.href, 'riddleWindow', 'resizable,scrollbars,width=1241,height=707');
                 return;
               }
