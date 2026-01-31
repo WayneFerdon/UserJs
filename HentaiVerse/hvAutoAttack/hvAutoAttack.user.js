@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.157
+// @version      2.90.158
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -3422,8 +3422,8 @@
       $async.logSwitch(arguments);
       const stamina = getValue('stamina', true) ?? { ratio: 1 };
       let [last, lastTime] = [stamina.current, stamina.time];
-      [stamina.current, stamina.perk] = await Promise.all([
-        getCurrentStamina(),
+      [stamina.current, stamina.punish, stamina.perk] = await Promise.all([
+        ... (await getCurrentStamina()),
         (async () => { try {
           const perk = stamina.perk ?? {};
           if (isIsekai || !g('option').restoreStamina) {
@@ -3445,6 +3445,10 @@
         } catch(e) {console.error(e) }})()
       ]);
       stamina.time = time(0);
+      if (!stamina.punish && stamina.ratio !== 1) {
+        stamina.ratio = 1;
+        setValue('stamina', stamina);
+      }
       const lastCost = stamina.lastCost;
       if (!lastCost) {
         $async.logSwitch(arguments);
@@ -3456,7 +3460,7 @@
         $async.logSwitch(arguments);
         return;
       }
-      const ratio = Math.max(1, delta / lastCost);
+      const ratio = stamina.punish ? Math.max(1, Math.round(delta / lastCost / 0.25)*0.25) : 1;
       if (stamina.ratio === ratio) {
         $async.logSwitch(arguments);
         return;
@@ -3465,9 +3469,8 @@
       stamina.lastRatio = stamina.ratio;
       stamina.lastRatioRaw = stamina.ratioRaw
       stamina.ratio = ratio;
-      stamina.ratioRaw = `${delta} / ${Math.round(lastCost * 100) / 100}`
+      stamina.ratioRaw = `${delta} / ${Math.round(lastCost * 100) / 100} = ${delta / lastCost}`
       setValue('stamina', stamina);
-
       console.log('stamina', stamina, '\n', last, '->', stamina.current, '=', lastCost, '*', ratio);
       $async.logSwitch(arguments);
     } catch (e) { console.error(e) } }
@@ -3643,13 +3646,13 @@
       }
       const option = g('option');
       const stamina = getValue('stamina', true);
-      const [low, lowNR, cost, ratio] = [condition.staminaLow??option.staminaLow, option.staminaLowWithReNat??0, Math.round((condition.staminaCost??0) * 100) / 100, stamina.ratio??1]
+      const [low, lowNR, cost, ratio] = [condition.staminaLow??option.staminaLow, option.staminaLowWithReNat??0, Math.round((condition.staminaCost??0) * 100) / 100, stamina.punish ? stamina.ratio??1 : 1]
       const checked = await checkStamina(low, cost);
       const [staminaChecked, stmNR] = [checked.checked, checked.stmNR];
       const [neat, neatNR] = [stamina.current-low, stmNR-lowNR];
       console.log(
-        'stamina check succeed:', staminaChecked === 1, ... staminaChecked === -1 ? ['with nature recover', lowNR, 'stmNR:', stmNR, '(', neatNR>=0 ? '+' : '-', neatNR, ')'] : [],
-        '\nlow:', low, ... cost ? ['cost:', cost, '*', ratio, '=', cost * ratio, 'current:', stamina.current, '(', neat>=0?'+':'-', neat, ')'] : [],
+        'stamina check succeed:', staminaChecked === 1, ... staminaChecked === -1 ? ['with nature recover', lowNR, 'stmNR:', stmNR, '(', neatNR>=0 ? '+' : '', neatNR, ')'] : [],
+        '\nlow:', low, ... cost ? ['cost:', cost, ... stamina.punish ? ['*', ratio, '=', cost * ratio] : [], 'current:', stamina.current, '(', neat>=0?'+':'-', neat, ')'] : [],
         '\nstamina:', stamina,
       );
       if (staminaChecked === 1) { // succeed
@@ -3681,7 +3684,10 @@
     }
 
     async function getCurrentStamina() { try {
-      return gE('#stamina_readout .fc4.far>div', $doc(await $ajax.insert(window.location.href))).textContent.match(/\d+/)[0] * 1;
+      const doc = $doc(await $ajax.insert(window.location.href));
+      const current = gE('#stamina_readout .fc4.far>div', doc).textContent.match(/\d+/)[0] * 1;
+      const punish = gE('#stamina_readout .fc4.far', doc).parentNode.title ?? 'a';
+      return [current, punish];
     } catch(e) { console.error(e); }}
 
     async function checkStamina(low, cost) {
@@ -3689,10 +3695,10 @@
       const option = g('option');
       let now = time(0);
       let hours = Math.floor(now / _1h);
-      let current = await getCurrentStamina();
+      let [current, punish] = await getCurrentStamina();
       const stmNR = current + 24 - (hours % 24);
       cost ??= 0;
-      if (option.staminaRatio) {
+      if (punish && option.staminaRatio) {
         cost *= stamina.ratio
       }
       const stmNRChecked = !cost || stmNR - cost >= option.staminaLowWithReNat;
@@ -3848,7 +3854,6 @@
         }
         setValue('arena', arena);
       }
-      console.log('arena:', getValue('arena', true));
       if (arena.array.length === 0) {
         setTimeout(autoSwitchIsekai, (option.isekaiTime * (Math.random() * 20 + 90) / 100) * _1s);
         return;
@@ -3890,7 +3895,7 @@
         gr: 0
       }
       let stamina = getValue('stamina', true);
-      stamina.current = await getCurrentStamina();
+      [stamina.current, stamina.punish] = await getCurrentStamina();
       stamina.time = time(0);
       for (let id in staminaCost) {
         staminaCost[id] *= (isIsekai ? 2 : 1) * (stamina.current >= 60 ? 0.03 : 0.02)
@@ -3910,13 +3915,13 @@
       }
       query = `?s=Battle&ss=${query}`;
       if (id === 'gr' && ((option.checkSupplyGF && !checkSupply(true)) || (option.repairValueGF && !await asyncCheckRepair(true)))) {
-        console.log('Check gr Battle Ready Failed in supply/repair', 'id:', id);
+        console.log('Check gr Battle Ready Failed in supply/repair', 'id:', id, arena);
         $async.logSwitch(arguments);
         return;
       }
       const cost = staminaCost[id];
       if (!await checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: option.encounter, staminaLow: id === 'gr' ? option.staminaGrindFest : undefined })) {
-        console.log('Check Battle Ready Failed', 'id:', id);
+        console.log('Check Battle Ready Failed', 'id:', id, arena);
         $async.logSwitch(arguments);
         return;
       }
@@ -3928,20 +3933,20 @@
       }
       await waitPause();
       writeArenaStart();
-      while(option.checkURLBeforeNewRound && !(await $ajax.insert(option.checkURLBeforeNewRound))) {
+      let aa;
+      while(option.checkURLBeforeNewRound && !(aa=await $ajax.insert(option.checkURLBeforeNewRound))) {
         await pauseAsync(option.checkURLBeforeNewRoundRetry);
       }
       while(!(await $ajax.insert(query, `initid=${id === 'gr' ? 1 : id}${token}`))) {
         await pauseAsync(option.checkURLBeforeNewRoundRetry);
       }
-      console.log('Arena Fetch Done.', 'altBattleFirst:', option.altBattleFirst);
       stamina.lastCost = id === 'gr' ? undefined : cost;
       setValue('stamina', stamina);
       if (option.altBattleFirst && await $ajax.insert(href.replace('hentaiverse.org', 'alt.hentaiverse.org').replace('alt.alt', 'alt'))) {
-        console.log('Arena goto alt');
+        console.log('Arena Fetch Done.', 'altBattleFirst:', option.altBattleFirst, 'Arena goto alt', arena);
         gotoAlt(true);
       } else {
-        console.log('Arena goto');
+        console.log('Arena Fetch Done.', 'altBattleFirst:', option.altBattleFirst, 'Arena goto', arena);
         goto();
       }
       $async.logSwitch(arguments);
