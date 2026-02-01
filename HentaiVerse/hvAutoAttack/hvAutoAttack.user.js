@@ -291,7 +291,7 @@
         },
         log: function () {
           if ($debug.realtime) {
-            console.log(...arguments, `\n`, (new $debug.Stack()).stack);
+            console.trace(...arguments);
             return;
           }
           $debug.logList.push({
@@ -870,9 +870,9 @@
 
       function r(e) {
         switch(true) {
-            case e.key?.length >=2 && e.key?.includes('F'): return;
-            case e.ctrlKey: return;
-            default: break;
+          case e.key?.length >=2 && e.key?.includes('F'): return;
+          case e.ctrlKey: return;
+          default: break;
         }
         e.preventDefault();
         e.stopImmediatePropagation();
@@ -2392,11 +2392,14 @@
       };
       gE('.hvAAReset', optionBox).onclick = function () {
         if (_alert(1, '是否重置', '是否重置', 'Whether to reset')) {
-          delValue('option');
+          const option = getValue('option');
+          const newOption = {};
+          setValue('option', Object.fromEntries(excludeStandalone.option.map(ex => [ex, option[ex]])));
+          goto();
         }
       };
       gE('.hvAAApply', optionBox).onclick = function () {
-        if (gE('select[name="attackStatus"] option[value="-1"]:checked', optionBox)) {
+        if (gE('select[name="attackStatus"] option[value="-1"]:checked', optionBox) || !gE('select[name="attackStatus"] option:checked', optionBox)) {
           _alert(0, '请选择攻击模式', '請選擇攻擊模式', 'Please select the attack mode');
           gE('.hvAATabmenu>span[name="Main"]').click();
           gE('#attackStatus', optionBox).style.border = '1px solid red';
@@ -3444,6 +3447,10 @@
           return perk;
         } catch(e) {console.error(e) }})()
       ]);
+      if (!stamina.current) {
+        $async.logSwitch(arguments);
+        return
+      }
       stamina.time = time(0);
       if (!stamina.punish && stamina.ratio !== 1) {
         stamina.ratio = 1;
@@ -3483,7 +3490,13 @@
       $async.logSwitch(arguments);
       const html = await $ajax.insert('?s=Character&ss=it');
       const items = {};
-      for (let each of gE('.nosel.itemlist>tbody', $doc(html)).children) {
+      const doc = $doc(html);
+      if (gE('#riddlecounter', doc) || gE('#battle_main', doc)) {
+        $async.logSwitch(arguments);
+        g('items', null);
+        return;
+      }
+      for (let each of gE('.nosel.itemlist>tbody', doc).children) {
         const name = each.children[0].children[0].innerText;
         const id = each.children[0].children[0].getAttribute('id').split('_')[1];
         const count = each.children[1].innerText;
@@ -3499,6 +3512,9 @@
         return true;
       }
       const items = g('items');
+      if (!items) {
+        return false;
+      }
       const thresholdList = isGFStandalone ? option.checkItemGF : option.checkItem;
       const checkList = isGFStandalone ? option.isCheckGF : option.isCheck;
       const percentage = isGFStandalone ? option.checkSupplyWarnGF : option.checkSupplyWarn;
@@ -3523,14 +3539,14 @@
         console.log(`Needs supply:${needs}`);
         document.title = `[C!${isGFStandalone ? '!' : ''}]` + document.title;
         switch(option.lang * 1) {
-            case 0:
+          case 0:
             popup(`消耗品${isGFStandalone ? '(压榨届独立配置)' : ''}不足:\n${needs}`);
             break
-            case 1:
+          case 1:
             popup(`消耗品${isGFStandalone ? '(壓榨屆獨立配置)' : ''}不足:\n${needs}`);
             break
-            case 2:
-            default:
+          case 2:
+          default:
             popup(`Failed supply check${isGFStandalone ? ' for Grindfest standalone' : ''}:\n${needs}`);
             break
         }
@@ -3538,14 +3554,14 @@
         console.log(`Warn supply:${warns}`);
         document.title = `[C!${isGFStandalone ? '!' : ''}]` + document.title;
         switch(option.lang * 1) {
-            case 0:
+          case 0:
             popup(`消耗品${isGFStandalone ? '(压榨届独立配置)' : ''} < ${percentage}%:\n${warns}`);
             break
-            case 1:
+          case 1:
             popup(`消耗品${isGFStandalone ? '(壓榨屆獨立配置)' : ''} < ${percentage}%:\n${warns}`);
             break
-            case 2:
-            default:
+          case 2:
+          default:
             popup(`Supplys ${isGFStandalone ? ' for Grindfest standalone' : ''} < ${percentage}%:\n${warns}`);
             break
         }
@@ -3582,6 +3598,10 @@
       } else {
         const href = `?s=Bazaar&ss=am&screen=repair&filter=equipped`;
         const doc = $doc(await $ajax.insert(href));
+        if (gE('#riddlecounter', doc) || gE('#battle_main', doc)) {
+          $async.logSwitch(arguments);
+          return undefined;
+        }
         const token = gE('#equipform>input[name="postoken"]', doc).value;
         eqps = await Promise.all(Array.from(gE('#equiplist>table>tbody>tr:not(.eqselall):not(.eqtplabel)', 'all', doc)).map(async eqp => { try {
           const id = gE('input', eqp).value;
@@ -3597,14 +3617,14 @@
       if (eqps.length) {
         console.log('equips need repair:\n', eqps.join('\n '));
         switch(option.lang * 1) {
-            case 0:
+          case 0:
             popup(`装备需要修理:\n${eqps.join('\n ')}`);
             break
-            case 1:
+          case 1:
             popup(`裝備需要修理:\n${eqps.join('\n ')}`);
             break
-            case 2:
-            default:
+          case 2:
+          default:
             popup(`Equips need repair:\n${eqps.join('\n ')}`);
             break
         }
@@ -3625,10 +3645,18 @@
       if (hvVersion < 91) {
         const href = `?s=Character&ss=in`;
         const doc = $doc(await $ajax.insert(href));
+        if (gE('#riddlecounter', doc) || gE('#battle_main', doc)) {
+          $async.logSwitch(arguments);
+          return false;
+        }
         count = gE('#eqinv_bot>div>div>div', doc).innerText.match(/: (\d+) \/ \d+/)[1];
       } else {
         const href = `?s=Bazaar&ss=am`;
         const doc = $doc(await $ajax.insert(href));
+        if (gE('#riddlecounter', doc) || gE('#battle_main', doc)) {
+          $async.logSwitch(arguments);
+          return false;
+        }
         count = gE('#equipblurb>table>tbody>tr>td:nth-child(2)', doc).innerText;
       }
       $async.logSwitch(arguments);
@@ -3668,14 +3696,14 @@
         }
       } else { // case -1: // failed with nature recover
         switch(option.lang * 1) {
-            case 0:
+          case 0:
             popup('当日精力不足(含自然恢复)');
             break
-            case 1:
+          case 1:
             popup('當日精力不足(含自然恢復)');
             break
-            case 2:
-            default:
+          case 2:
+          default:
             popup('Failed stamina check with nature recover.');
             break
         }
@@ -3684,13 +3712,22 @@
     }
 
     async function getCurrentStamina() { try {
+      await waitPause();
+      $async.logSwitch(arguments);
       const doc = $doc(await $ajax.insert(window.location.href));
+      if (gE('#riddlecounter', doc) || gE('#battle_main', doc)) {
+        $async.logSwitch(arguments);
+        return [ undefined, undefined ];
+      }
       const current = gE('#stamina_readout .fc4.far>div', doc).textContent.match(/\d+/)[0] * 1;
       const punish = gE('#stamina_readout .fc4.far', doc).parentNode.title ?? 'a';
+      $async.logSwitch(arguments);
       return [current, punish];
     } catch(e) { console.error(e); }}
 
     async function checkStamina(low, cost) {
+      await waitPause();
+      $async.logSwitch(arguments);
       const stamina = getValue('stamina', true);
       const option = g('option');
       let now = time(0);
@@ -3703,8 +3740,10 @@
       }
       const stmNRChecked = !cost || stmNR - cost >= option.staminaLowWithReNat;
       const result = { checked: stmNRChecked ? (current - cost >= (low ?? option.staminaLow)) ? 1 : 0 : -1, stmNR: stmNR };
+      $async.logSwitch(arguments);
       if (result.checked === 1 || isIsekai || !option.restoreStamina) return result;
       const items = g('items');
+      $async.logSwitch(arguments);
       if (!items) return result;
       const recoverItems = { 11401: true, 11402: false }
       for (let id in recoverItems) {
@@ -3716,6 +3755,7 @@
         goto();
         break;
       }
+      $async.logSwitch(arguments);
       return result;
     }
 
@@ -3724,6 +3764,8 @@
         console.log("skip encounter check");
         return false;
       }
+      // await waitPause();
+      // $async.logSwitch(arguments);
       const encounter = getEncounter();
       const count = encounter.filter(e => e.href).length;
       const option = g('option');
@@ -3761,17 +3803,20 @@
         if (!cd) {
           await waitPause();
           onEncounter();
+          // $async.logSwitch(arguments);
           return true;
         }
         if (cd < 30 * _1m && encounter[0]?.href && !encounter[0].encountered) {
           await waitPause();
           $ajax.openNoFetch(encounter[0].href);
+          // $async.logSwitch(arguments);
           return true;
         }
       }
       let interval = cd > _1h ? _1m : (!option.encounterQuickCheck || cd > _1m) ? _1s : 80;
       interval = (option.encounterQuickCheck && cd > _1m) ? (interval - cd % interval) / 4 : interval; // 让倒计时显示更平滑
       setTimeout(() => updateEncounter(engage), interval);
+      // $async.logSwitch(arguments);
       return engage && cd <= waitCD;
     } catch (e) { console.error(e) } }
 
@@ -3816,6 +3861,7 @@
 
     async function updateArena(forceUpdateToken = false) { try {
       await waitPause();
+      $async.logSwitch(arguments);
       let arena = getValue('arena', true) ?? {};
       const isToday = arena.date && time(2, arena.date) === time(2);
       if (forceUpdateToken || !isToday || !arena.isOptionUpdated) {
@@ -3837,6 +3883,7 @@
         arena.array.reverse();
       }
       arena.arrayDone = arena.arrayDone.filter(id => id === 'gr' || !Object.keys(arena.token).includes(id.toString()));
+      $async.logSwitch(arguments);
       return setValue('arena', arena);
     } catch (e) { console.error(e) } }
 
@@ -4374,6 +4421,7 @@
         onRoundEnd();
         async function onRoundEnd() { try {
           await waitPause();
+          // $async.logSwitch(arguments);
           if (g('monsterAlive') > 0) { // Defeat
             setExitBattleTimeout('Defeat');
             clearBattleUnresponsive();
@@ -4385,9 +4433,11 @@
           }
 
           async function onNewRound() { try {
-            await waitPause();
+            // await waitPause();
+            // $async.logSwitch(arguments);
             if (gE('#btcp')?.innerHTML.includes("finishbattle.png")) {
               goto();
+              // $async.logSwitch(arguments);
               return;
             }
             clearBattleUnresponsive();
@@ -4412,17 +4462,20 @@
             const doc = $doc(html)
             if (gE('#riddlecounter', doc)) {
               console.log('url check:', option.checkURLBeforeNewRound, '\n', urlChecked)
-              console.log(getValue('stamina', true))
               if (option.riddlePopup && !window.opener) {
                 window.open(window.location.href, 'riddleWindow', 'resizable,scrollbars,width=1241,height=707');
+                // $async.logSwitch(arguments);
                 return;
               }
+              console.log(window.location.href)
               goto();
+              // $async.logSwitch(arguments);
               return;
             }
             if (option.nativeNewRound) {
               onStepInDone();
               gE('#btcp').click();
+              // $async.logSwitch(arguments);
               return;
             }
             gE('#pane_completion').removeChild(gE('#btcp'));
@@ -4433,7 +4486,9 @@
             newRound(true);
             onStepInDone();
             onBattleRound();
+            // $async.logSwitch(arguments);
           } catch (e) { e => console.error(e) } }
+          // $async.logSwitch(arguments);
         } catch (e) { console.error(e) } }
       };
       gE('body').appendChild(eventEnd);
