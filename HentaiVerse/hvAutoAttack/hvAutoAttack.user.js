@@ -3714,7 +3714,7 @@
     }
 
     async function getCurrentStamina() { try {
-      await waitPause();
+      // await waitPause();
       $async.logSwitch(arguments);
       const doc = $doc(await $ajax.insert(window.location.href));
       if (gE('#riddlecounter', doc) || gE('#battle_main', doc)) {
@@ -3728,7 +3728,7 @@
     } catch(e) { console.error(e); }}
 
     async function checkStamina(low, cost) {
-      await waitPause();
+      // await waitPause();
       $async.logSwitch(arguments);
       const stamina = getValue('stamina', true);
       const option = g('option');
@@ -4435,7 +4435,7 @@
           }
 
           async function onNewRound() { try {
-            // await waitPause();
+            await waitPause();
             // $async.logSwitch(arguments);
             if (gE('#btcp')?.innerHTML.includes("finishbattle.png")) {
               goto();
