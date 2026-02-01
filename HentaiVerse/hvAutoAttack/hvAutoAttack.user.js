@@ -3450,6 +3450,7 @@
         } catch(e) {console.error(e) }})()
       ]);
       if (!stamina.current) {
+        setValue('stamina', stamina);
         $async.logSwitch(arguments);
         return
       }
@@ -3460,17 +3461,20 @@
       }
       const lastCost = stamina.lastCost;
       if (!lastCost) {
+        setValue('stamina', stamina);
         $async.logSwitch(arguments);
         return;
       }
       last += Math.floor(stamina.time / _1h) - Math.floor(lastTime / _1h);
       const delta = last - stamina.current;
       if (delta === 0 || lastCost <= 0.06 ) {
+        setValue('stamina', stamina);
         $async.logSwitch(arguments);
         return;
       }
       const ratio = stamina.punish ? Math.max(1, Math.round(delta / lastCost / 0.25)*0.25) : 1;
       if (stamina.ratio === ratio) {
+        setValue('stamina', stamina);
         $async.logSwitch(arguments);
         return;
       }
