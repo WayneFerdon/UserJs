@@ -2395,7 +2395,9 @@
           const option = getValue('option');
           const newOption = {};
           setValue('option', Object.fromEntries(excludeStandalone.option.map(ex => [ex, option[ex]])));
-          goto();
+          if (_alert(1, '已重置，是否刷新', '已重置，是否刷新', 'Reseted. Page reload?')) {
+            goto();
+          }
         }
       };
       gE('.hvAAApply', optionBox).onclick = function () {
