@@ -3450,7 +3450,9 @@
         } catch(e) {console.error(e) }})()
       ]);
       if (!stamina.current) {
-        setValue('stamina', stamina);
+        if (!getValue('stamina')) {
+          setValue('stamina', stamina);
+        }
         $async.logSwitch(arguments);
         return
       }
