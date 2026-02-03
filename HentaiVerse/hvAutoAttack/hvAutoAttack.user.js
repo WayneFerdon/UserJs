@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.159
+// @version      2.90.160
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1410,8 +1410,8 @@
         '  <div><b><l0>战斗执行顺序(未配置的按照下面的顺序)</l0><l1>戰鬥執行順序(未配置的按照下面的順序)</l1><l2>Battal Order(Using order below as default if not configed)</l2></b>: <input id="battleOrderDefaultOnly" type="checkbox"><label for="battleOrderDefaultOnly">(<l0>只使用默认顺序</l0><l1>只使用默認順序</l1><l2>Default order only</l2>)</label>',
         '    <div class="battleOrder"><input name="battleOrderName" style="width:80%;" type="text" disabled="true"><br>',
         '      <div class="hvAATable" style="display:grid; grid-template-columns:repeat(4, 1fr);">',
-        '        <div><input id="battleOrder_autoPause" value="Pause" type="checkbox"><label for="battleOrder_autoPause"><l0>自动暂停</l0><l1>自動暫停</l1><l2>Auto Pause</l2></label></div>',
         '        <div><input id="battleOrder_autoCure" value="Cure" type="checkbox"><label for="battleOrder_autoCure"><l0>使用治疗</l0><l1>使用治療</l1><l2>Cure</l2></label></div>',
+        '        <div><input id="battleOrder_autoPause" value="Pause" type="checkbox"><label for="battleOrder_autoPause"><l0>自动暂停</l0><l1>自動暫停</l1><l2>Auto Pause</l2></label></div>',
         '        <div><input id="battleOrder_autoSSDisable" value="SSDisable" type="checkbox"><label for="battleOrder_autoSSDisable"><l0>关闭灵动架式</l0><l1>關閉靈動架式</l1><l2>Disable Sprite</l2></label></div>',
         '        <div><input id="battleOrder_autoRecover" value="Rec" type="checkbox"><label for="battleOrder_autoRecover"><l0>恢复(含治疗)</l0><l1>恢復(含治療)</l1><l2>Recover(& cure)</l2></label></div>',
         '        <div><input id="battleOrder_useScroll" value="Scroll" type="checkbox"><label for="battleOrder_useScroll"><l0>使用卷轴</l0><l1>使用捲軸</l1><l2>Use Scroll</l2></label><br></div>',
@@ -3693,7 +3693,7 @@
       const [staminaChecked, stmNR] = [checked.checked, checked.stmNR];
       const [neat, neatNR] = [stamina.current-low, stmNR-lowNR];
       console.log(
-        'stamina check succeed:', staminaChecked === 1, ... staminaChecked === -1 ? ['with nature recover', lowNR, 'stmNR:', stmNR, '(', neatNR>=0 ? '+' : '', neatNR, ')'] : [],
+        'stamina check succeed:', staminaChecked === 1, ... staminaChecked === -1 ? ['with nature recover', lowNR, 'stmNR:', stmNR, '(', ... neatNR>=0 ? ['+', neatNR] : ['-', -neatNR], ')'] : [],
         '\nlow:', low, ... cost ? ['cost:', cost, ... stamina.punish ? ['*', ratio, '=', cost * ratio] : [], 'current:', stamina.current, '(', neat>=0?'+':'-', neat, ')'] : [],
         '\nstamina:', stamina,
       );
@@ -4199,18 +4199,18 @@
         return;
       }
       const taskList = {
-        'Pause': autoPause,
         'Cure': ()=>autoRecover(true),
+        'Pause': autoPause,
+        'SSDisable': ()=>autoSS(true),
         'Rec': ()=>autoRecover(false),
-        'Def': autoDefend,
         'Scroll': useScroll,
+        'Infus': useInfusions,
+        'Def': autoDefend,
         'Channel': useChannelSkill,
         'Buff': useBuffSkill,
-        'Infus': useInfusions,
         'Debuff': useDeSkill,
         'Focus': autoFocus,
         'SS': ()=>autoSS(false),
-        'SSDisable': ()=>autoSS(true),
         'Skill': autoSkill,
         'Atk': attack,
       };
