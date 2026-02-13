@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.160
+// @version      2.90.161
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -3183,7 +3183,7 @@
       for (const cookieObj of cookie) {
         const match = cookieObj.match(/ipb_member_id=(\d+)/);
         if (match) {
-          return match[1];
+          return match[1] * 1;
         }
       }
     }
@@ -3430,12 +3430,18 @@
       [stamina.current, stamina.punish, stamina.perk] = await Promise.all([
         ... (await getCurrentStamina()),
         (async () => { try {
-          const perk = stamina.perk ?? {};
+          let perk = stamina.perk;
+          if (perk && !Array.isArray(perk)) {
+            perk = Object.keys(perk).map(id=>id*1)
+          }
+          if (!perk?.length) {
+            perk = undefined;
+          }
           if (isIsekai || !g('option').restoreStamina) {
             return perk;
           }
           let currentID, html;
-          if (perk[currentID = getCurrentUser()]) {
+          if (perk && perk[currentID = getCurrentUser() * 1]) {
             return perk;
           }
           if (!(html = await $ajax.insert('https://e-hentai.org/hathperks.php'))) {
@@ -3443,8 +3449,8 @@
           }
           const doc = $doc(html);
           const perks = gE('.stuffbox>table>tbody>tr', 'all', doc);
-          if (perks && perks[25].innerHTML.includes('Obtained')) {
-            perk[currentID] = true;
+          if (perks && perks[25].innerHTML.includes('Obtained') && !(perk ??= []).includes(currentID)) {
+            perk.push(currentID);
           }
           return perk;
         } catch(e) {console.error(e) }})()
@@ -3458,24 +3464,22 @@
       }
       stamina.time = time(0);
       if (!stamina.punish) {
-        if (stamina.ratio !== 1) {
-          stamina.ratio = 1;
-        } else {
-          stamina.lastRatio = 1;
-          stamina.lastRatioRaw = undefined;
-          stamina.ratioRaw = undefined;
-        }
-        setValue('stamina', stamina);
+        [stamina.lastRatio, stamina.lastRatioRaw] = [stamina.ratio, stamina.ratioRaw];
+        [stamina.ratio, stamina.ratioRaw] = [undefined, undefined]
+      }
+      if (stamina.ratio === 1 && (stamina.lastRatio === 1 || !stamina.lastRatio)) {
+        [stamina.ratio, stamina.lastRatio, stamina.lastRatioRaw, stamina.ratioRaw] = Array(4).fill(undefined);
       }
       const lastCost = stamina.lastCost;
-      if (!lastCost) {
+      stamina.lastCost = undefined;
+      if (!lastCost || lastCost <= 0.06 ) {
         setValue('stamina', stamina);
         $async.logSwitch(arguments);
         return;
       }
       last += Math.floor(stamina.time / _1h) - Math.floor(lastTime / _1h);
       const delta = last - stamina.current;
-      if (delta === 0 || lastCost <= 0.06 ) {
+      if (!delta) {
         setValue('stamina', stamina);
         $async.logSwitch(arguments);
         return;
@@ -3486,11 +3490,8 @@
         $async.logSwitch(arguments);
         return;
       }
-      stamina.lastCost = undefined;
-      stamina.lastRatio = stamina.ratio;
-      stamina.lastRatioRaw = stamina.ratioRaw
-      stamina.ratio = ratio;
-      stamina.ratioRaw = `${delta} / ${Math.round(lastCost * 100) / 100} = ${delta / lastCost}`
+      [stamina.lastRatio, stamina.lastRatioRaw] = [stamina.ratio ?? 1, stamina.ratioRaw];
+      [stamina.ratio, stamina.ratioRaw] = [ratio, `${delta} / ${Math.round(lastCost * 100) / 100} = ${delta / lastCost}`]
       setValue('stamina', stamina);
       console.log('stamina', stamina, '\n', last, '->', stamina.current, '=', lastCost, '*', ratio);
       $async.logSwitch(arguments);
@@ -3694,7 +3695,7 @@
       const [neat, neatNR] = [stamina.current-low, stmNR-lowNR];
       console.log(
         'stamina check succeed:', staminaChecked === 1, ... staminaChecked === -1 ? ['with nature recover', lowNR, 'stmNR:', stmNR, '(', ... neatNR>=0 ? ['+', neatNR] : ['-', -neatNR], ')'] : [],
-        '\nlow:', low, ... cost ? ['cost:', cost, ... stamina.punish ? ['*', ratio, '=', cost * ratio] : [], 'current:', stamina.current, '(', neat>=0?'+':'-', neat, ')'] : [],
+        '\nlow:', low, ... cost ? ['cost:', cost, ... stamina.punish ? ['*', ratio, '=', Math.round(cost*ratio*10000)/10000] : [], 'current:', stamina.current, '(', neat>=0?'+':'-', neat, ')'] : [],
         '\nstamina:', stamina,
       );
       if (staminaChecked === 1) { // succeed
@@ -3734,9 +3735,9 @@
         return [ undefined, undefined ];
       }
       const current = gE('#stamina_readout .fc4.far>div', doc).textContent.match(/\d+/)[0] * 1;
-      const punish = gE('#stamina_readout .fc4.far', doc).parentNode.title ?? 'a';
+      const punish = !!gE('#stamina_readout .fc4.far', doc).parentNode.title;
       $async.logSwitch(arguments);
-      return [current, punish];
+      return [current, punish ? punish : undefined];
     } catch(e) { console.error(e); }}
 
     async function checkStamina(low, cost) {
@@ -3760,9 +3761,9 @@
       $async.logSwitch(arguments);
       if (!items) return result;
       const recoverItems = { 11401: true, 11402: false }
+      const isPerk = stamina.perk?.includes(getCurrentUser());
       for (let id in recoverItems) {
         if (!items[id]) continue;
-        const isPerk = (stamina.perk??{})[getCurrentUser()];
         const recover = recoverItems[id] ? isPerk ? 20 : 10 : 5;
         if (current + recover >= 100) continue; // check if overflow by (20 or 10) -> (5)
         const recovered = gE('#stamina_readout .fc4.far>div', $doc(await $ajax.insert(window.location.href, 'recover=stamina'))).textContent.match(/\d+/)[0] * 1;
@@ -5553,11 +5554,10 @@
       attackStatusOrder = attackStatusOrder.concat([0,6,5,1,2,4,3].filter(x=> !(attackStatusOrder.includes(x))));
       if (option.attackStatusSwitch) {
         for (const status of attackStatusOrder) {
-          const condition = option[`attackStatusSwitchCondition${status}`] ?? {};
           if (!option.attackStatusSwitch[status]) continue;
           const current = g('attackStatusCurrent');
           g('attackStatusCurrent', status);
-          if (checkCondition(condition, monsters) && onAttack(range, status, selectStatusOnly)) {
+          if (checkCondition(option[`attackStatusSwitchCondition${status}`], monsters) && onAttack(range, status, selectStatusOnly)) {
             return true;
           }
           g('attackStatusCurrent', current);
