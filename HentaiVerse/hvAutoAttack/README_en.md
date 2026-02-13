@@ -176,7 +176,7 @@ The following is a schematic diagram of the circuit diagram
 
 | 1 | 2 | 3 |
 | - | - | - |
-| - | Regen / regen | - |
+| Channeling / channeling | Regen / regen | - |
 | Protection / protection | Haste / haste | Shadow Veil / shadowveil |
 | Absorb / absorb | Spark of Life / sparklife | Spirit Shield / spiritshield |
 | Arcane Focus / arcanemeditation | Heartseeker / heartseeker | Cloak of the Fallen / fallenshield |
@@ -225,6 +225,7 @@ In this example, the script will attack enemy 1 next.
 
 * Old
 1. see [README_Chinese#更新历史](https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README.md#更新历史)
+
 
 
 
