@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.161
+// @version      2.90.162
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2907,7 +2907,7 @@
     function checkCondition(parms, targets = undefined) {
       let i, j, k, target;
       targets ??= [g('battle').monsterStatus[0]];
-      if (typeof parms === 'undefined') {
+      if (!parms || !Object.keys(parms).length) {
         return targets[0];
       }
       const returnValue = function (str) {
