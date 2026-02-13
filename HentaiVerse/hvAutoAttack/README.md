@@ -180,7 +180,7 @@
 
 | 1 | 2 | 3 |
 | - | - | - |
-| - | Regen / regen | - |
+| Channeling / channeling | Regen / regen | - |
 | Protection / protection | Haste / haste | Shadow Veil / shadowveil |
 | Absorb / absorb | Spark of Life / sparklife | Spirit Shield / spiritshield |
 | Arcane Focus / arcanemeditation | Heartseeker / heartseeker | Cloak of the Fallen / fallenshield |
@@ -417,6 +417,7 @@
 灵感来自hoverplay，刚开始接触js，初步完成代码
 功能有：答题警报、其他警报、快捷键、自动前进、自动使用宝石、自动回复、自动使用增益技能、自动打怪
 很可惜，玩游戏不走心，一直搞不懂HVSTAT是怎么知道每个怪的血量的，直到[版本2.0](#20)
+
 
 
 
