@@ -69,8 +69,8 @@ Four drop down lists and one button are visible in the box
 
 #### Comparison Value
 
-1. `hp`/`mp`/`sp`: **percent** of hp/mp/sp, 0-100
-2. `oc`: Overcharge, 0-250
+1. `hp`/`mp`/`sp`: **percent integer** of hp/mp/sp, 0-100; `_hpDecimal`/`_mpDecimal`/`_spDecimal`: **percent decimal** of hp/mp/sp, 0-1
+2. `oc`: Overcharge, 0-250 (integer); `_ocDecimal`: Overcharge in decimal 0-2.5
 3. `monsterAll`/`monsterAlive`/`bossAll`/`bossAlive`: amount of all monster/boss (alive)
 4. `roundNow`/`roundAll`/`roundLeft`
 5. `isRoundType`、`ar`、`ba`、`iw`、`tw`、`gr`、`rb`: is current round type as the target type, such as: both `_isRoundType_ar` and `_ar` returns `is currently in The Arena`
@@ -95,7 +95,7 @@ Four drop down lists and one button are visible in the box
 
   **example**: the image of Protection is protection, `_buffTurn_protection == 0` means you don't have the buff of Protection or `_buffTurn_protection >= 10` means the buff of Protection on you last at least 10 turns
 
-11. `_targetHp`/`_targetMp`/`_targetSp`/`_targetBuffTurn`/`_targetRank`: `HP%`/`SP%`/`MP%`/`buffRemainTime`/`attackRank` of target monster
+11. `_targetHp`/`_targetMp`/`_targetSp`/`_targetHpDecimal`/`_targetMpDecimal`/`_targetSpDecimal`/`_targetBuffTurn`/`_targetRank`: `HP%`/`SP%`/`MP%`/`HP% in decimal`/`SP%  in decimal`/`MP%  in decimal`/`buffRemainTime`/`attackRank` of target monster
     1. ,  suffix of `_targetBuffTurn_` is same as 8.`buffTurn`（such as：`_targetBuffTurn_bleed != 0` means remain turns of bleed buff on target monster is not equal to 0. Target that is calculating is chosen by following rules:
         1. The highest priority monster by rank in default situations.
         2. Weapon skills (OFC, T1~T3, etc.), Offensive Spell skills (Tire2, Tire3): by each condition > for each ranked target > find the target fit all sub-condition in the condition and cast to it. Such as the pic below: condition for Merciful Blow: only cast to targets which with hp below 25% and a bleed buff.
@@ -114,6 +114,8 @@ Four drop down lists and one button are visible in the box
         6. others: 0 (not boss)
 
 13. blank: the value you want to put in
+
+PS: For params get from func (starts with `_`), `_` from start can be omited (while omited, params will try get values as dict than as func if failed)
 
 #### Example
 
@@ -225,6 +227,7 @@ In this example, the script will attack enemy 1 next.
 
 * Old
 1. see [README_Chinese#更新历史](https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README.md#更新历史)
+
 
 
 
