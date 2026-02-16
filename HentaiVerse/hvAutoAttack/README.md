@@ -72,8 +72,8 @@
 
 #### 比较值
 
-1. `hp`/`mp`/`sp`: hp/mp/sp的*百分比 (percent)*
-2. `oc`: Overcharge, 250==>250%
+1. `hp`/`mp`/`sp`: hp/mp/sp的*百分比的整数形式 (percent)*；`_hpDecimal`/`_mpDecimal`/`_spDecimal`: hp/mp/sp的*百分比的小数形式 (percent decimal)*
+2. `oc`: Overcharge, 250==>250% *百分比的整数形式 (percent)*；`_ocDecimal`: oc的*百分比的小数形式 (percent decimal)*
 3. `monsterAll`/`monsterAlive`/`bossAll`/`bossAlive`: 怪兽/Boss的总数目/存活数目
 4. `roundNow`/`roundAll`/`roundLeft`: 当前回合数/总回合数/剩余回合数
 5. `isRoundType`、`ar`、`ba`、`iw`、`tw`、`gr`、`rb`: 当前是否是某战役模式，例如`_isRoundType_ar`或`_ar`均返回 `当前是否是The Arena`
@@ -98,7 +98,7 @@
 
   **示例**: Protection的img为protection，则`_buffTurn_protection == 0`表示不存在Protection的buff，`_buffTurn_protection >= 10`表示Protection的buff至少剩余10回合
 
-11. `_targetHp`、`_targetMp`、`_targetSp`、`_targetBuffTurn`、`_targetRank`: 目标怪物的HP%、SP%、MP%、buff剩余时间、优先级
+11. `_targetHp`、`_targetMp`、`_targetSp`、`_targetHpDecimal`、`_targetMpDecimal`、`_targetSpDecimal`、`_targetBuffTurn`、`_targetRank`: 目标怪物的HP%、SP%、MP%、HP%（小数形式）、SP%（小数形式）、MP%（小数形式）、buff剩余时间、优先级
     1. `_targetBuffTurn_`后缀参照8.`buffTurn`（如：`_targetBuffTurn_bleed != 0`表示目标bleed的buff剩余回合不等于0）。target的目标怪物遵循以下规则
        1. 默认情况的target均为权重优先级最高的目标
        2. 武器技能（马炮、T1~T3等）、法术技能（中阶、高阶）：按照 逐条条件判断>按权重逐个目标>满足任意一条条件内的所有子条目，则对该目标释放。例如下图最后的慈悲的条件：仅释放hp小于25%、拥有流血buff
@@ -116,6 +116,8 @@
         6. 其他: 0 (非boss)
 
 13. 空白(blank): 自己输入 (the value you want to put in)
+
+PS: 对于需要带下划线`_`开头的func式变量，可以省略`_`开头（省略时，获取值会先尝试按照dict式获取，失败时再按照func式获取）
 
 #### 示例
 
@@ -417,6 +419,7 @@
 灵感来自hoverplay，刚开始接触js，初步完成代码
 功能有：答题警报、其他警报、快捷键、自动前进、自动使用宝石、自动回复、自动使用增益技能、自动打怪
 很可惜，玩游戏不走心，一直搞不懂HVSTAT是怎么知道每个怪的血量的，直到[版本2.0](#20)
+
 
 
 
