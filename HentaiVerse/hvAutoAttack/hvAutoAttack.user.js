@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.162
+// @version      2.90.163
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -666,7 +666,7 @@
     } catch (e) { console.error('Opener reload or popup close failed:', e) } }
 
     function checkOption() {
-      g('version', GM_info ? GM_info.script.version.substr(0, 4) : scriptVersion);
+      g('version', GM_info ? GM_info.script.version : scriptVersion);
       if (!getValue('option')) {
         g('lang', window.prompt('请输入以下语言代码对应的数字\nPlease put in the number of your preferred language (0, 1 or 2)\n0.简体中文\n1.繁體中文\n2.English', 0) || 2);
         addStyle();
@@ -678,7 +678,7 @@
       const option = g('option');
       g('lang', option.lang || '0');
       addStyle();
-      if (option.version !== g('version')) {
+      if (option.version.substr(0, 4) !== g('version').substr(0, 4)) {
         gE('.hvAAButton').click();
         if (_alert(1, 'hvAutoAttack版本更新，请重新设置\n强烈推荐【重置设置】后再设置。\n是否查看更新说明？', 'hvAutoAttack版本更新，請重新設置\n強烈推薦【重置設置】後再設置。\n是否查看更新說明？', 'hvAutoAttack version update, please reset\nIt\'s recommended to reset all configuration.\nDo you want to read the changelog?')) {
           $ajax.openNoFetch('https://github.com/dodying/UserJs/commits/master/HentaiVerse/hvAutoAttack/hvAutoAttack.user.js', true);
@@ -919,6 +919,15 @@
 
     function loadOption() {
       let option = getValue('option', true);
+
+      // 迁移2.90.162及之前的targetHp等到targetHpDecimal等
+      const version = option.version.split('.').map(v=>isNaN(v*1) ? v : v*1)
+      if (version[0] < 2 || version[1] < 90 || isNaN(1*version[2]) || version[2]<=162) {
+        option = JSON.parse(JSON.stringify(option).replace('targetHp', 'targetHpDecimal').replace('targetMp', 'targetMpDecimal').replace('targetSp', 'targetSpDecimal'));
+        option.version = '2.90.163'
+        g('version', option.version)
+      }
+
       const aliasDict = {
         'debuffSkillImAll': 'debuffSkillAllIm',
         'debuffSkillWeAll': 'debuffSkillAllWk',
@@ -963,12 +972,11 @@
           newCondition[(id * 1 + size).toString()] = [...condition];
           newCondition[(id * 1 + size).toString()].push("fightingStyle,6,2");
           condition.push("fightingStyle,5,2");
-          condition.push("targetHp,2,0.25");
+          condition.push("_targetHp,2,0.25");
           condition.push("_targetBuffTurn_bleed,1,0");
         }
         option.skillT3Condition = newCondition;
       }
-
       if (isFrame) {
         g('option', option);
       } else {
@@ -2629,6 +2637,10 @@
         '<option value="mp">mp</option>',
         '<option value="sp">sp</option>',
         '<option value="oc">oc</option>',
+        '<option value="_hpDecimal">hpDecimal</option>',
+        '<option value="_mpDecimal">mpDecimal</option>',
+        '<option value="_spDecimal">spDecimal</option>',
+        '<option value="_ocDecimal">ocDecimal</option>',
         '<option value="">- - - -</option>',
         '<option value="monsterAll">monsterAll</option>',
         '<option value="monsterAlive">monsterAlive</option>',
@@ -2679,6 +2691,9 @@
         '<option value="_targetHp">targetHp</option>',
         '<option value="_targetMp">targetMp</option>',
         '<option value="_targetSp">targetSp</option>',
+        '<option value="_targetHpDecimal">targetHpDecimal</option>',
+        '<option value="_targetMpDecimal">targetMpDecimal</option>',
+        '<option value="_targetSpDecimal">targetSpDecimal</option>',
         '<option value="_targetRank">targetRank</option>',
         '<option value="_targetName">targetName</option>',
         '<option value="_targetBossType">targetBossType</option>',
@@ -2911,27 +2926,45 @@
         return targets[0];
       }
       const returnValue = function (str) {
+        // 旧版本/强制使用func
         if (str.match(/^_/) && !str.match(/\./)) {
           const arr = str.split('_');
           return func[arr[1]](...[...arr].splice(2));
-        } if (isNaN(str * 1)) {
-          const paramList = str.split('.');
-          let result, isInData;
-          for (let key of paramList) {
-            if (!result) {
-              result = (g('battle') ?? getValue('battle', true))[key] ?? g(key) ?? getValue(key) ?? g('option')?.[key];
-              isInData = result;
-              continue;
-            }
-            if (typeof result === 'string') {
-              result = JSON.parse(result)
-            }
-            result = result[key]
-          }
-          result ??= isInData ? 0 : result;
-          return isNaN(result * 1) ? result ?? str : (result * 1);
         }
-        return str * 1;
+        if (!isNaN(str * 1)) { // 数字直接返回
+          return str * 1;
+        }
+        const paramList = str.split('.');
+        let result, isInData;
+        for (let key of paramList) {
+          if (typeof result === 'undefined') { // 获取顶层数据
+            result = g('battle') ? g('battle')[key] : undefined;
+            if (typeof result === 'undefined') {
+              result = getValue('battle', true) ? getValue('battle', true)[key] : undefined;
+            }
+            if (typeof result === 'undefined') {
+              result = g(key);
+            }
+            if (typeof result === 'undefined') {
+              result = getValue(key);
+            }
+            if (typeof result === 'undefined') {
+              result = g('option')?.[key];
+            }
+            if (typeof result === 'undefined' && func[key]) {
+              result = func[key]();
+            }
+            if (typeof result === 'undefined') break;
+            isInData = true; // 存在顶层数据
+            continue;
+          }
+          if (typeof result === 'string') {
+            result = JSON.parse(result)
+          }
+          result = result[key]
+        }
+        result ??= isInData ? 0 : result; // 存在顶层数据时默认为0
+        return isNaN(result * 1) ? result ?? str : (result * 1);
       };
       const func = {
         ar() {
@@ -3066,13 +3099,35 @@
           }
         },
         targetHp() {
-          return target.hpNow / target.hp;
+          return Math.floor(func.targetHpDecimal() * 100);
         },
         targetMp() {
-          return target.mpNow;
+          return Math.floor(func.targetMpDecimal() * 100);
         },
         targetSp() {
+          return Math.floor(func.targetSpDecimal() * 100);
           return target.spNow;
+        },
+        targetHpDecimal() {
+          return target.hpNow / target.hp;
+        },
+        targetMpDecimal() {
+          return target.mpNow;
+        },
+        targetSpDecimal() {
+          return target.spNow;
+        },
+        hpDecimal() {
+          return g('hp') / 100;
+        },
+        mpDecimal() {
+          return g('mp') / 100;
+        },
+        spDecimal() {
+          return g('sp') / 100;
+        },
+        ocDecimal() {
+          return g('oc') / 100;
         },
       };
       for (i in parms) {
@@ -4466,7 +4521,7 @@
                   await pauseAsync(option.checkURLBeforeNewRoundRetry);
                 } finally {
                   if (!!urlChecked) {
-                    console.log('Done url check:', !!urlChecked, option.checkURLBeforeNewRound)
+                    // console.log('Done url check:', !!urlChecked, option.checkURLBeforeNewRound)
                   } else {
                     console.error('Failed connect ', option.checkURLBeforeNewRound);
                   }
