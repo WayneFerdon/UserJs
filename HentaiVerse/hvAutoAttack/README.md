@@ -94,7 +94,7 @@
 
   **示例2**: ManaElixir的id为11295，则`!_isCd_11295`表示不可使用，`_isCd_11295`表示可以使用
 
-10. `buffTurn`: 人物Buff剩余时间，格式`_buffTurn_img`
+10. `buffTurn`: 人物Buff剩余时间，格式`_buffTurn_img`。可使用`_scroll`限定为卷轴buff`_buffTurn_sparklife_scroll`、使用`_png`限定为非卷轴buff`_buffTurn_sparklife_png`
 
   **示例**: Protection的img为protection，则`_buffTurn_protection == 0`表示不存在Protection的buff，`_buffTurn_protection >= 10`表示Protection的buff至少剩余10回合
 
@@ -419,6 +419,7 @@ PS: 对于需要带下划线`_`开头的func式变量，可以省略`_`开头（
 灵感来自hoverplay，刚开始接触js，初步完成代码
 功能有：答题警报、其他警报、快捷键、自动前进、自动使用宝石、自动回复、自动使用增益技能、自动打怪
 很可惜，玩游戏不走心，一直搞不懂HVSTAT是怎么知道每个怪的血量的，直到[版本2.0](#20)
+
 
 
 
