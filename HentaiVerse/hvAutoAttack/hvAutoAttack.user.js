@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.163
+// @version      2.90.164
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -3055,11 +3055,11 @@
         spirit() {
           return gE('#ckey_spirit[src*="spirit_a"]') ? 1 : 0;
         },
-        buffTurn(img) {
-          return getBuffTurnFromImg(getPlayerBuff(img));
+        buffTurn(...img) {
+          return getBuffTurnFromImg(getPlayerBuff(img.join('_')));
         },
-        targetBuffTurn(img) {
-          return getBuffTurnFromImg(getMonsterBuff(getMonsterID(target), img));
+        targetBuffTurn(...img) {
+          return getBuffTurnFromImg(getMonsterBuff(getMonsterID(target), img.join('_')));
         },
         targetRank() {
           return Object.entries(g('battle').monsterStatus).find(([k, v]) => v.order === target.order)[0] * 1;
