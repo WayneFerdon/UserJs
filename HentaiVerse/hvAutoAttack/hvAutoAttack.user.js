@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.166
+// @version      2.90.167
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -29,17 +29,18 @@
 // @run-at       document-end
 // ==/UserScript==
 
+
 (function () {
   try {
     'use strict';
-    const standalone = ['option', 'arena', 'lastHref', 'ability', 'stamina', 'drop', 'stats', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS', 'onriddle'];
+    const standalone = ['option', 'arena', 'lastUrl', 'ability', 'stamina', 'drop', 'stats', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS', 'onriddle'];
     const local = ['stamina', 'drop', 'stats', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS', 'onriddle'];
     const sharable = ['option'];
     const excludeStandalone = { 'option': ['optionStandalone', 'version', 'lang'] };
-    const href = window.location.href;
+    const location = window.location.href;
     const isFrame = window.self !== window.top;
 
-    const isIsekai = href.indexOf('isekai') !== -1;
+    const isIsekai = location.indexOf('isekai') !== -1;
     const current = isIsekai ? 'isekai' : 'persistent';
     const other = isIsekai ? 'persistent' : 'isekai';
 
@@ -483,14 +484,14 @@
         if (window.location.href.indexOf(`?s=Battle&ss=ba`) !== -1) {
           const encounterURL = window.location.href?.split('/')[3];
           const encounter = getEncounter();
-          const filtered = encounter.filter(e => e.href === encounterURL);
+          const filtered = encounter.filter(e => e.url === encounterURL);
           if (!filtered.length) {
-            encounter.unshift({ href: encounterURL, time: time(0), encountered: time(0) });
+            encounter.unshift({ url: encounterURL, time: time(0), encountered: time(0) });
           } else {
             filtered[0].encountered ??= time(0);
           }
           setEncounter(encounter);
-          $ajax.openNoFetch(getValue('lastHref'));
+          $ajax.openNoFetch(getValue('lastUrl'));
           return;
         }
 
@@ -508,7 +509,7 @@
       setValue('lastEH', time(0));
       const isEngage = window.location.href === 'https://e-hentai.org/news.php?encounter';
       let encounter = getEncounter();
-      let href = getValue('url') ?? (document.referrer.match('hentaiverse.org') ? new URL(document.referrer).origin : 'https://hentaiverse.org');
+      let location = getValue('url') ?? (document.referrer.match('hentaiverse.org') ? new URL(document.referrer).origin : 'https://hentaiverse.org');
       const eventpane = gE('#eventpane');
       const now = time(0);
       let url;
@@ -517,7 +518,7 @@
         if (url === undefined) { // 新一天
           encounter = [];
         }
-        encounter.unshift({ href: url, time: now });
+        encounter.unshift({ url: url, time: now });
         setEncounter(encounter);
       } else {
         if (encounter.length) {
@@ -529,7 +530,7 @@
             if (e.encountered || time(0) - e.time >= 30 * _1m) {
               continue;
             }
-            url = e.href;
+            url = e.url;
             break;
           }
         }
@@ -538,7 +539,7 @@
       if (!url) {
         if (isEngage && !getValue('battle')) {
           // 自动跳转，同时先刷新遭遇时间，延长下一次遭遇
-          $ajax.openNoFetch(getValue('lastHref'));
+          $ajax.openNoFetch(getValue('lastUrl'));
         }
         return false;
       }
@@ -556,7 +557,7 @@
         }
       } else { // 战斗外，自动跳转
         checkOption();
-        $ajax.openNoFetch(`${g('option').altBattleFirst ? href.replace('hentaiverse.org', 'alt.hentaiverse.org').replace('alt.alt', 'alt') : href}/${url}`);
+        $ajax.openNoFetch(`${g('option').altBattleFirst ? location.replace('hentaiverse.org', 'alt.hentaiverse.org').replace('alt.alt', 'alt') : location}/${url}`);
       }
       return false;
     }
@@ -632,7 +633,7 @@
 
       if (gE('#riddlecounter') || gE('#battle_main')) {
         if (!window.top.location.href.endsWith(`?s=Battle`)) {
-          setValue('lastHref', window.top.location.href);
+          setValue('lastUrl', window.top.location.href);
         }
         window.top.location.href = currentUrl;
         return false;
@@ -713,11 +714,11 @@
       }
       // 战斗结束跳转回原链接
       if (window.top.location.href.endsWith(`?s=Battle`)) {
-        $ajax.openNoFetch(getValue('lastHref'));
+        $ajax.openNoFetch(getValue('lastUrl'));
         return true;
       }
       if (window.location.href.indexOf(`?s=Battle&ss=ba`) === -1) { // 不缓存encounter
-        setValue('lastHref', window.top.location.href); // 缓存进入战斗前的页面地址
+        setValue('lastUrl', window.top.location.href); // 缓存进入战斗前的页面地址
         setArenaDisplay();
       }
       delValue(1);
@@ -939,6 +940,7 @@
         'battleUnresponsiveTime_Alert': 'delayAlertTime',
         'battleUnresponsiveTime_Reload': 'delayReloadTime',
         'battleUnresponsiveTime_Alt': 'delayAltTime',
+        'lastUrl': 'lastHref',
       }
       for (let key in aliasDict) {
         const itemArray = key.split('_');
@@ -1800,6 +1802,8 @@
         '      <div><input class="hvAANumber" name="weight_BW" placeholder="-10" type="number"> <l0>流血(Bl)</l0><l1>流血(Bl)</l1><l2>Bleeding Wound</l2></div>',
         '      <div><input class="hvAANumber" name="weight_Co" placeholder="300" type="number"> <l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2></div>',
         '      <div><input class="hvAANumber" name="weight_Dr" placeholder="2" type="number"> <l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_ET" placeholder="2" type="number"> <l0>以太窃取(ET)</l0><l1>以太竊取(ET)</l1><l2>Ether Theft</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_ST" placeholder="2" type="number"> <l0>灵力窃取(ST)</l0><l1>靈力竊取(ST)</l1><l2>Spirit Theft</l2></div>',
         '      <div><input class="hvAANumber" name="weight_MN" placeholder="7" type="number"> <l0>魔磁网/固定(MN)</l0><l1>魔磁網/固定(MN)</l1><l2>MagNet/Immobilize</l2></div>',
         '      <div><input class="hvAANumber" name="weight_Po" placeholder="-10" type="number"> <l0>流动毒性(Po)</l0><l1>流动毒性(Po)</l1><l2>Spreading Poison</l2></div>',
         '      <div><input class="hvAANumber" name="weight_Stun" placeholder="290" type="number"> <l0>眩晕(St)</l0><l1>眩暈(St)</l1><l2>Stunned</l2></div>',
@@ -3267,7 +3271,7 @@
         // 若不启用自动跳转
         return;
       }
-      $ajax.openNoFetch(`${href.slice(0, href.indexOf('.org') + 4)}/${isIsekai ? '' : 'isekai/'}`);
+      $ajax.openNoFetch(`${location.slice(0, location.indexOf('.org') + 4)}/${isIsekai ? '' : 'isekai/'}`);
     }
 
     async function asyncOnIdle() { try {
@@ -3357,7 +3361,7 @@
       }
       let dict = {};
       for (let e of current) {
-        dict[e.href ?? `newDawn`] = e;
+        dict[e.url ?? `newDawn`] = e;
       }
       try {
         // if is latest version data
@@ -3368,12 +3372,12 @@
         const times = encounter.time;
         encounter = [];
         for (let i = 0; i <= times; i++) {
-          encounter.unshift({ href: i === 0 ? undefined : i, time: last, encountered: i === 0 ? undefined : time(0) });
+          encounter.unshift({ url: i === 0 ? undefined : i, time: last, encountered: i === 0 ? undefined : time(0) });
         }
         setEncounter(encounter);
       }
       for (let e of encounter) {
-        const key = e.href ?? `newDawn`;
+        const key = e.url ?? `newDawn`;
         dict[key] ??= e;
         dict[key].time = Math.max(dict[key].time, e.time);
         dict[key].encountered = (e.encountered || dict[key].encountered) ? Math.max(dict[key].encountered ?? 0, e.encountered ?? 0) : undefined;
@@ -3653,8 +3657,8 @@
         return true;
       }
       if (hvVersion < 91) {
-        const href = `?s=Forge&ss=re`;
-        const doc = $doc(await $ajax.insert(href));
+        const url = `?s=Forge&ss=re`;
+        const doc = $doc(await $ajax.insert(url));
         const json = JSON.parse((await $ajax.insert(gE('#mainpane>script[src]', doc).src)).match(/{.*}/)[0]);
         eqps = await Promise.all(Array.from(gE('.eqp>[id]', 'all', doc)).map(async eqp => { try {
           const id = eqp.id.match(/\d+/)[0];
@@ -3662,12 +3666,12 @@
           if (condition > threshold) {
             return;
           }
-          const after = $doc(await $ajax.insert(href, `select_item=${id}`));
+          const after = $doc(await $ajax.insert(url, `select_item=${id}`));
           return gE('.messagebox_error', )?.innerText ? undefined : json[id].t;
         } catch (e) { console.error(e) } }));
       } else {
-        const href = `?s=Bazaar&ss=am&screen=repair&filter=equipped`;
-        const doc = $doc(await $ajax.insert(href));
+        const url = `?s=Bazaar&ss=am&screen=repair&filter=equipped`;
+        const doc = $doc(await $ajax.insert(url));
         if (gE('#riddlecounter', doc) || gE('#battle_main', doc)) {
           $async.logSwitch(arguments);
           return undefined;
@@ -3679,7 +3683,7 @@
           if (condition > threshold) {
             return;
           }
-          const after = $doc(await $ajax.insert(href, `&eqids[]=${id}&postoken=${token}&replace_charms=on`));
+          const after = $doc(await $ajax.insert(url, `&eqids[]=${id}&postoken=${token}&replace_charms=on`));
           return gE(`#e${id}`, after) ? gE('.lc', eqp).childNodes[2].textContent : undefined;
         } catch (e) { console.error(e) } }));
       }
@@ -3713,16 +3717,16 @@
       $async.logSwitch(arguments);
       let count;
       if (hvVersion < 91) {
-        const href = `?s=Character&ss=in`;
-        const doc = $doc(await $ajax.insert(href));
+        const url = `?s=Character&ss=in`;
+        const doc = $doc(await $ajax.insert(url));
         if (gE('#riddlecounter', doc) || gE('#battle_main', doc)) {
           $async.logSwitch(arguments);
           return false;
         }
         count = gE('#eqinv_bot>div>div>div', doc).innerText.match(/: (\d+) \/ \d+/)[1];
       } else {
-        const href = `?s=Bazaar&ss=am`;
-        const doc = $doc(await $ajax.insert(href));
+        const url = `?s=Bazaar&ss=am`;
+        const doc = $doc(await $ajax.insert(url));
         if (gE('#riddlecounter', doc) || gE('#battle_main', doc)) {
           $async.logSwitch(arguments);
           return false;
@@ -3737,7 +3741,7 @@
       await waitPause();
       if (condition.checkEncounter) {
         const encounter = getEncounter();
-        if (encounter[0]?.href && !encounter[0]?.encountered) {
+        if (encounter[0]?.url && !encounter[0]?.encountered) {
           console.log(getEncounter());
           return;
         }
@@ -3837,12 +3841,12 @@
       // await waitPause();
       // $async.logSwitch(arguments);
       const encounter = getEncounter();
-      const count = encounter.filter(e => e.href).length;
+      const count = encounter.filter(e => e.url).length;
       const option = g('option');
       const now = time(0);
       const last = encounter[0]?.time ?? getValue('lastEH', true) ?? 0; // 上次遭遇 或 上次打开EH 或 0
       let cd;
-      if (encounter.filter(e => e.href && (e.encountered || (time(0) - e.time >= 30 * _1m))).length >= 24) {
+      if (encounter.filter(e => e.url && (e.encountered || (time(0) - e.time >= 30 * _1m))).length >= 24) {
         cd = Math.floor(encounter[0].time / _1d + 1) * _1d - now;
       } else if (!last) {
         cd = 0;
@@ -3860,7 +3864,7 @@
         return ui;
       })();
       const waitCD = option.encounterWaitCD;
-      const missed = count - encounter.filter(e => e.encountered && e.href).length;
+      const missed = count - encounter.filter(e => e.encountered && e.url).length;
       if (count === 24) {
         ui.style.cssText += 'color:orange!important;';
       } else if (cd <= waitCD) {
@@ -3876,9 +3880,9 @@
           // $async.logSwitch(arguments);
           return true;
         }
-        if (cd < 30 * _1m && encounter[0]?.href && !encounter[0].encountered) {
+        if (cd < 30 * _1m && encounter[0]?.url && !encounter[0].encountered) {
           await waitPause();
-          $ajax.openNoFetch(encounter[0].href);
+          $ajax.openNoFetch(encounter[0].url);
           // $async.logSwitch(arguments);
           return true;
         }
@@ -3893,7 +3897,7 @@
     async function onEncounter() { try {
       const option = g('option');
       while (
-        !(await $ajax.insert(href))
+        !(await $ajax.insert(location))
         || (option.checkURLBeforeNewRound && !(await $ajax.insert(option.checkURLBeforeNewRound)))
       ) { // perhaps network connect not available
         await pauseAsync(option.checkURLBeforeNewRoundRetry);
@@ -3905,7 +3909,7 @@
       }
       setEncounter(getEncounter()); // 离开页面前保存
       if (!window.top.location.href.endsWith(`?s=Battle`)) {
-        setValue('lastHref', window.top.location.href);
+        setValue('lastUrl', window.top.location.href);
       }
       $ajax.openNoFetch('https://e-hentai.org/news.php?encounter');
       $async.logSwitchStrict('updateEncounter', false);
@@ -4059,7 +4063,7 @@
       }
       stamina.lastCost = id === 'gr' ? undefined : cost;
       setValue('stamina', stamina);
-      if (option.altBattleFirst && await $ajax.insert(href.replace('hentaiverse.org', 'alt.hentaiverse.org').replace('alt.alt', 'alt'))) {
+      if (option.altBattleFirst && await $ajax.insert(location.replace('hentaiverse.org', 'alt.hentaiverse.org').replace('alt.alt', 'alt'))) {
         console.log('Arena Fetch Done.', 'altBattleFirst:', option.altBattleFirst, 'Arena goto alt', arena);
         gotoAlt(true);
       } else {
@@ -4414,7 +4418,7 @@
         return;
       }
       delValue(1);
-      setTimeoutOrExecute(() => $ajax.openNoFetch(getValue('lastHref')), option.ExitBattleWaitTime * _1s);
+      setTimeoutOrExecute(() => $ajax.openNoFetch(getValue('lastUrl')), option.ExitBattleWaitTime * _1s);
     }
 
     function reloader() {
@@ -4814,6 +4818,14 @@
           name: 'Drain',
           img: 'drainhp',
         },
+        ET: {
+          name: 'Ether Theft',
+          img: 'drainmp',
+        },
+        ST: {
+          name: 'Spirit Theft',
+          img: 'drainsp',
+        },
         We: {
           name: 'Weaken',
           img: 'weaken',
@@ -4939,7 +4951,7 @@
           unknown = Array.from(unknown).filter(buff => {
             const img = buff.src.match(/\/y\/e\/(.*)\.png/)[1];
             return !(Object.keys(known).includes(img));
-          }).map(buff=>`${buff.getAttribute('onmouseover').match(/^battle.set_infopane_effect\('(.+)', '.*', .+\)/)[1]}: ${buff.src.match(/\/y\/e\/(.*)\.png/)[1]}`);
+          }).map(buff=>`${buff.getAttribute('onmouseover').match(/^battle.set_infopane_effect\('(.+)', *'.*',.+\)/)[1]}: ${buff.src.match(/\/y\/e\/(.*)\.png/)[1]}`);
           if (unknown.length) {
             console.log('unsupported buff weight:', unknown);
           }
