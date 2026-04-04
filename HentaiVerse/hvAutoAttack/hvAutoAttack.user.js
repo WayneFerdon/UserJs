@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.168
+// @version      2.90.169
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -928,6 +928,10 @@
         option.version = '2.90.163'
         g('version', option.version)
       }
+      // 迁移2.90.168及之前的channelSkill2Order_Cure的Name错误
+      option.channelSkill2Order_Cure = option.channelSkill2Order_Cu;
+      option.channelSkill2Order_Cu = undefined;
+      option.channelSkill2OrderValue = option.channelSkill2OrderValue?.replace('Cu', 'Cure').replace('Curere', 'Cure');
 
       const aliasDict = {
         'debuffSkillImAll': 'debuffSkillAllIm',
@@ -1380,6 +1384,7 @@
         '  <span name="Buff"><input id="buffSkillSwitch" type="checkbox">BUFF<l01>技能</l01><l2> Spells</l2></span>',
         '  <span name="Debuff"><input id="debuffSkillSwitch" type="checkbox">DEBUFF<l01>技能</l01><l2> Spells</l2></span>',
         '  <span name="Skill"><input id="skillSwitch" type="checkbox"><l01>其他技能</l01><l2>Skills</l2></span>',
+        '  <span name="Infusion"><input id="infusionSwitch" type="checkbox"><l0>魔药</l0><l1>魔藥</l1><l2>Infusion</l2></span>',
         '  <span name="Scroll"><input id="scrollSwitch" type="checkbox"><l0>卷轴</l0><l1>捲軸</l1><l2>Scroll</l2></span>',
         '  <span name="Alarm"><l0>警报</l0><l1>警報</l1><l2>Alarm</l2></span>',
         '  <span name="Rule"><l0>攻击规则</l0><l1>攻擊規則</l1><l2>Attack Rule</l2></span>',
@@ -1436,10 +1441,9 @@
         '       <div><input id="battleOrder_autoSkill" value="Skill" type="checkbox"><label for="battleOrder_autoSkill"><l0>释放技能</l0><l1>釋放技能</l1><l2>Auto Skill</l2></label></div>',
         '       <div><input id="battleOrder_attack" value="Atk" type="checkbox"><label for="battleOrder_attack"><l0>自动攻击</l0><l1>自動攻擊</l1><l2>Attack</l2></label></div>',
         '    </div></div></div>',
-        '    <div><input id="infusionSwitch" type="checkbox"><label for="infusionSwitch"><b><l0>使用魔药(与默认攻击模式相同)</l0><l1>使用魔藥(與默認攻擊模式相同)</l1><l2>Use Infusion(same as default attack mode)</l2></b></label>{{infusionCondition}}</div>',
 
         '  <div><b><l0>次要攻击模式顺序(未配置的按照下面的顺序)</l0><l1>次要攻擊模式順序(未配置的按照下面的順序)</l1><l2>Attack Mode Order(Using order below as default if not configed)</l2></b>:',
-        '    <div class="attackStatusOrder"><input name="attackStatusOrderName" style="width:80%;" type="number" disabled="true"><input name="attackStatusOrderValue" style="width:80%;" type="hidden" disabled="true"><br>',
+        '    <div class="attackStatusOrder"><input name="attackStatusOrderName" style="width:80%;" type="text" disabled="true"><input name="attackStatusOrderValue" style="width:80%;" type="hidden" disabled="true"><br>',
         '      <div class="hvAATable" style="display:grid; grid-template-columns:repeat(7, 1fr);">',
         '        <div><input id="attackStatusOrder_0" value="Phys,0" type="checkbox"><label for="attackStatusOrder_0"><l0>物理</l0><l1>物理</l1><l2>Physical</l2></label></div>',
         '        <div><input id="attackStatusOrder_5" value="Divi,5" type="checkbox"><label for="attackStatusOrder_5"><l0>圣</l0><l1>聖</l1><l2>Divine</l2></label></div>',
@@ -1821,7 +1825,7 @@
         '  <div><input id="channelSkill2" type="checkbox"><label for="channelSkill2"><b><l0>再使用技能</l0><l1>再使用技能</l1><l2>Then use Skill</l2></b></label>: ',
         '    <div class="channelSkill2Order"><l0>施放顺序</l0><l1>施放順序</l1><l2>Cast Order</l2>: <input name="channelSkill2OrderName" style="width:80%;" type="text" disabled="true"><input name="channelSkill2OrderValue" style="width:80%;" type="hidden" disabled="true"><br>',
         '    <input id="channelSkill2Order_FC" value="FC,313" type="checkbox"><label for="channelSkill2Order_FC"><l0>完全治愈(FC)</l0><l1>完全治愈(FC)</l1><l2>Full-Cure</l2></label>',
-        '    <input id="channelSkill2Order_Cu" value="Cu,311" type="checkbox"><label for="channelSkill2Order_Cu"><l0>治疗(Cure)</l0><l1>治療(Cure)</l1><l2>Cure</l2></label>',
+        '    <input id="channelSkill2Order_Cure" value="Cure,311" type="checkbox"><label for="channelSkill2Order_Cure"><l0>治疗(Cure)</l0><l1>治療(Cure)</l1><l2>Cure</l2></label>',
         '    <input id="channelSkill2Order_SS" value="SS,423" type="checkbox"><label for="channelSkill2Order_SS"><l0>灵力盾(SS)</l0><l1>靈力盾(SS)</l1><l2>Spirit Shield</l2></label>',
         '    <input id="channelSkill2Order_SL" value="SL,422" type="checkbox"><label for="channelSkill2Order_SL"><l0>生命火花(SL)</l0><l1>生命火花(SL)</l1><l2>Spark of Life</l2></label>',
         '    <input id="channelSkill2Order_Pr" value="Pr,411" type="checkbox"><label for="channelSkill2Order_Pr"><l0>守护(Pr)</l0><l1>守護(Pr)</l1><l2>Protection</l2></label>',
@@ -1949,6 +1953,29 @@
         '  <div><input id="skill_T3" type="checkbox"><label for="skill_T3"><l0>3阶（如果有）</l0><l1>3階（如果有）</l1><l2>T3(if exist)</l2></label>: <input id="skillOTOS_T3" type="checkbox"><label for="skillOTOS_T3"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label><br>{{skillT3Condition}}</div>',
         '  <div><input id="skill_T2" type="checkbox"><label for="skill_T2"><l0>2阶（如果有）</l0><l1>2階（如果有）</l1><l2>T2(if exist)</l2></label>: <input id="skillOTOS_T2" type="checkbox"><label for="skillOTOS_T2"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label>{{skillT2Condition}}</div>',
         '  <div><input id="skill_T1" type="checkbox"><label for="skill_T1"><l0>1阶</l0><l1>1階</l1><l2>T1</l2></label>: <input id="skillOTOS_T1" type="checkbox"><label for="skillOTOS_T1"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label>{{skillT1Condition}}</div></div>',
+
+        '<div class="hvAATab" id="hvAATab-Infusion">',
+        '  <l0>战役模式</l0><l1>戰役模式</l1><l2>Battle type</l2>: ',
+        '  <input id="infusionRoundType_ar" type="checkbox" placeholder="true"><label for="infusionRoundType_ar"><l0>竞技场(AR)</l0><l1>競技場(AR)</l1><l2>The Arena</l2></label><input id="infusionRoundType_rb" type="checkbox" placeholder="true"><label for="infusionRoundType_rb"><l0>浴血擂台(RB)</l0><l1>浴血擂台(RB)</l1><l2>Ring of Blood</l2></label><input id="infusionRoundType_gr" type="checkbox" placeholder="true"><label for="infusionRoundType_gr"><l0>压榨届(GF)</l0><l1>壓榨界(GF)</l1><l2>GrindFest</l2></label><input id="infusionRoundType_iw" type="checkbox" placeholder="true"><label for="infusionRoundType_iw"><l0>道具届(IW)</l0><l1>道具界(IW)</l1><l2>Item World</l2></label><input id="infusionRoundType_ba" type="checkbox" placeholder="true"><label for="infusionRoundType_ba"><l0>随机遭遇(ba)</l0><l1>隨機遭遇(ba)</l1><l2>Encounter</l2></label><input id="infusionRoundType_tw" type="checkbox" placeholder="true"><label for="infusionRoundType_tw"><l0>塔楼(Tw)</l0><l1>塔樓(Tw)</l1><l2>The Tower</l2></label>',
+        '  <div><l0>魔药使用条件</l0><l1>魔藥使用條件</l1><l2>Infusion Use Condition</l2>{{infusionCondition}}</div>',
+        '  <div><input id="infusionDefaultOnly" type="checkbox" placeholder="true"><label for="infusionDefaultOnly"><b><l0>只使用与默认攻击模式相同的魔药</l0><l1>只使用與默認攻擊模式相同的魔藥</l1><l2>Use Infusion as same as default attack mode only.</l2></b></label></div>',
+        '  <div class="infusionOrder"><b><l0>施放顺序(未配置的按照下面的顺序)</l0><l1>施放順序(未配置的按照下面的順序)</l1><l2>Cast Order(Using order below as default if not configed)</l2></b>: <input name="infusionOrderName" style="width:80%;" type="text" disabled="true"><br>',
+        '    <div class="hvAATable" style="display:grid; grid-template-columns:repeat(4, 1fr);">' ,
+        '    <div><input id="infusionOrder_Divinity" type="checkbox"><label for="infusionOrder_Divinity"><l0>神圣(Divinity)</l0><l1>神聖(Divinity)</l1><l2>Divinity</l2></label></div>',
+        '    <div><input id="infusionOrder_Darkness" type="checkbox"><label for="infusionOrder_Darkness"><l0>黑暗(Darkness)</l0><l1>黑暗(Darkness)</l1><l2>Darkness</l2></label></div>',
+        '    <div><input id="infusionOrder_Flames" type="checkbox"><label for="infusionOrder_Flames"><l0>火焰(Flames)</l0><l1>火焰(Flames)</l1><l2>Flames</l2></label></div>',
+        '    <div><input id="infusionOrder_Frost" type="checkbox"><label for="infusionOrder_Frost"><l0>冰冷(Frost)</l0><l1>冰冷(Frost)</l1><l2>Frost</l2></label></div>',
+        '    <div><input id="infusionOrder_Lightning" type="checkbox"><label for="infusionOrder_Lightning"><l0>闪电(Lightning)</l0><l1>閃電(Lightning)</l1><l2>Lightning</l2></label></div>',
+        '    <div><input id="infusionOrder_Storms" value="Storms" type="checkbox"><label for="infusionOrder_Storms"><l0>风暴(Storms)</l0><l1>風暴(Storms)</l1><l2>Storms</l2></label></div>',
+        '  </div></div>',
+
+        '  <div><input id="infusion_Flames" type="checkbox"><label for="infusion_Flames"><l0>火焰魔药</l0><l1>火焰魔藥</l1><l2>Infusion of Flames</l2></label>{{infusionFlamesCondition}}</div>',
+        '  <div><input id="infusion_Frost" type="checkbox"><label for="infusion_Frost"><l0>冰冷魔药</l0><l1>冰冷魔藥</l1><l2>Infusion of Frost</l2></label>{{infusionFrostCondition}}</div>',
+        '  <div><input id="infusion_Lightning" type="checkbox"><label for="infusion_Lightning"><l0>闪电魔药</l0><l1>閃電魔藥</l1><l2>Infusion of Lightning</l2></label>{{infusionLightningCondition}}</div>',
+        '  <div><input id="infusion_Storms" type="checkbox"><label for="infusion_Storms"><l0>风暴魔药</l0><l1>風暴魔藥</l1><l2>Infusion of Storms</l2></label>{{infusionStormsCondition}}</div>',
+        '  <div><input id="infusion_Divinity" type="checkbox"><label for="infusion_Divinity"><l0>神圣魔药</l0><l1>神聖魔藥</l1><l2>Infusion of Divinity</l2></label>{{infusionDivinityCondition}}</div>',
+        '  <div><input id="infusion_Darkness" type="checkbox"><label for="infusion_Darkness"><l0>黑暗魔药</l0><l1>黑暗魔藥</l1><l2>Infusion of Darkness</l2></label>{{infusionDarknessCondition}}</div>',
+        '</div>',
 
         '<div class="hvAATab" id="hvAATab-Scroll">',
         '  <l0>战役模式</l0><l1>戰役模式</l1><l2>Battle type</l2>: ',
@@ -2112,7 +2139,7 @@
         '  <button class="hvAAReset"><l0>重置设置</l0><l1>重置設置</l1><l2>Reset</l2></button><button class="hvAAApply"><l0>应用</l0><l1>應用</l1><l2>Apply</l2></button><button class="hvAACancel"><l01>取消</l01><l2>Cancel</l2></button>',
         '</div>',
       ].join('').replace(/{{(.*?)}}/g, '<div class="customize" name="$1"></div>');
-
+      
       gE('#hvAATab-Main').style.zIndex = 1;
       optionBox.style.display = 'none';
       gE('select[name="lang"]').value = g('lang');
@@ -2339,166 +2366,55 @@
           input.checked = false;
         });
       };
-      gE('.hvAAArenaLevels', optionBox).onclick = function (e) {
-        if (e.target.tagName !== 'INPUT' && e.target.type !== 'checkbox') {
-          return;
-        }
-        const valueArray = e.target.value.split(',');
-        let levels = gE('input[name="idleArenaLevels"]').value;
-        let { value } = gE('input[name="idleArenaValue"]');
-        if (e.target.checked) {
-          levels = levels + ((levels) ? `,${valueArray[0]}` : valueArray[0]);
-          value = value + ((value) ? `,${valueArray[1]}` : valueArray[1]);
-        } else {
-          levels = levels.replace(new RegExp(`(^|,)${valueArray[0]}(,|$)`), '$2').replace(/^,/, '');
-          value = value.replace(new RegExp(`(^|,)${valueArray[1]}(,|$)`), '$2').replace(/^,/, '');
-        }
-        gE('input[name="idleArenaLevels"]').value = levels;
-        gE('input[name="idleArenaValue"]').value = value;
-      };
 
-      gE('.attackStatusOrder', optionBox).onclick = function (e) {
+      const optionBox2Order = (ids, valueFrom=undefined, index=0) => function (e) {
+        if (Array.isArray(ids)) { 
+          for (const i in ids) { 
+            optionBox2Order(ids[i], valueFrom, i)(e);
+          }
+          return;
+        }
         if (e.target.tagName !== 'INPUT' && e.target.type !== 'checkbox') {
           return;
         }
-        const valueArray = e.target.value.split(',');
-        let levels = gE('input[name="attackStatusOrderName"]').value;
-        let { value } = gE('input[name="attackStatusOrderValue"]');
-        if (e.target.checked) {
-          levels = levels + ((levels) ? `,${valueArray[0]}` : valueArray[0]);
-          value = value + ((value) ? `,${valueArray[1]}` : valueArray[1]);
-        } else {
-          levels = levels.replace(new RegExp(`(^|,)${valueArray[0]}(,|$)`), '$2').replace(/^,/, '');
-          value = value.replace(new RegExp(`(^|,)${valueArray[1]}(,|$)`), '$2').replace(/^,/, '');
-        }
-        gE('input[name="attackStatusOrderName"]').value = levels;
-        gE('input[name="attackStatusOrderValue"]').value = value;
-      };
+        valueFrom ??= e => e.target.value.split(',');
+        const valueArray = valueFrom(e);
+        const latest = Array.isArray(valueArray) ? valueArray[index] : valueArray;
 
-      gE('.battleOrder', optionBox).onclick = function (e) {
-        if (e.target.tagName !== 'INPUT' && e.target.type !== 'checkbox') {
-          return;
-        }
-        const value = e.target.value;
-        let name = gE('input[name="battleOrderName"]').value;
+        const orderObject = gE(`input[${ids}]`)
+        let value = orderObject.value;
         if (e.target.checked) {
-          name = name + ((name) ? `,${value}` : value);
+          value = value + ((value) ? `,${latest}` : latest);
         } else {
-          name = name.replace(new RegExp(`(^|,)${value}(,|$)`), '$2').replace(/^,/, '');
+          value = value.replace(new RegExp(`(^|,)${latest}(,|$)`), '$2').replace(/^,/, '');
         }
-        gE('input[name="battleOrderName"]').value = name;
-      };
-
-      // 标签页-附魔
-      gE('.channelSkill2Order', optionBox).onclick = function (e) {
-        if (e.target.tagName !== 'INPUT' && e.target.type !== 'checkbox') {
-          return;
-        }
-        const valueArray = e.target.value.split(',');
-        let name = gE('input[name="channelSkill2OrderName"]').value;
-        let { value } = gE('input[name="channelSkill2OrderValue"]');
-        if (e.target.checked) {
-          name = name + ((name) ? `,${valueArray[0]}` : valueArray[0]);
-          value = value + ((value) ? `,${valueArray[1]}` : valueArray[1]);
-        } else {
-          name = name.replace(new RegExp(`(^|,)${valueArray[0]}(,|$)`), '$2').replace(/^,/, '');
-          value = value.replace(new RegExp(`(^|,)${valueArray[1]}(,|$)`), '$2').replace(/^,/, '');
-        }
-        gE('input[name="channelSkill2OrderName"]').value = name;
-        gE('input[name="channelSkill2OrderValue"]').value = value;
-      };
-
-      // 标签页-物品
-      gE('.itemOrder', optionBox).onclick = function (e) {
-        if (e.target.tagName !== 'INPUT' && e.target.type !== 'checkbox') {
-          return;
-        }
-        const valueArray = e.target.value.split(',');
-        let name = gE('input[name="itemOrderName"]').value;
-        let { value } = gE('input[name="itemOrderValue"]');
-        if (e.target.checked) {
-          name = name + ((name) ? `,${valueArray[0]}` : valueArray[0]);
-          value = value + ((value) ? `,${valueArray[1]}` : valueArray[1]);
-        } else {
-          name = name.replace(new RegExp(`(^|,)${valueArray[0]}(,|$)`), '$2').replace(/^,/, '');
-          value = value.replace(new RegExp(`(^|,)${valueArray[1]}(,|$)`), '$2').replace(/^,/, '');
-        }
-        gE('input[name="itemOrderName"]').value = name;
-        gE('input[name="itemOrderValue"]').value = value;
-      };
-      // 标签页-Channel技能
-      gE('.channelSkill2Order', optionBox).onclick = function (e) {
-        if (e.target.tagName !== 'INPUT' && e.target.type !== 'checkbox') {
-          return;
-        }
-        const valueArray = e.target.value.split(',');
-        let name = gE('input[name="channelSkill2OrderName"]').value;
-        let { value } = gE('input[name="channelSkill2OrderValue"]');
-        if (e.target.checked) {
-          name = name + ((name) ? `,${valueArray[0]}` : valueArray[0]);
-          value = value + ((value) ? `,${valueArray[1]}` : valueArray[1]);
-        } else {
-          name = name.replace(new RegExp(`(^|,)${valueArray[0]}(,|$)`), '$2').replace(/^,/, '');
-          value = value.replace(new RegExp(`(^|,)${valueArray[1]}(,|$)`), '$2').replace(/^,/, '');
-        }
-        gE('input[name="channelSkill2OrderName"]').value = name;
-        gE('input[name="channelSkill2OrderValue"]').value = value;
-      };
-      // 标签页-BUFF技能
-      gE('.buffSkillOrder', optionBox).onclick = function (e) {
-        if (e.target.tagName !== 'INPUT' && e.target.type !== 'checkbox') {
-          return;
-        }
-        const name = e.target.id.match(/_(.*)/)[1];
-        let { value } = gE('input[name="buffSkillOrderValue"]');
-        if (e.target.checked) {
-          value = value + ((value) ? `,${name}` : name);
-        } else {
-          value = value.replace(new RegExp(`(^|,)${name}(,|$)`), '$2').replace(/^,/, '');
-        }
-        gE('input[name="buffSkillOrderValue"]').value = value;
-      };
-      // 标签页-DEBUFF技能
-      gE('.debuffSkillOrder', optionBox).onclick = function (e) {
-        if (e.target.tagName !== 'INPUT' && e.target.type !== 'checkbox') {
-          return;
-        }
-        const name = e.target.id.match(/_(.*)/)[1];
-        let { value } = gE('input[name="debuffSkillOrderValue"]');
-        if (e.target.checked) {
-          value = value + ((value) ? `,${name}` : name);
-        } else {
-          value = value.replace(new RegExp(`(^|,)${name}(,|$)`), '$2').replace(/^,/, '');
-        }
-        gE('input[name="debuffSkillOrderValue"]').value = value;
-      };
-      gE('.debuffSkillOrderAll', optionBox).onclick = function (e) {
-        if (e.target.tagName !== 'INPUT' && e.target.type !== 'checkbox') {
-          return;
-        }
-        const name = e.target.id.match(/_(.*)/)[1];
-        let { value } = gE('input[name="debuffSkillOrderAllValue"]');
-        if (e.target.checked) {
-          value = value + ((value) ? `,${name}` : name);
-        } else {
-          value = value.replace(new RegExp(`(^|,)${name}(,|$)`), '$2').replace(/^,/, '');
-        }
-        gE('input[name="debuffSkillOrderAllValue"]').value = value;
-      };
-      // 标签页-其他技能
-      gE('.skillOrder', optionBox).onclick = function (e) {
-        if (e.target.tagName !== 'INPUT' && e.target.type !== 'checkbox') {
-          return;
-        }
-        const name = e.target.id.match(/_(.*)/)[1];
-        let { value } = gE('input[name="skillOrderValue"]');
-        if (e.target.checked) {
-          value = value + ((value) ? `,${name}` : name);
-        } else {
-          value = value.replace(new RegExp(`(^|,)${name}(,|$)`), '$2').replace(/^,/, '');
-        }
-        gE('input[name="skillOrderValue"]').value = value;
-      };
+        orderObject.value = value;
+      }
+      const getOrderFromId = e => e.target.id.match(/_(.*)/)[1];
+      const orderValues = {
+        '.attackStatusOrder': ['name="attackStatusOrderName"', 'name="attackStatusOrderValue"'],
+        '.battleOrder': 'name="battleOrderName"',
+        // 标签页-战斗开启
+        '.hvAAArenaLevels': ['Name="idleArenaLevels"', 'name="idleArenaValue"'],
+        // 标签页-恢复技能
+        '.itemOrder': ['name="itemOrderName"', 'name="itemOrderValue"'],
+        // 标签页-引导技能
+        '.channelSkill2Order': ['name="channelSkill2OrderName"', 'name="channelSkill2OrderValue"'],
+        // 标签页-BUFF技能
+        '.buffSkillOrder': 'name="buffSkillOrderValue"',
+        // 标签页-DEBUFF技能
+        '.debuffSkillOrder': 'name="debuffSkillOrderValue"',
+        '.debuffSkillOrderAll': 'name="debuffSkillOrderAllValue"',
+        // 标签页-其他技能
+        '.skillOrder': 'name="skillOrderValue"',
+        // 标签页-,
+        '.infusionOrder': 'name = "infusionOrderName"',
+      }
+      const isGetOrderFromId = ['.buffSkillOrder', '.debuffSkillOrder', '.debuffSkillOrderAll', '.skillOrder', '.infusionOrder'];
+      for (let ui in orderValues) { 
+        gE(ui, optionBox).onclick = optionBox2Order(orderValues[ui], isGetOrderFromId.includes(ui) ? getOrderFromId : undefined);
+      }
+        
       // 标签页-警报
       gE('input[name="audio_Text"]', optionBox).onchange = function () {
         if (this.value === '') {
@@ -5566,39 +5482,58 @@
     }
 
     function useInfusions() { // 自动使用魔药
-      if (g('attackStatus') === 0) {
-        return false;
-      }
       const option = g('option');
-      if (!option.infusionSwitch) {
-        return false;
-      }
+      if (!option.infusionSwitch) return false;
       if (!checkCondition(option.infusionCondition)) {
         return false;
       }
-
+      
+      const onUse = function(status) { 
+        if (getPlayerBuff(infusionLib[status].img)) return false;
+        const itemBtn = gE(`.bti3>div[onmouseover*="(${infusionLib[status].id})"]`);
+        if (!itemBtn) return false;
+        itemBtn.click();
+        return true;
+      }
       const infusionLib = [ null, {
         id: 12101,
         img: 'fireinfusion',
+        name: 'Flames',
       }, {
         id: 12201,
         img: 'coldinfusion',
+        name: 'Frost',
       }, {
         id: 12301,
         img: 'elecinfusion',
+        name: 'Lightning',
       }, {
         id: 12401,
         img: 'windinfusion',
+        name: 'Storms',
       }, {
         id: 12501,
         img: 'holyinfusion',
+        name: 'Divinity',
       }, {
         id: 12601,
         img: 'darkinfusion',
+        name: 'Darkness',
       }];
-      if (gE(`.bti3>div[onmouseover*="(${infusionLib[g('attackStatus')].id})"]`) && !getPlayerBuff(infusionLib[[g('attackStatus')]].img)) {
-        gE(`.bti3>div[onmouseover*="(${infusionLib[g('attackStatus')].id})"]`).click();
-        return true;
+      
+      if (option.infusionDefaultOnly) {
+        const attackStatus = g('attackStatus');
+        if (attackStatus === 0) return false;
+        return onUse(attackStatus);
+      }
+      if (!option.infusion) return false;
+      const order = splitOrders(option.infusionOrderName, ['Divinity', 'Darkness', 'Flames', 'Frost', 'Lightning', 'Storms']);
+      for (const name of order) {
+        const condition = option[`infusion${name}Condition`];
+        if (!checkCondition(condition)) continue;
+        if (onUse(infusionLib.findIndex(i => i?.name === name))) {
+          return true;
+        }
       }
       return false;
     }
@@ -5682,6 +5617,7 @@
       if (!optionSkills) {
         return;
       }
+      const monsterStatus = g('battle').monsterStatus;
       for (let i in skillOrder) {
         let skill = skillOrder[i];
         if (!skill || !optionSkills[skill]) {
@@ -5701,7 +5637,7 @@
         }
         skillOTOS[skill]++;
         setValue('skillOTOS', skillOTOS);
-        let target = checkCondition(option[`skill${skill}Condition`], g('battle').monsterStatus);
+        let target = checkCondition(option[`skill${skill}Condition`], monsterStatus);
         if (!target) {
           continue;
         }
