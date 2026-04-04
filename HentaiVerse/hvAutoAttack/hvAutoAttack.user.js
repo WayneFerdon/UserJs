@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.167
+// @version      2.90.168
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -462,13 +462,13 @@
             $async.list.push(name);
           }
           $debug.log(`${state ? 'Start' : 'End'} ${name}\n`, JSON.parse(JSON.stringify($async.list)));
-        } catch (e) { } },
+        } catch (err) { /* console.log(err) */ } },
         logSwitch: function (args) { try {
           const argsStr = Array.from(args).join(',');
           const name = `${args.callee.name}${argsStr === '' ? argsStr : `(${argsStr})`}`;
           const state = $async.list.indexOf(name) === -1;
           $async.logSwitchStrict(name, state);
-        } catch (e) { } }
+        } catch (err) { /* console.log(err) */ } }
       }
       return $async;
     }
@@ -501,7 +501,7 @@
           } else {
             unsafeWindow.MAIN_URL = unsafeWindow.MAIN_URL.replace(/^https:/, `http:`);
           }
-        } catch (e) { }
+        } catch (err) { /* console.log(err) */ }
 
         return true;
       }
@@ -618,8 +618,8 @@
         }
         try {
           window.opener.location.href = currentUrl;
-        } catch (e) {
-          console.error(e);
+        } catch (err) {
+          console.error(err);
           console.error(`current: ${currentUrl}`);
           console.error(`opener: ${window.opener}`);
           console.error(`opener.location: ${window.opener.location}`);
@@ -646,7 +646,7 @@
     }
 
     async function safeClose(delay) {
-      try { window.close() } catch (e) { }
+      try { window.close() } catch (err) { /* console.log(err) */ }
       await pauseAsync(delay);
       return !window || window.closed;
     }
@@ -664,7 +664,7 @@
         return;
       }
       await tryClose(attempts, delay);
-    } catch (e) { console.error('Opener reload or popup close failed:', e) } }
+    } catch (err) { console.error('Opener reload or popup close failed:', err) } }
 
     function checkOption() {
       g('version', GM_info ? GM_info.script.version : scriptVersion);
@@ -1484,7 +1484,8 @@
         ' <div><input id="encounter" type="checkbox"><label for="encounter"><b><l0>自动遭遇战</l0><l1>自動遭遇戰</l1><l2>Auto Encounter</l2></b></label><br>',
         '  <input id="encounterQuickCheck" type="checkbox"><label for="encounterQuickCheck"><l0>精准倒计时(影响性能)</l0><l1>精準(影響性能)</l1><l2>Precise encounter cd(might reduced performsance)</l2></label><br>',
         '  <input id="encounterDisplay" type="checkbox"><label for="encounterDisplay"><l0>不自动遭遇时显示倒计时</l0><l1>不自動遭遇時顯示倒計時</l1><l2>Display CountDown While Not Auto Encounter</l2><br>',
-        '  <l0>遭遇战倒计时</l0><l1>遭遇戰倒計時</l1><l2>Wait for encounter first while count down</l2> ≤ <input class="hvAANumber" name="encounterWaitCD" placeholder="0" type="number">s<l0>时优先等待</l0><l1>時優先等待</l1><l2>.</l2></div>',
+        '  <l0>遭遇战倒计时</l0><l1>遭遇戰倒計時</l1><l2>Wait for encounter first while count down</l2> ≤ <input class="hvAANumber" name="encounterWaitCD" placeholder="0" type="number">s<l0>时优先等待</l0><l1>時優先等待</l1><l2>.</l2>',
+        '  </div>',
         '  <div><input id="idleArena" type="checkbox"><label for="idleArena"><b><l0>闲置竞技场</l0><l1>閒置競技場</l1><l2>Idle Arena</l2>: </b>',
         '    <l0>在任意页面停留</l0><l1>在任意頁面停留</l1><l2>Idle in any page for </l2><input class="hvAANumber" name="idleArenaTime" type="number"><l0>秒后，开始竞技场</l0><l1>秒後，開始競技場</l1><l2> (s), start Arena</l2></label> <button class="idleArenaReset"><l01>重置</l01><l2>Reset</l2></button>;<br>',
         '    <l0>进行的竞技场相对应等级</l0><l1>進行的競技場相對應等級</l1><l2>The levels of the Arena you want to complete</l2>:  ',
@@ -1494,21 +1495,30 @@
         '        <input id="arLevel_1" value="1,1" type="checkbox"><label for="arLevel_1">1</label> <input id="arLevel_10" value="10,3" type="checkbox"><label for="arLevel_10">10</label> <input id="arLevel_20" value="20,5" type="checkbox"><label for="arLevel_20">20</label> <input id="arLevel_30" value="30,8" type="checkbox"><label for="arLevel_30">30</label> <input id="arLevel_40" value="40,9" type="checkbox"><label for="arLevel_40">40</label> <input id="arLevel_50" value="50,11" type="checkbox"><label for="arLevel_50">50</label> <input id="arLevel_60" value="60,12" type="checkbox"><label for="arLevel_60">60</label> <input id="arLevel_70" value="70,13" type="checkbox"><label for="arLevel_70">70</label> <input id="arLevel_80" value="80,15" type="checkbox"><label for="arLevel_80">80</label> <input id="arLevel_90" value="90,16" type="checkbox"><label for="arLevel_90">90</label> <input id="arLevel_100" value="100,17" type="checkbox"><label for="arLevel_100">100</label> <input id="arLevel_110" value="110,19" type="checkbox"><label for="arLevel_110">110</label>',
         '        <input id="arLevel_120" value="120,20" type="checkbox"><label for="arLevel_120">120</label> <input id="arLevel_130" value="130,21" type="checkbox"><label for="arLevel_130">130</label> <input id="arLevel_140" value="140,23" type="checkbox"><label for="arLevel_140">140</label> <input id="arLevel_150" value="150,24" type="checkbox"><label for="arLevel_150">150</label> <input id="arLevel_165" value="165,26" type="checkbox"><label for="arLevel_165">165</label> <input id="arLevel_180" value="180,27" type="checkbox"><label for="arLevel_180">180</label> <input id="arLevel_200" value="200,28" type="checkbox"><label for="arLevel_200">200</label> <input id="arLevel_225" value="225,29" type="checkbox"><label for="arLevel_225">225</label> <input id="arLevel_250" value="250,32" type="checkbox"><label for="arLevel_250">250</label> <input id="arLevel_300" value="300,33" type="checkbox"><label for="arLevel_300">300</label> <input id="arLevel_400" value="400,34" type="checkbox"><label for="arLevel_400">400</label> <input id="arLevel_500" value="500,35" type="checkbox"><label for="arLevel_500">500</label>',
         '        <input id="arLevel_RB50" value="RB50,105" type="checkbox"><label for="arLevel_RB50">RB50</label> <input id="arLevel_RB75A" value="RB75A,106" type="checkbox"><label for="arLevel_RB75A">RB75A</label> <input id="arLevel_RB75B" value="RB75B,107" type="checkbox"><label for="arLevel_RB75B">RB75B</label> <input id="arLevel_RB75C" value="RB75C,108" type="checkbox"><label for="arLevel_RB75C">RB75C</label>',
-        '        <input id="arLevel_RB100" value="RB100,109" type="checkbox"><label for="arLevel_RB100">RB100</label> <input id="arLevel_RB150" value="RB150,110" type="checkbox"><label for="arLevel_RB150">RB150</label> <input id="arLevel_RB200" value="RB200,111" type="checkbox"><label for="arLevel_RB200">RB200</label> <input id="arLevel_RB250" value="RB250,112" type="checkbox"><label for="arLevel_RB250">RB250</label> <input id="arLevel_GF" value="GF,gr" type="checkbox"><label for="arLevel_GF" >GrindFest </label><input class="hvAANumber" name="idleArenaGrTime" placeholder="1" type="number"></div><div><input id="obscureNotIdleArena" type="checkbox"><label for="obscureNotIdleArena"><l0>页面中置灰未设置且未完成的</l0><l1>頁面中置灰未設置且未完成的</l1><l2>obscure not setted and not battled in Battle&gt;Arena/RingOfBlood</l2></div></div>',
+        '        <input id="arLevel_RB100" value="RB100,109" type="checkbox"><label for="arLevel_RB100">RB100</label> <input id="arLevel_RB150" value="RB150,110" type="checkbox"><label for="arLevel_RB150">RB150</label> <input id="arLevel_RB200" value="RB200,111" type="checkbox"><label for="arLevel_RB200">RB200</label> <input id="arLevel_RB250" value="RB250,112" type="checkbox"><label for="arLevel_RB250">RB250</label> <input id="arLevel_GF" value="GF,gr" type="checkbox"><label for="arLevel_GF" >GrindFest </label><input class="hvAANumber" name="idleArenaGrTime" placeholder="1" type="number">',
+        '      </div>',
+        '      <div><input id="obscureNotIdleArena" type="checkbox"><label for="obscureNotIdleArena"><l0>页面中置灰未设置且未完成的</l0><l1>頁面中置灰未設置且未完成的</l1><l2>obscure not setted and not battled in Battle&gt;Arena/RingOfBlood</l2>',
+        '      </div>',
+        '    </div>',
         '  <div>',
-        '      <b>[S!]<l0>精力</l0><l1>精力</l1><l2>Stamina</l2>: </b>',
-        '      <l0>进入遭遇战的最低精力</l0><l1>進入遭遇戰的最低精力</l1><l2><b></b>Minimum stamina to engage encounter</l2>: <input class="hvAANumber" name="staminaEncounter" placeholder="60" type="number"></br>',
-        '      <l0>竞技场/浴血擂台阈值</l0><l1>競技場/浴血擂台閾值</l1><l2><b></b>Minimum stamina to auto start The Arena or Ring Of Blood</l2>: Min(85, <input class="hvAANumber" name="staminaLow" placeholder="60" type="number">)<br>',
-        '      <l0>进入压榨届的最低精力</l0><l1>進入壓榨屆的最低精力</l1><l2><b></b>Minimum stamina to auto start GrindFest</l2>: <input class="hvAANumber" name="staminaGrindFest" placeholder="100" type="number"></br>',
-        '      <b>[S!!]</b><l0>进入竞技场/浴血擂台/压榨届时，含本日自然恢复的阈值</l0><l1>进入競技場/浴血擂台/壓榨屆时，含本日自然恢復的閾值</l1><l2><b></b>Stamina threshold with naturally recovers today for The Arena, Ring Of Bloog, GrindFest</l2>: <input class="hvAANumber" name="staminaLowWithReNat" placeholder="0" type="number"></br>',
-        '      <input id="restoreStamina" type="checkbox"><label for="restoreStamina"><l0>战前恢复</l0><l1>戰前恢復</l1><l2>Restore stamina</l2></label>',
-        '      <input id="staminaRatio" type="checkbox"><label for="staminaRatio"><l0>检查惩罚倍率</l0><l1>檢查懲罰倍率</l1><l2>Check Punishment Ratio</l2></label>',
+        '    <b>[S!]<l0>精力</l0><l1>精力</l1><l2>Stamina</l2>: </b>',
+        '    <l0>进入遭遇战的最低精力</l0><l1>進入遭遇戰的最低精力</l1><l2><b></b>Minimum stamina to engage encounter</l2>: <input class="hvAANumber" name="staminaEncounter" placeholder="60" type="number"></br>',
+        '    <l0>竞技场/浴血擂台阈值</l0><l1>競技場/浴血擂台閾值</l1><l2><b></b>Minimum stamina to auto start The Arena or Ring Of Blood</l2>: Min(85, <input class="hvAANumber" name="staminaLow" placeholder="60" type="number">)<br>',
+        '    <l0>进入压榨届的最低精力</l0><l1>進入壓榨屆的最低精力</l1><l2><b></b>Minimum stamina to auto start GrindFest</l2>: <input class="hvAANumber" name="staminaGrindFest" placeholder="100" type="number"></br>',
+        '    <b>[S!!]</b><l0>进入竞技场/浴血擂台/压榨届时，含本日自然恢复的阈值</l0><l1>进入競技場/浴血擂台/壓榨屆时，含本日自然恢復的閾值</l1><l2><b></b>Stamina threshold with naturally recovers today for The Arena, Ring Of Bloog, GrindFest</l2>: <input class="hvAANumber" name="staminaLowWithReNat" placeholder="0" type="number"></br>',
+        '    <input id="restoreStamina" type="checkbox"><label for="restoreStamina"><l0>战前恢复</l0><l1>戰前恢復</l1><l2>Restore stamina</l2></label>',
+        '    <input id="staminaRatio" type="checkbox"><label for="staminaRatio"><l0>检查惩罚倍率</l0><l1>檢查懲罰倍率</l1><l2>Check Punishment Ratio</l2></label>',
         '  </div>',
-        '  <div><input id="repair" type="checkbox"><label for="repair"><b>[R!]<l0>修复装备</l0><l1>修復裝備</l1><l2>Repair Equipment</l2></b></label>: ',
-        '    <l0>耐久度</l0><l1>耐久度</l1><l2>Durability</l2> ≤ <input class="hvAANumber" name="repairValue" type="number">% <l0>或 压榨届耐久度</l0><l1>或 壓榨屆耐久度</l1><l2>OR Grind Fest Durability</l2> ≤ <input class="hvAANumber" name="repairValueGF" type="number">%</br><input id="encounterRepair" type="checkbox"><label for="encounterRepair"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label></div>',
-        '  <div><input id="equStorage" type="checkbox"><label for="equStorage"><b>[E!]<l0>装备库存</l0><l1>裝備庫存</l1><l2>Equipment Storage</l2></b></label> ≤ <input class="hvAANumber" style="width: 32px;" name="equStorageValue" placeholder="2000" type="number">; <input id="encounterEquStorage" type="checkbox"><label for="encounterEquStorage"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label></div>',
-        '  <div><input id="checkSupply" type="checkbox"><label for="checkSupply"><b>[C!]<l0>检查物品库存</l0><l1>檢查物品庫存</l1><l2>Check is item needs supply</l2></b>;</label>',
-        '    <l0>库存</l0><l1>庫存</l1><l2>Warn if supply</l2>&lt;max(100%,<input id="checkSupplyWarn" class="hvAANumber" name="checkSupplyWarn" placeholder="100" type="number">%)<l0>时提示</l0><l1>時提示</l1>;',
+        '  <div>',
+        '    <input id="repair" type="checkbox"><label for="repair"><b>[R!]<l0>修复装备</l0><l1>修復裝備</l1><l2>Repair Equipment</l2></b></label>: ',
+        '    <l0>耐久度</l0><l1>耐久度</l1><l2>Durability</l2> ≤ <input class="hvAANumber" name="repairValue" type="number">% <l0>或 压榨届耐久度</l0><l1>或 壓榨屆耐久度</l1><l2>OR Grind Fest Durability</l2> ≤ <input class="hvAANumber" name="repairValueGF" type="number">%</br><input id="encounterRepair" type="checkbox"><label for="encounterRepair"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label>',
+        '  </div>',
+        '  <div>',
+        '    <input id="equStorage" type="checkbox"><label for="equStorage"><b>[E!]<l0>装备库存</l0><l1>裝備庫存</l1><l2>Equipment Storage</l2></b></label> ≤ <input class="hvAANumber" style="width: 32px;" name="equStorageValue" placeholder="2000" type="number">; <input id="encounterEquStorage" type="checkbox"><label for="encounterEquStorage"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label>',
+        '  </div>',
+        '  <div>',
+        '    <input id="checkSupply" type="checkbox"><label for="checkSupply"><b>[C!]<l0>检查物品库存</l0><l1>檢查物品庫存</l1><l2>Check is item needs supply</l2></b>;</label>',
+        '    <l0>库存</l0><l1>庫存</l1><l2>Warn if supply</l2>&lt;max(100%,<input id="checkSupplyWarn" class="hvAANumber" name="checkSupplyWarn" placeholder="100" type="number">%)<l0>时提示</l0><l1>時提示</l1>;</br>',
         '    <input id="encounterSupply" type="checkbox"><label for="encounterSupply"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label>',
         '    <div class="hvAAcheckItems hvAATable">',
         '      <div><input id="isCheck_11191" type="checkbox"><label for="isCheck_11191"><input class="hvAANumber" name="checkItem_11191" placeholder="0" type="number"><l0>体力长效药</l0><l1>體力長效藥</l1><l2>Health Draught</l2></label></div>',
@@ -1538,6 +1548,9 @@
         '      <div><input id="isCheck_12601" type="checkbox"><label for="isCheck_12601"><input class="hvAANumber" name="checkItem_12601" placeholder="0" type="number"><l0>黑暗魔药</l0><l1>黑暗魔藥</l1><l2><br>Infusion of Darkness</l2></label></div>',
         '      <div><input id="isCheck_11401" type="checkbox"><label for="isCheck_11401"><input class="hvAANumber" name="checkItem_11401" placeholder="0" type="number"><l0>能量饮料</l0><l1>能量飲料</l1><l2><br>Energy Drink</l2></label></div>',
         '      <div><input id="isCheck_11402" type="checkbox"><label for="isCheck_11402"><input class="hvAANumber" name="checkItem_11402" placeholder="0" type="number"><l0>咖啡因糖果</l0><l1>咖啡因糖果</l1><l2><br>Caffeinated Candy</l2></label></div>',
+        '      <div><input id="isCheck_61001" type="checkbox"><label for="isCheck_61001"><input class="hvAANumber" name="checkItem_61001" placeholder="0" type="number"><l0>虚空碎片</l0><l1>虛空碎片</l1><l2><br>Voidseeker Shard</l2></label></div>',
+        '      <div><input id="isCheck_61101" type="checkbox"><label for="isCheck_61101"><input class="hvAANumber" name="checkItem_61101" placeholder="0" type="number"><l0>以太碎片</l0><l1>以太碎片</l1><l2><br>Aether Shard</l2></label></div>',
+        '      <div><input id="isCheck_61501" type="checkbox"><label for="isCheck_61501"><input class="hvAANumber" name="checkItem_61501" placeholder="0" type="number"><l0>羽毛碎片</l0><l1>羽毛碎片</l1><l2><br>Featherweight Shard</l2></label></div>',
         '    </div>',
         '  </div>',
         '  <div><input id="checkSupplyGF" type="checkbox"><label for="checkSupplyGF"><b>[C!!]<l0>压榨届使用额外的库存检查</l0><l1>壓榨屆使用額外的庫存檢查</l1><l2>Extra supply check for Grind Fest</l2></b>;</label>',
@@ -1570,9 +1583,180 @@
         '      <div><input id="isCheckGF_12601" type="checkbox"><label for="isCheckGF_12601"><input class="hvAANumber" name="checkItemGF_12601" placeholder="0" type="number"><l0>黑暗魔药</l0><l1>黑暗魔藥</l1><l2><br>Infusion of Darkness</l2></label></div>',
         '      <div><input id="isCheckGF_11401" type="checkbox"><label for="isCheckGF_11401"><input class="hvAANumber" name="checkItemGF_11401" placeholder="0" type="number"><l0>能量饮料</l0><l1>能量飲料</l1><l2><br>Energy Drink</l2></label></div>',
         '      <div><input id="isCheckGF_11402" type="checkbox"><label for="isCheckGF_11402"><input class="hvAANumber" name="checkItemGF_11402" placeholder="0" type="number"><l0>咖啡因糖果</l0><l1>咖啡因糖果</l1><l2><br>Caffeinated Candy</l2></label></div>',
+        '      <div><input id="isCheckGF_61001" type="checkbox"><label for="isCheckGF_61001"><input class="hvAANumber" name="checkItemGF_61001" placeholder="0" type="number"><l0>虚空碎片</l0><l1>虛空碎片</l1><l2><br>Voidseeker Shard</l2></label></div>',
+        '      <div><input id="isCheckGF_61101" type="checkbox"><label for="isCheckGF_61101"><input class="hvAANumber" name="checkItemGF_61101" placeholder="0" type="number"><l0>以太碎片</l0><l1>以太碎片</l1><l2><br>Aether Shard</l2></label></div>',
+        '      <div><input id="isCheckGF_61501" type="checkbox"><label for="isCheckGF_61501"><input class="hvAANumber" name="checkItemGF_61501" placeholder="0" type="number"><l0>羽毛碎片</l0><l1>羽毛碎片</l1><l2><br>Featherweight Shard</l2></label></div>',
         '    </div>',
         '  </div>',
+        '  <div>',
+        '    <input id="checkEnchant" type="checkbox"><label for="checkEnchant"><b><l0>检查附魔</l0><l1>檢查附魔</l1><l2>Check enchant</l2></b>(<l0>请在库存检查设置中预留附魔所需份额</l0><l1>請在庫存檢查中預留附魔所需份額</l1><l2>Please includes portions in supply check</l2>);</label></br>',
+        '    <input id="enchantEncounter" type="checkbox"><label for="enchantEncounter"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label>',
+        '    <div class="hvAATable" style="display:grid; grid-template-columns:repeat(8, 1fr);">' ,
+        '      <div><span class="hvAATitle"><b><l0>阈值</br>(分钟)</l0><l1>閾值</br>(分鐘)</l1><l2>Thresholds(m)</l2></b></span></br></div>',
+        '      <div><l0>主手</l0><l1>主手</l1><l2>Main<br>Hand</l2></div>',
+        '      <div><l0>副手</l0><l1>副手</l1><l2>Off<br>Hand</l2></div>',
+        '      <div><l0>头盔</l0><l1>頭盔</l1><l2>Helmet</l2></div>',
+        '      <div><l0>身体</l0><l1>身體</l1><l2>Body</l2></div>',
+        '      <div><l0>手部</l0><l1>手部</l1><l2>Hands</l2></div>',
+        '      <div><l0>腿部</l0><l1>腿部</l1><l2>Legs</l2></div>',
+        '      <div><l0>脚部</l0><l1>腳部</l1><l2>Feet</l2></div>',
+        '      <div><l0>虚空</l0><l1>虛空</l1><l2>Voidseeker</l2></div>',
+        '      <div><input id="isEnchant_6100101" type="checkbox"><label for="isEnchant_6100101">:<input class="hvAANumber" name="enchant_6100101" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_6100102" type="checkbox"><label for="isEnchant_6100102">:<input class="hvAANumber" name="enchant_6100102" placeholder="0" type="number"></label></div>',
+        '      <div></div>',
+        '      <div></div>',
+        '      <div></div>',
+        '      <div></div>',
+        '      <div></div>',
+        '      <div><l0>以太</l0><l1>以太</l1><l2>Aether</l2></div>',
+        '      <div><input id="isEnchant_6110101" type="checkbox"><label for="isEnchant_6110101">:<input class="hvAANumber" name="enchant_6110101" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_6110102" type="checkbox"><label for="isEnchant_6110102">:<input class="hvAANumber" name="enchant_6110102" placeholder="0" type="number"></label></div>',
+        '      <div></div>',
+        '      <div></div>',
+        '      <div></div>',
+        '      <div></div>',
+        '      <div></div>',
+        '      <div><l0>羽毛</l0><l1>羽毛</l1><l2>Featherweight</l2></div>',
+        '      <div><input id="isEnchant_6150101" type="checkbox"><label for="isEnchant_6150101">:<input class="hvAANumber" name="enchant_6150101" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_6150102" type="checkbox"><label for="isEnchant_6150102">:<input class="hvAANumber" name="enchant_6150102" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_6150113" type="checkbox"><label for="isEnchant_6150113">:<input class="hvAANumber" name="enchant_6150113" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_6150111" type="checkbox"><label for="isEnchant_6150111">:<input class="hvAANumber" name="enchant_6150111" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_6150114" type="checkbox"><label for="isEnchant_6150114">:<input class="hvAANumber" name="enchant_6150114" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_6150112" type="checkbox"><label for="isEnchant_6150112">:<input class="hvAANumber" name="enchant_6150112" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_6150115" type="checkbox"><label for="isEnchant_6150115">:<input class="hvAANumber" name="enchant_6150115" placeholder="0" type="number"></label></div>',
+        '      <div><l0>火焰</l0><l1>火焰</l1><l2>Flames</l2></div>',
+        '      <div><input id="isEnchant_1210101" type="checkbox"><label for="isEnchant_1210101">:<input class="hvAANumber" name="enchant_1210101" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1210102" type="checkbox"><label for="isEnchant_1210102">:<input class="hvAANumber" name="enchant_1210102" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1210113" type="checkbox"><label for="isEnchant_1210113">:<input class="hvAANumber" name="enchant_1210113" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1210111" type="checkbox"><label for="isEnchant_1210111">:<input class="hvAANumber" name="enchant_1210111" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1210114" type="checkbox"><label for="isEnchant_1210114">:<input class="hvAANumber" name="enchant_1210114" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1210112" type="checkbox"><label for="isEnchant_1210112">:<input class="hvAANumber" name="enchant_1210112" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1210115" type="checkbox"><label for="isEnchant_1210115">:<input class="hvAANumber" name="enchant_1210115" placeholder="0" type="number"></label></div>',
+        '      <div><l0>冰霜</l0><l1>冰霜</l1><l2>Frost</l2></div>',
+        '      <div><input id="isEnchant_1220101" type="checkbox"><label for="isEnchant_1220101">:<input class="hvAANumber" name="enchant_1220101" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1220102" type="checkbox"><label for="isEnchant_1220102">:<input class="hvAANumber" name="enchant_1220102" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1220113" type="checkbox"><label for="isEnchant_1220113">:<input class="hvAANumber" name="enchant_1220113" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1220111" type="checkbox"><label for="isEnchant_1220111">:<input class="hvAANumber" name="enchant_1220111" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1220114" type="checkbox"><label for="isEnchant_1220114">:<input class="hvAANumber" name="enchant_1220114" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1220112" type="checkbox"><label for="isEnchant_1220112">:<input class="hvAANumber" name="enchant_1220112" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1220115" type="checkbox"><label for="isEnchant_1220115">:<input class="hvAANumber" name="enchant_1220115" placeholder="0" type="number"></label></div>',
+        '      <div><l0>雷电</l0><l1>雷電</l1><l2>Lightning</l2></div>',
+        '      <div><input id="isEnchant_1230101" type="checkbox"><label for="isEnchant_1230101">:<input class="hvAANumber" name="enchant_1230101" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1230102" type="checkbox"><label for="isEnchant_1230102">:<input class="hvAANumber" name="enchant_1230102" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1230113" type="checkbox"><label for="isEnchant_1230113">:<input class="hvAANumber" name="enchant_1230113" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1230111" type="checkbox"><label for="isEnchant_1230111">:<input class="hvAANumber" name="enchant_1230111" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1230114" type="checkbox"><label for="isEnchant_1230114">:<input class="hvAANumber" name="enchant_1230114" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1230112" type="checkbox"><label for="isEnchant_1230112">:<input class="hvAANumber" name="enchant_1230112" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1230115" type="checkbox"><label for="isEnchant_1230115">:<input class="hvAANumber" name="enchant_1230115" placeholder="0" type="number"></label></div>',
+        '      <div><l0>风暴</l0><l1>風暴</l1><l2>Storm</l2></div>',
+        '      <div><input id="isEnchant_1240101" type="checkbox"><label for="isEnchant_1240101">:<input class="hvAANumber" name="enchant_1240101" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1240102" type="checkbox"><label for="isEnchant_1240102">:<input class="hvAANumber" name="enchant_1240102" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1240113" type="checkbox"><label for="isEnchant_1240113">:<input class="hvAANumber" name="enchant_1240113" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1240111" type="checkbox"><label for="isEnchant_1240111">:<input class="hvAANumber" name="enchant_1240111" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1240114" type="checkbox"><label for="isEnchant_1240114">:<input class="hvAANumber" name="enchant_1240114" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1240112" type="checkbox"><label for="isEnchant_1240112">:<input class="hvAANumber" name="enchant_1240112" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1240115" type="checkbox"><label for="isEnchant_1240115">:<input class="hvAANumber" name="enchant_1240115" placeholder="0" type="number"></label></div>',
+        '      <div><l0>神圣</l0><l1>神聖</l1><l2>Divinity</l2></div>','      <div><input id="isEnchant_1250101" type="checkbox"><label for="isEnchant_1250101">:<input class="hvAANumber" name="enchant_1250101" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1250102" type="checkbox"><label for="isEnchant_1250102">:<input class="hvAANumber" name="enchant_1250102" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1250113" type="checkbox"><label for="isEnchant_1250113">:<input class="hvAANumber" name="enchant_1250113" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1250111" type="checkbox"><label for="isEnchant_1250111">:<input class="hvAANumber" name="enchant_1250111" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1250114" type="checkbox"><label for="isEnchant_1250114">:<input class="hvAANumber" name="enchant_1250114" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1250112" type="checkbox"><label for="isEnchant_1250112">:<input class="hvAANumber" name="enchant_1250112" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1250115" type="checkbox"><label for="isEnchant_1250115">:<input class="hvAANumber" name="enchant_1250115" placeholder="0" type="number"></label></div>',
+        '      <div><l0>黑暗</l0><l1>黑暗</l1><l2>Darkness</l2></div>','      <div><input id="isEnchant_1260101" type="checkbox"><label for="isEnchant_1260101">:<input class="hvAANumber" name="enchant_1260101" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1260102" type="checkbox"><label for="isEnchant_1260102">:<input class="hvAANumber" name="enchant_1260102" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1260113" type="checkbox"><label for="isEnchant_1260113">:<input class="hvAANumber" name="enchant_1260113" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1260111" type="checkbox"><label for="isEnchant_1260111">:<input class="hvAANumber" name="enchant_1260111" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1260114" type="checkbox"><label for="isEnchant_1260114">:<input class="hvAANumber" name="enchant_1260114" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1260112" type="checkbox"><label for="isEnchant_1260112">:<input class="hvAANumber" name="enchant_1260112" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchant_1260115" type="checkbox"><label for="isEnchant_1260115">:<input class="hvAANumber" name="enchant_1260115" placeholder="0" type="number"></label></div>',
+        '    </div>',
         '  </div>',
+        '  <div>',
+        '    <input id="checkEnchantGF" type="checkbox"><label for="checkEnchantGF"><b><l0>压榨界使用额外的附魔检查</l0><l1>壓榨界使用額外的附魔檢查</l1><l2>Extra enchant check for Grind Fest</l2></b></br><l0>若压榨界使用额外库存检查，则在对应设置中预留附魔所需份额</l0><l1>若壓榨界使用額外庫存檢查，則在對應配置中預留附魔所需份額</l1><l2>Includes portions in extra supply check for Grind Fest instead if it\'s enabled.</l2></label>',
+        '    <div class="hvAATable" style="display:grid; grid-template-columns:repeat(8, 1fr);">',
+        '      <div><span class="hvAATitle"><b><l0>阈值</br>(分钟)</l0><l1>閾值</br>(分鐘)</l1><l2>Thresholds(m)</l2></b></span></br></div>',
+        '      <div><l0>主手</l0><l1>主手</l1><l2>Main<br>Hand</l2></div>',
+        '      <div><l0>副手</l0><l1>副手</l1><l2>Off<br>Hand</l2></div>',
+        '      <div><l0>头盔</l0><l1>頭盔</l1><l2>Helmet</l2></div>',
+        '      <div><l0>身体</l0><l1>身體</l1><l2>Body</l2></div>',
+        '      <div><l0>手部</l0><l1>手部</l1><l2>Hands</l2></div>',
+        '      <div><l0>腿部</l0><l1>腿部</l1><l2>Legs</l2></div>',
+        '      <div><l0>脚部</l0><l1>腳部</l1><l2>Feet</l2></div>',
+        '      <div><l0>虚空</l0><l1>虛空</l1><l2>Voidseeker</l2></div>',
+        '      <div><input id="isEnchantGF_6100101" type="checkbox"><label for="isEnchantGF_6100101">:<input class="hvAANumber" name="enchantGF_6100101" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_6100102" type="checkbox"><label for="isEnchantGF_6100102">:<input class="hvAANumber" name="enchantGF_6100102" placeholder="0" type="number"></label></div>',
+        '      <div></div>',
+        '      <div></div>',
+        '      <div></div>',
+        '      <div></div>',
+        '      <div></div>',
+        '      <div><l0>以太</l0><l1>以太</l1><l2>Aether</l2></div>',
+        '      <div><input id="isEnchantGF_6110101" type="checkbox"><label for="isEnchantGF_6110101">:<input class="hvAANumber" name="enchantGF_6110101" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_6110102" type="checkbox"><label for="isEnchantGF_6110102">:<input class="hvAANumber" name="enchantGF_6110102" placeholder="0" type="number"></label></div>',
+        '      <div></div>',
+        '      <div></div>',
+        '      <div></div>',
+        '      <div></div>',
+        '      <div></div>',
+        '      <div><l0>羽毛</l0><l1>羽毛</l1><l2>Featherweight</l2></div>',
+        '      <div><input id="isEnchantGF_6150101" type="checkbox"><label for="isEnchantGF_6150101">:<input class="hvAANumber" name="enchantGF_6150101" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_6150102" type="checkbox"><label for="isEnchantGF_6150102">:<input class="hvAANumber" name="enchantGF_6150102" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_6150113" type="checkbox"><label for="isEnchantGF_6150113">:<input class="hvAANumber" name="enchantGF_6150113" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_6150111" type="checkbox"><label for="isEnchantGF_6150111">:<input class="hvAANumber" name="enchantGF_6150111" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_6150114" type="checkbox"><label for="isEnchantGF_6150114">:<input class="hvAANumber" name="enchantGF_6150114" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_6150112" type="checkbox"><label for="isEnchantGF_6150112">:<input class="hvAANumber" name="enchantGF_6150112" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_6150115" type="checkbox"><label for="isEnchantGF_6150115">:<input class="hvAANumber" name="enchantGF_6150115" placeholder="0" type="number"></label></div>',
+        '      <div><l0>火焰</l0><l1>火焰</l1><l2>Flames</l2></div>',
+        '      <div><input id="isEnchantGF_1210101" type="checkbox"><label for="isEnchantGF_1210101">:<input class="hvAANumber" name="enchantGF_1210101" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1210102" type="checkbox"><label for="isEnchantGF_1210102">:<input class="hvAANumber" name="enchantGF_1210102" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1210113" type="checkbox"><label for="isEnchantGF_1210113">:<input class="hvAANumber" name="enchantGF_1210113" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1210111" type="checkbox"><label for="isEnchantGF_1210111">:<input class="hvAANumber" name="enchantGF_1210111" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1210114" type="checkbox"><label for="isEnchantGF_1210114">:<input class="hvAANumber" name="enchantGF_1210114" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1210112" type="checkbox"><label for="isEnchantGF_1210112">:<input class="hvAANumber" name="enchantGF_1210112" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1210115" type="checkbox"><label for="isEnchantGF_1210115">:<input class="hvAANumber" name="enchantGF_1210115" placeholder="0" type="number"></label></div>',
+        '      <div><l0>冰霜</l0><l1>冰霜</l1><l2>Frost</l2></div>',
+        '      <div><input id="isEnchantGF_1220101" type="checkbox"><label for="isEnchantGF_1220101">:<input class="hvAANumber" name="enchantGF_1220101" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1220102" type="checkbox"><label for="isEnchantGF_1220102">:<input class="hvAANumber" name="enchantGF_1220102" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1220113" type="checkbox"><label for="isEnchantGF_1220113">:<input class="hvAANumber" name="enchantGF_1220113" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1220111" type="checkbox"><label for="isEnchantGF_1220111">:<input class="hvAANumber" name="enchantGF_1220111" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1220114" type="checkbox"><label for="isEnchantGF_1220114">:<input class="hvAANumber" name="enchantGF_1220114" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1220112" type="checkbox"><label for="isEnchantGF_1220112">:<input class="hvAANumber" name="enchantGF_1220112" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1220115" type="checkbox"><label for="isEnchantGF_1220115">:<input class="hvAANumber" name="enchantGF_1220115" placeholder="0" type="number"></label></div>',
+        '      <div><l0>雷电</l0><l1>雷電</l1><l2>Lightning</l2></div>',
+        '      <div><input id="isEnchantGF_1230101" type="checkbox"><label for="isEnchantGF_1230101">:<input class="hvAANumber" name="enchantGF_1230101" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1230102" type="checkbox"><label for="isEnchantGF_1230102">:<input class="hvAANumber" name="enchantGF_1230102" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1230113" type="checkbox"><label for="isEnchantGF_1230113">:<input class="hvAANumber" name="enchantGF_1230113" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1230111" type="checkbox"><label for="isEnchantGF_1230111">:<input class="hvAANumber" name="enchantGF_1230111" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1230114" type="checkbox"><label for="isEnchantGF_1230114">:<input class="hvAANumber" name="enchantGF_1230114" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1230112" type="checkbox"><label for="isEnchantGF_1230112">:<input class="hvAANumber" name="enchantGF_1230112" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1230115" type="checkbox"><label for="isEnchantGF_1230115">:<input class="hvAANumber" name="enchantGF_1230115" placeholder="0" type="number"></label></div>',
+        '      <div><l0>风暴</l0><l1>風暴</l1><l2>Storm</l2></div>',
+        '      <div><input id="isEnchantGF_1240101" type="checkbox"><label for="isEnchantGF_1240101">:<input class="hvAANumber" name="enchantGF_1240101" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1240102" type="checkbox"><label for="isEnchantGF_1240102">:<input class="hvAANumber" name="enchantGF_1240102" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1240113" type="checkbox"><label for="isEnchantGF_1240113">:<input class="hvAANumber" name="enchantGF_1240113" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1240111" type="checkbox"><label for="isEnchantGF_1240111">:<input class="hvAANumber" name="enchantGF_1240111" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1240114" type="checkbox"><label for="isEnchantGF_1240114">:<input class="hvAANumber" name="enchantGF_1240114" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1240112" type="checkbox"><label for="isEnchantGF_1240112">:<input class="hvAANumber" name="enchantGF_1240112" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1240115" type="checkbox"><label for="isEnchantGF_1240115">:<input class="hvAANumber" name="enchantGF_1240115" placeholder="0" type="number"></label></div>',
+        '      <div><l0>神圣</l0><l1>神聖</l1><l2>Divinity</l2></div>','      <div><input id="isEnchantGF_1250101" type="checkbox"><label for="isEnchantGF_1250101">:<input class="hvAANumber" name="enchantGF_1250101" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1250102" type="checkbox"><label for="isEnchantGF_1250102">:<input class="hvAANumber" name="enchantGF_1250102" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1250113" type="checkbox"><label for="isEnchantGF_1250113">:<input class="hvAANumber" name="enchantGF_1250113" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1250111" type="checkbox"><label for="isEnchantGF_1250111">:<input class="hvAANumber" name="enchantGF_1250111" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1250114" type="checkbox"><label for="isEnchantGF_1250114">:<input class="hvAANumber" name="enchantGF_1250114" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1250112" type="checkbox"><label for="isEnchantGF_1250112">:<input class="hvAANumber" name="enchantGF_1250112" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1250115" type="checkbox"><label for="isEnchantGF_1250115">:<input class="hvAANumber" name="enchantGF_1250115" placeholder="0" type="number"></label></div>',
+        '      <div><l0>黑暗</l0><l1>黑暗</l1><l2>Darkness</l2></div>','      <div><input id="isEnchantGF_1260101" type="checkbox"><label for="isEnchantGF_1260101">:<input class="hvAANumber" name="enchantGF_1260101" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1260102" type="checkbox"><label for="isEnchantGF_1260102">:<input class="hvAANumber" name="enchantGF_1260102" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1260113" type="checkbox"><label for="isEnchantGF_1260113">:<input class="hvAANumber" name="enchantGF_1260113" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1260111" type="checkbox"><label for="isEnchantGF_1260111">:<input class="hvAANumber" name="enchantGF_1260111" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1260114" type="checkbox"><label for="isEnchantGF_1260114">:<input class="hvAANumber" name="enchantGF_1260114" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1260112" type="checkbox"><label for="isEnchantGF_1260112">:<input class="hvAANumber" name="enchantGF_1260112" placeholder="0" type="number"></label></div>',
+        '      <div><input id="isEnchantGF_1260115" type="checkbox"><label for="isEnchantGF_1260115">:<input class="hvAANumber" name="enchantGF_1260115" placeholder="0" type="number"></label></div>',
+        '    </div>',
+        '  </div>',
+
+        '</div>',
 
         '<div class="hvAATab" id="hvAATab-Recovery">',
         '  <div class="itemOrder"><b><l0>施放顺序(未配置的按照下面的顺序)</l0><l1>施放順序(未配置的按照下面的順序)</l1><l2>Cast Order(Using order below as default if not configed)</l2></b>: <input name="itemOrderName" style="width:80%;" type="text" disabled="true"><input name="itemOrderValue" style="width:80%;" type="hidden" disabled="true"><br>',
@@ -2203,6 +2387,25 @@
           name = name.replace(new RegExp(`(^|,)${value}(,|$)`), '$2').replace(/^,/, '');
         }
         gE('input[name="battleOrderName"]').value = name;
+      };
+
+      // 标签页-附魔
+      gE('.channelSkill2Order', optionBox).onclick = function (e) {
+        if (e.target.tagName !== 'INPUT' && e.target.type !== 'checkbox') {
+          return;
+        }
+        const valueArray = e.target.value.split(',');
+        let name = gE('input[name="channelSkill2OrderName"]').value;
+        let { value } = gE('input[name="channelSkill2OrderValue"]');
+        if (e.target.checked) {
+          name = name + ((name) ? `,${valueArray[0]}` : valueArray[0]);
+          value = value + ((value) ? `,${valueArray[1]}` : valueArray[1]);
+        } else {
+          name = name.replace(new RegExp(`(^|,)${valueArray[0]}(,|$)`), '$2').replace(/^,/, '');
+          value = value.replace(new RegExp(`(^|,)${valueArray[1]}(,|$)`), '$2').replace(/^,/, '');
+        }
+        gE('input[name="channelSkill2OrderName"]').value = name;
+        gE('input[name="channelSkill2OrderValue"]').value = value;
       };
 
       // 标签页-物品
@@ -3288,29 +3491,29 @@
         (async () => { try {
           ready.ability = await asyncSetAbilityData() || true;
           await tryEncounter();
-        } catch (e) { console.error(e) } })(),
+        } catch (err) { console.error(err) } })(),
         // stamina & hathperk
         (async () => { try {
           ready.stamina = await asyncSetStamina() || true;
           await tryEncounter();
-        } catch (e) { console.error(e) } })(),
+        } catch (err) { console.error(err) } })(),
         // item & supply
         (async () => { try {
           ready.item = await asyncGetItems() || true;
           await tryEncounter();
           ready.supply = checkSupply();
           await tryEncounter();
-        } catch (e) { console.error(e) } })(),
+        } catch (err) { console.error(err) } })(),
         // repair
         (async () => { try {
           ready.repair = await asyncCheckRepair();
           await tryEncounter();
-        } catch (e) { console.error(e) } })(),
+        } catch (err) { console.error(err) } })(),
         // equipment storage
         (async () => { try {
           ready.storage = await asyncCheckEquStorage();
           await tryEncounter();
-        } catch (e) { console.error(e) } })(),
+        } catch (err) { console.error(err) } })(),
         // arena data
         updateArena(),
       ]);
@@ -3345,8 +3548,8 @@
         $async.logSwitch(arguments);
         ready.encounter ||= !(await updateEncounter(option.encounter));
         $async.logSwitch(arguments);
-      } catch (e) { console.error(e) } }
-    } catch (e) { console.error(e) } }
+      } catch (err) { console.error(err) } }
+    } catch (err) { console.error(err) } }
 
     function setEncounter(encounter) {
       return g('encounter', setValue('encounter', encounter));
@@ -3479,7 +3682,7 @@
       });
       setValue('ability', ability);
       $async.logSwitch(arguments);
-    } catch (e) { console.error(e) } }
+    } catch (err) { console.error(err) } }
 
     async function asyncSetStamina() { try {
       await waitPause();
@@ -3554,7 +3757,7 @@
       setValue('stamina', stamina);
       console.log('stamina', stamina, '\n', last, '->', stamina.current, '=', lastCost, '*', ratio);
       $async.logSwitch(arguments);
-    } catch (e) { console.error(e) } }
+    } catch (err) { console.error(err) } }
 
     async function asyncGetItems() { try {
       if (!g('option').checkSupply && (isIsekai || !g('option').restoreStamina)) {
@@ -3578,7 +3781,7 @@
       }
       g('items', items);
       $async.logSwitch(arguments);
-    } catch (e) { console.error(e) } }
+    } catch (err) { console.error(err) } }
 
     function checkSupply(isGFStandalone) {
       const option = g('option');
@@ -3643,6 +3846,83 @@
       return !needs.length;
     }
 
+    async function asyncCheckEnchant(isGrindFest) {
+      try {
+      if (hvVersion >= 91) return true;
+      $async.logSwitch(arguments);
+      const option = g('option');
+      const [isEnchant, thresholds] = isGrindFest && option.checkEnchantGF ? [option.isEnchantGF, option.enchantGF] : [option.isEnchant, option.enchant];
+      if (!isEnchant) return true;
+      await waitPause();
+
+      const enchant = {};
+      Object.keys(isEnchant).forEach(id => {
+        if (!isEnchant[id]) return;
+        const item = Math.floor(id/100);
+        const slot = id % 100;
+        (enchant[slot] ??= {})[item] = thresholds[id];
+      });
+
+      const url = `?s=Forge&ss=re`;
+      const enchant_data= {
+        "Voidseeker's Blessing" : { Weapon: 'vseek', item:61001, }, // 'Voidseeker Shard'
+        'Suffused Aether' : { Weapon: 'ether', item:61101, }, // 'Aether Shard'
+        'Featherweight Charm' : { Weapon: 'feath', Armor: 'feath', item:61501, }, // 'Featherweight Shard'
+        'Infused Flames' : { Weapon: 'sfire', Armor: 'pfire', item:12101, }, // 'Infusion of Flames'
+        'Infused Frost' : { Weapon: 'scold', Armor: 'pcold', item:12201, }, // 'Infusion of Frost'
+        'Infused Lightning' : { Weapon: 'selec', Armor: 'pelec', item:12301, }, // 'Infusion of Lightning'
+        'Infused Storms' : { Weapon: 'swind', Armor: 'pwind', item:12401, }, // 'Infusion of Storms'
+        'Infused Divinity' : { Weapon: 'sholy', Armor: 'pholy', item:12501, }, // 'Infusion of Divinity'
+        'Infused Darkness' : { Weapon: 'sdark', Armor: 'pdark', item:12601, }, // 'Infusion of Darkness'
+      }
+      const item2Enchant = {
+        61001: "Voidseeker's Blessing",
+        61101: 'Suffused Aether',
+        61501: 'Featherweight Charm',
+        12101: 'Infused Flames',
+        12201: 'Infused Frost',
+        12301: 'Infused Lightning',
+        12401: 'Infused Storms',
+        12501: 'Infused Divinity',
+        12601: 'Infused Darkness',
+      }
+      const d = $doc(await $ajax.insert(`?s=Character&ss=eq`));
+      const eqps = {};
+      Array.from(gE('.eqb', 'all', d)).forEach(eqb=> {
+        const slot = eqb.getAttribute('onclick').match(`equip_slot=(.*)'`)[1] * 1;
+        const id = gE('div[onmouseover*="equips.set"]', eqb)?.id.replace('e', '') * 1;
+        eqps[id]=slot;
+      });
+      const doc = $doc(await $ajax.insert(url));
+      const eqpdoc = await $ajax.insert(gE('#mainpane>script[src]', doc).src)
+      const json = JSON.parse(eqpdoc.match(/{.*}/)[0]);
+      await Promise.all(Array.from(gE('.eqp>[id]', 'all', doc)).map(e => (async eqp => { try {
+        const id = eqp.id.match(/\d+/)[0];
+        const slot = eqps[id];
+        const data = json[id];
+        if (!enchant[slot]) return;
+        const enchanted = {};
+        Array.from(gE('#ee>span', 'all', $doc(await $ajax.insert(`equip/${id}/${data.k}`))))?.forEach(s=> {
+          const info = s.innerHTML.match(/(.*) \[(\d+)m\]/);
+          enchanted[enchant_data[info[1]].item] = info[2]*1
+          return;
+        });
+        let type = data.d.match(`<div class=\"eq e.\"><div>.* *(Armor|Weapon|Shield|Staff).*</div><div>Condition`)[1];
+        type = (type === 'Shield') ? 'Armor' : (type === 'Staff' ? 'Weapon' : type)
+        return await Promise.all(Object.keys(enchant[slot]).map(i => (async item => { try {
+          const threshold = enchant[slot][item];
+          const current = enchanted[item] ?? 0;
+          const enc = enchant_data[item2Enchant[item]][type];
+          if (!enc) return;
+          if (current && current >= threshold) return;
+          const failed = $doc(await $ajax.insert(`?s=Forge&ss=en`, `select_item=${id}&enchantment=${enc}`))?.innerText;
+          if (failed) {
+            console.error(failed, ':', data.t, ':', enc, '=', current, '>?', threshold, '=', current >= threshold);
+          }
+        } catch (err) { console.error(err) }; })(i)));
+      } catch (err) { console.error(err) }; })(e)));
+    } catch (err) { console.error(err) }; return false; }
+
     async function asyncCheckRepair(isGrindFestStandalone) { try {
       const option = g('option');
       if (!option.repair) {
@@ -3659,7 +3939,8 @@
       if (hvVersion < 91) {
         const url = `?s=Forge&ss=re`;
         const doc = $doc(await $ajax.insert(url));
-        const json = JSON.parse((await $ajax.insert(gE('#mainpane>script[src]', doc).src)).match(/{.*}/)[0]);
+        const eqpdoc = await $ajax.insert(gE('#mainpane>script[src]', doc).src)
+        const json = JSON.parse(eqpdoc.match(/{.*}/)[0]);
         eqps = await Promise.all(Array.from(gE('.eqp>[id]', 'all', doc)).map(async eqp => { try {
           const id = eqp.id.match(/\d+/)[0];
           const condition = 1 * json[id].d.match(/Condition: \d+ \/ \d+ \((\d+)%\)/)[1];
@@ -3668,7 +3949,7 @@
           }
           const after = $doc(await $ajax.insert(url, `select_item=${id}`));
           return gE('.messagebox_error', )?.innerText ? undefined : json[id].t;
-        } catch (e) { console.error(e) } }));
+        } catch (err) { console.error(err) } }));
       } else {
         const url = `?s=Bazaar&ss=am&screen=repair&filter=equipped`;
         const doc = $doc(await $ajax.insert(url));
@@ -3685,7 +3966,7 @@
           }
           const after = $doc(await $ajax.insert(url, `&eqids[]=${id}&postoken=${token}&replace_charms=on`));
           return gE(`#e${id}`, after) ? gE('.lc', eqp).childNodes[2].textContent : undefined;
-        } catch (e) { console.error(e) } }));
+        } catch (err) { console.error(err) } }));
       }
       eqps = eqps.filter(e=>e);
       if (eqps.length) {
@@ -3706,7 +3987,7 @@
       }
       $async.logSwitch(arguments);
       return !eqps.length;
-    } catch (e) { console.error(e) }; return false; }
+    } catch (err) { console.error(err) }; return false; }
 
     async function asyncCheckEquStorage() { try {
       const option = g('option');
@@ -3735,7 +4016,7 @@
       }
       $async.logSwitch(arguments);
       return count * 1 <= option.equStorageValue;
-    } catch (e) { console.error(e) }; return false; }
+    } catch (err) { console.error(err) }; return false; }
 
     async function checkBattleReady(method, condition = {}) {
       await waitPause();
@@ -3892,7 +4173,7 @@
       setTimeout(() => updateEncounter(engage), interval);
       // $async.logSwitch(arguments);
       return engage && cd <= waitCD;
-    } catch (e) { console.error(e) } }
+    } catch (err) { console.error(err) } }
 
     async function onEncounter() { try {
       const option = g('option');
@@ -3911,9 +4192,10 @@
       if (!window.top.location.href.endsWith(`?s=Battle`)) {
         setValue('lastUrl', window.top.location.href);
       }
+      if (option.enchantEncounter) await asyncCheckEnchant();
       $ajax.openNoFetch('https://e-hentai.org/news.php?encounter');
       $async.logSwitchStrict('updateEncounter', false);
-    } catch (e) { console.error(e) } }
+    } catch (err) { console.error(err) } }
 
     async function startUpdateArena(idleStart, startIdleArena = true) { try {
       $async.logSwitchStrict('startUpdateArena', true);
@@ -3931,7 +4213,7 @@
       const last = getValue('arena', true)?.date ?? now;
       setTimeout(startUpdateArena, Math.max(0, Math.floor(last / _1d + 1) * _1d - now));
       $async.logSwitchStrict('startUpdateArena', false);
-    } catch (e) { console.error(e) } }
+    } catch (err) { console.error(err) } }
 
     async function updateArena(forceUpdateToken = false) { try {
       await waitPause();
@@ -3940,12 +4222,12 @@
       const isToday = arena.date && time(2, arena.date) === time(2);
       if (forceUpdateToken || !isToday || !arena.isOptionUpdated) {
         arena.token = {};
-        await Promise.all(['gr', 'ar', 'rb'].map(async site => {
+        await Promise.all(['gr', 'ar', 'rb'].map(s => (async site => {
           try {
             const doc = $doc(await $ajax.insert(`?s=Battle&ss=${site}`));
             getStartBattleButtons(doc).forEach(btn => { arena.token[btn.id] = btn.token ?? null; });
-          } catch (e) { console.error(e) }
-        }));
+          } catch (err) { console.error(err) }
+        })(s)));
       }
       if (!isToday) {
         arena.date = time(0);
@@ -3959,7 +4241,7 @@
       arena.arrayDone = arena.arrayDone.filter(id => id === 'gr' || !Object.keys(arena.token).includes(id.toString()));
       $async.logSwitch(arguments);
       return setValue('arena', arena);
-    } catch (e) { console.error(e) } }
+    } catch (err) { console.error(err) } }
 
     async function idleArena() { try { // 闲置竞技场
       let id;
@@ -4054,10 +4336,10 @@
       }
       await waitPause();
       writeArenaStart();
-      let aa;
-      while(option.checkURLBeforeNewRound && !(aa=await $ajax.insert(option.checkURLBeforeNewRound))) {
+      while(option.checkURLBeforeNewRound && !(await $ajax.insert(option.checkURLBeforeNewRound))) {
         await pauseAsync(option.checkURLBeforeNewRoundRetry);
       }
+      await asyncCheckEnchant(id === 'gr');
       while(!(await $ajax.insert(query, `initid=${id === 'gr' ? 1 : id}${token}`))) {
         await pauseAsync(option.checkURLBeforeNewRoundRetry);
       }
@@ -4071,7 +4353,7 @@
         goto();
       }
       $async.logSwitch(arguments);
-    } catch (e) { console.error(e) } }
+    } catch (err) { console.error(err) } }
 
     // 战斗中//
     function onBattleRound() { // 主程序
@@ -4436,7 +4718,7 @@
       async function onBattleUnresponsive(method) { try {
         await waitPause();
         method();
-      } catch (e) { console.error(e) } }
+      } catch (err) { console.error(err) } }
 
       let obj, a, cost;
       const eventStart = cE('a');
@@ -4561,9 +4843,9 @@
             onStepInDone();
             onBattleRound();
             // $async.logSwitch(arguments);
-          } catch (e) { e => console.error(e) } }
+          } catch (err) { console.error(err) } }
           // $async.logSwitch(arguments);
-        } catch (e) { console.error(e) } }
+        } catch (err) { console.error(err) } }
       };
       gE('body').appendChild(eventEnd);
 
@@ -6135,8 +6417,8 @@
       }
       setValue('stats', stats);
     }
-  } catch (e) {
-    console.error(e);
-    document.title = e;
+  } catch (err) {
+    console.error(err);
+    document.title = err;
   }
 })();
