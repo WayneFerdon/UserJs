@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.169
+// @version      2.90.170
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -29,12 +29,12 @@
 // @run-at       document-end
 // ==/UserScript==
 
-
 (function () {
   try {
     'use strict';
     const standalone = ['option', 'arena', 'lastUrl', 'ability', 'stamina', 'drop', 'stats', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS', 'onriddle'];
-    const local = ['stamina', 'drop', 'stats', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS', 'onriddle'];
+    const local = ['stamina', 'drop', 'stats', 'dropOld', 'statsOld', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS', 'onriddle'];
+    const portable = ['drop', 'stats', 'dropOld', 'statsOld', 'monsterDB', 'monsterMID']
     const sharable = ['option'];
     const excludeStandalone = { 'option': ['optionStandalone', 'version', 'lang'] };
     const location = window.location.href;
@@ -676,9 +676,12 @@
         return false;
       }
       loadOption();
+      writePortables();
+
       const option = g('option');
       g('lang', option.lang || '0');
       addStyle();
+
       if (option.version.substr(0, 4) !== g('version').substr(0, 4)) {
         gE('.hvAAButton').click();
         if (_alert(1, 'hvAutoAttack版本更新，请重新设置\n强烈推荐【重置设置】后再设置。\n是否查看更新说明？', 'hvAutoAttack版本更新，請重新設置\n強烈推薦【重置設置】後再設置。\n是否查看更新說明？', 'hvAutoAttack version update, please reset\nIt\'s recommended to reset all configuration.\nDo you want to read the changelog?')) {
@@ -693,6 +696,14 @@
         return false;
       }
       return true;
+    }
+
+    function writePortables() {
+      const option = g('option');
+      for (const key of portable) {
+        if (!(Object.keys(option.portable).includes)) continue;
+        setValue(key, getValue(key), true);
+      }
     }
 
     function onRiddle() {
@@ -739,7 +750,7 @@
       if (getValue('onriddle', true)) {
         console.log('onBattle clean onriddle')
         window.history.replaceState(null, '', window.location.href);
-        delValue('onriddle', false)
+        delValue('onriddle')
       }
 
       const box2 = gE('#battle_main').appendChild(cE('div'));
@@ -1129,8 +1140,8 @@
       }
     }
 
-    function setValue(key, value) { // 储存数据
-      const isLocalStorage = local.includes(key);
+    function setValue(key, value, portable=false) { // 储存数据
+      const isLocalStorage = local.includes(key) && !portable;
       if (!standalone.includes(key)) {
         setLocal(key, value, isLocalStorage);
         return value;
@@ -1200,8 +1211,8 @@
       GM_deleteValue(key);
     }
 
-    function delValue(key, isLocalStorage) { // 删除数据
-      isLocalStorage ||= local.includes(key);
+    function delValue(key, portable=false) { // 删除数据
+      const isLocalStorage = portable ? false : local.includes(key);
       if (standalone.includes(key)) {
         key = `${current}_${key}`;
       }
@@ -1217,7 +1228,7 @@
         1: ['battle', 'battleCode'],
       }
       for (let item of itemMap[key]) {
-        delValue(item, isLocalStorage);
+        delValue(item, portable);
       }
     }
 
@@ -2000,7 +2011,7 @@
         '  <div><b>1. <l0>初始血量权重=Log10(目标血量/场上最低血量)</l0><l1>初始血量權重=Log10(目標血量/場上最低血量)</l1><l2>BaseHpWeight = BaseHpRatio*Log10(TargetHP/MaxHPOnField)</l2></b><br>',
         '    <l0>初始权重系数(>0:低血量优先;<0:高血量优先)</l0><l1>初始權重係數(>0:低血量優先;<0:高血量優先)</l1><l2>BaseHpRatio(>0:low hp first;<0:high hp first)</l2><input class="hvAANumber" name="baseHpRatio" placeholder="1" type="number"><br>',
         '    <l0>不可命中目标的权重</l0><l1>不可名中目標的權重</l1><l2>Unreachable Target Weight</l2><input class="hvAANumber" name="unreachableWeight" placeholder="1000" type="number"><br>',
-        '    <input id="cacheMonsterHP" type="checkbox"><label for="cacheMonsterHP"><l0>启用HP缓存</l0><l1>啟用HP緩存</l1><l2>Use HP Cache</l2></label><button class="clearMonsterHPCache"><l0>清空缓存</l0><l1>清空緩存</l1><l2>Clear HP Cache</l2></button></div>',
+        '    <input id="cacheMonsterHP" type="checkbox"><label for="cacheMonsterHP"><l0>启用HP缓存</l0><l1>啟用HP緩存</l1><l2>Use HP Cache</l2></label><button class="clearMonsterHPCache"><l0>清空缓存</l0><l1>清空緩存</l1><l2>Clear HP Cache</l2></button><input id="portable_monsterDB" type="checkbox"><label for="portable_monsterDB"><l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2></label><input id="portable_monsterMID" type="checkbox" style="display:none"></div>',
         '  <div><b>2. <l0>初始权重与下述各Buff权重相加</l0><l1>初始權重與下述各Buff權重相加</l1><l2>PW(X) = BaseHpWeight + Accumulated_Weight_of_Deprecating_Spells_In_Effect(X)</l2></b><br>',
         '    <div class="hvAATable" style="display:grid; grid-template-columns:repeat(3, 1fr);">',
         '      <div><input class="hvAANumber" name="weight_We" placeholder="12" type="number"> <l0>虚弱(We)</l0><l1>虛弱(We)</l1><l2>Weaken</l2></div>',
@@ -2070,13 +2081,13 @@
         '  <div>PS. <l0>如果你对各Buff权重有特别见解，请务必</l0><l1>如果你對各Buff權重有特別見解，請務必</l1><l2>If you have any suggestions, please </l2><a class="hvAAGoto" name="hvAATab-Feedback"><l0>告诉我</l0><l1>告訴我</l1><l2>let me know</l2></a>.<br><l0>参考公式为：</l0><l1>參考公式為：</l1><l2>Basic Weight Calculation as: </l2>PW(X) = Log10(<br>  (HP/MaxHPOnField/(1+CentralAttackDamageExtraRatio)<br>  *[HPActualEffectivenessRate:∏(1-debuff),debuff=Im|PA|Bl|Co|Dr|MN|St]<br>  /[DMGActualEffectivenessRate:∏(1-debuff),debuff=We|Bl|Slo|Si|Sl|Co|Dr|MN|St])<br>)</div>',
         '</div>',
 
-        '<div class="hvAATab hvAACenter" id="hvAATab-Drop">',
-        '  <span class="hvAATitle"><l0>掉落监测</l0><l1>掉落監測</l1><l2>Drops Tracking</l2></span><button class="reDropMonitor"><l01>重置</l01><l2>Reset</l2></button>',
-        '  <div><l0>记录装备的最低品质</l0><l1>記錄裝備的最低品質</l1><l2>Minimum drop quality</l2>: <select name="dropQuality"><option value="0">Crude</option><option value="1">Fair</option><option value="2">Average</option><option value="3">Superior</option><option value="4">Exquisite</option><option value="5">Magnificent</option><option value="6">Legendary</option><option value="7">Peerless</option></select></div>',
-        '  <table></table></div>',
+        '<div class="hvAATab" id="hvAATab-Drop">',
+        '  <div><button class="reDropMonitor"><l0>重置掉落监测</l0><l1>重置掉落監測</l1><l2>Reset Drops Tracking</l2></button><input id="portable_drop" type="checkbox"><label for="portable_drop"><l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2></label><input id="portable_dropOld" type="checkbox" style="display:none"></div>',
+        '  <div class="hvAACenter"><l0>记录装备的最低品质</l0><l1>記錄裝備的最低品質</l1><l2>Minimum drop quality</l2>: <select name="dropQuality"><option value="0">Crude</option><option value="1">Fair</option><option value="2">Average</option><option value="3">Superior</option><option value="4">Exquisite</option><option value="5">Magnificent</option><option value="6">Legendary</option><option value="7">Peerless</option></select></div>',
+        '  <table class="hvAACenter"></table></div>',
 
         '<div class="hvAATab" id="hvAATab-Usage">',
-        '  <button class="reRecordUsage"><l0>重置数据记录</l0><l1>重置數據記錄</l1><l2>Reset Usage Tracking</l2></button><br>',
+        '  <div><button class="reRecordUsage"><l0>重置数据记录</l0><l1>重置數據記錄</l1><l2>Reset Usage Tracking</l2></button><input id="portable_stats" type="checkbox"><label for="portable_stats"><l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2></label><input id="portable_statsOld" type="checkbox" style="display:none"></div>',
         '  <div><b><l0>自身</l0><l1>自身</l1><l2>Self</l2></b>',
         '  <div class="hvAATable" style="display: grid; grid-template-columns: repeat(5, 1fr);">' ,
         '    <div><input id="record_turn" type="checkbox"><label for="record_turn"><l0></l0><l1></l1><l2></l2>Turns</label></div>',
@@ -2139,7 +2150,7 @@
         '  <button class="hvAAReset"><l0>重置设置</l0><l1>重置設置</l1><l2>Reset</l2></button><button class="hvAAApply"><l0>应用</l0><l1>應用</l1><l2>Apply</l2></button><button class="hvAACancel"><l01>取消</l01><l2>Cancel</l2></button>',
         '</div>',
       ].join('').replace(/{{(.*?)}}/g, '<div class="customize" name="$1"></div>');
-      
+
       gE('#hvAATab-Main').style.zIndex = 1;
       optionBox.style.display = 'none';
       gE('select[name="lang"]').value = g('lang');
@@ -2368,8 +2379,8 @@
       };
 
       const optionBox2Order = (ids, valueFrom=undefined, index=0) => function (e) {
-        if (Array.isArray(ids)) { 
-          for (const i in ids) { 
+        if (Array.isArray(ids)) {
+          for (const i in ids) {
             optionBox2Order(ids[i], valueFrom, i)(e);
           }
           return;
@@ -2398,6 +2409,7 @@
         '.hvAAArenaLevels': ['Name="idleArenaLevels"', 'name="idleArenaValue"'],
         // 标签页-恢复技能
         '.itemOrder': ['name="itemOrderName"', 'name="itemOrderValue"'],
+
         // 标签页-引导技能
         '.channelSkill2Order': ['name="channelSkill2OrderName"', 'name="channelSkill2OrderValue"'],
         // 标签页-BUFF技能
@@ -2411,10 +2423,10 @@
         '.infusionOrder': 'name = "infusionOrderName"',
       }
       const isGetOrderFromId = ['.buffSkillOrder', '.debuffSkillOrder', '.debuffSkillOrderAll', '.skillOrder', '.infusionOrder'];
-      for (let ui in orderValues) { 
+      for (let ui in orderValues) {
         gE(ui, optionBox).onclick = optionBox2Order(orderValues[ui], isGetOrderFromId.includes(ui) ? getOrderFromId : undefined);
       }
-        
+
       // 标签页-警报
       gE('input[name="audio_Text"]', optionBox).onchange = function () {
         if (this.value === '') {
@@ -2434,23 +2446,38 @@
       };
       // 标签页-攻击规则
       gE('.clearMonsterHPCache', optionBox).onclick = function () {
-        delValue('monsterDB');
-        delValue('monsterMID');
+        delValue('monsterDB', true);
+        delValue('monsterDB', false);
+        delValue('monsterMID', true);
+        delValue('monsterMID', false);
       };
+      gE('#portable_monsterDB', optionBox).onclick = function () {
+        gE('#portable_monsterMID', optionBox).checked = this.checked;
+      }
       // 标签页-掉落监测
       gE('.reDropMonitor', optionBox).onclick = function () {
         if (_alert(1, '是否重置', '是否重置', 'Whether to reset')) {
-          delValue('drop');
-          delValue('dropOld');
+          delValue('drop', true);
+          delValue('drop', false);
+          delValue('dropOld', true);
+          delValue('dropOld', false);
         }
       };
+      gE('#portable_drop', optionBox).onclick = function () {
+        gE('#portable_dropOld', optionBox).checked = this.checked;
+      }
       // 标签页-数据记录
       gE('.reRecordUsage', optionBox).onclick = function () {
         if (_alert(1, '是否重置', '是否重置', 'Whether to reset')) {
-          delValue('stats');
-          delValue('statsOld');
+          delValue('stats', true);
+          delValue('stats', false);
+          delValue('statsOld', true);
+          delValue('statsOld', false);
         }
       };
+      gE('#portable_stats', optionBox).onclick = function () {
+        gE('#portable_statsOld', optionBox).checked = this.checked;
+      }
       // 标签页-关于本脚本
       gE('.hvAAFix', optionBox).onclick = function () {
         gE('.hvAADebug[name^="round"]', 'all', optionBox).forEach((input) => {
@@ -2617,6 +2644,11 @@
         }
         setValue('option', _option);
         optionBox.style.display = 'none';
+        // 清除不再需要的portable数据
+        for (const key of portable) {
+          if (_option.portable && Object.keys(_option.portable).includes(key)) continue;
+          delValue(key, true, true);
+        }
         // 更改设置后实时刷新竞技场数据
         const arenaNew = _option.idleArenaValue;
         if (arenaNew === arenaPrev) {
@@ -3482,11 +3514,8 @@
       for (let e of current) {
         dict[e.url ?? `newDawn`] = e;
       }
-      try {
-        // if is latest version data
-        for (let e of encounter) { }
-      } catch {
-        // if old versions
+      // if is not latest version data (old versions)
+      if (!Array.isArray(encounter)) {
         const last = encounter.lastTime;
         const times = encounter.time;
         encounter = [];
@@ -3764,80 +3793,80 @@
 
     async function asyncCheckEnchant(isGrindFest) {
       try {
-      if (hvVersion >= 91) return true;
-      $async.logSwitch(arguments);
-      const option = g('option');
-      const [isEnchant, thresholds] = isGrindFest && option.checkEnchantGF ? [option.isEnchantGF, option.enchantGF] : [option.isEnchant, option.enchant];
-      if (!isEnchant) return true;
-      await waitPause();
+        if (hvVersion >= 91) return true;
+        $async.logSwitch(arguments);
+        const option = g('option');
+        const [isEnchant, thresholds] = isGrindFest && option.checkEnchantGF ? [option.isEnchantGF, option.enchantGF] : [option.isEnchant, option.enchant];
+        if (!isEnchant) return true;
+        await waitPause();
 
-      const enchant = {};
-      Object.keys(isEnchant).forEach(id => {
-        if (!isEnchant[id]) return;
-        const item = Math.floor(id/100);
-        const slot = id % 100;
-        (enchant[slot] ??= {})[item] = thresholds[id];
-      });
-
-      const url = `?s=Forge&ss=re`;
-      const enchant_data= {
-        "Voidseeker's Blessing" : { Weapon: 'vseek', item:61001, }, // 'Voidseeker Shard'
-        'Suffused Aether' : { Weapon: 'ether', item:61101, }, // 'Aether Shard'
-        'Featherweight Charm' : { Weapon: 'feath', Armor: 'feath', item:61501, }, // 'Featherweight Shard'
-        'Infused Flames' : { Weapon: 'sfire', Armor: 'pfire', item:12101, }, // 'Infusion of Flames'
-        'Infused Frost' : { Weapon: 'scold', Armor: 'pcold', item:12201, }, // 'Infusion of Frost'
-        'Infused Lightning' : { Weapon: 'selec', Armor: 'pelec', item:12301, }, // 'Infusion of Lightning'
-        'Infused Storms' : { Weapon: 'swind', Armor: 'pwind', item:12401, }, // 'Infusion of Storms'
-        'Infused Divinity' : { Weapon: 'sholy', Armor: 'pholy', item:12501, }, // 'Infusion of Divinity'
-        'Infused Darkness' : { Weapon: 'sdark', Armor: 'pdark', item:12601, }, // 'Infusion of Darkness'
-      }
-      const item2Enchant = {
-        61001: "Voidseeker's Blessing",
-        61101: 'Suffused Aether',
-        61501: 'Featherweight Charm',
-        12101: 'Infused Flames',
-        12201: 'Infused Frost',
-        12301: 'Infused Lightning',
-        12401: 'Infused Storms',
-        12501: 'Infused Divinity',
-        12601: 'Infused Darkness',
-      }
-      const d = $doc(await $ajax.insert(`?s=Character&ss=eq`));
-      const eqps = {};
-      Array.from(gE('.eqb', 'all', d)).forEach(eqb=> {
-        const slot = eqb.getAttribute('onclick').match(`equip_slot=(.*)'`)[1] * 1;
-        const id = gE('div[onmouseover*="equips.set"]', eqb)?.id.replace('e', '') * 1;
-        eqps[id]=slot;
-      });
-      const doc = $doc(await $ajax.insert(url));
-      const eqpdoc = await $ajax.insert(gE('#mainpane>script[src]', doc).src)
-      const json = JSON.parse(eqpdoc.match(/{.*}/)[0]);
-      await Promise.all(Array.from(gE('.eqp>[id]', 'all', doc)).map(e => (async eqp => { try {
-        const id = eqp.id.match(/\d+/)[0];
-        const slot = eqps[id];
-        const data = json[id];
-        if (!enchant[slot]) return;
-        const enchanted = {};
-        Array.from(gE('#ee>span', 'all', $doc(await $ajax.insert(`equip/${id}/${data.k}`))))?.forEach(s=> {
-          const info = s.innerHTML.match(/(.*) \[(\d+)m\]/);
-          enchanted[enchant_data[info[1]].item] = info[2]*1
-          return;
+        const enchant = {};
+        Object.keys(isEnchant).forEach(id => {
+          if (!isEnchant[id]) return;
+          const item = Math.floor(id/100);
+          const slot = id % 100;
+          (enchant[slot] ??= {})[item] = thresholds[id];
         });
-        let type = data.d.match(`<div class=\"eq e.\"><div>.* *(Armor|Weapon|Shield|Staff).*</div><div>Condition`)[1];
-        type = (type === 'Shield') ? 'Armor' : (type === 'Staff' ? 'Weapon' : type)
-        return await Promise.all(Object.keys(enchant[slot]).map(i => (async item => { try {
-          const threshold = enchant[slot][item];
-          const current = enchanted[item] ?? 0;
-          const enc = enchant_data[item2Enchant[item]][type];
-          if (!enc) return;
-          if (current && current >= threshold) return;
-          const failed = $doc(await $ajax.insert(`?s=Forge&ss=en`, `select_item=${id}&enchantment=${enc}`))?.innerText;
-          if (failed) {
-            console.error(failed, ':', data.t, ':', enc, '=', current, '>?', threshold, '=', current >= threshold);
-          }
-        } catch (err) { console.error(err) }; })(i)));
-      } catch (err) { console.error(err) }; })(e)));
-    } catch (err) { console.error(err) }; return false; }
+
+        const url = `?s=Forge&ss=re`;
+        const enchant_data= {
+          "Voidseeker's Blessing" : { Weapon: 'vseek', item:61001, }, // 'Voidseeker Shard'
+          'Suffused Aether' : { Weapon: 'ether', item:61101, }, // 'Aether Shard'
+          'Featherweight Charm' : { Weapon: 'feath', Armor: 'feath', item:61501, }, // 'Featherweight Shard'
+          'Infused Flames' : { Weapon: 'sfire', Armor: 'pfire', item:12101, }, // 'Infusion of Flames'
+          'Infused Frost' : { Weapon: 'scold', Armor: 'pcold', item:12201, }, // 'Infusion of Frost'
+          'Infused Lightning' : { Weapon: 'selec', Armor: 'pelec', item:12301, }, // 'Infusion of Lightning'
+          'Infused Storms' : { Weapon: 'swind', Armor: 'pwind', item:12401, }, // 'Infusion of Storms'
+          'Infused Divinity' : { Weapon: 'sholy', Armor: 'pholy', item:12501, }, // 'Infusion of Divinity'
+          'Infused Darkness' : { Weapon: 'sdark', Armor: 'pdark', item:12601, }, // 'Infusion of Darkness'
+        }
+        const item2Enchant = {
+          61001: "Voidseeker's Blessing",
+          61101: 'Suffused Aether',
+          61501: 'Featherweight Charm',
+          12101: 'Infused Flames',
+          12201: 'Infused Frost',
+          12301: 'Infused Lightning',
+          12401: 'Infused Storms',
+          12501: 'Infused Divinity',
+          12601: 'Infused Darkness',
+        }
+        const d = $doc(await $ajax.insert(`?s=Character&ss=eq`));
+        const eqps = {};
+        Array.from(gE('.eqb', 'all', d)).forEach(eqb=> {
+          const slot = eqb.getAttribute('onclick').match(`equip_slot=(.*)'`)[1] * 1;
+          const id = gE('div[onmouseover*="equips.set"]', eqb)?.id.replace('e', '') * 1;
+          eqps[id]=slot;
+        });
+        const doc = $doc(await $ajax.insert(url));
+        const eqpdoc = await $ajax.insert(gE('#mainpane>script[src]', doc).src)
+        const json = JSON.parse(eqpdoc.match(/{.*}/)[0]);
+        await Promise.all(Array.from(gE('.eqp>[id]', 'all', doc)).map(e => (async eqp => { try {
+          const id = eqp.id.match(/\d+/)[0];
+          const slot = eqps[id];
+          const data = json[id];
+          if (!enchant[slot]) return;
+          const enchanted = {};
+          Array.from(gE('#ee>span', 'all', $doc(await $ajax.insert(`equip/${id}/${data.k}`))))?.forEach(s=> {
+            const info = s.innerHTML.match(/(.*) \[(\d+)m\]/);
+            enchanted[enchant_data[info[1]].item] = info[2]*1
+            return;
+          });
+          let type = data.d.match(`<div class=\"eq e.\"><div>.* *(Armor|Weapon|Shield|Staff).*</div><div>Condition`)[1];
+          type = (type === 'Shield') ? 'Armor' : (type === 'Staff' ? 'Weapon' : type)
+          return await Promise.all(Object.keys(enchant[slot]).map(i => (async item => { try {
+            const threshold = enchant[slot][item];
+            const current = enchanted[item] ?? 0;
+            const enc = enchant_data[item2Enchant[item]][type];
+            if (!enc) return;
+            if (current && current >= threshold) return;
+            const failed = $doc(await $ajax.insert(`?s=Forge&ss=en`, `select_item=${id}&enchantment=${enc}`))?.innerText;
+            if (failed) {
+              console.error(failed, ':', data.t, ':', enc, '=', current, '>?', threshold, '=', current >= threshold);
+            }
+          } catch (err) { console.error(err) }; })(i)));
+        } catch (err) { console.error(err) }; })(e)));
+      } catch (err) { console.error(err) }; return false; }
 
     async function asyncCheckRepair(isGrindFestStandalone) { try {
       const option = g('option');
@@ -5487,8 +5516,8 @@
       if (!checkCondition(option.infusionCondition)) {
         return false;
       }
-      
-      const onUse = function(status) { 
+
+      const onUse = function(status) {
         if (getPlayerBuff(infusionLib[status].img)) return false;
         const itemBtn = gE(`.bti3>div[onmouseover*="(${infusionLib[status].id})"]`);
         if (!itemBtn) return false;
@@ -5520,7 +5549,7 @@
         img: 'darkinfusion',
         name: 'Darkness',
       }];
-      
+
       if (option.infusionDefaultOnly) {
         const attackStatus = g('attackStatus');
         if (attackStatus === 0) return false;
