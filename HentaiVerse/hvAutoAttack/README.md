@@ -105,6 +105,7 @@
         ![示例](https://github.com/user-attachments/assets/b4d0c57d-fdb1-464b-88d6-107643809339)
 
     2. `_targetRank`和攻击规则给出的顺序值相同（0~9，数字越小，优先级越高）
+    3. `targetBossType`（见12.）、`targetBuffTurn`、`targetHp`、`targetMp`、`targetSp`、`targetHpDecimal`、`targetMpDecimal`、`targetSpDecimal`可使用`max/min`后缀来表示所有**存活**怪物中的最大/最小值，如：`_targetBuffTurn_max_bleed`.
 12. `targetName`、`targetBossType`: 目标怪物的名称、Boss类型。
     1. `_targetName`返回目标的名称字符串（**注意**: 字符串之间的比较会自动去除最外层的引号，且请使用下划线`_`代替空格` `，如`Yugi_Nagato`/`'Yugi_Nagato'`/`"Yugi_Nagato"`）
     2. 其中类Boss型`_targetBossType`根据 名称进行判断:
