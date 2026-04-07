@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.172
+// @version      2.90.173
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -151,9 +151,9 @@
               continue;
             }
 
-            if (/[a-zA-Z_.'"]/.test(ch)) {
+            if (/[a-zA-Z_.'",{}]/.test(ch)) {
               let varName = '';
-              while (i < expression.length && /[a-zA-Z0-9_.'"]/.test(expression[i])) {
+              while (i < expression.length && /[a-zA-Z0-9_.'",{}]/.test(expression[i])) {
                 varName += expression[i];
                 i++;
               }
@@ -172,7 +172,7 @@
           const stack = [];
           for (const token of infixTokens) {
             switch(true) {
-              case typeof token === 'number' || /[a-zA-Z_'"]/.test(token[0]):
+              case typeof token === 'number' || /[a-zA-Z_'",{}]/.test(token[0]):
                 output.push(token);
                 break;
               case token === '(':
@@ -217,7 +217,7 @@
               stack.push(token);
               continue;
             }
-            if (typeof token === 'string' && /[a-zA-Z_.'"]/.test(token[0])) {
+            if (typeof token === 'string' && /[a-zA-Z_.'",{}]/.test(token[0])) {
               let value = resolver ? resolver(token) : token;
               if (typeof value === 'string') {
                 if (value[0] !== `"` && value[0] != `'`) value = `'${value}'`;
@@ -3215,10 +3215,12 @@
           return gE('#ckey_spirit[src*="spirit_a"]') ? 1 : 0;
         },
         buffTurn(...img) {
-          return getBuffTurnFromImg(getPlayerBuff(imgArray2img(img)));
+          return getBuffTurnFromImg(getBuff(imgArray2img(img)));
         },
         targetBuffTurn(...img) {
-          const getBuffTurn = (t, i) => getBuffTurnFromImg(getMonsterBuff(getMonsterID(t), imgArray2img(i)));
+          const getBuffTurn = (t, i) => {
+            getBuffTurnFromImg(getBuff(imgArray2img(i), getMonsterID(t)));
+          };
           const first = img.shift();
           if (first === 'min') {
             return Math.min(...targets.filter(t => !t.isDead).map(t=>getBuffTurn(t, img)));
@@ -4570,15 +4572,20 @@
       return (s + 1) % 10; // case is order
     }
 
-    function getPlayerBuff(buff) {
-      return gE(`#pane_effects>img[src*="${buff}"]`);
-    }
-
     function getMonster(id) {
       return gE(`#mkey_${id % 10}`);
     }
 
-    function getMonsterBuff(id, buff) {
+    function getBuff(buff, id) {
+      if (buff.match(`^{.*}$`)) {
+        for (const b of buff.replace(/[\{\}]/g, '').split(/\,\s*/)) {
+          if (getBuff(b)) return true;
+        }
+        return false;
+      }
+      if (id === undefined) {
+        return gE(`#pane_effects>img[src*="${buff}"]`);
+      }
       return gE(`${monsterStateKeys.buffs}>img[src*="${buff}"]`, getMonster(id));
     }
 
@@ -5317,7 +5324,7 @@
           continue;
         }
         for (let j = 1; j <= scrollLib[i].mult; j++) {
-          if (getPlayerBuff(scrollLib[i][`img${j}`] + scrollFirst)) {
+          if (getBuff(scrollLib[i][`img${j}`] + scrollFirst)) {
             continue;
           }
           gE(`.bti3>div[onmouseover*="(${scrollLib[i].id})"]`).click();
@@ -5332,7 +5339,7 @@
       if (!option.channelSkillSwitch) {
         return false;
       }
-      if (!getPlayerBuff('channeling')) {
+      if (!getBuff('channeling')) {
         return false;
       }
       const skillLib = {
@@ -5383,16 +5390,16 @@
         },
 
         'Cloak of the Fallen': {
-          id: getPlayerBuff('sparklife') ? undefined : 422,
+          id: getBuff('sparklife') ? undefined : 422,
         }
       };
       if (option.channelSkill) {
         const skillPack = splitOrders(option.buffSkillOrderValue, ['SS', 'SL', 'Pr', 'Ab', 'SV', 'Re', 'Ha', 'He', 'AF']);
         for (const buff of skillPack) {
-          const current = getBuffTurnFromImg(getPlayerBuff(skillLib[buff].img));
+          const current = getBuffTurnFromImg(getBuff(skillLib[buff].img));
           const threshold = option.channelThreshold ? option.channelThreshold[buff] : 0;
           if (threshold > 0 && current >= threshold) continue;
-          if (!option.channelSkill[buff] || getPlayerBuff(skillLib[buff].img)) continue;
+          if (!option.channelSkill[buff] || getBuff(skillLib[buff].img)) continue;
           if (!isOn(skillLib[buff].id)) continue;
           gE(skillLib[buff].id).click();
           return true;
@@ -5403,7 +5410,7 @@
         for (const id of order) {
           const buff = Object.keys(skillLib).find(s => skillLib[s].id * 1 === 1 * id);
           if (buff) {
-            const current = getBuffTurnFromImg(getPlayerBuff(skillLib[buff].img));
+            const current = getBuffTurnFromImg(getBuff(skillLib[buff].img));
             const threshold = option.channelThreshold ? option.channelThreshold[buff] : 0;
             if (threshold > 0 && current > threshold) continue;
           }
@@ -5415,12 +5422,12 @@
       if (option.channelRebuff) {
         let minBuff, minTime;
         for (const buff in skillLib) {
-          let current = getBuffTurnFromImg(getPlayerBuff(skillLib[buff].img));
+          let current = getBuffTurnFromImg(getBuff(skillLib[buff].img));
           const threshold = option.channelThreshold ? option.channelThreshold[buff] : 0;
           if (threshold > 0 && current > threshold) continue;
 
           current = isNaN(current) ? 0 : current;
-          if (getPlayerBuff(skillLib[buff].img)?.src.match(/_scroll.png$/) || (minTime && current >= minTime)) {
+          if (getBuff(skillLib[buff].img)?.src.match(/_scroll.png$/) || (minTime && current >= minTime)) {
             continue;
           }
           const id = skillLib[buff].id;
@@ -5503,7 +5510,7 @@
         if (!option.buffSkill[buff]) continue;
         if (!isOn(skillLib[buff].id)) continue;
         if (!checkCondition(option[`buffSkill${buff}Condition`])) continue;
-        const current = getBuffTurnFromImg(getPlayerBuff(skillLib[buff].img));
+        const current = getBuffTurnFromImg(getBuff(skillLib[buff].img));
         const threshold = option.buffSkillThreshold ? option.buffSkillThreshold[buff] : 0;
         if (threshold >= 0 && current > threshold) continue;
         gE(skillLib[buff].id).click();
@@ -5532,7 +5539,7 @@
         },
       };
       for (i in draughtPack) {
-        if (!getPlayerBuff(draughtPack[i].img) && option.buffSkill && option.buffSkill[i] && checkCondition(option[`buffSkill${i}Condition`]) && gE(`.bti3>div[onmouseover*="(${draughtPack[i].id})"]`)) {
+        if (!getBuff(draughtPack[i].img) && option.buffSkill && option.buffSkill[i] && checkCondition(option[`buffSkill${i}Condition`]) && gE(`.bti3>div[onmouseover*="(${draughtPack[i].id})"]`)) {
           gE(`.bti3>div[onmouseover*="(${draughtPack[i].id})"]`).click();
           return true;
         }
@@ -5548,7 +5555,7 @@
       }
 
       const onUse = function(status) {
-        if (getPlayerBuff(infusionLib[status].img)) return false;
+        if (getBuff(infusionLib[status].img)) return false;
         const itemBtn = gE(`.bti3>div[onmouseover*="(${infusionLib[status].id})"]`);
         if (!itemBtn) return false;
         itemBtn.click();
@@ -5828,7 +5835,7 @@
       }
       let isDebuffed = (target, b) => {
         if (b || !exclusiveBuffs) {
-          const current = getBuffTurnFromImg(getMonsterBuff(getMonsterID(target), skillLib[b ?? buff].img));
+          const current = getBuffTurnFromImg(getBuff(skillLib[b ?? buff].img, getMonsterID(target)));
           const threshold = option.debuffSkillThreshold ? option.debuffSkillThreshold[b ?? buff] : 0;
           return threshold >= 0 && current > threshold;
         }
@@ -5973,8 +5980,8 @@
       }
 
       // 2. etherTap
-      if (option.etherTap && getMonsterBuff(getMonsterID(target), 'coalescemana')
-          && (!gE('#pane_effects>img[onmouseover*="Ether Tap (x2)"]') || getPlayerBuff(`wpn_et"][id*="effect_expire`))
+      if (option.etherTap && getBuff('coalescemana', getMonsterID(target))
+          && (!gE('#pane_effects>img[onmouseover*="Ether Tap (x2)"]') || getBuff(`wpn_et"][id*="effect_expire`))
           && checkCondition(option.etherTapCondition)) {
         return tryAttack();
       }
