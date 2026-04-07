@@ -94,7 +94,7 @@
 
   **示例2**: ManaElixir的id为11295，则`!_isCd_11295`表示不可使用，`_isCd_11295`表示可以使用
 
-10. `buffTurn`: 人物Buff剩余时间，格式`_buffTurn_img`。可使用`_scroll`限定为卷轴buff`_buffTurn_sparklife_scroll`、使用`_png`限定为非卷轴buff`_buffTurn_sparklife_png`
+10. `buffTurn`: 人物Buff剩余时间，格式`_buffTurn_img`。可使用`_scroll`限定为卷轴buff`_buffTurn_sparklife_scroll`、使用`_png`限定为非卷轴buff`_buffTurn_sparklife_png`. 可用 `{buffA,buffB,...}` 表示获取 buffA **或** buffB （**或** 括号 `{ }` 中的任意其他buff，将返回匹配成功的第一个buff），注意内部不要包含空格，例如`_buffTurn_{stun,sleep}`.
 
   **示例**: Protection的img为protection，则`_buffTurn_protection == 0`表示不存在Protection的buff，`_buffTurn_protection >= 10`表示Protection的buff至少剩余10回合
 
