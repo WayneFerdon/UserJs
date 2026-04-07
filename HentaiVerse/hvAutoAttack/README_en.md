@@ -103,6 +103,7 @@ Four drop down lists and one button are visible in the box
         ![example](https://github.com/user-attachments/assets/da181eac-e634-41ad-97a7-ff59a7b28b6d)
     
     2. `_targetBuffTurn` returns the value as same as the ranked order given by Attack Rule (0~9, smaller number as higher priority)
+    3. `targetBossType`(see 12.) /`targetBuffTurn`/`targetHp`/`targetMp`/`targetSp`/`targetHpDecimal`/`targetMpDecimal`/`targetSpDecimal` can get maxim/minimum value from all alive monsters by using suffix `max/min` such as: `_targetBuffTurn_max_bleed`.
 12. `targetName`/`targetBossType`: name and boss type for target monster
     1. `_targetName` returns a string of the target name (**Note**: Comparison between strings will automatically remove the outermost quotation marks, meanwhile **please replace space` ` with underline`_`**, such as `Yugi_Nagato`/`'Yugi_Nagato'`/`"Yugi_Nagato"`)
     2. `_targetBossType` is determined by name:
