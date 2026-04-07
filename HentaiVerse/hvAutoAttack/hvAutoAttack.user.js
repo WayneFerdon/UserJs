@@ -4578,7 +4578,7 @@
 
     function getBuff(buff, id) {
       if (buff.match(`^{.*}$`)) {
-        for (const b of buff.replace(/[\{\}]/g, '').split(/\,\s*/)) {
+        for (const b of buff.replace(/[\{\}\s]/g, '').split(',')) {
           if (getBuff(b)) return true;
         }
         return false;
