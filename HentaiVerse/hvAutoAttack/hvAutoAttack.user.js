@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.171
+// @version      2.90.172
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -3090,9 +3090,12 @@
         if (!isNaN(str * 1)) { // 数字直接返回
           return str * 1;
         }
-        const paramList = str.split('.');
+        const paramList = str.replace(/[^\d](\.)/g, (match, ...p) => {
+          return match.replace('.', '_'); // 将不是数字小数点的 . 转为 _ 以便进行参数分割
+        }).split('_');
         let result, isInData;
-        for (let key of paramList) {
+        while (paramList.length) {
+          const key = paramList.shift();
           if (typeof result === 'undefined') { // 获取顶层数据
             result = g('battle') ? g('battle')[key] : undefined;
             if (typeof result === 'undefined' || result === null) {
@@ -3108,7 +3111,7 @@
               result = g('option')?.[key];
             }
             if ((typeof result === 'undefined' || result === null) && func[key]) {
-              result = func[key]();
+              result = func[key](...paramList);
             }
             if (typeof result === 'undefined' || result === null) break;
             isInData = true; // 存在顶层数据
@@ -3212,66 +3215,76 @@
           return gE('#ckey_spirit[src*="spirit_a"]') ? 1 : 0;
         },
         buffTurn(...img) {
-          return getBuffTurnFromImg(getPlayerBuff(img.join('_').replace('_png', 'png')));
+          return getBuffTurnFromImg(getPlayerBuff(imgArray2img(img)));
         },
         targetBuffTurn(...img) {
-          return getBuffTurnFromImg(getMonsterBuff(getMonsterID(target), img.join('_').replace('_png', 'png')));
+          const getBuffTurn = (t, i) => getBuffTurnFromImg(getMonsterBuff(getMonsterID(t), imgArray2img(i)));
+          const first = img.shift();
+          if (first === 'min') {
+            return Math.min(...targets.filter(t => !t.isDead).map(t=>getBuffTurn(t, img)));
+          }
+          if (first === 'max') {
+            return Math.max(...targets.filter(t => !t.isDead).map(t=>getBuffTurn(t, img)));
+          }
+          img.unshift(first);
+          return getBuffTurn(target, img);
         },
         targetRank() {
           return Object.entries(g('battle').monsterStatus).find(([k, v]) => v.order === target.order)[0] * 1;
         },
-        targetName() {
-          const mon = getMonster(getMonsterID(target))
+        targetName(param) {
+          param ??= target
+          const mon = getMonster(getMonsterID(param))
           return gE(`.btm3>div>div`, mon).innerText.replace(' ', '_');
         },
-        targetBossType() {
-          const name = func.targetName();
-          switch(name.replace('_', ' ')) {
-            case 'Manbearpig':
-            case 'White Bunneh':
-            case 'Mithra':
-            case 'Dalek':
-              return 1; // BOSS
-            case 'Konata':
-            case 'Mikuru Asahina':
-            case 'Ryouko Asakura':
-            case 'Yuki Nagato':
-              return 2; // Legendaries
-            case 'Skuld':
-            case 'Urd':
-            case 'Verdandi':
-            case 'Yggdrasil':
-              return 3; // Trio and the Tree
-            case 'Rhaegal':
-            case 'Viserion':
-            case 'Drogon':
-              return 4; // A Dance with Dragons
-            case 'Real Life':
-            case 'Invisible Pink Unicorn':
-            case 'Flying Spaghetti Monster':
-              return 5; // Gods
-            default:
-              return 0;
-          }
+        targetBossType(param) {
+          return switchMaxMin(param, t=> {
+            const name = func.targetName(t);
+            switch(name.replace('_', ' ')) {
+              case 'Manbearpig':
+              case 'White Bunneh':
+              case 'Mithra':
+              case 'Dalek':
+                return 1; // BOSS
+              case 'Konata':
+              case 'Mikuru Asahina':
+              case 'Ryouko Asakura':
+              case 'Yuki Nagato':
+                return 2; // Legendaries
+              case 'Skuld':
+              case 'Urd':
+              case 'Verdandi':
+              case 'Yggdrasil':
+                return 3; // Trio and the Tree
+              case 'Rhaegal':
+              case 'Viserion':
+              case 'Drogon':
+                return 4; // A Dance with Dragons
+              case 'Real Life':
+              case 'Invisible Pink Unicorn':
+              case 'Flying Spaghetti Monster':
+                return 5; // Gods
+              default:
+                return 0;
+            }});
         },
-        targetHp() {
-          return Math.floor(func.targetHpDecimal() * 100);
+        targetHp(param) {
+          return switchMaxMin(param, t=>Math.floor(func.targetHpDecimal(t) * 100));
         },
-        targetMp() {
-          return Math.floor(func.targetMpDecimal() * 100);
+        targetMp(param) {
+          return switchMaxMin(param, t=>Math.floor(func.targetMpDecimal(t) * 100));
         },
-        targetSp() {
-          return Math.floor(func.targetSpDecimal() * 100);
-          return target.spNow;
+        targetSp(param) {
+          return switchMaxMin(param, t=>Math.floor(func.targetSpDecimal(t) * 100));
         },
-        targetHpDecimal() {
-          return target.hpNow / target.hp;
+        targetHpDecimal(param) {
+          return switchMaxMin(param, t=>t.hpNow / t.hp);
         },
-        targetMpDecimal() {
-          return target.mpNow;
+        targetMpDecimal(param) {
+          return switchMaxMin(param, t=>t.mpNow);
         },
-        targetSpDecimal() {
-          return target.spNow;
+        targetSpDecimal(param) {
+          return switchMaxMin(param, t=>t.spNow);
         },
         hpDecimal() {
           return g('hp') / 100;
@@ -3352,6 +3365,22 @@
         }
       }
       return undefined;
+
+      function switchMaxMin(param, defaultResult) {
+        param ??= target;
+        switch (param) {
+          case 'max':
+            return Math.max(...targets.filter(t => !t.isDead).map(defaultResult));
+          case 'min':
+            return Math.min(...targets.filter(t => !t.isDead).map(defaultResult));
+          default:
+            return defaultResult(param);
+        }
+      }
+
+      function imgArray2img(...img) {
+        return img.join('_').replace('_png', 'png');
+      }
     }
 
     function pauseChange() { // 暂停状态更改
