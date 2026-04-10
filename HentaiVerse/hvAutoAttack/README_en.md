@@ -179,7 +179,7 @@ The following is a schematic diagram of the circuit diagram
 
 | 1 | 2 | 3 |
 | - | - | - |
-| Channeling / channeling | Regen / regen | - |
+| Channeling / channeling | Regen / regen | Focus / focus |
 | Protection / protection | Haste / haste | Shadow Veil / shadowveil |
 | Absorb / absorb | Spark of Life / sparklife | Spirit Shield / spiritshield |
 | Arcane Focus / arcanemeditation | Heartseeker / heartseeker | Cloak of the Fallen / fallenshield |
