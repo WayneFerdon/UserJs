@@ -183,7 +183,7 @@ PS: 对于需要带下划线`_`开头的func式变量，可以省略`_`开头（
 
 | 1 | 2 | 3 |
 | - | - | - |
-| Channeling / channeling | Regen / regen | - |
+| Channeling / channeling | Regen / regen | Focus / focus |
 | Protection / protection | Haste / haste | Shadow Veil / shadowveil |
 | Absorb / absorb | Spark of Life / sparklife | Spirit Shield / spiritshield |
 | Arcane Focus / arcanemeditation | Heartseeker / heartseeker | Cloak of the Fallen / fallenshield |
