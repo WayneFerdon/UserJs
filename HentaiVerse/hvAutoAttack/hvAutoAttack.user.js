@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.178
+// @version      2.90.179
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -944,6 +944,10 @@
       option.channelSkill2Order_Cure = option.channelSkill2Order_Cu;
       option.channelSkill2Order_Cu = undefined;
       option.channelSkill2OrderValue = option.channelSkill2OrderValue?.replace('Cu', 'Cure').replace('Curere', 'Cure');
+      // 迁移2.90.178及之前的debuff警报设置
+      if (option.debuffSkillTurnAlert === true) {
+        option.debuffSkillTurnAlert = 1;
+      }
 
       const aliasDict = {
         'debuffSkillImAll': 'debuffSkillAllIm',
@@ -1883,7 +1887,8 @@
 
         '<div class="hvAATab" id="hvAATab-Debuff">',
         '  <div><l0>Debuff释放条件</l0><l1>Debuff釋放條件</l1><l2>Cast debuff spells Condition</l2>{{debuffSkillCondition}}</div>',
-        '  <div><input id="debuffSkillTurnAlert" type="checkbox"><label for="debuffSkillTurnAlert"><l0>剩余Turns低于阈值时警报</l0><l1>剩餘Turns低於閾值時警報</l1><l2>Alert when remain expire turns less than threshold</l2></label><br>',
+        '  <div>',
+        '    <l0>超出6个debuff的默认显示上限时（例如同时使用jpx时）：</l0><l1>忽略超出6個debuff的默認顯示上限時（例如同時使用jpx時）：</l1><l2>When debuff count overflows 6 as the default maximum display count (such as using jpx): </l2><select class="hvAANumber" name="debuffSkillTurnAlert"><option value="0" selected>跳过 / Skip</option><option value="1">警报 / Alert</option><option value="2">忽略 / Ignore</option></select><br>',
         '    <l0>沉眠(Sl)</l0><l1>沉眠(Sl)</l1><l2>Sleep</l2>: <input class="hvAANumber" placeholder="0" name="debuffSkillTurn_Sle" type="number">',
         '    <l0>致盲(Bl)</l0><l1>致盲(Bl)</l1><l2>Blind</l2>: <input class="hvAANumber" placeholder="0" name="debuffSkillTurn_Bl" type="number">',
         '    <l0>虚弱(We)</l0><l1>虛弱(We)</l1><l2>Weaken</l2>: <input class="hvAANumber" placeholder="0" name="debuffSkillTurn_We" type="number"><br>',
@@ -2666,6 +2671,8 @@
       gE('.hvAACancel', optionBox).onclick = function () {
         optionBox.style.display = 'none';
       };
+
+      // 加载UI数据
       const option = g('option');
       if (option) {
         let i, j, k;
@@ -5873,19 +5880,27 @@
         return false;
       }
       const imgs = gE('img', 'all', gE(monsterStateKeys.buffs, getMonster(id)));
+      const buffs = Object.fromEntries(Array.from(imgs).map(img=> [img.src.match(/\/y\/e\/(.*)\.png/)[1], img]))
       // 已有buff小于6个
       // 未开启debuff失败警告
       // buff剩余持续时间大于等于警报时间
-      if (imgs.length < 6) {
-        gE(skillLib[buff].id).click();
-        clickMonster(id);
-        return true;
-      } else if (!option.debuffSkillTurnAlert || (option.debuffSkillTurn && getBuffTurnFromImg(imgs[imgs.length - 1]) >= option.debuffSkillTurn[buff])){
-        return false;
+      if (imgs.length >= 6) {
+        switch (option.debuffSkillTurnAlert * 1) {
+          case 1:
+            if ((option.debuffSkillTurn && (getBuffTurnFromImg(buffs[skillLib[buff].img]) ?? 0) >= option.debuffSkillTurn[buff])){
+              return false;
+            }
+            _alert(0, '无法正常施放DEBUFF技能，请尝试手动打怪', '無法正常施放DEBUFF技能，請嘗試手動打怪', 'Can not cast de-skills normally, continue the script?\nPlease try attack manually.');
+            pauseChange();
+            return true;
+          case 2:
+            break;
+          default: // case 0, "" or undefined
+            return false;
+        }
       }
-
-      _alert(0, '无法正常施放DEBUFF技能，请尝试手动打怪', '無法正常施放DEBUFF技能，請嘗試手動打怪', 'Can not cast de-skills normally, continue the script?\nPlease try attack manually.');
-      pauseChange();
+      gE(skillLib[buff].id).click();
+      clickMonster(id);
       return true;
     }
 
