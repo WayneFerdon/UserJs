@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.177
+// @version      2.90.178
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -810,7 +810,7 @@
     }
 
     function goto() { // 前进
-      window.location.reload();
+      window.location.href = window.location.search ? window.location.pathname + window.location.search : window.location.href;
       setTimeout(goto, 5000);
       setTimeout(()=>{window.location.href = window.location.href}, 10000);
     }
@@ -5021,8 +5021,8 @@
       for (let i = 0; i < bugLog.length; i++) {
         if (bugLog[i].textContent.match(isBug)) {
           bugLog[i].className = 'tlbWARN';
-          setTimeout(() => { // 间隔时间以避免持续刷新
-            window.location.reload();// 刷新移除问题元素
+          setTimeout(() => { // 刷新移除问题元素，间隔时间以避免持续刷新
+            window.location.href = window.location.search ? window.location.pathname + window.location.search : window.location.href;
           }, 700);
         } else {
           bugLog[i].className = 'tlbQRA';
