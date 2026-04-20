@@ -32,7 +32,7 @@
 (function () {
   try {
     'use strict';
-    const standalone = ['option', 'arena', 'lastUrl', 'ability', 'stamina', 'drop', 'stats', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS', 'onriddle'];
+    const standalone = ['option', 'arena', 'lastUrl', 'ability', 'proficiency', 'stamina', 'drop', 'stats', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS', 'onriddle'];
     const local = ['stamina', 'drop', 'stats', 'dropOld', 'statsOld', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS', 'onriddle'];
     const portable = ['drop', 'stats', 'dropOld', 'statsOld', 'monsterDB', 'monsterMID']
     const sharable = ['option'];
@@ -43,6 +43,8 @@
     const isIsekai = location.indexOf('isekai') !== -1;
     const current = isIsekai ? 'isekai' : 'persistent';
     const other = isIsekai ? 'persistent' : 'isekai';
+
+    let ability = getValue('ability', true);
 
     const scriptVersion = '2.90';
     let hvVersion;
@@ -748,6 +750,7 @@
       if (!gE('#textlog')) {
         return false;
       }
+      updateMonsterEffects(false);
       if (getValue('onriddle', true)) {
         console.log('onBattle clean onriddle')
         window.history.replaceState(null, '', window.location.href);
@@ -1135,7 +1138,7 @@
     }
 
     function setLocal(key, value, isLocalStroage) {
-      if (JSON.stringify(getLocal(key)) === JSON.stringify(value)) {
+      if (JSON.stringify(getLocal(key, isLocalStroage)) === JSON.stringify(value)) {
         return;
       }
       if (typeof GM_setValue === 'undefined' || isLocalStroage) {
@@ -1159,7 +1162,7 @@
     }
 
     function getLocal(key, isLocalStorage, toJSON) {
-      if (typeof GM_getValue === 'undefined' || !GM_getValue(key, null)) {
+      if (isLocalStorage || typeof GM_getValue === 'undefined' || !GM_getValue(key, null)) {
         key = `hvAA-${key}`;
         return (key in window.localStorage) ? (toJSON ? JSON.parse(window.localStorage[key]) : window.localStorage[key]) : null;
       }
@@ -1183,6 +1186,7 @@
       }
       let otherWorldItem = getLocal(`${other}_${key}`, isLocalStorage);
       // 将旧的数据迁移到新的数据
+
       if (!getLocal(`${current}_${key}`, isLocalStorage)) {
         let itemExisted = getLocal(key, isLocalStorage);
         if (!itemExisted && sharable.includes(key)) {
@@ -3473,6 +3477,11 @@
       };
       const idleStart = time(0);
       await Promise.all([
+        // proficiency
+        (async () => { try {
+          ready.proficiency = await asyncSetProficiency() || true;
+          await tryEncounter();
+        } catch (err) { console.error(err) } })(),
         // ability
         (async () => { try {
           ready.ability = await asyncSetAbilityData() || true;
@@ -3521,6 +3530,7 @@
         }
         if (option.encounter) {
           switch (true) {
+            case !ready.proficiency:
             case !ready.ability:
             case !ready.stamina:
             case option.restoreStamina && !ready.item:
@@ -3571,6 +3581,28 @@
       return getToday(Object.values(dict)).sort((x, y) => x.time < y.time ? 1 : x.time > y.time ? -1 : 0);
     }
 
+    async function asyncSetProficiency() { try {
+      await waitPause();
+      $async.logSwitch(arguments);
+      const doc = $doc(await $ajax.insert('?s=Character'));
+      const proficiency = {};
+      if (hvVersion < 91) {
+        const regex = /<div><div class="fc2 far fcb"><div>(.*) <\/div><\/div><\/div>\n\t<div><div class="fc2 fal fcb"><div>&nbsp;(.*)<\/div><\/div><\/div>/;
+        const profs = gE('#stats_pane .stats_page:last-child .st2:last-child', doc).innerHTML.match( new RegExp(regex, regex.flags + 'g'));
+        profs.forEach(p=>{
+        const exec = p.match(regex);
+          proficiency[exec[2]] = exec[1]*1;
+        });
+      } else {
+        gE('#stats_scrollable table:last-child tr', 'all', doc).forEach((tr) => {
+          const exec = tr.innerHTML.match(/<td>(.*)<\/td>.*<td>(.*)<\/td>/);
+          proficiency[exec[2]] = exec[1]*1;
+        });
+      }
+      localStorage.setItem(`hvAA-${current}_proficiency`, JSON.stringify(proficiency));
+      $async.logSwitch(arguments);
+    } catch (err) { console.error(err) } }
+
     async function asyncSetAbilityData() { try {
       await waitPause();
       $async.logSwitch(arguments);
@@ -3607,11 +3639,11 @@
         // 'Heavy Prcg': { id: 3302, unlock: [0, 75, 150], level: 0 },
         // 'Heavy Slsh': { id: 3303, unlock: [0, 75, 150], level: 0 },
         // 'Heavy HP': { id: 3304, unlock: [0, 60, 110, 170, 230, 290, 350], level: 0 },
-        // 'Better Weaken': { id: 4201, unlock: [70, 100, 130, 190, 250], level: 0 },
+        'Better Weaken': { id: 4201, unlock: [70, 100, 130, 190, 250], level: 0 },
         'Faster Weaken': { id: 4202, unlock: [80, 165, 250], level: 0 },
-        // 'Better Imperil': { id: 4203, unlock: [130, 175, 230, 285, 330], level: 0 },
+        'Better Imperil': { id: 4203, unlock: [130, 175, 230, 285, 330], level: 0 },
         'Faster Imperil': { id: 4204, unlock: [140, 225, 310], level: 0 },
-        // 'Better Blind': { id: 4205, unlock: [110, 130, 160, 190, 220], level: 0 },
+        'Better Blind': { id: 4205, unlock: [110, 130, 160, 190, 220], level: 0 },
         'Faster Blind': { id: 4206, unlock: [120, 215, 275], level: 0 },
         'Mind Control': { id: 4207, unlock: [80, 130, 170], level: 0 },
         'Better Silence': { id: 4211, unlock: [120, 170, 215], level: 0 },
@@ -3655,15 +3687,16 @@
         // 'Holy Imperil': { id: 4505, unlock: [175, 225, 275, 325, 375], level: 0 },
       }
 
-      let ability = {};
+      const newAbility = {};
       gE('#ability_top div[onmouseover*="overability"]', 'all', doc).forEach((div) => {
         const exec = div.getAttribute('onmouseover').match(/overability\(\d+, '([^']+)','.+?','(?:(Not Acquired|At Maximum)|Requires <strong>Level (\d+).+?)','(Not Acquired|At Maximum|Requires <strong>Level (\d+).+?)'/);
         const name = exec[1];
         const ab = abd[name];
         if (!ab) return;
-        ability[ab.id] = exec[2] ? 0 : ab.unlock.indexOf(1*exec[3]) + 1;
+        newAbility[ab.id] = exec[2] ? 0 : ab.unlock.indexOf(1*exec[3]) + 1;
       });
-      setValue('ability', ability);
+      setValue('ability', newAbility);
+      ability = Object.keys(newAbility).length ? newAbility : ability;
       $async.logSwitch(arguments);
     } catch (err) { console.error(err) } }
 
@@ -4557,18 +4590,15 @@
     }
 
     function getBuffTurnFromImg(buff) {
-      if (!buff) {
-        return 0;
-      }
-      buff = buff.getAttribute('onmouseover').match(/\(.*,.*,(\s*)(.*?)\)$/)[2];
-      if (!buff) {
-        buff = 0;
-      } else if (buff ==='permanent') {
-        buff = Infinity;
+      let duration = buff?.getAttribute('onmouseover').match(/\(.*,.*,(\s*)(.*?)\)$/)[2];
+      if (!duration) {
+        duration = 0;
+      } else if (['permanent', '-', "'-'"].includes(duration)) {
+        duration = Infinity;
       } else {
-        buff *= 1;
+        duration *= 1;
       }
-      return buff;
+      return duration;
     }
 
     function getMonsterID(s) {
@@ -4851,6 +4881,7 @@
         b.withCredentials = true;
         b.onreadystatechange = d;
         b.onload = function () {
+          updateMonsterEffects();
           document.getElementById('eventEnd').click();
         };
         document.getElementById('eventStart').click();
@@ -4869,7 +4900,27 @@
             b.send(JSON.stringify(a));
           }, delay2 * (Math.random() * 50 + 50) / 100);
         }
-      }.toString()}`;
+      }.toString()};
+      const current = "${current}";
+      const other = "${other}";
+      const isIsekai = "${isIsekai}";
+      const isDisplay = ${g('option').isDisplayAllDebuff};
+
+      const local = ${JSON.stringify(local)};
+      const standalone = ${JSON.stringify(standalone)};
+      const excludeStandalone = ${JSON.stringify(excludeStandalone)};
+      const portable = ${JSON.stringify(portable)};
+      const sharable = ${JSON.stringify(sharable)};
+      const monsterStateKeys = ${JSON.stringify(monsterStateKeys)};
+      const ability = ${JSON.stringify(ability)};
+      const hvVersion = ${JSON.stringify(hvVersion)};
+
+      ${[updateMonsterEffects,
+         getMonsterID, getMonster, getMonster, getBuff,
+         getValue, setValue, delValue,
+         getLocal, setLocal, delLocal,
+         gE, cE].map(f=>f.toString()).join(';')};
+      `;
       gE('head').appendChild(fakeApiCall);
       const fakeApiResponse = cE('script');
       fakeApiResponse.textContent = `api_response = ${function (b) {
@@ -4893,6 +4944,607 @@
       gE('head').appendChild(fakeApiResponse);
     }
 
+    function updateMonsterEffects(isNewTurn=true) {
+      return; // Untested
+      const battle = getValue('battle', true);
+      if (!battle?.monsterStatus) return;
+
+      let regExp = {
+        locationQueries: /\w+=\w+/g,
+        playerInfo: /(\w+) Lv\.(\d+)/,
+        staminaInfo: /Stamina:\s(\d+)/,
+        spellInfo: /\('([\w\s-]+)'.*, '(\w+)', (\d+), (\d+), (\d+)\)/, //Name, iconID, MP, OC, CD
+        itemInfo: /set_infopane_item\((\d+)/,
+        battleTypeLog: /Initializing (.*) \.\.\./,
+        floor: /Floor (\d+)/,
+        round: /Round (\d+) \/ (\d+)/,
+        monster: /MID=(\d+) \(([^<>]+)\) \LV=(\d+) HP=(\d+)/g,
+        effectGain: /([\w\s-]+) gains the effect ([\w\s-]+)\./g,
+        effectExpired: /The effect ([\w\s-]+) on ([\w\s-]+) has expired\./g,
+        effectWear: /The effect ([\w\s-]+) on ([\w\s-]+) has worn off\./g,
+        effectWearAsleep: /([^<>]+) has been roused from its sleep\./g,
+        effectWearConfused: /([^<>]+) got knocked out of confuse\./g,
+        oc: /div/g,
+        ocHalf: /vcr/g,
+        /*isekai911*/
+        spellMatch: /\('(?<name>[\w\s-]+)(?:\s\(x(?<stack>\d+)\))?',\s?(?<description>.*),\s?'?(?<turns>[\w\s-]+)'?\)/,
+        /*isekai912*/
+        //battleRecorder
+        turnLog: /([^]+?)<tr><td class="tls">/,
+        //timeRecorder
+        action: />([^<>]+)<\/td><\/tr>(<tr><td class="tlb">Spirit Stance Exhausted<\/td><\/tr>)*<tr><td class="tls"/,
+        /*isekai911*/
+        action2: />([^<>]+)<\/td><\/tr><tr><td class="tlb?">[^<>]+<\/td><\/tr>(<tr><td class="tlb">Spirit Stance Exhausted<\/td><\/tr>)*<tr><td class="tls"/,
+        /*isekai912*/
+        zeroturn: /You use\s*(\w* (?:Gem|Draught|Potion|Elixir|Drink|Candy|Infusion|Scroll|Vase|Bubble))/,
+        use: /You (cast|use) ([\w\s-]+)/,
+        //combatRecorder
+        damage: /[^<>]+damage( \([^<>]+\))*(<\/td><\/tr><tr><td class="tlb">Your spirit shield absorbs \d+ |<|\.)/g,
+        damageType: /for (\d+) (\w+) damage/,
+        spiritShield: /absorbs (\d+)/,
+        crit: /(You crit| crits | blasts )/,
+        strike: /(Fire|Cold|Wind|Elec|Holy|Dark|Void) Strike hits/,
+        damagePlus: /for (\d+) damage/,
+        damagePhysicalPlus: /(Bleeding Wound|Spreading Poison)/,
+        damagePoints: /for (\d+) points of (\w+) damage/,
+        counter: />You counter/g,
+        //    dealt magical
+        magicalDealtMiss: /to connect\./g,
+        magicalDealtEvade: /evades your spell\./g,
+        magicalDealtResist50: / (?:hits|blasts) [^y][^<>]+50%/g,
+        magicalDealtResist75: / (?:hits|blasts) [^y][^<>]+75%/g,
+        magicalDealtResist90: / (?:hits|blasts) [^y][^<>]+90%/g,
+        magicalDealtResist: /resists your spell\./g,
+        //    dealt physical
+        physicalDealtMiss: /its mark\./g,
+        physicalDealtEvade: /(?: dodges your attack\.|evades your offhand attack\.)/g,
+        physicalDealtParry: /parries your attack\./g,
+        //    taken magical
+        magicalTakenEvade: / casts [^<>]+evade the attack\./g,
+        magicalTakenBlock: / casts [^<>]+block the attack\./g,
+        magicalTakenResist50: / (?:hits|blasts) y[^<>]+50%/g,
+        magicalTakenResist75: / (?:hits|blasts) y[^<>]+75%/g,
+        magicalTakenResist90: / (?:hits|blasts) y[^<>]+90%/g,
+        //    taken physical
+        physicalTakenMiss: /misses the attack against you\./g,
+        physicalTakenEvade: /(>You evade| uses [^<>]+evade the attack\.)/g,
+        physicalTakenParry: /(>You parry| uses [^<>]+parry the attack\.)/g,
+        physicalTakenBlock: /(>You block| uses [^<>]+block the attack\.)/g,
+        /*isekai911*/
+        //combatRecorder_isekai
+        damage_isekai: /[^<>]+damage/g,
+        damageTaken1_isekai: /(?<v>glances|hits|crits) you.*?(?<n>\d+).*?(?<t>\w+) damage/,
+        damageTaken2_isekai: /which (?<v>glances|hits|crits).*?(?<n>\d+).*?(?<t>\w+) damage/,
+        spiritShield_isekai: /absorbs (\d+)/,
+        damageDealt1_isekai: /(?:You|Your offhand attack|Arcane Blow) (?:(?<s>\d)x-)*(?<v>glance|hit|crit).*?(?<n>\d+).*?(?<t>\w+) damage/,
+        damageDealt2_isekai: /(?:(?<s>\d)x-)*(?<v>glanced|hit|crit|eviscerated) for (?<n>\d+) (?<t>\w+) damage/,
+        strike_isekai: /(Fire|Cold|Wind|Elec|Holy|Dark|Void) Strike hits.*?(\d+).*?(\w+) damage/,
+        explode_isekai: /explodes for (\d+) (\w+) damage/,
+        damagePlus_isekai: /for (\d+) damage/,
+        damagePhysicalPlus_isekai: /(Bleeding Wound|Spreading Poison)/,
+        damagePoints_isekai: /for (\d+) points of (\w+) damage/,
+        debuffLog_isekai: /(?:<tr><td class="tlb?">[^<>]+(?: gains the effect | partially resists the effects of your spell\.| shrugs off the effects of your spell\.)+[^<>]*<\/td><\/tr>)+<tr><td class="tl">You cast [a-zA-Z]+\.<\/td><\/tr>/,
+        debuffResist0_isekai: / gains the effect /g,
+        debuffResist1_isekai: / partially resists the effects of your spell\./g,
+        debuffResist3_isekai: / shrugs off the effects of your spell\./g,
+        counter_isekai: />You counter/g,
+        //    dealt magical
+        magicalDealtMiss_isekai: / to connect\./g,
+        magicalDealtEvade_isekai: / evades your spell\./g,
+        magicalDealtResistPartially_isekai: / resists, and was/g,
+        magicalDealtResist_isekai: / resists your spell\./g,
+        //    dealt physical
+        physicalDealtMiss_isekai: / its mark\./g,
+        physicalDealtEvade_isekai: / dodges your attack\./g,
+        physicalDealtParryPartially_isekai: / parries[^<>]+?(\d+)[^<>]+?(\w+) damage/g,
+        physicalDealtParry_isekai: / parries your attack\./g,
+        //    taken magical
+        magicalTakenMiss_isekai: /(?:casts[^<>]+, but misses the attack\.|casts[^<>]+, missing you completely\.)/g,
+        magicalTakenEvade_isekai: />You evade the attack\./g,
+        magicalTakenResistPartially_isekai: / resist the attack/g,
+        magicalTakenBlockPartially_isekai: /casts[^<>]+partially block (?:and|resist| )*the attack/g,
+        magicalTakenBlock_isekai: /(?<!partially )block (?:and|resist| )*the attack\./g,
+        //    taken physical
+        physicalTakenMiss_isekai: /(?:uses[^<>]+, but misses the attack\.|(?:vigorously whiffs at a shadow|uses[^<>]+), missing you completely\.)/g,
+        physicalTakenEvade_isekai: />You evade the attack from/g,
+        physicalTakenParryPartially_isekai: /partially parry the attack/g,
+        physicalTakenParry_isekai: /(?<!partially )parry the attack/g,
+        physicalTakenBlockPartially_isekai: /(?:(?:uses[^<>]+|>)You|you) partially block (?:and|partially|parry| )*the attack/g,
+        physicalTakenBlock_isekai: /(?<!partially )block (?:and|partially|parry| )*the attack/g,
+        /*isekai912*/
+        //revenueRecorder
+        gainExp: /gain (\d+) EXP/,
+        gainCredit: /gain (\d+) Credit/,
+        proficiencies: /\d+\.\d+ points of [^<>]+ proficiency/g,
+        proficiency: /(\d+\.\d+) points of ([^<>]+) proficiency/,
+        dropsLogs: /\S+ <span style="color:.{7}">\[[^<>]+\](<\/span><\/td><\/tr><tr><td class="tlb">A traveling)*/g,
+        drop: /(\S+) \<.*#(.{6}).*\[(.*)\](.)*/,
+        quality: /(Crude|Fair|Average|Superior|Exquisite|Magnificent|Legendary|Peerless)/,
+        credit: /(\d+) Credit/,
+        crystal: /(?:(\d+)x )?(Crystal of \w+)/,
+      }
+
+      const effectSrc = {
+        'Vital Theft': { scr: '/y/e/drainhp.png' },
+        'Ether Theft': { scr: '/y/e/drainmp.png' },
+        'Spirit Theft': { scr: '/y/e/drainsp.png' },
+
+        'Weakened': { scr: '/y/e/weaken.png' },
+        'Imperiled': { scr: '/y/e/imperil.png' },
+        'Slowed': { scr: '/y/e/slow.png' },
+        'Asleep': { scr: '/y/e/sleep.png' },
+        'Confused': { scr: '/y/e/confuse.png' },
+        'Blinded': { scr: '/y/e/blind.png' },
+        'Silenced': { scr: '/y/e/silence.png' },
+        'Magically Snared': { scr: '/y/e/magnet.png' },
+        'Immobilized': { scr: '/y/e/magnet.png' },
+        'Stunned': { scr: '/y/e/wpn_stun.png' },
+        'Penetrated Armor': { scr: '/y/e/wpn_ap.png' },
+        'Bleeding Wound': { scr: '/y/e/wpn_bleed.png' },
+        'Spreading Poison': { scr: '/y/e/poison.png' },
+        'Coalesced Mana': { scr: '/y/e/coalescemana.png' },
+
+        'Searing Skin': { scr: '/y/e/firedot.png' },
+        'Freezing Limbs': { scr: '/y/e/coldslow.png' },
+        'Turbulent Air': { scr: '/y/e/windmiss.png' },
+        'Deep Burns': { scr: '/y/e/elecweak.png' },
+        'Breached Defense': { scr: '/y/e/holybreach.png' },
+        'Blunted Attack': { scr: '/y/e/darknerf.png' },
+        'Burning Soul': { scr: '/y/e/soulfire.png' },
+        'Ripened Soul': { scr: '/y/e/ripesoul.png' },
+
+        'Fury of the Sisters': { scr: '/y/e/trio_furyofthesisters.png' },
+        'Lamentations of the Future': { scr: '/y/e/trio_skuld.png' },
+        'Screams of the Past': { scr: '/y/e/trio_urd.png' },
+        'Wails of the Present': { scr: '/y/e/trio_verdandi.png' },
+        'Absorbing Ward': { scr: '/y/e/absorb.png' },
+      };
+
+      const skillLib = {
+        // debuff skill ------------
+        We: {
+          proficiency: ['deprecating', 0, 345], // ???
+          buff: 'Weakened',
+          name: 'Weaken',
+          img: 'weaken',
+          duration: { 4201: [10,11,12,13,14,15] },
+          channeling: true,
+          description: "'The target has been weakened, making it deal less damage, and preventing it from scoring critical hits.'"
+        },
+        Im: {
+          proficiency: ['deprecating', 30, 495], // ???
+          buff: 'Imperiled',
+          name: 'Imperil',
+          img: 'imperil',
+          duration: { 4203: [10,11,12,13,14,15] },
+          channeling: true,
+          description: hvVersion < 91 ? "'The target has been imperiled, reducing physical and magical mitigation as well as elemental mitigations.'" : "'The target has been imperiled, reducing physical and magical mitigation as well as elemental mitigation.'"
+        },
+        Bl: {
+          proficiency: ['deprecating', 30, 610], // ???
+          buff: 'Blinded',
+          name: 'Blind',
+          img: 'blind',
+          duration: { 4205: [10,11,12,13,14,15] },
+          channeling: true,
+          description: "'The target has been blinded, reducing the chance of landing attacks and hitting with magic spells.'"
+        },
+        Sle: {
+          proficiency: ['deprecating', 0, 410], // ???
+          buff: 'Asleep',
+          name: 'Sleep',
+          img: 'sleep',
+          duration: { 4207: [5,6,6,7] },
+          channeling: true,
+          description: "'The target has been lulled to sleep, preventing it from taking any actions. Any attacks against this target are guaranteed to hit, but can also wake it up.'"
+        },
+        Co: {
+          proficiency: ['deprecating', 45, 660], // ???
+          buff: 'Confused',
+          name: 'Confuse',
+          img: 'confuse',
+          duration: { 4207: [10,11,12,12] },
+          channeling: true,
+          description: "'The target has been confused, making it lunge out wildly and strike friends and foes alike.'"
+        },
+        Si: {
+          proficiency: ['deprecating', 40, 600], // ???
+          buff: 'Silenced',
+          name: 'Silence',
+          img: 'silence',
+          duration: { 4211: [10,11,12,13] },
+          channeling: true,
+          description: "'The target has been silenced, preventing it from using special attacks and magic.'"
+        },
+        MN: {
+          proficiency: ['deprecating', 100, 700], // ???
+          buff: hvVersion < 91 ? 'Magically Snared' : 'Immobilized',
+          name: 'MagNet',
+          img: 'magnet',
+          duration: { 4212: [10,11,12,13,14,15] },
+          channeling: true,
+          description: hvVersion < 91 ? "'The target has been hit with a magic net, eliminating its chance to evade or resist attacks.'" : "'The target has been immobilized, eliminating its chance to evade and reducing its magic resistance.'"
+        },
+        Slo: {
+          proficiency: ['deprecating', 0, 300], // ???
+          buff: 'Slowed',
+          name: 'Slow',
+          img: 'slow',
+          duration: { 4213: [10,11,12,13,14,15] },
+          channeling: true,
+          description: `'The target has been slowed by ${[30,40,40,45,50,50][ability[4213]??0]}%, making it attack less frequently.'`
+        },
+        // debuff skills not checked ------------ ??
+        Dr: {
+          proficiency: ['deprecating', 0, 300], // ???
+          buff: 'Vital Theft',
+          name: 'Drain',
+          img: 'drainhp',
+          duration: 10,
+          channeling: true,
+          description: "'Siphons off the target\\'s life essence over time. This causes a damage-over-time effect, and returns a small amount of health to the player.'"
+        },
+        ET: {
+          proficiency: ['deprecating', 0, 300], // ???
+          name: 'Ether Theft',
+          img: 'drainmp',
+          duration: 10, // ??
+          description: "'Siphons off the target\'s mana over time. This returns a small amount of mana to the player.'"
+        },
+        ST: {
+          proficiency: ['deprecating', 0, 300], // ???
+          name: 'Spirit Theft',
+          img: 'drainsp',
+          duration: 10, // ??
+          description: "'Siphons off the target\'s spirit over time. This returns a small amount of spirit to the player.'"
+        },
+        // elem attack debuff ------------ ??
+        SS: {
+          proficiency: ['elemental', 0, 800], // ???
+          name: 'Searing Skin',
+          img: 'firedot',
+          elem: 2,
+          duration: 3,
+          channeling: true,
+          description: "'The skin of the target has been scorched, inhibiting its attack damage. Cold resistance is lowered.'"
+        },
+        FL: {
+          proficiency: ['elemental', 0, 800], // ???
+          name: 'Freezing Limbs',
+          img: 'coldslow',
+          elem: 1,
+          duration: 3,
+          channeling: true,
+          description: "'The limbs of the target have been frozen, causing slower movement. Wind resistance is lowered.'"
+        },
+        TA: {
+          proficiency: ['elemental', 0, 800], // ???
+          name: 'Turbulent Air',
+          img: 'windmiss',
+          elem: 4,
+          duration: 3,
+          channeling: true,
+          description: "'The air around the target has been upset, blowing up dust and increasing its miss chance. Elec resistance is lowered.'"
+        },
+        DB: {
+          proficiency: ['elemental', 0, 800], // ???
+          name: 'Deep Burns',
+          img: 'elecweak',
+          elem: 3,
+          duration: 3,
+          channeling: true,
+          description: "'Internal damage causes slower reactions and lowers evade and resist chance. Fire resistance is lowered.'"
+        },
+        BD: {
+          proficiency: ['forbidden', 0, 800], // ???
+          name: 'Breached Defense',
+          img: 'holybreach',
+          elem: 6,
+          duration: 3,
+          channeling: true,
+          description: "'The holy attack has penetrated the target defenses, making it take more damage. Dark resistance is lowered.'"
+        },
+        BA: {
+          proficiency: ['divine', 0, 800], // ???
+          name: 'Blunted Attack',
+          img: 'darknerf',
+          elem: 5,
+          duration: 3,
+          channeling: true,
+          description: "'The decaying effects of the spell has blunted the target offenses, making it deal less damage. Holy resistance is lowered.'"
+        },
+        BS: {
+          proficiency: ['divine', 0, 800], // ???
+          name: 'Burning Soul',
+          img: 'soulfire',
+          duration: 7,
+          channeling: true,
+          description: "'The life essence of the target has been set ablaze, damaging its physical form over time.'"
+        },
+        RS: {
+          proficiency: ['forbidden', 0, 800], // ???
+          name: 'Ripened Soul',
+          img: 'ripesoul',
+          duration: 7,
+          channeling: true,
+          description: "'The life essence of the target has been corrupted beyond repair, damaging its physical form over time.'"
+        },
+        // weapon debuff ------------ ??
+        PA: {
+          name: 'Penetrated Armor',
+          img: 'wpn_ap',
+          duration: 7,
+          description: "'The armor of this target has been breached, reducing its physical defenses.'"
+        },
+        BW: {
+          name: 'Bleeding Wound',
+          img: 'wpn_bleed',
+          duration: 7,
+          description: hvVersion < 91 ? "'A gashing wound is making this target take damage over time.'" : "'Gashing wounds are making this target take damage over time.'"
+        },
+        Stun: {
+          name: 'Stunned',
+          img: 'wpn_stun',
+          duration: 4,
+          description: "'A powerful blow has temporarily stunned this target.'"
+        },
+        // else from player ------------ ??
+        Po: {
+          name: 'Spreading Poison',
+          img: 'poison',
+          duration: 15,
+          description: "'Poison courses through the target\'s veins. This causes a damage-over-time effect, and eliminates its evade chance.'"
+        },
+        CM: {
+          name: 'Coalesced Mana',
+          img: 'coalescemana',
+          duration: 5,
+          description: "'Mystical energies have converged on this target. Striking it with any magic spell will consume only half the normal mana.'"
+        },
+        // from monster ------------ ?? permanent or 800?
+        AW: {
+          name: 'Absorbing Ward',
+          img: 'absorb',
+          duration: 'permanent',
+          description: "'The next magical attack against the target has a chance to be absorbed and partially converted to MP.'"
+        },
+        FoS: {
+          name: 'Fury of the Sisters',
+          img: 'trio_furyofthesisters',
+          // duration: 'permanent',
+          description: "'The destruction of the world tree has infuriated its defenders, increasing their hit and crit chances.'"
+        },
+        LoF: {
+          name: 'Lamentations of the Future',
+          img: 'trio_skuld',
+          // duration: 'permanent',
+          description: "'The destruction of the future has increased the attack power of her allies.'"
+        },
+        SoP: {
+          name: 'Screams of the Past',
+          img: 'trio_urd',
+          // duration: 'permanent',
+          description: "'The destruction of the past has increased the defensive power of her allies.'"
+        },
+        WoP: {
+          buff: 'Wails of the Present',
+          name: 'Wailings of the Present',
+          img: 'trio_verdandi',
+          // duration: 'permanent',
+          description: "'The destruction the present has increased the attack speed of her allies.'"
+        },
+      };
+
+      function getEffectChanges(turnLog) {
+        let effectsAdded = turnLog.matchAll(regExp.effectGain);
+        let effectsRemoved = [...turnLog.matchAll(regExp.effectExpired), ...turnLog.matchAll(regExp.effectWear)];
+        let asleepRemoved = turnLog.matchAll(regExp.effectWearAsleep);
+        let confusedRemoved = turnLog.matchAll(regExp.effectWearConfused);
+        let effectChanges = {};
+
+        for (const match of effectsAdded) (effectChanges[match[1]] ??= { add: [], remove: [] }).add.push(match[2]);
+        for (const match of effectsRemoved) (effectChanges[match[2]] ??= { add: [], remove: [] }).remove.push(match[1]);
+        for (const match of asleepRemoved) (effectChanges[match[1]] ??= { add: [], remove: [] }).remove.push('Asleep');
+        for (const match of confusedRemoved) (effectChanges[match[1]] ??= { add: [], remove: [] }).remove.push('Confused');
+
+        return effectChanges;
+      }
+
+      function applyHiddenDelta(savedEffects, effectObj, delta) {
+        if (!savedEffects) return;
+
+        let elementEffects = ['Searing Skin', 'Freezing Limbs', 'Turbulent Air', 'Deep Burns', 'Breached Defense', 'Blunted Attack'];
+        let effects = Object.keys(effectObj);
+        let elementCount = effects.filter(effect => elementEffects.includes(effect)).length;
+
+        for (const savedEffect in savedEffects) {
+          if (effects.includes(savedEffect)) continue;
+
+          if (
+            (elementCount < 3 && elementEffects.includes(savedEffect)) ||
+            savedEffect === 'Coalesced Mana'
+          ) {
+            delete savedEffects[savedEffect];
+            continue;
+          }
+
+          if (!delta || delta <= 0) continue;
+          let savedTurns = +savedEffects[savedEffect]?.turns;
+          if (isNaN(savedTurns)) continue;
+
+          if (savedTurns - delta < 0 && elementEffects.includes(savedEffect)) {
+            delete savedEffects[savedEffect];
+            continue;
+          }
+          savedEffects[savedEffect].turns = Math.max(0, savedTurns - delta);
+        }
+      }
+
+      const turnLog = gE('#textlog').innerHTML.match(/([^]+?)((<tr><td class="tls">)|(<\/tbody>))/)[0];
+      isNewTurn &&= turnLog !== battle.turnLog;
+      if (turnLog.match(regExp.battleTypeLog)) return; // skip if is new round
+      const profs = turnLog.match(regExp.proficiencies);
+      const channeling = battle.channeling || 1; // cache last turn channeling
+      battle.channeling = getBuff('channeling') ? 1.5 : 1;
+
+      const proficiency = battle.proficiency ?? {};
+      if (profs) {
+        for (const prof of profs) {
+          const [_, points, type] = prof.match(regExp.proficiency);
+          proficiency[type] ??= 0;
+          proficiency[type] += points*1;
+        }
+      }
+      let effectChanges = getEffectChanges(turnLog);
+
+      function roundUp(number, num_digits) {
+        const factor = Math.pow(10, num_digits);
+        return Math.ceil(number * factor) / factor;
+      }
+
+      let delta = isNewTurn && !turnLog.match(regExp.zeroturn) ? 1 : 0;
+
+      for (const activeMonster of battle.monsterStatus) {
+        // continue if dead
+        if (gE('img[src*="nbardead.png"]', getMonster(getMonsterID(activeMonster)))) continue;
+
+        let name = gE(monsterStateKeys.name, getMonster(getMonsterID(activeMonster))).innerText;
+        let effectObj = {};
+        let monster_btm6 = gE('.btm6', getMonster(getMonsterID(activeMonster)));
+        monster_btm6.querySelectorAll('img').forEach((effect) => {
+          let tooltip = effect.getAttribute('onmouseover');
+          if (!tooltip) return;
+
+          let matches = tooltip.match(regExp.spellMatch);
+          if (!matches?.groups) return;
+
+          let { name, stack, description, turns } = matches.groups;
+          let dc = Object.values(skillLib).find(skill => [skill.name, skill.buff].includes(name))?.description;
+          if (dc !== description) console.log('Unmatching debuff description:', name, description, dc);
+          if (name) effectObj[name] = { turns, stack: stack ?? 1 };
+        });
+
+        let effects = Object.keys(effectObj);
+
+        // DEBUG ---------------------
+        // 统计持续时间及熟练度相关数据，以便进行核验和测试
+        const rec = JSON.parse(localStorage.getItem(`hvAA-${current}_rec`) ?? `{}`);
+        for (const effect of effects) {
+          const skill = Object.values(skillLib).find(skill => [skill.name, skill.buff].includes(effect));
+          if (!skill) {
+            console.log('Unknown debuff skill', effect)
+            continue;
+          }
+          let duration = skill.duration;
+          if (typeof duration === 'number') {
+            duration = duration * 1;
+          } else if (duration !== 'permanent') { for (const ab in duration) {
+            if (!(duration = duration[ab][ability[ab]??0])) continue;
+          } }
+          rec[effect] ??= {}
+          rec[effect].turns ??= 0;
+
+          const current = effectObj[effect].turns*1;
+          if (!isNaN(current)) {
+            const min = duration??roundUp(current / 4, 0);
+            const ratio = Math.max(1,current / min / channeling);
+            if (ratio > 6) {
+              throw new Error(`duration undefined: ${effect}, ${duration}*${channeling}*${ratio}=?${current}`)
+            } else if (ratio <= 4 ) { // 中间段 (4,6] 很可能受 channeling 影响，不太好记录和测试，排除中间段的ratio
+              rec[effect].minBase = min;
+              rec[effect].turns = current;
+              if (skill.proficiency) {
+                const [ptype, plow, phigh] = skill.proficiency
+                const p = proficiency[ptype];
+                rec[effect].calcProf = Math.min(4, (p-plow)/(phigh-plow) * 4).toFixed(6)*1;
+                if (rec[effect].calcProf === 4) {
+                  rec[effect].finPHigh = p;
+                }
+              }
+              if (ratio > (rec[effect].asumeProf??0)) {
+                rec[effect].asumeProf = ratio.toFixed(6)*1;
+              }
+            }
+          }
+        }
+        localStorage.setItem(`hvAA-${current}_rec`, JSON.stringify(rec));
+        // DEBUG END ---------------------
+
+        let savedEffects = activeMonster.effectObj ??= {};
+        if (effects.length < 5) {
+          for (const effect in savedEffects) delete savedEffects[effect];
+        } else if (effects.length === 5) {
+          for (const effect in savedEffects) delete savedEffects[effect];
+          for (const effect of effects) savedEffects[effect] = { ...effectObj[effect] };
+        } else if (effects.length === 6) {
+
+          for (const effect of effects) savedEffects[effect] = { ...effectObj[effect] }; // updated directly
+
+          if (effectChanges[name]) {
+            for (const effect of effectChanges[name].add) {
+              const skill = Object.values(skillLib).find(skill => [skill.name, skill.buff].includes(effect));
+              if (!skill) {
+                console.log('Unknown debuff skill', effect)
+                continue;
+              }
+              const c = skill.channling ? channeling : 1
+              if (savedEffects[name]) {
+                savedEffects[name][effect].channeling ??= c;
+              }
+              if (effects.includes(effect)) continue; // updated directly above
+              let duration = skill.duration;
+              // TODO TBD combine effectSrc and skillLib
+              // TODO TBD stack from skillLib etc.
+              // TODO 测试检查非 减益技能(deprecating) 的debuff持续时间是否正确 (skillLib)
+
+              // TODO 熟练度带来的持续时间倍率 proficiency 进行计算
+              // TODO 确认倍率公式，已知最大为4
+              // 推测：
+              // 计算方式为 (p-pmin)/(pmax-pmin) * 4
+              // pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
+              // 和 https://ehwiki.org/wiki/Spells#Offensive_Magic
+              // 减益技能(deprecating) 统一按照减益的熟练度
+              // 元素攻击（应该包括Burning Soul/Ripened Soul?）带来的按各自的熟练度（推测是按T3的pmin/pmax）
+              // 至于取整方式则暂时无法确定
+
+              console.log(skill.proficiency)
+              const ratio = 4;
+              if (typeof duration === 'number') {
+                duration = ratio * c * duration;
+              } else if (duration !== 'permanent') { for (const ab in duration) {
+                if (!(duration = ratio * c * duration[ab][ability[ab]??0])) continue;
+              } }
+              savedEffects[effect] = { turns: duration ?? '-', stack: '-' , channeling: c};
+              if (!duration) { console.log('duration undefined saved effect:', effect, savedEffects[effect]) }
+            }
+            for (const effect of effectChanges[name].remove) (!effects.includes(effect) && (effect in savedEffects)) && delete savedEffects[effect];
+          }
+
+          applyHiddenDelta(savedEffects, effectObj, delta);
+
+          monster_btm6.style.width = 'max-content';
+          activeMonster.effectObj = savedEffects;
+          for (const effect in savedEffects) {
+            if (effect in effectObj) continue;
+            let { turns, stack } = savedEffects[effect];
+            effectObj[effect] = { turns, stack };
+            if (isNaN(+turns)) turns = `'${String(turns).replace(/'/g, "\\'")}'`;
+
+            let img = document.createElement('img');
+            img.src = (isIsekai ? '/isekai' : '') + (effectSrc[effect]?.scr || '/y/e/channeling.png');
+            let description = Object.values(skillLib).find(skill =>[skill.name, skill.buff].includes(effect))?.description;
+            img.setAttribute('onmouseover', `battle.set_infopane_effect('${effect}', ${description}, ${turns})`);
+            img.setAttribute('onmouseout', 'battle.clear_infopane()');
+
+            monster_btm6.appendChild(img);
+          }
+        }
+      }
+      if (!isNewTurn) return;
+      battle.turnLog = turnLog;
+      setValue('battle', battle);
+    }
+
     async function loadUnsafeWindowBattle() { try {
       while (!unsafeWindow.battle) {
         await pauseAsync(300);
@@ -4902,14 +5554,21 @@
     } catch(e) { console.error(e) }}
 
     function newRound(isNew) { // New Round
-      let battle = isNew ? {} : getValue('battle', true);
+      const token = document.documentElement.outerHTML.match(/var battle_token = "(.*)";/)[1];
+      let battle = getValue('battle', true);
+      const isSameBattle = battle?.token === token;
+      const prof = getValue('proficiency', true);
       if (isNew) {
-        setValue('skillOTOS', {});
+        battle = {
+          proficiency: isSameBattle ? battle?.proficiency ?? prof : prof,
+          skillOTOS: {}
+        };
       }
       if (!battle) {
         battle = JSON.parse(JSON.stringify(g('battle') ?? {}));
         battle.monsterStatus?.sort(objArrSort('order'));
       };
+      battle.proficiency = isSameBattle ? battle?.proficiency ?? prof : prof;
       setValue('battle', battle);
       if (window.location.hash !== '') {
         goto();
