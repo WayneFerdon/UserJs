@@ -5463,46 +5463,48 @@
         // DEBUG ---------------------
         // 统计持续时间及熟练度相关数据，以便进行核验和测试
         const rec = JSON.parse(localStorage.getItem(`hvAA-${current}_rec`) ?? `{}`);
-        for (const effect of effects) {
-          const skill = Object.values(skillLib).find(skill => [skill.name, skill.buff].includes(effect));
-          if (!skill) {
-            console.log('Unknown debuff skill', effect)
-            continue;
-          }
-          let duration = skill.duration;
-          if (typeof duration === 'number') {
-            duration = duration * 1;
-          } else if (duration !== 'permanent') { for (const ab in duration) {
-            if (!(duration = duration[ab][ability[ab]??0])) continue;
-          } }
-          rec[effect] ??= {}
-          rec[effect].turns ??= 0;
+        if (!turnLog.match('partially resists')) { // v091 排除部分抵抗的情况进行数据收集
+          for (const effect of effects) {
+            const skill = Object.values(skillLib).find(skill => [skill.name, skill.buff].includes(effect));
+            if (!skill) {
+              console.log('Unknown debuff skill', effect)
+              continue;
+            }
+            let duration = skill.duration;
+            if (typeof duration === 'number') {
+              duration = duration * 1;
+            } else if (duration !== 'permanent') { for (const ab in duration) {
+              if (!(duration = duration[ab][ability[ab]??0])) continue;
+            } }
+            rec[effect] ??= {}
+            rec[effect].turns ??= 0;
 
-          const current = effectObj[effect].turns*1;
-          if (!isNaN(current)) {
-            const min = duration??roundUp(current / 4, 0);
-            const ratio = Math.max(1,current / min / channeling);
-            // 091版本debuff可叠加，测试核验需要计算增量，不在此版本进行（公式应该没改）
-            if (hvVersion < 91 && ratio > 6) {
-              throw new Error(`duration undefined: ${effect}, ${min},${duration}*${channeling}*${ratio}=?${current}`)
-            } else if (ratio <= 4 ) { // 中间段 (4,6] 很可能受 channeling 影响，不太好记录和测试，排除中间段的ratio
-              rec[effect].minBase = min;
-              rec[effect].turns = current;
-              if (skill.proficiency) {
-                const [ptype, plow, phigh] = skill.proficiency;
-                const p = proficiency[ptype];
-                rec[effect].calcProf = Math.min(4, (p-plow)/(phigh-plow) * 4).toFixed(6)*1;
-                if (rec[effect].calcProf === 4) {
-                  rec[effect].finPHigh = p;
+            const current = effectObj[effect].turns*1;
+            if (!isNaN(current)) {
+              const min = duration??roundUp(current / 4, 0);
+              const ratio = Math.max(1,current / min / channeling);
+              // 091版本debuff可叠加，测试核验需要计算增量，不在此版本进行（公式应该没改）
+              if (hvVersion < 91 && ratio > 6) {
+                throw new Error(`duration undefined: ${effect}, ${min},${duration}*${channeling}*${ratio}=?${current}`)
+              } else if (ratio <= 4) { // 中间段 (4,6] 很可能受 channeling 影响，不太好记录和测试，排除中间段的ratio
+                rec[effect].minBase = min;
+                rec[effect].turns = current;
+                if (skill.proficiency) {
+                  const [ptype, plow, phigh] = skill.proficiency;
+                  const p = proficiency[ptype];
+                  rec[effect].calcProf = Math.min(4, (p-plow)/(phigh-plow) * 4).toFixed(6)*1;
+                  if (rec[effect].calcProf === 4) {
+                    rec[effect].finPHigh = p;
+                  }
                 }
-              }
-              if (ratio > (rec[effect].asumeProf??0)) {
-                rec[effect].asumeProf = ratio.toFixed(6)*1;
+                if (ratio > (rec[effect].asumeProf??0)) {
+                  rec[effect].asumeProf = ratio.toFixed(6)*1;
+                }
               }
             }
           }
+          localStorage.setItem(`hvAA-${current}_rec`, JSON.stringify(rec));
         }
-        localStorage.setItem(`hvAA-${current}_rec`, JSON.stringify(rec));
         // DEBUG END ---------------------
 
         let savedEffects = activeMonster.effectObj ??= {};
