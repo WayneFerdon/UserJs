@@ -5420,8 +5420,9 @@
         for (const prof of profs) {
           const [_, points, type] = prof.match(regExp.proficiency);
           proficiency[ptypes[type]] += points*1;
+          proficiency[ptypes[type]] = proficiency[ptypes[type]].toFixed(3)*1;
         }
-        console.log(JSON.stringify({profs, proficiency}))
+        console.log(JSON.stringify({profs, proficiency}).replace('"proficiency":','"proficiency":\n'));
       }
       let effectChanges = getEffectChanges(turnLog);
 
@@ -5597,6 +5598,7 @@
         battle = JSON.parse(JSON.stringify(g('battle') ?? {}));
         battle.monsterStatus?.sort(objArrSort('order'));
       };
+      battle.token = token;
       battle.proficiency = isSameBattle ? battle?.proficiency ?? prof : prof;
       setValue('battle', battle);
       if (window.location.hash !== '') {
