@@ -5182,7 +5182,7 @@
           img: 'drainhp',
           duration: 10,
           channeling: true,
-          description: "'Siphons off the target\\'s life essence over time. This causes a damage-over-time effect, and returns a small amount of health to the player.'"
+          description: hvVersion < 91 ? "'Siphons off the target\\'s life essence over time. This causes a damage-over-time effect, and returns a small amount of health to the player.'" : "'Siphons off the target\\'s life essence over time, and gives it to the player.'"
         },
         ET: {
           proficiency: ['deprecating', 0, 300], // ???
@@ -5389,11 +5389,39 @@
 
       const proficiency = battle.proficiency ?? {};
       if (profs) {
+        console.log(JSON.stringify(proficiency),'->')
+        const ptypes = hvVersion < 91 ? {
+          'cloth armor': 'cloth armor',
+          'deprecating magic' : 'deprecating',
+          'divine': 'divine',
+          'dual wielding' : 'dual wielding',
+          'elemental': 'elemental',
+          'forbidden': 'forbidden',
+          'heavy armor': 'heavy armor',
+          'light armor': 'light armor',
+          'one-handed weapon': 'one-handed',
+          'staff': 'staff',
+          'supportive magic' : 'supportive',
+          'two-handed weapon': 'two-handed',
+      } :{
+          'cloth armor': 'Cloth Armor',
+          'deprecating magic' : 'Deprecating',
+          'divine': 'Divine',
+          'dual wielding' : 'Dual-wielding',
+          'elemental': 'Elemental',
+          'forbidden': 'Forbidden',
+          'heavy armor': 'Heavy Armor',
+          'light armor': 'Light Armor',
+          'one-handed weapon': 'One-handed',
+          'staff': 'Staff',
+          'supportive magic' : 'Supportive',
+          'two-handed weapon': 'Two-handed',
+        }
         for (const prof of profs) {
           const [_, points, type] = prof.match(regExp.proficiency);
-          proficiency[type] ??= 0;
-          proficiency[type] += points*1;
+          proficiency[ptypes[type]] += points*1;
         }
+        console.log(JSON.stringify({profs, proficiency}))
       }
       let effectChanges = getEffectChanges(turnLog);
 
@@ -5448,13 +5476,14 @@
           if (!isNaN(current)) {
             const min = duration??roundUp(current / 4, 0);
             const ratio = Math.max(1,current / min / channeling);
-            if (ratio > 6) {
-              throw new Error(`duration undefined: ${effect}, ${duration}*${channeling}*${ratio}=?${current}`)
+            // 091版本debuff可叠加，测试核验需要计算增量，不在此版本进行（公式应该没改）
+            if (hvVersion < 91 && ratio > 6) {
+              throw new Error(`duration undefined: ${effect}, ${min},${duration}*${channeling}*${ratio}=?${current}`)
             } else if (ratio <= 4 ) { // 中间段 (4,6] 很可能受 channeling 影响，不太好记录和测试，排除中间段的ratio
               rec[effect].minBase = min;
               rec[effect].turns = current;
               if (skill.proficiency) {
-                const [ptype, plow, phigh] = skill.proficiency
+                const [ptype, plow, phigh] = skill.proficiency;
                 const p = proficiency[ptype];
                 rec[effect].calcProf = Math.min(4, (p-plow)/(phigh-plow) * 4).toFixed(6)*1;
                 if (rec[effect].calcProf === 4) {
