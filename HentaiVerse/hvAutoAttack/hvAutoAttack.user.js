@@ -1891,6 +1891,7 @@
 
         '<div class="hvAATab" id="hvAATab-Debuff">',
         '  <div><l0>Debuff释放条件</l0><l1>Debuff釋放條件</l1><l2>Cast debuff spells Condition</l2>{{debuffSkillCondition}}</div>',
+        '  <div><input id="debuffAutoFill" type="checkbox"><label for="debuffAutoFill"><l0>[!!实验性]补全因超过默认显示上限未显示的怪物buff</l0><l1>[!!實驗性]補全因超過默認顯示上限未顯示的怪物buff</l1><l2>[!!Experimental]Auto fill hidden monster buffs due to display limitation</l2></label></div>',
         '  <div>',
         '    <l0>超出6个debuff的默认显示上限时（例如同时使用jpx时可忽略上限）：</l0><l1>超出6個debuff的默認顯示上限時（例如同時使用jpx時可忽略上限）：</l1><l2>When debuff count overflows 6 as the default maximum display count (such as ignore limitation while using jpx): </l2><select class="hvAANumber" name="debuffSkillTurnAlert"><option value="0" selected>跳过 / Skip</option><option value="1">警报 / Alert</option><option value="2">忽略 / Ignore</option></select><br>',
         '    <l0>剩余Turns低于阈值时警报</l0><l1>剩餘Turns低於閾值時警報</l1><l2>Alert when remain expire turns less than threshold</l2><br>',
@@ -4914,6 +4915,7 @@
       const monsterStateKeys = ${JSON.stringify(monsterStateKeys)};
       const ability = ${JSON.stringify(ability)};
       const hvVersion = ${JSON.stringify(hvVersion)};
+      const debuffAutoFill = ${g('option').debuffAutoFill?.toString() ?? 'undefined'};
 
       ${[updateMonsterEffects,
          getMonsterID, getMonster, getMonster, getBuff,
@@ -4945,10 +4947,13 @@
     }
 
     function updateMonsterEffects(isNewTurn=true) {
-      return; // Untested
+      if (typeof GM_getValue === 'undefined') {
+        if (!debuffAutoFill) return;
+      } else {
+        if (!g('option').debuffAutoFill) return;
+      }
       const battle = getValue('battle', true);
       if (!battle?.monsterStatus) return;
-
       let regExp = {
         locationQueries: /\w+=\w+/g,
         playerInfo: /(\w+) Lv\.(\d+)/,
@@ -5103,7 +5108,7 @@
       const skillLib = {
         // debuff skill ------------
         We: {
-          proficiency: ['deprecating', 0, 345], // ???
+          proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 0, 345], // ???
           buff: 'Weakened',
           name: 'Weaken',
           img: 'weaken',
@@ -5112,7 +5117,7 @@
           description: "'The target has been weakened, making it deal less damage, and preventing it from scoring critical hits.'"
         },
         Im: {
-          proficiency: ['deprecating', 30, 495], // ???
+          proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 30, 495], // ???
           buff: 'Imperiled',
           name: 'Imperil',
           img: 'imperil',
@@ -5121,7 +5126,7 @@
           description: hvVersion < 91 ? "'The target has been imperiled, reducing physical and magical mitigation as well as elemental mitigations.'" : "'The target has been imperiled, reducing physical and magical mitigation as well as elemental mitigation.'"
         },
         Bl: {
-          proficiency: ['deprecating', 30, 610], // ???
+          proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 30, 610], // ???
           buff: 'Blinded',
           name: 'Blind',
           img: 'blind',
@@ -5130,7 +5135,7 @@
           description: "'The target has been blinded, reducing the chance of landing attacks and hitting with magic spells.'"
         },
         Sle: {
-          proficiency: ['deprecating', 0, 410], // ???
+          proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 0, 410], // ???
           buff: 'Asleep',
           name: 'Sleep',
           img: 'sleep',
@@ -5139,7 +5144,7 @@
           description: "'The target has been lulled to sleep, preventing it from taking any actions. Any attacks against this target are guaranteed to hit, but can also wake it up.'"
         },
         Co: {
-          proficiency: ['deprecating', 45, 660], // ???
+          proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 45, 660], // ???
           buff: 'Confused',
           name: 'Confuse',
           img: 'confuse',
@@ -5148,7 +5153,7 @@
           description: "'The target has been confused, making it lunge out wildly and strike friends and foes alike.'"
         },
         Si: {
-          proficiency: ['deprecating', 40, 600], // ???
+          proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 40, 600], // ???
           buff: 'Silenced',
           name: 'Silence',
           img: 'silence',
@@ -5157,7 +5162,7 @@
           description: "'The target has been silenced, preventing it from using special attacks and magic.'"
         },
         MN: {
-          proficiency: ['deprecating', 100, 700], // ???
+          proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 100, 700], // ???
           buff: hvVersion < 91 ? 'Magically Snared' : 'Immobilized',
           name: 'MagNet',
           img: 'magnet',
@@ -5166,7 +5171,7 @@
           description: hvVersion < 91 ? "'The target has been hit with a magic net, eliminating its chance to evade or resist attacks.'" : "'The target has been immobilized, eliminating its chance to evade and reducing its magic resistance.'"
         },
         Slo: {
-          proficiency: ['deprecating', 0, 300], // ???
+          proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 0, 300], // ???
           buff: 'Slowed',
           name: 'Slow',
           img: 'slow',
@@ -5176,7 +5181,7 @@
         },
         // debuff skills not checked ------------ ??
         Dr: {
-          proficiency: ['deprecating', 0, 300], // ???
+          proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 0, 300], // ???
           buff: 'Vital Theft',
           name: 'Drain',
           img: 'drainhp',
@@ -5185,14 +5190,14 @@
           description: hvVersion < 91 ? "'Siphons off the target\\'s life essence over time. This causes a damage-over-time effect, and returns a small amount of health to the player.'" : "'Siphons off the target\\'s life essence over time, and gives it to the player.'"
         },
         ET: {
-          proficiency: ['deprecating', 0, 300], // ???
+          proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 0, 300], // ???
           name: 'Ether Theft',
           img: 'drainmp',
           duration: 10, // ??
           description: "'Siphons off the target\'s mana over time. This returns a small amount of mana to the player.'"
         },
         ST: {
-          proficiency: ['deprecating', 0, 300], // ???
+          proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 0, 300], // ???
           name: 'Spirit Theft',
           img: 'drainsp',
           duration: 10, // ??
@@ -5200,7 +5205,7 @@
         },
         // elem attack debuff ------------ ??
         SS: {
-          proficiency: ['elemental', 0, 800], // ???
+          proficiency: [hvVersion < 91 ? 'elemental' : 'Elemental', 0, 800], // ???
           name: 'Searing Skin',
           img: 'firedot',
           elem: 2,
@@ -5209,7 +5214,7 @@
           description: "'The skin of the target has been scorched, inhibiting its attack damage. Cold resistance is lowered.'"
         },
         FL: {
-          proficiency: ['elemental', 0, 800], // ???
+          proficiency: [hvVersion < 91 ? 'elemental' : 'Elemental', 0, 800], // ???
           name: 'Freezing Limbs',
           img: 'coldslow',
           elem: 1,
@@ -5218,7 +5223,7 @@
           description: "'The limbs of the target have been frozen, causing slower movement. Wind resistance is lowered.'"
         },
         TA: {
-          proficiency: ['elemental', 0, 800], // ???
+          proficiency: [hvVersion < 91 ? 'elemental' : 'Elemental', 0, 800], // ???
           name: 'Turbulent Air',
           img: 'windmiss',
           elem: 4,
@@ -5227,7 +5232,7 @@
           description: "'The air around the target has been upset, blowing up dust and increasing its miss chance. Elec resistance is lowered.'"
         },
         DB: {
-          proficiency: ['elemental', 0, 800], // ???
+          proficiency: [hvVersion < 91 ? 'elemental' : 'Elemental', 0, 800], // ???
           name: 'Deep Burns',
           img: 'elecweak',
           elem: 3,
@@ -5236,7 +5241,7 @@
           description: "'Internal damage causes slower reactions and lowers evade and resist chance. Fire resistance is lowered.'"
         },
         BD: {
-          proficiency: ['forbidden', 0, 800], // ???
+          proficiency: [hvVersion < 91 ? 'forbidden' : 'Forbidden', 0, 800], // ???
           name: 'Breached Defense',
           img: 'holybreach',
           elem: 6,
@@ -5245,7 +5250,7 @@
           description: "'The holy attack has penetrated the target defenses, making it take more damage. Dark resistance is lowered.'"
         },
         BA: {
-          proficiency: ['divine', 0, 800], // ???
+          proficiency: [hvVersion < 91 ? 'divine' : 'Divine', 0, 800], // ???
           name: 'Blunted Attack',
           img: 'darknerf',
           elem: 5,
@@ -5254,7 +5259,7 @@
           description: "'The decaying effects of the spell has blunted the target offenses, making it deal less damage. Holy resistance is lowered.'"
         },
         BS: {
-          proficiency: ['divine', 0, 800], // ???
+          proficiency: [hvVersion < 91 ? 'divine' : 'Divine', 0, 800], // ???
           name: 'Burning Soul',
           img: 'soulfire',
           duration: 7,
@@ -5262,7 +5267,7 @@
           description: "'The life essence of the target has been set ablaze, damaging its physical form over time.'"
         },
         RS: {
-          proficiency: ['forbidden', 0, 800], // ???
+          proficiency: [hvVersion < 91 ? 'forbidden' : 'Forbidden', 0, 800], // ???
           name: 'Ripened Soul',
           img: 'ripesoul',
           duration: 7,
@@ -5311,26 +5316,26 @@
         FoS: {
           name: 'Fury of the Sisters',
           img: 'trio_furyofthesisters',
-          // duration: 'permanent',
-          description: "'The destruction of the world tree has infuriated its defenders, increasing their hit and crit chances.'"
+          duration: hvVersion < 91 ? undefined :'permanent',
+          description: hvVersion < 91 ? "'The destruction of the world tree has infuriated its defenders, increasing their hit and crit chances.'" : "'The destruction of the world tree has infuriated its defenders, increasing their accuracy.'"
         },
         LoF: {
           name: 'Lamentations of the Future',
           img: 'trio_skuld',
-          // duration: 'permanent',
+          duration: hvVersion < 91 ? undefined :'permanent',
           description: "'The destruction of the future has increased the attack power of her allies.'"
         },
         SoP: {
           name: 'Screams of the Past',
           img: 'trio_urd',
-          // duration: 'permanent',
+          duration: hvVersion < 91 ? undefined :'permanent',
           description: "'The destruction of the past has increased the defensive power of her allies.'"
         },
         WoP: {
           buff: 'Wails of the Present',
           name: 'Wailings of the Present',
           img: 'trio_verdandi',
-          // duration: 'permanent',
+          duration: hvVersion < 91 ? undefined :'permanent',
           description: "'The destruction the present has increased the attack speed of her allies.'"
         },
       };
@@ -5388,35 +5393,35 @@
       battle.channeling = getBuff('channeling') ? 1.5 : 1;
 
       const proficiency = battle.proficiency ?? {};
+      const ptypes = hvVersion < 91 ? {
+        'cloth armor': 'cloth armor',
+        'deprecating magic' : 'deprecating',
+        'divine': 'divine',
+        'dual wielding' : 'dual wielding',
+        'elemental': 'elemental',
+        'forbidden': 'forbidden',
+        'heavy armor': 'heavy armor',
+        'light armor': 'light armor',
+        'one-handed weapon': 'one-handed',
+        'staff': 'staff',
+        'supportive magic' : 'supportive',
+        'two-handed weapon': 'two-handed',
+      } :{
+        'cloth armor': 'Cloth Armor',
+        'deprecating magic' : 'Deprecating',
+        'divine': 'Divine',
+        'dual wielding' : 'Dual-wielding',
+        'elemental': 'Elemental',
+        'forbidden': 'Forbidden',
+        'heavy armor': 'Heavy Armor',
+        'light armor': 'Light Armor',
+        'one-handed weapon': 'One-handed',
+        'staff': 'Staff',
+        'supportive magic' : 'Supportive',
+        'two-handed weapon': 'Two-handed',
+      }
       if (profs) {
         console.log(JSON.stringify(proficiency),'->')
-        const ptypes = hvVersion < 91 ? {
-          'cloth armor': 'cloth armor',
-          'deprecating magic' : 'deprecating',
-          'divine': 'divine',
-          'dual wielding' : 'dual wielding',
-          'elemental': 'elemental',
-          'forbidden': 'forbidden',
-          'heavy armor': 'heavy armor',
-          'light armor': 'light armor',
-          'one-handed weapon': 'one-handed',
-          'staff': 'staff',
-          'supportive magic' : 'supportive',
-          'two-handed weapon': 'two-handed',
-      } :{
-          'cloth armor': 'Cloth Armor',
-          'deprecating magic' : 'Deprecating',
-          'divine': 'Divine',
-          'dual wielding' : 'Dual-wielding',
-          'elemental': 'Elemental',
-          'forbidden': 'Forbidden',
-          'heavy armor': 'Heavy Armor',
-          'light armor': 'Light Armor',
-          'one-handed weapon': 'One-handed',
-          'staff': 'Staff',
-          'supportive magic' : 'Supportive',
-          'two-handed weapon': 'Two-handed',
-        }
         for (const prof of profs) {
           const [_, points, type] = prof.match(regExp.proficiency);
           proficiency[ptypes[type]] += points*1;
@@ -5536,15 +5541,32 @@
               // 减益技能(deprecating) 统一按照减益的熟练度
               // 元素攻击（应该包括Burning Soul/Ripened Soul?）带来的按各自的熟练度（推测是按T3的pmin/pmax）
               // 至于取整方式则暂时无法确定
-
-              console.log(skill.proficiency)
-              const ratio = 4;
+              let ratio = 1;
+              if (skill.proficiency) {
+                const [ptype, plow, phigh] = skill.proficiency;
+                const p = proficiency[ptype];
+                ratio = Math.min(4, (p-plow)/(phigh-plow) * 4).toFixed(6)*1;
+                // v91 倍率貌似公式不一样
+              }
               if (typeof duration === 'number') {
                 duration = ratio * c * duration;
               } else if (duration !== 'permanent') { for (const ab in duration) {
-                if (!(duration = ratio * c * duration[ab][ability[ab]??0])) continue;
+                if (!(duration = Math.round(ratio * c * duration[ab][ability[ab]??0]))) continue;
               } }
-              savedEffects[effect] = { turns: duration ?? '-', stack: '-' , channeling: c};
+              if (hvVersion >= 91 && savedEffects[effect]) {
+                let t = savedEffects[effect].turns;
+                // TODO 叠加规则（部分抵抗无法估算?）
+                if (duration === 'permanent') {
+                  t = 'permanent'
+                } else if (t === '-') {
+                  t = duration ?? '-';
+                } else if (isNewTurn) {
+                  t += duration ?? 0;
+                }
+                savedEffects[effect] = { turns: t, stack: '-' , channeling: c};
+              } else {
+                savedEffects[effect] = { turns: duration ?? '-', stack: '-' , channeling: c};
+              }
               if (!duration) { console.log('duration undefined saved effect:', effect, savedEffects[effect]) }
             }
             for (const effect of effectChanges[name].remove) (!effects.includes(effect) && (effect in savedEffects)) && delete savedEffects[effect];
