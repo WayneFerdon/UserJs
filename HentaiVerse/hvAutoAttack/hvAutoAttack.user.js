@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.183
+// @version      2.90.184
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -946,7 +946,7 @@
       // 迁移2.90.168及之前的channelSkill2Order_Cure的Name错误
       option.channelSkill2Order_Cure = option.channelSkill2Order_Cu;
       option.channelSkill2Order_Cu = undefined;
-      option.channelSkill2OrderValue = option.channelSkill2OrderValue?.replace('Cu', 'Cure').replace('Curere', 'Cure');
+      option.channelSkill2OrderName = option.channelSkill2OrderName?.replace('Cu', 'Cure').replace('Curere', 'Cure');
       // 迁移2.90.178及之前的debuff警报设置
       if (option.debuffSkillTurnAlert === true) {
         option.debuffSkillTurnAlert = 1;
