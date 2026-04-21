@@ -5340,6 +5340,23 @@
         },
       };
 
+      function getDuration(skill, channeling) {
+        let [base, profRatio, prof] = [skill.duration, 1, 0];
+        if (typeof base === 'number') {
+          base = base * 1;
+        } else if (base !== 'permanent') { for (const ab in base) {
+          if (!(base = base[ab][ability[ab]??0])) continue;
+        } }
+        if (skill.proficiency) {
+          const [ptype, plow, phigh] = skill.proficiency;
+          prof = proficiency[ptype];
+          profRatio = Math.max(1,Math.min(4, (prof-plow)/(phigh-plow) * 4).toFixed(6)*1);
+        }
+        const channelingRatio = skill.channling ? channeling : 1;
+        const duration = typeof base === 'number' ? Math.round(base * channelingRatio * profRatio) : base;
+        return [duration, base, profRatio, prof, channelingRatio];
+      }
+
       function getEffectChanges(turnLog) {
         let effectsAdded = turnLog.matchAll(regExp.effectGain);
         let effectsRemoved = [...turnLog.matchAll(regExp.effectExpired), ...turnLog.matchAll(regExp.effectWear)];
@@ -5388,10 +5405,8 @@
       const turnLog = gE('#textlog').innerHTML.match(/([^]+?)((<tr><td class="tls">)|(<\/tbody>))/)[0];
       isNewTurn &&= turnLog !== battle.turnLog;
       if (turnLog.match(regExp.battleTypeLog)) return; // skip if is new round
-      const profs = turnLog.match(regExp.proficiencies);
-      const channeling = battle.channeling || 1; // cache last turn channeling
-      battle.channeling = getBuff('channeling') ? 1.5 : 1;
 
+      // update proficiency
       const proficiency = battle.proficiency ?? {};
       const ptypes = hvVersion < 91 ? {
         'cloth armor': 'cloth armor',
@@ -5420,27 +5435,22 @@
         'supportive magic' : 'Supportive',
         'two-handed weapon': 'Two-handed',
       }
-      if (profs) {
-        console.log(JSON.stringify(proficiency),'->')
-        for (const prof of profs) {
-          const [_, points, type] = prof.match(regExp.proficiency);
-          proficiency[ptypes[type]] += points*1;
-          proficiency[ptypes[type]] = proficiency[ptypes[type]].toFixed(3)*1;
-        }
-        console.log(JSON.stringify({profs, proficiency}).replace('"proficiency":','"proficiency":\n'));
+      for (const prof of turnLog.match(regExp.proficiencies)??[]) {
+        const [_, points, type] = prof.match(regExp.proficiency);
+        proficiency[ptypes[type]] += points*1;
+        proficiency[ptypes[type]] = proficiency[ptypes[type]].toFixed(3)*1;
       }
+
+      // cache last turn channeling
+      const channeling = battle.channeling || 1;
+      battle.channeling = getBuff('channeling') ? 1.5 : 1;
+
       let effectChanges = getEffectChanges(turnLog);
 
-      function roundUp(number, num_digits) {
-        const factor = Math.pow(10, num_digits);
-        return Math.ceil(number * factor) / factor;
-      }
-
-      let delta = isNewTurn && !turnLog.match(regExp.zeroturn) ? 1 : 0;
+      let turnDelta = isNewTurn && !turnLog.match(regExp.zeroturn) ? 1 : 0;
 
       for (const activeMonster of battle.monsterStatus) {
-        // continue if dead
-        if (gE('img[src*="nbardead.png"]', getMonster(getMonsterID(activeMonster)))) continue;
+        if (gE('img[src*="nbardead.png"]', getMonster(getMonsterID(activeMonster)))) continue; // continue if dead
 
         let name = gE(monsterStateKeys.name, getMonster(getMonsterID(activeMonster))).innerText;
         let effectObj = {};
@@ -5457,141 +5467,111 @@
           if (dc !== description) console.log('Unmatching debuff description:', name, description, dc);
           if (name) effectObj[name] = { turns, stack: stack ?? 1 };
         });
-
         let effects = Object.keys(effectObj);
 
         // DEBUG ---------------------
         // 统计持续时间及熟练度相关数据，以便进行核验和测试
         const rec = JSON.parse(localStorage.getItem(`hvAA-${current}_rec`) ?? `{}`);
-        if (!turnLog.match('partially resists')) { // v091 排除部分抵抗的情况进行数据收集
-          for (const effect of effects) {
-            const skill = Object.values(skillLib).find(skill => [skill.name, skill.buff].includes(effect));
-            if (!skill) {
-              console.log('Unknown debuff skill', effect)
-              continue;
-            }
-            let duration = skill.duration;
-            if (typeof duration === 'number') {
-              duration = duration * 1;
-            } else if (duration !== 'permanent') { for (const ab in duration) {
-              if (!(duration = duration[ab][ability[ab]??0])) continue;
-            } }
-            rec[effect] ??= {}
-            rec[effect].turns ??= 0;
+        for (const effect of effects) {
+          const turns = effectObj[effect].turns*1;
+          if (isNaN(turns)) continue;
+          const skill = Object.values(skillLib).find(skill => [skill.name, skill.buff].includes(effect)) ?? console.log('Unknown debuff skill', effect);
+          if (!skill) continue;
 
-            const current = effectObj[effect].turns*1;
-            if (!isNaN(current)) {
-              const min = duration??roundUp(current / 4, 0);
-              const ratio = Math.max(1,current / min / channeling);
-              // 091版本debuff可叠加，测试核验需要计算增量，不在此版本进行（公式应该没改）
-              if (hvVersion < 91 && ratio > 6) {
-                throw new Error(`duration undefined: ${effect}, ${min},${duration}*${channeling}*${ratio}=?${current}`)
-              } else if (ratio <= 4) { // 中间段 (4,6] 很可能受 channeling 影响，不太好记录和测试，排除中间段的ratio
-                rec[effect].minBase = min;
-                rec[effect].turns = current;
-                if (skill.proficiency) {
-                  const [ptype, plow, phigh] = skill.proficiency;
-                  const p = proficiency[ptype];
-                  rec[effect].calcProf = Math.min(4, (p-plow)/(phigh-plow) * 4).toFixed(6)*1;
-                  if (rec[effect].calcProf === 4) {
-                    rec[effect].finPHigh = p;
-                  }
-                }
-                if (ratio > (rec[effect].asumeProf??0)) {
-                  rec[effect].asumeProf = ratio.toFixed(6)*1;
-                }
-              }
-            }
+          rec[effect] ??= { t:0 };
+          // 获取新增时间（忽略非新增的情况）
+          let [delta, added] = [turns - rec[effect].t, rec[effect].d];
+          if (delta > 0) {
+            added = hvVersion < 91 ? turns : rec[effect].t ? delta : added;
+          }
+          // 获取基础、熟练度计算倍率、熟练度，设置及初始化主要数据
+          let [duration, base, profRatio, prof, channelingRatio] = getDuration(skill, channeling);
+          if (profRatio === 4) rec[effect].f = prof;
+          rec[effect].b = base; // 基础持续时间
+          rec[effect].c = profRatio; // 公式理论计算值
+          rec[effect].ch = rec[effect].t && added > 0 ? channelingRatio : rec[effect].ch; // 引导倍率
+          rec[effect].t = turns; // 当前剩余持续时间
+          rec[effect].d = added; // 新增时间
+          rec[effect].m = Math.max(rec[effect].m??0, added); // 历史最大新增时间
+          rec[effect].a ??= [0,0]; // 推测熟练度倍率 [ 历史最大值, 按照‘缺失引导信息导致变成1.5倍’的修正值(除以1.5)  ]
+          rec[effect].r ??= [0,0,0]; // 实际倍率 [ 0-4 应该正常, 4-6推测缺失引导信息, 6+ 异常]
+          // 计算推测倍率
+          if (base <= added) {
+            const a = Math.max(base, added)/base/channelingRatio
+            rec[effect].a[0] = Math.max(a, rec[effect].a[0]).toFixed(4)*1;
+            rec[effect].a[1] = Math.max(a/1.5, rec[effect].a[1]).toFixed(4)*1;
+          }
+          // 检查实际ratio
+          const ratio = Math.max(base, added)/duration;
+          if (ratio > 1.5) {
+            rec.error ??= [];
+            const e =`${effect}: ${Math.max(base, added).toFixed(4)}/(${base.toFixed(4)}*${channelingRatio.toFixed(4)}*${profRatio.toFixed(4)})=${ratio.toFixed(4)}`
+            if (!rec.error.includes(e)) rec.error.push(e);
+          }
+          if (ratio > 1.5 && ratio > rec[effect].r[2]) {
+            rec[effect].r[2] = ratio.toFixed(4)*1;
+          } else if (ratio <= 1.5 && ratio > 1 && ratio > rec[effect].r[1]) {
+            rec[effect].r[1] = ratio.toFixed(4)*1;
+          } else if (ratio <= 1 && ratio > rec[effect].r[0]) {
+            rec[effect].r[0] = ratio.toFixed(4)*1;
           }
           localStorage.setItem(`hvAA-${current}_rec`, JSON.stringify(rec));
         }
         // DEBUG END ---------------------
 
         let savedEffects = activeMonster.effectObj ??= {};
-        if (effects.length < 5) {
-          for (const effect in savedEffects) delete savedEffects[effect];
-        } else if (effects.length === 5) {
-          for (const effect in savedEffects) delete savedEffects[effect];
-          for (const effect of effects) savedEffects[effect] = { ...effectObj[effect] };
-        } else if (effects.length === 6) {
+        if (effects.length <= 5) for (const effect in savedEffects) delete savedEffects[effect];
+        if (effects.length >= 5) for (const effect of effects) savedEffects[effect] = { ...effectObj[effect] }; // updated directly
+        if (effects.length !== 6) continue; // <= 5 && undetermined situation
 
-          for (const effect of effects) savedEffects[effect] = { ...effectObj[effect] }; // updated directly
-
-          if (effectChanges[name]) {
-            for (const effect of effectChanges[name].add) {
-              const skill = Object.values(skillLib).find(skill => [skill.name, skill.buff].includes(effect));
-              if (!skill) {
-                console.log('Unknown debuff skill', effect)
-                continue;
-              }
-              const c = skill.channling ? channeling : 1
-              if (savedEffects[name]) {
-                savedEffects[name][effect].channeling ??= c;
-              }
-              if (effects.includes(effect)) continue; // updated directly above
-              let duration = skill.duration;
-              // TODO TBD combine effectSrc and skillLib
-              // TODO TBD stack from skillLib etc.
-              // TODO 测试检查非 减益技能(deprecating) 的debuff持续时间是否正确 (skillLib)
-
-              // TODO 熟练度带来的持续时间倍率 proficiency 进行计算
-              // TODO 确认倍率公式，已知最大为4
-              // 推测：
-              // 计算方式为 (p-pmin)/(pmax-pmin) * 4
-              // pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
-              // 和 https://ehwiki.org/wiki/Spells#Offensive_Magic
-              // 减益技能(deprecating) 统一按照减益的熟练度
-              // 元素攻击（应该包括Burning Soul/Ripened Soul?）带来的按各自的熟练度（推测是按T3的pmin/pmax）
-              // 至于取整方式则暂时无法确定
-              let ratio = 1;
-              if (skill.proficiency) {
-                const [ptype, plow, phigh] = skill.proficiency;
-                const p = proficiency[ptype];
-                ratio = Math.min(4, (p-plow)/(phigh-plow) * 4).toFixed(6)*1;
-                // v91 倍率貌似公式不一样
-              }
-              if (typeof duration === 'number') {
-                duration = ratio * c * duration;
-              } else if (duration !== 'permanent') { for (const ab in duration) {
-                if (!(duration = Math.round(ratio * c * duration[ab][ability[ab]??0]))) continue;
-              } }
-              if (hvVersion >= 91 && savedEffects[effect]) {
-                let t = savedEffects[effect].turns;
-                // TODO 叠加规则（部分抵抗无法估算?）
-                if (duration === 'permanent') {
-                  t = 'permanent'
-                } else if (t === '-') {
-                  t = duration ?? '-';
-                } else if (isNewTurn) {
-                  t += duration ?? 0;
-                }
-                savedEffects[effect] = { turns: t, stack: '-' , channeling: c};
-              } else {
-                savedEffects[effect] = { turns: duration ?? '-', stack: '-' , channeling: c};
-              }
-              if (!duration) { console.log('duration undefined saved effect:', effect, savedEffects[effect]) }
+        if (effectChanges[name]) {
+          for (const effect of effectChanges[name].add) {
+            const skill = Object.values(skillLib).find(skill => [skill.name, skill.buff].includes(effect)) ?? console.log('Unknown debuff skill', effect);
+            if (!skill) continue;
+            /* TODO
+            1. TBD combine effectSrc and skillLib
+            2. TBD stack from skillLib etc.
+            3. 测试检查非 减益技能(deprecating) 的debuff持续时间是否正确 (skillLib)
+            4. 熟练度带来的持续时间倍率 proficiency 进行计算
+            5. 确认v091不同buff的叠加规则（部分抵抗无法估算?）
+            6. 确认倍率公式，已知最大为4。推测：
+            计算方式为 (p-pmin)/(pmax-pmin) * 4
+            pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
+            和 https://ehwiki.org/wiki/Spells#Offensive_Magic
+            减益技能(deprecating) 统一按照减益的熟练度
+            元素攻击（应该包括Burning Soul/Ripened Soul?）带来的按各自的熟练度（推测是按T3的pmin/pmax）
+            至于取整方式则暂时无法确定
+            */
+            let [duration, base, profRatio, prof, channelingRatio] = getDuration(skill, channeling);
+            if (savedEffects[name]) savedEffects[name][effect].channeling ??= channelingRatio;
+            if (effects.includes(effect)) continue; // updated directly above
+            if (!duration) { console.log('duration undefined saved effect:', effect, savedEffects[effect]) }
+            if (hvVersion >= 91 && savedEffects[effect]) {
+              const turn = savedEffects[effect].turns*1;
+              if (!isNaN(turn) && isNewTurn) duration = turn + duration ?? 0;
             }
-            for (const effect of effectChanges[name].remove) (!effects.includes(effect) && (effect in savedEffects)) && delete savedEffects[effect];
+            savedEffects[effect] = { turns: duration ?? '-', stack: '-' , channeling: channelingRatio};
           }
+          for (const effect of effectChanges[name].remove) (!effects.includes(effect) && (effect in savedEffects)) && delete savedEffects[effect];
+        }
 
-          applyHiddenDelta(savedEffects, effectObj, delta);
+        applyHiddenDelta(savedEffects, effectObj, turnDelta);
 
-          monster_btm6.style.width = 'max-content';
-          activeMonster.effectObj = savedEffects;
-          for (const effect in savedEffects) {
-            if (effect in effectObj) continue;
-            let { turns, stack } = savedEffects[effect];
-            effectObj[effect] = { turns, stack };
-            if (isNaN(+turns)) turns = `'${String(turns).replace(/'/g, "\\'")}'`;
+        monster_btm6.style.width = 'max-content';
+        activeMonster.effectObj = savedEffects;
+        for (const effect in savedEffects) {
+          if (effect in effectObj) continue;
+          let { turns, stack } = savedEffects[effect];
+          effectObj[effect] = { turns, stack };
+          if (isNaN(+turns)) turns = `'${String(turns).replace(/'/g, "\\'")}'`;
 
-            let img = document.createElement('img');
-            img.src = (isIsekai ? '/isekai' : '') + (effectSrc[effect]?.scr || '/y/e/channeling.png');
-            let description = Object.values(skillLib).find(skill =>[skill.name, skill.buff].includes(effect))?.description;
-            img.setAttribute('onmouseover', `battle.set_infopane_effect('${effect}', ${description}, ${turns})`);
-            img.setAttribute('onmouseout', 'battle.clear_infopane()');
+          let img = document.createElement('img');
+          img.src = (isIsekai ? '/isekai' : '') + (effectSrc[effect]?.scr || '/y/e/channeling.png');
+          let description = Object.values(skillLib).find(skill =>[skill.name, skill.buff].includes(effect))?.description;
+          img.setAttribute('onmouseover', `battle.set_infopane_effect('${effect}', ${description}, ${turns})`);
+          img.setAttribute('onmouseout', 'battle.clear_infopane()');
 
-            monster_btm6.appendChild(img);
-          }
+          monster_btm6.appendChild(img);
         }
       }
       if (!isNewTurn) return;
