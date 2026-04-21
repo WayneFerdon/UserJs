@@ -4948,8 +4948,7 @@
     }
 
     function updateMonsterEffects(isNewTurn=true) {
-      const debuffAutoFill = typeof GM_getValue === 'undefined' ? debuffAutoFill : g('option').debuffAutoFill;
-      if (!debuffAutoFill) return;
+      if (!(typeof GM_getValue === 'undefined' ? debuffAutoFill : g('option').debuffAutoFill)) return;
       const battle = getValue('battle', true);
       if (!battle?.monsterStatus) return;
       let regExp = {
@@ -5468,8 +5467,7 @@
         let effects = Object.keys(effectObj);
 
         // DEBUG ---------------------
-        const enableleRec = typeof GM_getValue === 'undefined' ? debuffAutoFilRec : g('option').debuffAutoFill;
-        if (enableleRec) {
+        if (typeof GM_getValue === 'undefined' ? debuffAutoFillRec : g('option').debuffAutoFillRec) {
           // 统计持续时间及熟练度相关数据，以便进行核验和测试
           const rec = JSON.parse(localStorage.getItem(`hvAA-${current}_rec`) ?? `{}`);
           for (const effect of effects) {
