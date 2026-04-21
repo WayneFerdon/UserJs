@@ -2406,10 +2406,12 @@
 
         const orderObject = gE(`input[${ids}]`)
         let value = orderObject.value;
+        const regExp = new RegExp(`(^|,)${latest}(,|$)`, 'g');
+        while (value.match(regExp)) {
+          value = value.replace(regExp, '$2').replace(/^,/, '');
+        }
         if (e.target.checked) {
           value = value + ((value) ? `,${latest}` : latest);
-        } else {
-          value = value.replace(new RegExp(`(^|,)${latest}(,|$)`), '$2').replace(/^,/, '');
         }
         orderObject.value = value;
       }
