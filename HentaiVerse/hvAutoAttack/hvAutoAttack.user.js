@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.186
+// @version      2.90.187
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -63,7 +63,316 @@
       '<l0>暗</l0><l1>暗</l1><l2>Forbidden</l2>',
     ];
     const monsterStateKeys = { obj: `div.btm1`, lv: `div.btm2`, name: `div.btm3`, bars: `div.btm4>div.btm5`, buffs: `div.btm6` }
+    let monsterBuffSkillLib;
+    const setMonsterBuffSkillLib = (hvVersion) => { return {
+      // debuff skill ------------
+      We: {
+        proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 0, 345], // ???
+        buff: 'Weakened',
+        name: 'Weaken',
+        img: 'weaken',
+        id: '212',
+        range: { 4202: [1, 1, 2, 3] },
+        duration: { 4201: [10,11,12,13,14,15] },
+        channeling: true,
+        description: "'The target has been weakened, making it deal less damage, and preventing it from scoring critical hits.'"
+      },
+      Im: {
+        proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 30, 495], // ???
+        buff: 'Imperiled',
+        name: 'Imperil',
+        img: 'imperil',
+        id: '213',
+        range: { 4204: [1, 1, 2, 3] },
+        duration: { 4203: [10,11,12,13,14,15] },
+        channeling: true,
+        description: hvVersion < 91 ? "'The target has been imperiled, reducing physical and magical mitigation as well as elemental mitigations.'" : "'The target has been imperiled, reducing physical and magical mitigation as well as elemental mitigation.'"
+      },
+      Bl: {
+        proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 30, 610], // ???
+        buff: 'Blinded',
+        name: 'Blind',
+        img: 'blind',
+        id: '231',
+        range: { 4206: [1, 1, 2, 3] },
+        duration: { 4205: [10,11,12,13,14,15] },
+        channeling: true,
+        description: "'The target has been blinded, reducing the chance of landing attacks and hitting with magic spells.'"
+      },
+      Sle: {
+        proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 0, 410], // ???
+        buff: 'Asleep',
+        name: 'Sleep',
+        img: 'sleep',
+        id: '222',
+        range: { 4207: [1, 1, 2, 3] },
+        duration: { 4207: [5,6,6,7] },
+        channeling: true,
+        description: "'The target has been lulled to sleep, preventing it from taking any actions. Any attacks against this target are guaranteed to hit, but can also wake it up.'"
+      },
+      Co: {
+        proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 45, 620], // ???
+        buff: 'Confused',
+        name: 'Confuse',
+        img: 'confuse',
+        id: '223',
+        range: { 4207: [1, 1, 2, 3] },
+        duration: { 4207: [10,11,12,12] },
+        channeling: true,
+        description: "'The target has been confused, making it lunge out wildly and strike friends and foes alike.'"
+      },
+      Si: {
+        proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 40, 600], // ???
+        buff: 'Silenced',
+        name: 'Silence',
+        img: 'silence',
+        id: '232',
+        range: { 4211: [1, 1, 2, 3] },
+        duration: { 4211: [10,11,12,13] },
+        channeling: true,
+        description: "'The target has been silenced, preventing it from using special attacks and magic.'"
+      },
+      MN: {
+        proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 100, 700], // ???
+        buff: hvVersion < 91 ? 'Magically Snared' : 'Immobilized',
+        name: 'MagNet',
+        img: 'magnet',
+        id: '233',
+        range: { 4212: [1, 1, 1, 2, 2, 3] },
+        duration: { 4212: [10,11,12,13,14,15] },
+        channeling: true,
+        description: hvVersion < 91 ? "'The target has been hit with a magic net, eliminating its chance to evade or resist attacks.'" : "'The target has been immobilized, eliminating its chance to evade and reducing its magic resistance.'"
+      },
+      Slo: {
+        proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 0, 300], // ???
+        buff: 'Slowed',
+        name: 'Slow',
+        img: 'slow',
+        id: '221',
+        range: { 4213: [1, 1, 2, 2, 2, 3] },
+        duration: { 4213: [10,11,12,13,14,15] },
+        channeling: true,
+        description: `'The target has been slowed by ${[30,40,40,45,50,50][ability[4213]??0]}%, making it attack less frequently.'`
+      },
+      // debuff skills not checked ------------ ??
+      Dr: {
+        proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 0, 300], // ???
+        buff: 'Vital Theft',
+        name: 'Drain',
+        img: 'drainhp',
+        id: '211',
+        duration: 10,
+        channeling: true,
+        description: hvVersion < 91 ? "'Siphons off the target\\'s life essence over time. This causes a damage-over-time effect, and returns a small amount of health to the player.'" : "'Siphons off the target\\'s life essence over time, and gives it to the player.'"
+      },
+      ET: {
+        proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 0, 300], // ???
+        name: 'Ether Theft',
+        img: 'drainmp',
+        duration: 10, // ??
+        description: "'Siphons off the target\'s mana over time. This returns a small amount of mana to the player.'"
+      },
+      ST: {
+        proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 0, 300], // ???
+        name: 'Spirit Theft',
+        img: 'drainsp',
+        duration: 10, // ??
+        description: "'Siphons off the target\'s spirit over time. This returns a small amount of spirit to the player.'"
+      },
+      // elem attack debuff ------------ ??
+      SS: {
+        proficiency: [hvVersion < 91 ? 'elemental' : 'Elemental', 0, 800], // ???
+        name: 'Searing Skin',
+        img: 'firedot',
+        elem: 2,
+        duration: 3,
+        channeling: true,
+        description: "'The skin of the target has been scorched, inhibiting its attack damage. Cold resistance is lowered.'"
+      },
+      FL: {
+        proficiency: [hvVersion < 91 ? 'elemental' : 'Elemental', 0, 800], // ???
+        name: 'Freezing Limbs',
+        img: 'coldslow',
+        elem: 1,
+        duration: 3,
+        channeling: true,
+        description: "'The limbs of the target have been frozen, causing slower movement. Wind resistance is lowered.'"
+      },
+      TA: {
+        proficiency: [hvVersion < 91 ? 'elemental' : 'Elemental', 0, 800], // ???
+        name: 'Turbulent Air',
+        img: 'windmiss',
+        elem: 4,
+        duration: 3,
+        channeling: true,
+        description: "'The air around the target has been upset, blowing up dust and increasing its miss chance. Elec resistance is lowered.'"
+      },
+      DB: {
+        proficiency: [hvVersion < 91 ? 'elemental' : 'Elemental', 0, 800], // ???
+        name: 'Deep Burns',
+        img: 'elecweak',
+        elem: 3,
+        duration: 3,
+        channeling: true,
+        description: "'Internal damage causes slower reactions and lowers evade and resist chance. Fire resistance is lowered.'"
+      },
+      BD: {
+        proficiency: [hvVersion < 91 ? 'forbidden' : 'Forbidden', 0, 800], // ???
+        name: 'Breached Defense',
+        img: 'holybreach',
+        elem: 6,
+        duration: 3,
+        channeling: true,
+        description: "'The holy attack has penetrated the target defenses, making it take more damage. Dark resistance is lowered.'"
+      },
+      BA: {
+        proficiency: [hvVersion < 91 ? 'divine' : 'Divine', 0, 800], // ???
+        name: 'Blunted Attack',
+        img: 'darknerf',
+        elem: 5,
+        duration: 3,
+        channeling: true,
+        description: "'The decaying effects of the spell has blunted the target offenses, making it deal less damage. Holy resistance is lowered.'"
+      },
+      BS: {
+        proficiency: [hvVersion < 91 ? 'divine' : 'Divine', 0, 800], // ???
+        name: 'Burning Soul',
+        img: 'soulfire',
+        duration: 7,
+        channeling: true,
+        description: "'The life essence of the target has been set ablaze, damaging its physical form over time.'"
+      },
+      RS: {
+        proficiency: [hvVersion < 91 ? 'forbidden' : 'Forbidden', 0, 800], // ???
+        name: 'Ripened Soul',
+        img: 'ripesoul',
+        duration: 7,
+        channeling: true,
+        description: "'The life essence of the target has been corrupted beyond repair, damaging its physical form over time.'"
+      },
+      // weapon debuff ------------ ??
+      PA: {
+        name: 'Penetrated Armor',
+        img: 'wpn_ap',
+        duration: 7,
+        description: "'The armor of this target has been breached, reducing its physical defenses.'"
+      },
+      BW: {
+        name: 'Bleeding Wound',
+        img: 'wpn_bleed',
+        duration: 7,
+        description: hvVersion < 91 ? "'A gashing wound is making this target take damage over time.'" : "'Gashing wounds are making this target take damage over time.'"
+      },
+      Stun: {
+        name: 'Stunned',
+        img: 'wpn_stun',
+        duration: 4,
+        description: "'A powerful blow has temporarily stunned this target.'"
+      },
+      // else from player ------------ ??
+      Po: {
+        name: 'Spreading Poison',
+        img: 'poison',
+        duration: 15,
+        description: "'Poison courses through the target\'s veins. This causes a damage-over-time effect, and eliminates its evade chance.'"
+      },
+      CM: {
+        name: 'Coalesced Mana',
+        img: 'coalescemana',
+        duration: 5,
+        description: "'Mystical energies have converged on this target. Striking it with any magic spell will consume only half the normal mana.'"
+      },
+      // from monster ------------ ?? permanent or 800?
+      AW: {
+        name: 'Absorbing Ward',
+        img: 'absorb',
+        duration: 'permanent',
+        description: "'The next magical attack against the target has a chance to be absorbed and partially converted to MP.'"
+      },
+      FoS: {
+        name: 'Fury of the Sisters',
+        img: 'trio_furyofthesisters',
+        duration: hvVersion < 91 ? undefined :'permanent',
+        description: hvVersion < 91 ? "'The destruction of the world tree has infuriated its defenders, increasing their hit and crit chances.'" : "'The destruction of the world tree has infuriated its defenders, increasing their accuracy.'"
+      },
+      LoF: {
+        name: 'Lamentations of the Future',
+        img: 'trio_skuld',
+        duration: hvVersion < 91 ? undefined :'permanent',
+        description: "'The destruction of the future has increased the attack power of her allies.'"
+      },
+      SoP: {
+        name: 'Screams of the Past',
+        img: 'trio_urd',
+        duration: hvVersion < 91 ? undefined :'permanent',
+        description: "'The destruction of the past has increased the defensive power of her allies.'"
+      },
+      WoP: {
+        buff: 'Wails of the Present',
+        name: 'Wailings of the Present',
+        img: 'trio_verdandi',
+        duration: hvVersion < 91 ? undefined :'permanent',
+        description: "'The destruction the present has increased the attack speed of her allies.'"
+      },
+    } };
+
+    const playerBuffSkillLib = {
+      SS: {
+        name: 'Spirit Shield',
+        id: '423',
+        img: 'spiritshield',
+      },
+      SL: {
+        name: 'Spark of Life',
+        id: '422',
+        img: 'sparklife',
+      },
+      Pr: {
+        name: 'Protection',
+        id: '411',
+        img: 'protection',
+      },
+      Ab: {
+        name: 'Absorb',
+        id: '421',
+        img: 'absorb',
+      },
+      SV: {
+        name: 'Shadow Veil',
+        id: '413',
+        img: 'shadowveil',
+      },
+      Re: {
+        name: 'Regen',
+        id: '312',
+        img: 'regen',
+      },
+      Ha: {
+        name: 'Haste',
+        id: '412',
+        img: 'haste',
+      },
+      He: {
+        name: 'Heartseeker',
+        id: '431',
+        img: 'heartseeker',
+      },
+      AF: {
+        name: 'Arcane Focus',
+        id: '432',
+        img: 'arcanemeditation',
+      },
+
+      CF: {
+        name: 'Cloak of the Fallen',
+        id: 422,
+        img: 'fallenshield',
+      }
+    };
+
     const [$RPN, $async, $debug, $ajax] = [initRPN(), initAsync(), initDebug(), window.top.$ajax ??= unsafeWindow.$ajax ??= initAjax()];
+
+    // 初始化结束，开始实际流程
     for (let check of [checkIsHV, checkIsWindowTop, checkOption]) {
       if (!check()) return;
     }
@@ -481,6 +790,7 @@
         const hvver = gE('script[src*="hvc.js"]', document).src.match(/z\/(\d+)(.*)\/hvc.js/);
         hvVersion = hvver[1] * 1;
         hvVersion.sub = hvver[2];
+        monsterBuffSkillLib = setMonsterBuffSkillLib(hvVersion)
 
         // 补充记录（因写入冲突、网络卡顿等）未被记录的encounter链接
         if (window.location.href.indexOf(`?s=Battle&ss=ba`) !== -1) {
@@ -4904,11 +5214,15 @@
           }, delay2 * (Math.random() * 50 + 50) / 100);
         }
       }.toString()};
+      // bool
+      const isIsekai = ${isIsekai};
+      const isDisplay = ${g().option.isDisplayAllDebuff};
+      const debuffAutoFill = ${g().option.debuffAutoFill?.toString() ?? 'undefined'};
+      const debuffAutoFillRec = ${g().option.debuffAutoFillRec?.toString() ?? 'undefined'};
+      // string
       const current = "${current}";
       const other = "${other}";
-      const isIsekai = "${isIsekai}";
-      const isDisplay = ${g().option.isDisplayAllDebuff};
-
+      // object
       const local = ${JSON.stringify(local)};
       const standalone = ${JSON.stringify(standalone)};
       const excludeStandalone = ${JSON.stringify(excludeStandalone)};
@@ -4917,9 +5231,8 @@
       const monsterStateKeys = ${JSON.stringify(monsterStateKeys)};
       const ability = ${JSON.stringify(ability)};
       const hvVersion = ${JSON.stringify(hvVersion)};
-      const debuffAutoFill = ${g().option.debuffAutoFill?.toString() ?? 'undefined'};
-      const debuffAutoFillRec = ${g().option.debuffAutoFillRec?.toString() ?? 'undefined'};
-
+      const monsterBuffSkillLib = ${JSON.stringify(monsterBuffSkillLib)};
+      // funciton
       ${[updateMonsterEffects,
          getMonsterID, getMonster, getMonster, getBuff,
          getValue, setValue, delValue,
@@ -5068,277 +5381,6 @@
         crystal: /(?:(\d+)x )?(Crystal of \w+)/,
       }
 
-      const effectSrc = {
-        'Vital Theft': { scr: '/y/e/drainhp.png' },
-        'Ether Theft': { scr: '/y/e/drainmp.png' },
-        'Spirit Theft': { scr: '/y/e/drainsp.png' },
-
-        'Weakened': { scr: '/y/e/weaken.png' },
-        'Imperiled': { scr: '/y/e/imperil.png' },
-        'Slowed': { scr: '/y/e/slow.png' },
-        'Asleep': { scr: '/y/e/sleep.png' },
-        'Confused': { scr: '/y/e/confuse.png' },
-        'Blinded': { scr: '/y/e/blind.png' },
-        'Silenced': { scr: '/y/e/silence.png' },
-        'Magically Snared': { scr: '/y/e/magnet.png' },
-        'Immobilized': { scr: '/y/e/magnet.png' },
-        'Stunned': { scr: '/y/e/wpn_stun.png' },
-        'Penetrated Armor': { scr: '/y/e/wpn_ap.png' },
-        'Bleeding Wound': { scr: '/y/e/wpn_bleed.png' },
-        'Spreading Poison': { scr: '/y/e/poison.png' },
-        'Coalesced Mana': { scr: '/y/e/coalescemana.png' },
-
-        'Searing Skin': { scr: '/y/e/firedot.png' },
-        'Freezing Limbs': { scr: '/y/e/coldslow.png' },
-        'Turbulent Air': { scr: '/y/e/windmiss.png' },
-        'Deep Burns': { scr: '/y/e/elecweak.png' },
-        'Breached Defense': { scr: '/y/e/holybreach.png' },
-        'Blunted Attack': { scr: '/y/e/darknerf.png' },
-        'Burning Soul': { scr: '/y/e/soulfire.png' },
-        'Ripened Soul': { scr: '/y/e/ripesoul.png' },
-
-        'Fury of the Sisters': { scr: '/y/e/trio_furyofthesisters.png' },
-        'Lamentations of the Future': { scr: '/y/e/trio_skuld.png' },
-        'Screams of the Past': { scr: '/y/e/trio_urd.png' },
-        'Wails of the Present': { scr: '/y/e/trio_verdandi.png' },
-        'Absorbing Ward': { scr: '/y/e/absorb.png' },
-      };
-
-      const skillLib = {
-        // debuff skill ------------
-        We: {
-          proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 0, 345], // ???
-          buff: 'Weakened',
-          name: 'Weaken',
-          img: 'weaken',
-          duration: { 4201: [10,11,12,13,14,15] },
-          channeling: true,
-          description: "'The target has been weakened, making it deal less damage, and preventing it from scoring critical hits.'"
-        },
-        Im: {
-          proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 30, 495], // ???
-          buff: 'Imperiled',
-          name: 'Imperil',
-          img: 'imperil',
-          duration: { 4203: [10,11,12,13,14,15] },
-          channeling: true,
-          description: hvVersion < 91 ? "'The target has been imperiled, reducing physical and magical mitigation as well as elemental mitigations.'" : "'The target has been imperiled, reducing physical and magical mitigation as well as elemental mitigation.'"
-        },
-        Bl: {
-          proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 30, 610], // ???
-          buff: 'Blinded',
-          name: 'Blind',
-          img: 'blind',
-          duration: { 4205: [10,11,12,13,14,15] },
-          channeling: true,
-          description: "'The target has been blinded, reducing the chance of landing attacks and hitting with magic spells.'"
-        },
-        Sle: {
-          proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 0, 410], // ???
-          buff: 'Asleep',
-          name: 'Sleep',
-          img: 'sleep',
-          duration: { 4207: [5,6,6,7] },
-          channeling: true,
-          description: "'The target has been lulled to sleep, preventing it from taking any actions. Any attacks against this target are guaranteed to hit, but can also wake it up.'"
-        },
-        Co: {
-          proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 45, 620], // ???
-          buff: 'Confused',
-          name: 'Confuse',
-          img: 'confuse',
-          duration: { 4207: [10,11,12,12] },
-          channeling: true,
-          description: "'The target has been confused, making it lunge out wildly and strike friends and foes alike.'"
-        },
-        Si: {
-          proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 40, 600], // ???
-          buff: 'Silenced',
-          name: 'Silence',
-          img: 'silence',
-          duration: { 4211: [10,11,12,13] },
-          channeling: true,
-          description: "'The target has been silenced, preventing it from using special attacks and magic.'"
-        },
-        MN: {
-          proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 100, 700], // ???
-          buff: hvVersion < 91 ? 'Magically Snared' : 'Immobilized',
-          name: 'MagNet',
-          img: 'magnet',
-          duration: { 4212: [10,11,12,13,14,15] },
-          channeling: true,
-          description: hvVersion < 91 ? "'The target has been hit with a magic net, eliminating its chance to evade or resist attacks.'" : "'The target has been immobilized, eliminating its chance to evade and reducing its magic resistance.'"
-        },
-        Slo: {
-          proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 0, 300], // ???
-          buff: 'Slowed',
-          name: 'Slow',
-          img: 'slow',
-          duration: { 4213: [10,11,12,13,14,15] },
-          channeling: true,
-          description: `'The target has been slowed by ${[30,40,40,45,50,50][ability[4213]??0]}%, making it attack less frequently.'`
-        },
-        // debuff skills not checked ------------ ??
-        Dr: {
-          proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 0, 300], // ???
-          buff: 'Vital Theft',
-          name: 'Drain',
-          img: 'drainhp',
-          duration: 10,
-          channeling: true,
-          description: hvVersion < 91 ? "'Siphons off the target\\'s life essence over time. This causes a damage-over-time effect, and returns a small amount of health to the player.'" : "'Siphons off the target\\'s life essence over time, and gives it to the player.'"
-        },
-        ET: {
-          proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 0, 300], // ???
-          name: 'Ether Theft',
-          img: 'drainmp',
-          duration: 10, // ??
-          description: "'Siphons off the target\'s mana over time. This returns a small amount of mana to the player.'"
-        },
-        ST: {
-          proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 0, 300], // ???
-          name: 'Spirit Theft',
-          img: 'drainsp',
-          duration: 10, // ??
-          description: "'Siphons off the target\'s spirit over time. This returns a small amount of spirit to the player.'"
-        },
-        // elem attack debuff ------------ ??
-        SS: {
-          proficiency: [hvVersion < 91 ? 'elemental' : 'Elemental', 0, 800], // ???
-          name: 'Searing Skin',
-          img: 'firedot',
-          elem: 2,
-          duration: 3,
-          channeling: true,
-          description: "'The skin of the target has been scorched, inhibiting its attack damage. Cold resistance is lowered.'"
-        },
-        FL: {
-          proficiency: [hvVersion < 91 ? 'elemental' : 'Elemental', 0, 800], // ???
-          name: 'Freezing Limbs',
-          img: 'coldslow',
-          elem: 1,
-          duration: 3,
-          channeling: true,
-          description: "'The limbs of the target have been frozen, causing slower movement. Wind resistance is lowered.'"
-        },
-        TA: {
-          proficiency: [hvVersion < 91 ? 'elemental' : 'Elemental', 0, 800], // ???
-          name: 'Turbulent Air',
-          img: 'windmiss',
-          elem: 4,
-          duration: 3,
-          channeling: true,
-          description: "'The air around the target has been upset, blowing up dust and increasing its miss chance. Elec resistance is lowered.'"
-        },
-        DB: {
-          proficiency: [hvVersion < 91 ? 'elemental' : 'Elemental', 0, 800], // ???
-          name: 'Deep Burns',
-          img: 'elecweak',
-          elem: 3,
-          duration: 3,
-          channeling: true,
-          description: "'Internal damage causes slower reactions and lowers evade and resist chance. Fire resistance is lowered.'"
-        },
-        BD: {
-          proficiency: [hvVersion < 91 ? 'forbidden' : 'Forbidden', 0, 800], // ???
-          name: 'Breached Defense',
-          img: 'holybreach',
-          elem: 6,
-          duration: 3,
-          channeling: true,
-          description: "'The holy attack has penetrated the target defenses, making it take more damage. Dark resistance is lowered.'"
-        },
-        BA: {
-          proficiency: [hvVersion < 91 ? 'divine' : 'Divine', 0, 800], // ???
-          name: 'Blunted Attack',
-          img: 'darknerf',
-          elem: 5,
-          duration: 3,
-          channeling: true,
-          description: "'The decaying effects of the spell has blunted the target offenses, making it deal less damage. Holy resistance is lowered.'"
-        },
-        BS: {
-          proficiency: [hvVersion < 91 ? 'divine' : 'Divine', 0, 800], // ???
-          name: 'Burning Soul',
-          img: 'soulfire',
-          duration: 7,
-          channeling: true,
-          description: "'The life essence of the target has been set ablaze, damaging its physical form over time.'"
-        },
-        RS: {
-          proficiency: [hvVersion < 91 ? 'forbidden' : 'Forbidden', 0, 800], // ???
-          name: 'Ripened Soul',
-          img: 'ripesoul',
-          duration: 7,
-          channeling: true,
-          description: "'The life essence of the target has been corrupted beyond repair, damaging its physical form over time.'"
-        },
-        // weapon debuff ------------ ??
-        PA: {
-          name: 'Penetrated Armor',
-          img: 'wpn_ap',
-          duration: 7,
-          description: "'The armor of this target has been breached, reducing its physical defenses.'"
-        },
-        BW: {
-          name: 'Bleeding Wound',
-          img: 'wpn_bleed',
-          duration: 7,
-          description: hvVersion < 91 ? "'A gashing wound is making this target take damage over time.'" : "'Gashing wounds are making this target take damage over time.'"
-        },
-        Stun: {
-          name: 'Stunned',
-          img: 'wpn_stun',
-          duration: 4,
-          description: "'A powerful blow has temporarily stunned this target.'"
-        },
-        // else from player ------------ ??
-        Po: {
-          name: 'Spreading Poison',
-          img: 'poison',
-          duration: 15,
-          description: "'Poison courses through the target\'s veins. This causes a damage-over-time effect, and eliminates its evade chance.'"
-        },
-        CM: {
-          name: 'Coalesced Mana',
-          img: 'coalescemana',
-          duration: 5,
-          description: "'Mystical energies have converged on this target. Striking it with any magic spell will consume only half the normal mana.'"
-        },
-        // from monster ------------ ?? permanent or 800?
-        AW: {
-          name: 'Absorbing Ward',
-          img: 'absorb',
-          duration: 'permanent',
-          description: "'The next magical attack against the target has a chance to be absorbed and partially converted to MP.'"
-        },
-        FoS: {
-          name: 'Fury of the Sisters',
-          img: 'trio_furyofthesisters',
-          duration: hvVersion < 91 ? undefined :'permanent',
-          description: hvVersion < 91 ? "'The destruction of the world tree has infuriated its defenders, increasing their hit and crit chances.'" : "'The destruction of the world tree has infuriated its defenders, increasing their accuracy.'"
-        },
-        LoF: {
-          name: 'Lamentations of the Future',
-          img: 'trio_skuld',
-          duration: hvVersion < 91 ? undefined :'permanent',
-          description: "'The destruction of the future has increased the attack power of her allies.'"
-        },
-        SoP: {
-          name: 'Screams of the Past',
-          img: 'trio_urd',
-          duration: hvVersion < 91 ? undefined :'permanent',
-          description: "'The destruction of the past has increased the defensive power of her allies.'"
-        },
-        WoP: {
-          buff: 'Wails of the Present',
-          name: 'Wailings of the Present',
-          img: 'trio_verdandi',
-          duration: hvVersion < 91 ? undefined :'permanent',
-          description: "'The destruction the present has increased the attack speed of her allies.'"
-        },
-      };
-
       function getDuration(skill, channeling) {
         let [base, profRatio, prof] = [skill.duration, 1, 0];
         if (typeof base === 'number') {
@@ -5447,7 +5489,7 @@
       let effectChanges = getEffectChanges(turnLog);
 
       let turnDelta = isNewTurn && !turnLog.match(regExp.zeroturn) ? 1 : 0;
-
+      const getBuffSkill = (buff) => Object.values(monsterBuffSkillLib).find(skill => [skill.name, skill.buff].includes(buff)) ?? console.log('Unknown debuff skill', buff);
       for (const activeMonster of battle.monsterStatus) {
         if (gE('img[src*="nbardead.png"]', getMonster(getMonsterID(activeMonster)))) continue; // continue if dead
 
@@ -5462,8 +5504,10 @@
           if (!matches?.groups) return;
 
           let { name, stack, description, turns } = matches.groups;
-          let dc = Object.values(skillLib).find(skill => [skill.name, skill.buff].includes(name))?.description;
-          if (dc !== description) console.log('Unmatching debuff description:', name, description, dc);
+          let dc = getBuffSkill(name)?.description;
+          if (dc !== description) console.log('Unmatching debuff description:', description, '\n from', name, dc);
+          // TODO 测试确保 ability[4213] Better Slow 效果正常：
+          // description: `'The target has been slowed by ${[30,40,40,45,50,50][ability[4213]??0]}%, making it attack less frequently.'`
           if (name) effectObj[name] = { turns, stack: stack ?? 1 };
         });
         let effects = Object.keys(effectObj);
@@ -5475,7 +5519,7 @@
           for (const effect of effects) {
             const turns = effectObj[effect].turns*1;
             if (isNaN(turns)) continue;
-            const skill = Object.values(skillLib).find(skill => [skill.name, skill.buff].includes(effect)) ?? console.log('Unknown debuff skill', effect);
+            const skill = getBuffSkill(effect);
             if (!skill) continue;
 
             rec[effect] ??= { t:0 };
@@ -5527,12 +5571,11 @@
 
         if (effectChanges[name]) {
           for (const effect of effectChanges[name].add) {
-            const skill = Object.values(skillLib).find(skill => [skill.name, skill.buff].includes(effect)) ?? console.log('Unknown debuff skill', effect);
+            const skill = getBuffSkill(effect);
             if (!skill) continue;
             /* TODO
-            1. TBD combine effectSrc and skillLib
-            2. TBD stack from skillLib etc.
-            3. 测试检查非 减益技能(deprecating) 的debuff持续时间是否正确 (skillLib)
+            2. TBD stack from monsterBuffSkillLib etc.
+            3. 测试检查非 减益技能(deprecating) 的debuff持续时间是否正确 (monsterBuffSkillLib)
             4. 熟练度带来的持续时间倍率 proficiency 进行计算
             5. 确认v091不同buff的叠加规则（部分抵抗无法估算?）
             6. 确认倍率公式，已知最大为4。推测：
@@ -5548,8 +5591,8 @@
             if (effects.includes(effect)) continue; // updated directly above
             if (!duration) { console.log('duration undefined saved effect:', effect, savedEffects[effect]) }
             if (hvVersion >= 91 && savedEffects[effect]) {
-              const turn = savedEffects[effect].turns*1;
-              if (!isNaN(turn) && isNewTurn) duration = turn + duration ?? 0;
+              const turn = (savedEffects[effect].turns??0) * 1;
+              if (isNewTurn && !isNaN(turn)) duration = turn + (duration ?? 0);
             }
             savedEffects[effect] = { turns: duration ?? '-', stack: '-' , channeling: channelingRatio};
           }
@@ -5567,8 +5610,8 @@
           if (isNaN(+turns)) turns = `'${String(turns).replace(/'/g, "\\'")}'`;
 
           let img = document.createElement('img');
-          img.src = (isIsekai ? '/isekai' : '') + (effectSrc[effect]?.scr || '/y/e/channeling.png');
-          let description = Object.values(skillLib).find(skill =>[skill.name, skill.buff].includes(effect))?.description;
+          img.src = (`${isIsekai ? '/isekai' : ''}/y/e/${ getBuffSkill(effect)?.img || 'channeling'}.png`);
+          let description = getBuffSkill(effect)?.description;
           img.setAttribute('onmouseover', `battle.set_infopane_effect('${effect}', ${description}, ${turns})`);
           img.setAttribute('onmouseout', 'battle.clear_infopane()');
 
@@ -5755,133 +5798,6 @@
       }
       battle.monsterStatus = monsterStatus;
 
-      const skillLib = {
-        Sle: {
-          name: 'Sleep',
-          img: 'sleep',
-        },
-        Bl: {
-          name: 'Blind',
-          img: 'blind',
-        },
-        Slo: {
-          name: 'Slow',
-          img: 'slow',
-        },
-        Im: {
-          name: 'Imperil',
-          img: 'imperil',
-        },
-        MN: {
-          name: 'MagNet',
-          img: 'magnet',
-        },
-        Si: {
-          name: 'Silence',
-          img: 'silence',
-        },
-        Dr: {
-          name: 'Drain',
-          img: 'drainhp',
-        },
-        ET: {
-          name: 'Ether Theft',
-          img: 'drainmp',
-        },
-        ST: {
-          name: 'Spirit Theft',
-          img: 'drainsp',
-        },
-        We: {
-          name: 'Weaken',
-          img: 'weaken',
-        },
-        Co: {
-          name: 'Confuse',
-          img: 'confuse',
-        },
-        Po: {
-          name: 'Spreading Poison',
-          img: 'poison'
-        },
-        CM: {
-          name: 'Coalesced Mana',
-          img: 'coalescemana',
-        },
-        Stun: {
-          name: 'Stunned',
-          img: 'wpn_stun',
-        },
-        PA: {
-          name: 'Penetrated Armor',
-          img: 'wpn_ap',
-        },
-        BW: {
-          name: 'Bleeding Wound',
-          img: 'wpn_bleed',
-        },
-        AW: {
-          name: 'Absorbing Ward',
-          img: 'absorb',
-        },
-
-        FoS: {
-          name: 'Fury of the Sisters',
-          img: 'trio_furyofthesisters',
-        },
-        LoF: {
-          name: 'Lamentations of the Future',
-          img: 'trio_skuld',
-        },
-        SoP: {
-          name: 'Screams of the Past',
-          img: 'trio_urd',
-        },
-        WoP: {
-          name: 'Wailings of the Present',
-          img: 'trio_verdandi',
-        },
-
-        SS: {
-          name: 'Searing Skin',
-          img: 'firedot',
-          elem: 2,
-        },
-        FL: {
-          name: 'Freezing Limbs',
-          img: 'coldslow',
-          elem: 1,
-        },
-        TA: {
-          name: 'Turbulent Air',
-          img: 'windmiss',
-          elem: 4,
-        },
-        DB: {
-          name: 'Deep Burns',
-          img: 'elecweak',
-          elem: 3,
-        },
-        BD: {
-          name: 'Breached Defense',
-          img: 'holybreach',
-          elem: 6,
-        },
-        BA: {
-          name: 'Blunted Attack',
-          img: 'darknerf',
-          elem: 5,
-        },
-
-        BS: {
-          name: 'Burning Soul',
-          img: 'soulfire',
-        },
-        RS: {
-          name: 'Ripened Soul',
-          img: 'ripesoul',
-        },
-      };
       const monsterBuff = gE(monsterStateKeys.buffs, 'all');
       const hpMin = Math.min.apply(null, hpArray);
       const option = g().option;
@@ -5900,12 +5816,12 @@
           weight += yggdrasilExtraWeight; // yggdrasilExtraWeight.defalut -1000
         }
         const known = {};
-        for (j in skillLib) {
-          if (!gE(`img[src*="/${skillLib[j].img}"]`, monsterBuff[i])) {
+        for (j in monsterBuffSkillLib) {
+          if (!gE(`img[src*="/${monsterBuffSkillLib[j].img}"]`, monsterBuff[i])) {
             continue;
           }
-          known[skillLib[j].img] = skillLib[j];
-          if (skillLib[j].elem && skillLib[j].elem !== g().attackStatus) {
+          known[monsterBuffSkillLib[j].img] = monsterBuffSkillLib[j];
+          if (monsterBuffSkillLib[j].elem && monsterBuffSkillLib[j].elem !== g().attackStatus) {
             weight += option.weight[`${j}1`] ?? 0;
             continue;
           }
@@ -6044,77 +5960,26 @@
       if (!getBuff('channeling')) {
         return false;
       }
-      const skillLib = {
-        SS: {
-          name: 'Spirit Shield',
-          id: '423',
-          img: 'spiritshield',
-        },
-        SL: {
-          name: 'Spark of Life',
-          id: '422',
-          img: 'sparklife',
-        },
-        Pr: {
-          name: 'Protection',
-          id: '411',
-          img: 'protection',
-        },
-        Ab: {
-          name: 'Absorb',
-          id: '421',
-          img: 'absorb',
-        },
-        SV: {
-          name: 'Shadow Veil',
-          id: '413',
-          img: 'shadowveil',
-        },
-        Re: {
-          name: 'Regen',
-          id: '312',
-          img: 'regen',
-        },
-        Ha: {
-          name: 'Haste',
-          id: '412',
-          img: 'haste',
-        },
-        He: {
-          name: 'Heartseeker',
-          id: '431',
-          img: 'heartseeker',
-        },
-        AF: {
-          name: 'Arcane Focus',
-          id: '432',
-          img: 'arcanemeditation',
-        },
 
-        CF: {
-          name: 'Cloak of the Fallen',
-          id: getBuff('sparklife') ? undefined : 422,
-          img: 'fallenshield',
-        }
-      };
+      playerBuffSkillLib.CF.id = getBuff('sparklife') ? undefined : 422;
       if (option.channelSkill) {
         const skillPack = splitOrders(option.buffSkillOrderValue, ['SS', 'SL', 'Pr', 'Ab', 'SV', 'Re', 'Ha', 'He', 'AF']);
         for (const buff of skillPack) {
-          const current = getBuffTurnFromImg(getBuff(skillLib[buff].img));
+          const current = getBuffTurnFromImg(getBuff(playerBuffSkillLib[buff].img));
           const threshold = option.channelThreshold ? option.channelThreshold[buff] : 0;
           if (threshold > 0 && current >= threshold) continue;
-          if (!option.channelSkill[buff] || getBuff(skillLib[buff].img)) continue;
-          if (!isOn(skillLib[buff].id)) continue;
-          gE(skillLib[buff].id).click();
+          if (!option.channelSkill[buff] || getBuff(playerBuffSkillLib[buff].img)) continue;
+          if (!isOn(playerBuffSkillLib[buff].id)) continue;
+          gE(playerBuffSkillLib[buff].id).click();
           return true;
         }
       }
       if (option.channelSkill2) {
         const order = splitOrders(option.channelSkill2OrderValue);
         for (const id of order) {
-          const buff = Object.keys(skillLib).find(s => skillLib[s].id * 1 === 1 * id);
-          if (buff) {
-            const current = getBuffTurnFromImg(getBuff(skillLib[buff].img));
+          const buffs = Object.keys(playerBuffSkillLib).filter(s => playerBuffSkillLib[s].id * 1 === 1 * id);
+          for (const buff of buffs) {
+            const current = getBuffTurnFromImg(getBuff(playerBuffSkillLib[buff].img));
             const threshold = option.channelThreshold ? option.channelThreshold[buff] : 0;
             if (threshold > 0 && current > threshold) continue;
           }
@@ -6125,18 +5990,18 @@
       }
       if (option.channelRebuff) {
         let minBuff, minTime;
-        for (const buff in skillLib) {
-          let current = getBuffTurnFromImg(getBuff(skillLib[buff].img));
+        for (const buff in playerBuffSkillLib) {
+          let current = getBuffTurnFromImg(getBuff(playerBuffSkillLib[buff].img));
           const threshold = option.channelThreshold ? option.channelThreshold[buff] : 0;
           if (threshold > 0 && current > threshold) continue;
 
           current = isNaN(current) ? 0 : current;
-          if (getBuff(skillLib[buff].img)?.src.match(/_scroll.png$/) || (minTime && current >= minTime)) {
+          if (getBuff(playerBuffSkillLib[buff].img)?.src.match(/_scroll.png$/) || (minTime && current >= minTime)) {
             continue;
           }
-          const id = skillLib[buff].id;
           if (!current && (!option.buffSkillSwitch || !option.buffSkill[buff])) continue;
 
+          const id = playerBuffSkillLib[buff].id;
           if (!isOn(id)) continue;
           minBuff = id;
           minTime = current;
@@ -6150,53 +6015,6 @@
     }
 
     function useBuffSkill() { // 自动施法BUFF技能
-      const skillLib = {
-        SS: {
-          name: 'Spirit Shield',
-          id: '423',
-          img: 'spiritshield',
-        },
-        SL: {
-          name: 'Spark of Life',
-          id: '422',
-          img: 'sparklife',
-        },
-        Pr: {
-          name: 'Protection',
-          id: '411',
-          img: 'protection',
-        },
-        Ab: {
-          name: 'Absorb',
-          id: '421',
-          img: 'absorb',
-        },
-        SV: {
-          name: 'Shadow Veil',
-          id: '413',
-          img: 'shadowveil',
-        },
-        Re: {
-          name: 'Regen',
-          id: '312',
-          img: 'regen',
-        },
-        Ha: {
-          name: 'Haste',
-          id: '412',
-          img: 'haste',
-        },
-        He: {
-          name: 'Heartseeker',
-          id: '431',
-          img: 'heartseeker',
-        },
-        AF: {
-          name: 'Arcane Focus',
-          id: '432',
-          img: 'arcanemeditation',
-        },
-      };
       const option = g().option;
       if (!option.buffSkillSwitch) {
         return false;
@@ -6212,14 +6030,15 @@
       for (i = 0; i < skillPack.length; i++) {
         let buff = skillPack[i];
         if (!option.buffSkill[buff]) continue;
-        if (!isOn(skillLib[buff].id)) continue;
+        if (!isOn(playerBuffSkillLib[buff].id)) continue;
         if (!checkCondition(option[`buffSkill${buff}Condition`])) continue;
-        const current = getBuffTurnFromImg(getBuff(skillLib[buff].img));
+        const current = getBuffTurnFromImg(getBuff(playerBuffSkillLib[buff].img));
         const threshold = option.buffSkillThreshold ? option.buffSkillThreshold[buff] : 0;
         if (threshold >= 0 && current > threshold) continue;
-        gE(skillLib[buff].id).click();
+        gE(playerBuffSkillLib[buff].id).click();
         return true;
       }
+
       const draughtPack = {
         HD: {
           id: 11191,
@@ -6354,50 +6173,41 @@
       if (!option.skillSwitch) {
         return false;
       }
-      if (!gE('#ckey_spirit[src*="spirit_a"]')) {
-        return false;
-      }
+      // if (!gE('#ckey_spirit[src*="spirit_a"]')) {
+      //   return false;
+      // }
+      if (!option.skill) return false;
 
       const skillOrder = splitOrders(option.skillOrderValue, ['OFC', 'FRD', 'T3', 'T2', 'T1']);
       const fightStyle = g().fightingStyle; // 1二天 2单手 3双手 4双持 5法杖
       const skillLib = {
-        OFC: '1111',
-        FRD: '1101',
-        T3: fightStyle ? `2${fightStyle}03` : undefined,
-        T2: fightStyle ? `2${fightStyle}02` : undefined,
-        T1: fightStyle ? `2${fightStyle}01` : undefined,
+        OFC: 1111,
+        FRD: 1101,
+        T3: fightStyle ? `2${fightStyle}03`*1 : undefined,
+        T2: fightStyle ? `2${fightStyle}02`*1 : undefined,
+        T1: fightStyle ? `2${fightStyle}01`*1 : undefined,
       };
-      const skillOC = { // default as 2
-        '1101': 4,
-        '1111': 8,
-        '2101': 4,
-        '2201': 1,
-        '2203': 4,
-        '2403': 3
-      }
-      const rangeSkills = {
-        2101: 5,
-        2302: 5,
-        2303: 5,
-        2403: 5,
-        // 1101: 20, 全体
-        // 1111: 20,
-      }
-      const optionSkills = option.skill;
-      if (!optionSkills) {
-        return;
+      const skillInfos = {
+        1101: { oc: 4, range: 10 },
+        1111: { oc: 8, range: 10 },
+        2101: { oc: 4, range: 5 },
+        2201: { oc: 1, },
+        2203: { oc: 4, },
+        2302: { range: 5 },
+        2303: { range: 5 },
+        2403: { oc: 3, }
       }
       const monsterStatus = g().battle.monsterStatus;
       for (let i in skillOrder) {
         let skill = skillOrder[i];
-        if (!skill || !optionSkills[skill]) {
+        if (!skill || !option.skill[skill]) {
           return;
         }
         let id = skillLib[skill];
         if (!isOn(id)) {
           continue;
         }
-        if (g().oc < (id in skillOC ? skillOC[id] : 2)) {
+        if (g().oc < (skillInfos[id]?.oc ?? 2)) {
           continue;
         }
         const skillOTOS = getValue('skillOTOS', true) ?? {};
@@ -6412,7 +6222,8 @@
           continue;
         }
         gE(id).click();
-        clickMonster(getRangeCenter(target, rangeSkills[id] ?? 1).id);
+
+        clickMonster(getRangeCenter(target, skillInfos[id]?.range ?? 1).id);
         return true;
       }
       return false;
@@ -6459,70 +6270,15 @@
     }
 
     function useDebuffSkill(buff, isAll = false) {
-      const skillLib = {
-        Sle: {
-          name: 'Sleep',
-          id: '222',
-          img: 'sleep',
-          range: { 4207: [1, 1, 2, 3] },
-        },
-        Bl: {
-          name: 'Blind',
-          id: '231',
-          img: 'blind',
-          range: { 4206: [1, 1, 2, 3] },
-        },
-        Slo: {
-          name: 'Slow',
-          id: '221',
-          img: 'slow',
-          range: { 4213: [1, 1, 2, 2, 2, 3] },
-        },
-        Im: {
-          name: 'Imperil',
-          id: '213',
-          img: 'imperil',
-          range: { 4204: [1, 1, 2, 3] },
-        },
-        MN: {
-          name: 'MagNet',
-          id: '233',
-          img: 'magnet',
-          range: { 4212: [1, 1, 1, 2, 2, 3] },
-        },
-        Si: {
-          name: 'Silence',
-          id: '232',
-          img: 'silence',
-          range: { 4211: [1, 1, 2, 3] },
-        },
-        Dr: {
-          name: 'Drain',
-          id: '211',
-          img: 'drainhp',
-        },
-        We: {
-          name: 'Weaken',
-          id: '212',
-          img: 'weaken',
-          range: { 4202: [1, 1, 2, 3] },
-        },
-        Co: {
-          name: 'Confuse',
-          id: '223',
-          img: 'confuse',
-          range: { 4207: [1, 1, 2, 3] },
-        },
-      };
-      if (!isOn(skillLib[buff].id)) { // 技能不可用
+      if (!isOn(monsterBuffSkillLib[buff].id)) { // 技能不可用
         return false;
       }
       // 获取范围
       let range = 1;
       let ab;
       const ability = getValue('ability', true);
-      for (ab in skillLib[buff].range) {
-        const ranges = skillLib[buff].range[ab];
+      for (ab in monsterBuffSkillLib[buff].range) {
+        const ranges = monsterBuffSkillLib[buff].range[ab];
         if (!ranges) {
           continue;
         }
@@ -6539,7 +6295,7 @@
       }
       let isDebuffed = (target, b) => {
         if (b || !exclusiveBuffs) {
-          const current = getBuffTurnFromImg(getBuff(skillLib[b ?? buff].img, getMonsterID(target)));
+          const current = getBuffTurnFromImg(getBuff(monsterBuffSkillLib[b ?? buff].img, getMonsterID(target)));
           const threshold = option.debuffSkillThreshold ? option.debuffSkillThreshold[b ?? buff] : 0;
           return threshold >= 0 && current > threshold;
         }
@@ -6583,7 +6339,7 @@
       if (imgs.length >= 6) {
         switch (option.debuffSkillTurnAlert * 1) {
           case 1:
-            if ((option.debuffSkillTurn && (getBuffTurnFromImg(buffs[skillLib[buff].img]) ?? 0) >= option.debuffSkillTurn[buff])){
+            if ((option.debuffSkillTurn && (getBuffTurnFromImg(buffs[monsterBuffSkillLib[buff].img]) ?? 0) >= option.debuffSkillTurn[buff])){
               return false;
             }
             _alert(0, '无法正常施放DEBUFF技能，请尝试手动打怪', '無法正常施放DEBUFF技能，請嘗試手動打怪', 'Can not cast de-skills normally, continue the script?\nPlease try attack manually.');
@@ -6595,7 +6351,7 @@
             return false;
         }
       }
-      gE(skillLib[buff].id).click();
+      gE(monsterBuffSkillLib[buff].id).click();
       clickMonster(id);
       return true;
     }
