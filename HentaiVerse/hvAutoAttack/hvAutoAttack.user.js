@@ -292,26 +292,26 @@
       FoS: {
         name: 'Fury of the Sisters',
         img: 'trio_furyofthesisters',
-        duration: hvVersion < 91 ? undefined :'permanent',
+        duration: hvVersion < 91 ? 'permanent' :'permanent',
         description: hvVersion < 91 ? "'The destruction of the world tree has infuriated its defenders, increasing their hit and crit chances.'" : "'The destruction of the world tree has infuriated its defenders, increasing their accuracy.'"
       },
       LoF: {
         name: 'Lamentations of the Future',
         img: 'trio_skuld',
-        duration: hvVersion < 91 ? undefined :'permanent',
+        duration: hvVersion < 91 ? 'permanent' :'permanent',
         description: "'The destruction of the future has increased the attack power of her allies.'"
       },
       SoP: {
         name: 'Screams of the Past',
         img: 'trio_urd',
-        duration: hvVersion < 91 ? undefined :'permanent',
+        duration: hvVersion < 91 ? 'permanent' :'permanent',
         description: "'The destruction of the past has increased the defensive power of her allies.'"
       },
       WoP: {
         buff: 'Wails of the Present',
         name: 'Wailings of the Present',
         img: 'trio_verdandi',
-        duration: hvVersion < 91 ? undefined :'permanent',
+        duration: hvVersion < 91 ? 'permanent' :'permanent',
         description: "'The destruction the present has increased the attack speed of her allies.'"
       },
     } };
@@ -5386,7 +5386,8 @@
         if (typeof base === 'number') {
           base = base * 1;
         } else if (base !== 'permanent') { for (const ab in base) {
-          if (!(base = base[ab][ability[ab]??0])) continue;
+          base = base[ab][ability[ab]??0];
+          break;
         } }
         if (skill.proficiency) {
           const [ptype, plow, phigh] = skill.proficiency;
