@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.187
+// @version      2.90.188
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -292,26 +292,26 @@
       FoS: {
         name: 'Fury of the Sisters',
         img: 'trio_furyofthesisters',
-        duration: hvVersion < 91 ? 'permanent' :'permanent',
+        duration: hvVersion < 91 ? 777 :'permanent',
         description: hvVersion < 91 ? "'The destruction of the world tree has infuriated its defenders, increasing their hit and crit chances.'" : "'The destruction of the world tree has infuriated its defenders, increasing their accuracy.'"
       },
       LoF: {
         name: 'Lamentations of the Future',
         img: 'trio_skuld',
-        duration: hvVersion < 91 ? 'permanent' :'permanent',
+        duration: hvVersion < 91 ? 777 :'permanent',
         description: "'The destruction of the future has increased the attack power of her allies.'"
       },
       SoP: {
         name: 'Screams of the Past',
         img: 'trio_urd',
-        duration: hvVersion < 91 ? 'permanent' :'permanent',
+        duration: hvVersion < 91 ? 777 :'permanent',
         description: "'The destruction of the past has increased the defensive power of her allies.'"
       },
       WoP: {
         buff: 'Wails of the Present',
         name: 'Wailings of the Present',
         img: 'trio_verdandi',
-        duration: hvVersion < 91 ? 'permanent' :'permanent',
+        duration: hvVersion < 91 ? 777 :'permanent',
         description: "'The destruction the present has increased the attack speed of her allies.'"
       },
     } };
@@ -5489,14 +5489,22 @@
 
       let effectChanges = getEffectChanges(turnLog);
 
-      let turnDelta = isNewTurn && !turnLog.match(regExp.zeroturn) ? 1 : 0;
+      // 消除对每次操作影响turns程度最大的加速buff（技能或卷轴）
+      let turnDelta = (isNewTurn && !turnLog.match(regExp.zeroturn)) ? 1 : 0;
+      turnDelta *= 100 / (getBuff('haste')?.getAttribute('onmouseover').match(/increasing its action speed by (.*)%\./)[1] ?? 100);
+
       const getBuffSkill = (buff) => Object.values(monsterBuffSkillLib).find(skill => [skill.name, skill.buff].includes(buff)) ?? console.log('Unknown debuff skill', buff);
       for (const activeMonster of battle.monsterStatus) {
         if (gE('img[src*="nbardead.png"]', getMonster(getMonsterID(activeMonster)))) continue; // continue if dead
 
-        let name = gE(monsterStateKeys.name, getMonster(getMonsterID(activeMonster))).innerText;
+        const monster = getMonster(getMonsterID(activeMonster));
+        if (gE('img[src*="nbardead.png"]', monster)) continue; // continue if dead
+
+        let name = gE(monsterStateKeys.name, monster).innerText;
         let effectObj = {};
-        let monster_btm6 = gE('.btm6', getMonster(getMonsterID(activeMonster)));
+        let jpxObj = {};
+        let monster_btm6 = gE('.btm6', monster);
+
         monster_btm6.querySelectorAll('img').forEach((effect) => {
           let tooltip = effect.getAttribute('onmouseover');
           if (!tooltip) return;
@@ -5505,11 +5513,17 @@
           if (!matches?.groups) return;
 
           let { name, stack, description, turns } = matches.groups;
+          if (!name) return console.log('Undefined debuff name:', name);
+          const jpx = turns === '-' || description.includes('jpx Hidden Effects');
+          if (jpx) { // 可能为jpx补全的buff，在hvAA中重新计算确认数据
+            jpxObj[name] = effect;
+            return;
+          }
           let dc = getBuffSkill(name)?.description;
           if (dc !== description) console.log('Unmatching debuff description:', description, '\n from', name, dc);
           // TODO 测试确保 ability[4213] Better Slow 效果正常：
           // description: `'The target has been slowed by ${[30,40,40,45,50,50][ability[4213]??0]}%, making it attack less frequently.'`
-          if (name) effectObj[name] = { turns, stack: stack ?? 1 };
+          effectObj[name] = { turns, stack: stack ?? 1 };
         });
         let effects = Object.keys(effectObj);
 
@@ -5609,11 +5623,10 @@
           let { turns, stack } = savedEffects[effect];
           effectObj[effect] = { turns, stack };
           if (isNaN(+turns)) turns = `'${String(turns).replace(/'/g, "\\'")}'`;
-
-          let img = document.createElement('img');
+          let img = jpxObj[effect] ?? document.createElement('img');
           img.src = (`${isIsekai ? '/isekai' : ''}/y/e/${ getBuffSkill(effect)?.img || 'channeling'}.png`);
           let description = getBuffSkill(effect)?.description;
-          img.setAttribute('onmouseover', `battle.set_infopane_effect('${effect}', ${description}, ${turns})`);
+          img.setAttribute('onmouseover', `battle.set_infopane_effect('${effect}', ${description}, ${Math.floor(turns)})`);
           img.setAttribute('onmouseout', 'battle.clear_infopane()');
 
           monster_btm6.appendChild(img);
