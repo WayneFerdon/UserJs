@@ -5520,9 +5520,12 @@
             return;
           }
           let dc = getBuffSkill(name)?.description;
-          if (dc !== description) console.log('Unmatching debuff description:', description, '\n from', name, dc);
-          // TODO 测试确保 ability[4213] Better Slow 效果正常：
-          // description: `'The target has been slowed by ${[30,40,40,45,50,50][ability[4213]??0]}%, making it attack less frequently.'`
+          if (dc !== description) {
+            // TODO 测试确保 ability[4213] Better Slow 效果描述正常，目前是描述均是30%
+            if (dc !== `'The target has been slowed by ${[30,40,40,45,50,50][ability[4213]??0]}%, making it attack less frequently.'` && description !== `'The target has been slowed by 30%, making it attack less frequently.'`) {
+              console.log('Unmatching debuff description:', description, '\n from', name, dc);
+            }
+          }
           effectObj[name] = { turns, stack: stack ?? 1 };
         });
         let effects = Object.keys(effectObj);
@@ -5589,11 +5592,10 @@
             const skill = getBuffSkill(effect);
             if (!skill) continue;
             /* TODO
-            2. TBD stack from monsterBuffSkillLib etc.
-            3. 测试检查非 减益技能(deprecating) 的debuff持续时间是否正确 (monsterBuffSkillLib)
-            4. 熟练度带来的持续时间倍率 proficiency 进行计算
-            5. 确认v091不同buff的叠加规则（部分抵抗无法估算?）
-            6. 确认倍率公式，已知最大为4。推测：
+            1. TBD stack from monsterBuffSkillLib etc.
+            2. 测试检查非 减益技能(deprecating) 的debuff持续时间是否正确 (monsterBuffSkillLib)
+            3. 确认v091不同buff的叠加规则（部分抵抗无法估算?）
+            4. 确认熟练度倍率公式，已知最大为4。推测：
             计算方式为 (p-pmin)/(pmax-pmin) * 4
             pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
             和 https://ehwiki.org/wiki/Spells#Offensive_Magic
@@ -6301,6 +6303,7 @@
       }
       // 获取目标
       const option = g().option;
+      // TODO TBD 权重倍率 额外结合剩余turns数
       const excludedRatio = 0.9
       let exclusiveBuffs;
       if (isAll && option.debuffAllExclusive) {
@@ -6504,7 +6507,7 @@
 
     function getHPFromMonsterDB(mdb, name, lv) {
       let hp = (mdb && mdb[name]) ? mdb[name][lv] : undefined;
-      // TODO: 根据lv模糊推测
+      // TODO TBD 根据lv模糊推测（一般数据都是等级逐渐提升的，可能可以直接用缓存而不需要推测，异世界新赛季时可以自动刷新缓存?）
       return hp;
     }
 
