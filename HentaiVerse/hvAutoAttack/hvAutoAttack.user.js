@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.189
+// @version      2.90.190
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -646,7 +646,7 @@
           $ajax.fetch(url, data, method, context, headers).then(goto).catch(e => { console.error(e) });
         },
         openNoFetch: function (url, newTab) {
-          window.open(url, newTab ? '_blank' : '_self')
+          window.open(url, newTab ? '_blank' : '_self');
         },
         repeat: function (count, func, ...args) {
           const list = [];
@@ -743,7 +743,7 @@
           } else if (text === 'state lock limiter in effect') {
             if ($ajax.error !== text) {
               popup(`<p style="color: #f00; font-weight: bold;">${text}</p><p>Your connection speed is so fast that <br>you have reached the maximum connection limit.</p><p>Try again later.</p>`);
-              console.error(`${text}\nYour connection speed is so fast that you have reached the maximum connection limit. Try again later.`)
+              console.error(`${text}\nYour connection speed is so fast that you have reached the maximum connection limit. Try again later.`);
             }
             $ajax.error = text;
             r.context.onerror?.();
@@ -790,7 +790,7 @@
         const hvver = gE('script[src*="hvc.js"]', document).src.match(/z\/(\d+)(.*)\/hvc.js/);
         hvVersion = hvver[1] * 1;
         hvVersion.sub = hvver[2];
-        monsterBuffSkillLib = setMonsterBuffSkillLib(hvVersion)
+        monsterBuffSkillLib = setMonsterBuffSkillLib(hvVersion);
 
         // 补充记录（因写入冲突、网络卡顿等）未被记录的encounter链接
         if (window.location.href.indexOf(`?s=Battle&ss=ba`) !== -1) {
@@ -861,11 +861,11 @@
       // 2. 若新的遭遇已出现，则前一次已超时失效错过，重新获取新的一次
       if (!isEngage) { // 战斗外，非自动跳转
         if (eventpane) {
-          eventpane.style.cssText += 'color:red;' // 链接标红提醒
+          eventpane.style.cssText += 'color:red;'; // 链接标红提醒
         }
       } else if (getValue('battle')) { //战斗中
         if (eventpane) {
-          eventpane.style.cssText += 'color:gray;' // 链接置灰提醒
+          eventpane.style.cssText += 'color:gray;'; // 链接置灰提醒
         }
       } else { // 战斗外，自动跳转
         checkOption();
@@ -1023,7 +1023,7 @@
       if (!gE('#riddlecounter')) {
         return false;
       }
-      setValue('onriddle', true)
+      setValue('onriddle', true);
       if (!g().option.riddlePopup || window.opener) {
         riddleAlert();
         return true;
@@ -1062,9 +1062,9 @@
       }
       updateMonsterEffects(false);
       if (getValue('onriddle', true)) {
-        console.log('onBattle clean onriddle')
+        console.log('onBattle clean onriddle');
         window.history.replaceState(null, '', window.location.href);
-        delValue('onriddle')
+        delValue('onriddle');
       }
 
       const box2 = gE('#battle_main').appendChild(cE('div'));
@@ -1247,11 +1247,11 @@
       let option = getValue('option', true);
 
       // 迁移2.90.162及之前的targetHp等到targetHpDecimal等
-      const version = option.version.split('.').map(v=>isNaN(v*1) ? v : v*1)
+      const version = option.version.split('.').map(v=>isNaN(v*1) ? v : v*1);
       if (version[0] < 2 || version[1] < 90 || isNaN(1*version[2]) || version[2]<=162) {
         option = JSON.parse(JSON.stringify(option).replace('targetHp', 'targetHpDecimal').replace('targetMp', 'targetMpDecimal').replace('targetSp', 'targetSpDecimal'));
         option.version = '2.90.163'
-        g('version', option.version)
+        g('version', option.version);
       }
       // 迁移2.90.168及之前的channelSkill2Order_Cure的Name错误
       option.channelSkill2Order_Cure = option.channelSkill2Order_Cu;
@@ -2714,7 +2714,7 @@
         const valueArray = valueFrom(e);
         const latest = Array.isArray(valueArray) ? valueArray[index] : valueArray;
 
-        const orderObject = gE(`input[${ids}]`)
+        const orderObject = gE(`input[${ids}]`);
         let value = orderObject.value;
         const regExp = new RegExp(`(^|,)${latest}(,|$)`, 'g');
         while (value.match(regExp)) {
@@ -3055,7 +3055,7 @@
             });
           }
         }
-        g('option', option)
+        g('option', option);
         const customize = gE('.customize', 'all', optionBox);
         for (i = 0; i < customize.length; i++) {
           itemName = customize[i].getAttribute('name');
@@ -3443,7 +3443,7 @@
             continue;
           }
           if (typeof result === 'string') {
-            result = JSON.parse(result)
+            result = JSON.parse(result);
           }
           result = result[key]
         }
@@ -3559,7 +3559,7 @@
         },
         targetName(param) {
           param ??= target
-          const mon = getMonster(getMonsterID(param))
+          const mon = getMonster(getMonsterID(param));
           return gE(`.btm3>div>div`, mon).innerText.replace(' ', '_');
         },
         targetBossType(param) {
@@ -4023,7 +4023,7 @@
         (async () => { try {
           let perk = stamina.perk;
           if (perk && !Array.isArray(perk)) {
-            perk = Object.keys(perk).map(id=>id*1)
+            perk = Object.keys(perk).map(id=>id*1);
           }
           if (!perk?.length) {
             perk = undefined;
@@ -4223,7 +4223,7 @@
           eqps[id]=slot;
         });
         const doc = $doc(await $ajax.insert(url));
-        const eqpdoc = await $ajax.insert(gE('#mainpane>script[src]', doc).src)
+        const eqpdoc = await $ajax.insert(gE('#mainpane>script[src]', doc).src);
         const json = JSON.parse(eqpdoc.match(/{.*}/)[0]);
         await Promise.all(Array.from(gE('.eqp>[id]', 'all', doc)).map(e => (async eqp => { try {
           const id = eqp.id.match(/\d+/)[0];
@@ -4237,7 +4237,7 @@
             return;
           });
           let type = data.d.match(`<div class=\"eq e.\"><div>.* *(Armor|Weapon|Shield|Staff).*</div><div>Condition`)[1];
-          type = (type === 'Shield') ? 'Armor' : (type === 'Staff' ? 'Weapon' : type)
+          type = (type === 'Shield') ? 'Armor' : (type === 'Staff' ? 'Weapon' : type);
           return await Promise.all(Object.keys(enchant[slot]).map(i => (async item => { try {
             const threshold = enchant[slot][item];
             const current = enchanted[item] ?? 0;
@@ -4268,7 +4268,7 @@
       if (hvVersion < 91) {
         const url = `?s=Forge&ss=re`;
         const doc = $doc(await $ajax.insert(url));
-        const eqpdoc = await $ajax.insert(gE('#mainpane>script[src]', doc).src)
+        const eqpdoc = await $ajax.insert(gE('#mainpane>script[src]', doc).src);
         const json = JSON.parse(eqpdoc.match(/{.*}/)[0]);
         eqps = await Promise.all(Array.from(gE('.eqp>[id]', 'all', doc)).map(async eqp => { try {
           const id = eqp.id.match(/\d+/)[0];
@@ -4630,7 +4630,7 @@
       [stamina.current, stamina.punish] = await getCurrentStamina();
       stamina.time = time(0);
       for (let id in staminaCost) {
-        staminaCost[id] *= (isIsekai ? 2 : 1) * (stamina.current >= 60 ? 0.03 : 0.02)
+        staminaCost[id] *= (isIsekai ? 2 : 1) * (stamina.current >= 60 ? 0.03 : 0.02);
       }
 
       let query;
@@ -4695,7 +4695,7 @@
             order: ms.order,
             hp: ms.hp
           }
-        })
+        });
         battle.monsterStatus.sort(objArrSort('order'));
       };
       $debug.log('onBattle', `\n`, battle);
@@ -4934,9 +4934,9 @@
         return undefined;
       }
       if (id === undefined) {
-        return gE(`#pane_effects>img[src*="${buff}"]`);
+        return gE(`#pane_effects>img[src*="/${buff}"]`) ?? gE(`#pane_effects>img[src*="_${buff}"]`);
       }
-      return gE(`${monsterStateKeys.buffs}>img[src*="${buff}"]`, getMonster(id));
+      return gE(`${monsterStateKeys.buffs}>img[src*="/${buff}"]`, getMonster(id)) ?? gE(`${monsterStateKeys.buffs}>img[src*="_${buff}"]`, getMonster(id));
     }
 
     function isOn(id) { // 是否可以施放技能/使用物品
@@ -5044,7 +5044,7 @@
       function clearBattleUnresponsive() {
         Object.keys(battleUnresponsive).forEach(t => {
           if (!battleUnresponsive[t].timeout) return;
-          clearTimeout(battleUnresponsive[t].timeout)
+          clearTimeout(battleUnresponsive[t].timeout);
         });
       }
       async function onBattleUnresponsive(method) { try {
@@ -5139,7 +5139,7 @@
                   await pauseAsync(option.checkURLBeforeNewRoundRetry);
                 } finally {
                   if (!!urlChecked) {
-                    // console.log('Done url check:', !!urlChecked, option.checkURLBeforeNewRound)
+                    // console.log('Done url check:', !!urlChecked, option.checkURLBeforeNewRound);
                   } else {
                     console.error('Failed connect ', option.checkURLBeforeNewRound);
                   }
@@ -5147,15 +5147,15 @@
               }
             }
             const html = await $ajax.insert(window.location.href);
-            const doc = $doc(html)
+            const doc = $doc(html);
             if (gE('#riddlecounter', doc)) {
-              console.log('url check:', option.checkURLBeforeNewRound, '\n', urlChecked)
+              console.log('url check:', option.checkURLBeforeNewRound, '\n', urlChecked);
               if (option.riddlePopup && !window.opener) {
                 window.open(window.location.href, 'riddleWindow', 'resizable,scrollbars,width=1241,height=707');
                 // $async.logSwitch(arguments);
                 return;
               }
-              console.log(window.location.href)
+              console.log(window.location.href);
               goto();
               // $async.logSwitch(arguments);
               return;
@@ -5167,7 +5167,7 @@
               return;
             }
             gE('#pane_completion').removeChild(gE('#btcp'));
-            ['#battle_right', '#battle_left'].forEach(selector => { gE('#battle_main').replaceChild(gE(selector, doc), gE(selector)); })
+            ['#battle_right', '#battle_left'].forEach(selector => { gE('#battle_main').replaceChild(gE(selector, doc), gE(selector)); });
             unsafeWindow.battle = undefined;
             await loadUnsafeWindowBattle();
             $debug.log('______________newRound', true);
@@ -5495,8 +5495,6 @@
 
       const getBuffSkill = (buff) => Object.values(monsterBuffSkillLib).find(skill => [skill.name, skill.buff].includes(buff)) ?? console.log('Unknown debuff skill', buff);
       for (const activeMonster of battle.monsterStatus) {
-        if (gE('img[src*="nbardead.png"]', getMonster(getMonsterID(activeMonster)))) continue; // continue if dead
-
         const monster = getMonster(getMonsterID(activeMonster));
         if (gE('img[src*="nbardead.png"]', monster)) continue; // continue if dead
 
@@ -5822,22 +5820,24 @@
       const baseHpRatio = option.baseHpRatio;
       // 权重越小，优先级越高
       for (i = 0; i < monsterStatus.length; i++) { // 死亡的排在最后（优先级最低）
-        if (monsterStatus[i].isDead) {
-          monsterStatus[i].finWeight = unreachableWeight;
+        const target = monsterStatus[i];
+        if (target.isDead) {
+          target.finWeight = unreachableWeight;
           continue;
         }
-        let weight = baseHpRatio * Math.log10(monsterStatus[i].hpNow / hpMin); // > 0 生命越低权重越低优先级越高
+        let weight = baseHpRatio * Math.log10(target.hpNow / hpMin); // > 0 生命越低权重越低优先级越高
         const name = gE(`${monsterStateKeys.name}>div>div`, monsterBuff[i].parentNode).innerText;
         if (yggdrasilExtraWeight && ('Yggdrasil' === name || '世界树 Yggdrasil' === name)) { // 默认设置下，任何情况都优先击杀群体大量回血的boss"Yggdrasil"
           weight += yggdrasilExtraWeight; // yggdrasilExtraWeight.defalut -1000
         }
         const known = {};
         for (j in monsterBuffSkillLib) {
-          if (!gE(`img[src*="/${monsterBuffSkillLib[j].img}"]`, monsterBuff[i])) {
+          const skill = monsterBuffSkillLib[j];
+          if (!getBuff(skill.img, getMonsterID(target))) {
             continue;
           }
-          known[monsterBuffSkillLib[j].img] = monsterBuffSkillLib[j];
-          if (monsterBuffSkillLib[j].elem && monsterBuffSkillLib[j].elem !== g().attackStatus) {
+          known[skill.img] = skill;
+          if (skill.elem && skill.elem !== g().attackStatus) {
             weight += option.weight[`${j}1`] ?? 0;
             continue;
           }
@@ -5871,7 +5871,7 @@
       const cures = [313, 11199, 11501, 10005, 11195, 311];
       for (let i = 0; i < name.length; i++) {
         let id = order[i];
-        if (isCureOnly && !cures.includes(id)){
+        if (isCureOnly && !cures.includes(id)) {
           continue;
         }
         if (option.item[name[i]] && checkCondition(option[`item${name[i]}Condition`]) && isOn(id)) {
@@ -6162,8 +6162,7 @@
       const enabled = gE('#ckey_spirit[src*="spirit_a"]');
       if (
         (!isDisableOnly && option.turnOnSS && checkCondition(option.turnOnSSCondition) && !enabled)
-        ||
-        (option.turnOffSS && checkCondition(option.turnOffSSCondition) && enabled)
+        || (option.turnOffSS && checkCondition(option.turnOffSSCondition) && enabled)
       ) {
         gE('#ckey_spirit').click();
         return true;
@@ -6286,15 +6285,16 @@
     }
 
     function useDebuffSkill(buff, isAll = false) {
-      if (!isOn(monsterBuffSkillLib[buff].id)) { // 技能不可用
+      const skill = monsterBuffSkillLib[buff];
+      if (!isOn(skill.id)) { // 技能不可用
         return false;
       }
       // 获取范围
       let range = 1;
       let ab;
       const ability = getValue('ability', true);
-      for (ab in monsterBuffSkillLib[buff].range) {
-        const ranges = monsterBuffSkillLib[buff].range[ab];
+      for (ab in skill.range) {
+        const ranges = skill.range[ab];
         if (!ranges) {
           continue;
         }
@@ -6330,7 +6330,7 @@
       let max = isAll ? monsterStatus.length : 1;
       let id;
       let minWeight = Number.MAX_SAFE_INTEGER;
-      const condition = option[`debuffSkill${buff}${isAll ? 'All' : ''}Condition`];target => checkCondition(condition, [target]);
+      const condition = option[`debuffSkill${buff}${isAll ? 'All' : ''}Condition`];
       const excludeCondition = target => checkCondition(condition, [target]) ? isDebuffed(target) : excludedRatio;
       for (let i = 0; i < max; i++) {
         let target = buff === 'Dr' ? monsterStatus[max - i - 1] : monsterStatus[i];
@@ -6349,14 +6349,14 @@
         return false;
       }
       const imgs = gE('img', 'all', gE(monsterStateKeys.buffs, getMonster(id)));
-      const buffs = Object.fromEntries(Array.from(imgs).map(img=> [img.src.match(/\/y\/e\/(.*)\.png/)[1], img]))
+      const buffs = Object.fromEntries(Array.from(imgs).map(img=> [img.src.match(/\/y\/e\/(.*)\.png/)[1], img]));
       // 已有buff小于6个
       // 未开启debuff失败警告
       // buff剩余持续时间大于等于警报时间
       if (imgs.length >= 6) {
         switch (option.debuffSkillTurnAlert * 1) {
           case 1:
-            if ((option.debuffSkillTurn && (getBuffTurnFromImg(buffs[monsterBuffSkillLib[buff].img]) ?? 0) >= option.debuffSkillTurn[buff])){
+            if ((option.debuffSkillTurn && (getBuffTurnFromImg(buffs[skill.img]) ?? 0) >= option.debuffSkillTurn[buff])) {
               return false;
             }
             _alert(0, '无法正常施放DEBUFF技能，请尝试手动打怪', '無法正常施放DEBUFF技能，請嘗試手動打怪', 'Can not cast de-skills normally, continue the script?\nPlease try attack manually.');
@@ -6368,7 +6368,7 @@
             return false;
         }
       }
-      gE(monsterBuffSkillLib[buff].id).click();
+      gE(skill.id).click();
       clickMonster(id);
       return true;
     }
@@ -6539,7 +6539,7 @@
           return;
         }
         weights.push(s.finWeight);
-      })
+      });
       const sec = Math.max(1, weights.length - 1);
       const max = 360 * 2 / 3;
       const colorTextList = [];
