@@ -5523,7 +5523,7 @@
           if (dc !== description) {
             // TODO 测试确保 ability[4213] Better Slow 效果描述正常，目前是描述均是30%
             if (dc !== `'The target has been slowed by ${[30,40,40,45,50,50][ability[4213]??0]}%, making it attack less frequently.'` && description !== `'The target has been slowed by 30%, making it attack less frequently.'`) {
-              console.log('Unmatching debuff description:', description, '\n from', name, dc);
+              console.log('Unmatched debuff description:', description, '\n from', name, dc);
             }
           }
           effectObj[name] = { turns, stack: stack ?? 1 };
