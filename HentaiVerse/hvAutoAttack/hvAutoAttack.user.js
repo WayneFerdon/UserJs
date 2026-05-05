@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.190
+// @version      2.90.191
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -62,7 +62,7 @@
       '<l0>圣</l0><l1>聖</l1><l2>Divine</l2>',
       '<l0>暗</l0><l1>暗</l1><l2>Forbidden</l2>',
     ];
-    const monsterStateKeys = { obj: `div.btm1`, lv: `div.btm2`, name: `div.btm3`, bars: `div.btm4>div.btm5`, buffs: `div.btm6` }
+    const monsterStateKeys = { obj: `div.btm1`, lv: `div.btm2`, name: `div.btm3`, bars: `div.btm4>div.btm5`, buffs: `div.btm6` };
     let monsterBuffSkillLib;
     const setMonsterBuffSkillLib = (hvVersion) => { return {
       // debuff skill ------------
@@ -1060,7 +1060,6 @@
       if (!gE('#textlog')) {
         return false;
       }
-      updateMonsterEffects(false);
       if (getValue('onriddle', true)) {
         console.log('onBattle clean onriddle');
         window.history.replaceState(null, '', window.location.href);
@@ -1080,8 +1079,8 @@
       }
       g('timeNow', time(0));
       g('runSpeed', 1);
-      $debug.log('______________newRound', false);
       newRound(false);
+      updateMonsterEffects(false);
       onBattleRound();
       if (g().option.recordEach) {
         const token = document.body.innerHTML.match(`var battle_token = \"(.*)\";`)[1];
@@ -1222,22 +1221,27 @@
         return;
       }
       getStartBattleButtons().forEach(btn => {
-        if (ar.includes(btn.id)) {
+        if (ar.includes(btn.id) && btn.cleared) {
           return;
         }
-        gE('div', 'all', btn.parentNode.parentNode).forEach(div => { div.style.cssText += 'color:grey!important;' });
+        gE('div', 'all', btn.parentNode.parentNode).forEach(div => { div.style.cssText += `color:${btn.cleared?'grey':'red'}!important;` });
       });
     }
 
-    function getStartBattleButtons(doc = undefined) {
+    function getStartBattleButtons(doc = undefined, site = undefined) {
+      const option = g().option;
       const buttons = [];
       doc ??= document;
-      gE(`img[src*="startchallenge.png"], img[src*="startgrindfest.png"]`, 'all', doc).forEach((btn) => {
+      gE(`img[src*="startchallenge.png"], img[src*="startgrindfest.png"]`, 'all', doc).forEach(btn => {
         const onclick = btn.getAttribute('onclick');
         const key = btn.getAttribute('src').match(`${unsafeWindow.IMG_URL}(.*)/start(.*).png`)[1] === 'grindfest' ? 'gr' : undefined;
         let temp = hvVersion < 91 ? onclick.match(/init_battle\((\d+),\s*(\d+,)*'(.*?)'\)/) : onclick.match(/init_battle\((\d+)(,\d+)*\)/);
         btn.id = key ? key : temp[1] * 1;
         btn.token = temp[3];
+        btn.cleared = site === 'gr' || gE('td:nth-child(2)>div>div', btn.parentNode.parentNode).innerText;
+        if (option.skipUnclearedArena && site !== 'gr') {
+          btn.cleared = btn.cleared !== '-';
+        }
         buttons.push(btn);
       });
       return buttons;
@@ -1830,6 +1834,8 @@
         '        <input id="arLevel_120" value="120,20" type="checkbox"><label for="arLevel_120">120</label> <input id="arLevel_130" value="130,21" type="checkbox"><label for="arLevel_130">130</label> <input id="arLevel_140" value="140,23" type="checkbox"><label for="arLevel_140">140</label> <input id="arLevel_150" value="150,24" type="checkbox"><label for="arLevel_150">150</label> <input id="arLevel_165" value="165,26" type="checkbox"><label for="arLevel_165">165</label> <input id="arLevel_180" value="180,27" type="checkbox"><label for="arLevel_180">180</label> <input id="arLevel_200" value="200,28" type="checkbox"><label for="arLevel_200">200</label> <input id="arLevel_225" value="225,29" type="checkbox"><label for="arLevel_225">225</label> <input id="arLevel_250" value="250,32" type="checkbox"><label for="arLevel_250">250</label> <input id="arLevel_300" value="300,33" type="checkbox"><label for="arLevel_300">300</label> <input id="arLevel_400" value="400,34" type="checkbox"><label for="arLevel_400">400</label> <input id="arLevel_500" value="500,35" type="checkbox"><label for="arLevel_500">500</label>',
         '        <input id="arLevel_RB50" value="RB50,105" type="checkbox"><label for="arLevel_RB50">RB50</label> <input id="arLevel_RB75A" value="RB75A,106" type="checkbox"><label for="arLevel_RB75A">RB75A</label> <input id="arLevel_RB75B" value="RB75B,107" type="checkbox"><label for="arLevel_RB75B">RB75B</label> <input id="arLevel_RB75C" value="RB75C,108" type="checkbox"><label for="arLevel_RB75C">RB75C</label>',
         '        <input id="arLevel_RB100" value="RB100,109" type="checkbox"><label for="arLevel_RB100">RB100</label> <input id="arLevel_RB150" value="RB150,110" type="checkbox"><label for="arLevel_RB150">RB150</label> <input id="arLevel_RB200" value="RB200,111" type="checkbox"><label for="arLevel_RB200">RB200</label> <input id="arLevel_RB250" value="RB250,112" type="checkbox"><label for="arLevel_RB250">RB250</label> <input id="arLevel_GF" value="GF,gr" type="checkbox"><label for="arLevel_GF" >GrindFest </label><input class="hvAANumber" name="idleArenaGrTime" placeholder="1" type="number">',
+        '      </div>',
+        '      <div><input id="skipUnclearedArena" type="checkbox" placeholder="1"><label for="skipUnclearedArena"><l0>跳过未通关过的</l0><l1>跳過未通關過的</l1><l2>Skip not cleared Arena/RingOfBlood</l2>',
         '      </div>',
         '      <div><input id="obscureNotIdleArena" type="checkbox"><label for="obscureNotIdleArena"><l0>页面中置灰未设置且未完成的</l0><l1>頁面中置灰未設置且未完成的</l1><l2>obscure not setted and not battled in Battle&gt;Arena/RingOfBlood</l2>',
         '      </div>',
@@ -4554,10 +4560,17 @@
         await Promise.all(['gr', 'ar', 'rb'].map(s => (async site => {
           try {
             const doc = $doc(await $ajax.insert(`?s=Battle&ss=${site}`));
-            getStartBattleButtons(doc).forEach(btn => { arena.token[btn.id] = btn.token ?? null; });
+            getStartBattleButtons(doc, site).forEach(btn => {
+              if (btn.cleared) {
+                arena.token[btn.id] = btn.token ?? null;
+                return;
+              }
+              delete arena.token[btn.id];
+            });
           } catch (err) { console.error(err) }
         })(s)));
       }
+
       if (!isToday) {
         arena.date = time(0);
         arena.gr = g().option.idleArenaGrTime;
@@ -5170,7 +5183,6 @@
             ['#battle_right', '#battle_left'].forEach(selector => { gE('#battle_main').replaceChild(gE(selector, doc), gE(selector)); });
             unsafeWindow.battle = undefined;
             await loadUnsafeWindowBattle();
-            $debug.log('______________newRound', true);
             newRound(true);
             onStepInDone();
             onBattleRound();
@@ -5185,7 +5197,7 @@
       window.sessionStorage.delay2 = g().option.delay2;
       const fakeApiCall = cE('script');
       fakeApiCall.textContent = `api_call = ${function (b, a, d) {
-        const delay = window.sessionStorage.delay * 1;
+        let delay = window.sessionStorage.delay * 1;
         const delay2 = window.sessionStorage.delay2 * 1;
         window.info = a;
         unsafeWindow = typeof unsafeWindow === 'undefined' ? window : unsafeWindow;
@@ -5198,20 +5210,15 @@
           document.getElementById('eventEnd').click();
         };
         document.getElementById('eventStart').click();
-        if (a.mode === 'magic' && a.skill >= 200) {
-          if (delay <= 0) {
-            b.send(JSON.stringify(a));
-          } else {
-            setTimeout(() => {
-              b.send(JSON.stringify(a));
-            }, delay * (Math.random() * 50 + 50) / 100);
-          }
-        } else if (delay2 <= 0) {
+        if (a.mode !== 'magic' || a.skill < 200) {
+          delay = delay2;
+        }
+        if (delay <= 0) {
           b.send(JSON.stringify(a));
         } else {
           setTimeout(() => {
             b.send(JSON.stringify(a));
-          }, delay2 * (Math.random() * 50 + 50) / 100);
+          }, delay * (Math.random() * 50 + 50) / 100);
         }
       }.toString()};
       // bool
@@ -5646,6 +5653,7 @@
     } catch(e) { console.error(e) }}
 
     function newRound(isNew) { // New Round
+      $debug.log('______________newRound', isNew);
       const token = document.documentElement.outerHTML.match(/var battle_token = "(.*)";/)[1];
       let battle = getValue('battle', true);
       const isSameBattle = battle?.token === token;
@@ -5742,10 +5750,7 @@
             monsterDB[name].mid = mid;
             monsterDB[name][lv] = hp;
           }
-          monsterStatus[order] = {
-            order: order,
-            hp,
-          };
+          monsterStatus[order] = { order, hp };
           order++;
         }
         if (g().option.cacheMonsterHP) {
