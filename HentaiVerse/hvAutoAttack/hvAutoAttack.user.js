@@ -2282,7 +2282,7 @@
         '  </div>',
 
         '<div class="hvAATab" id="hvAATab-Skill">',
-        '  <div><input id="skillSSOnly" type="checkbox" placeholder="true"><label for="skillSSOnly"><l0>只在灵动架式状态下使用，请在<a class="hvAAGoto" name="hvAATab-Main">主要选项</a>勾选并设置<b>开启/关闭灵动架式</b></l0><l1>只在靈動架式狀態下使用，請在<a class="hvAAGoto" name="hvAATab-Main">主要選項</a>勾選並設置<b>開啟/關閉靈動架式</b></l1><l2>Only use skills under Spirit by default, please check and set the <b>Turn on/off Spirit Stance</b> in <a class="hvAAGoto" name="hvAATab-Main">Main</a></l2></label></div>',
+        '  <div><input id="skillSSOnly" type="checkbox" placeholder="true"><label for="skillSSOnly"><l0>只在灵动架式状态下使用</l0><l1>只在靈動架式狀態下使用</l1><l2>Only use skills under Spirit by default</l2></label><br/><span><l0>(请在<a class="hvAAGoto" name="hvAATab-Main">主要选项</a>勾选并设置<b>开启/关闭灵动架式</b>)</l0><l1>(請在<a class="hvAAGoto" name="hvAATab-Main">主要選項</a>勾選並設置<b>開啟/關閉靈動架式</b>)</l1><l2>(please check and set the <b>Turn on/off Spirit Stance</b> in <a class="hvAAGoto" name="hvAATab-Main">Main</a>)</l2></span></div>',
 
         '  <div class="skillOrder"><l0>施放顺序(未配置的按照下面的顺序)</l0><l1>施放順序(未配置的按照下面的順序)</l1><l2>Cast Order(Using order below as default if not configed)</l2>: ',
         '  <input name="skillOrderValue" style="width:80%;" type="text" disabled="true"><br>',
