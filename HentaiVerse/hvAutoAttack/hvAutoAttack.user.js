@@ -3410,7 +3410,7 @@
     }
 
     function checkCondition(parms, targets = undefined) {
-      let i, j, k, target;
+      let i, j, k, target, paramResults={};
       targets ??= [g().battle.monsterStatus[0]];
       if (!parms || !Object.keys(parms).length) {
         return targets[0];
@@ -3421,7 +3421,7 @@
         if (debug) str = str.replace(/^#/, '');
 
         const onResult = (r) => {
-          if (debug) console.log([str], r);
+          if (debug) paramResults[str] = r;
           return r;
         }
 
@@ -3647,6 +3647,7 @@
           if (target.isDead) {
             continue;
           }
+          paramResults={};
           let parmResult = true;
           for (j = 0; j < parms[i].length; j++) {
             let result = true;
@@ -3697,7 +3698,7 @@
               }
             }).replace('_1h', '_onehanded').replace('_2h', '_twohanded');
             result = $RPN.evaluate(k.replace(/^@/, ''), returnValue);
-            if (k.match(/^@/)) console.log([k], result)
+            if (k.match(/^@/)) console.log([k], result, paramResults);
             if (!result) {
               parmResult = false;
               break;
