@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.193
+// @version      2.90.194
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -3410,7 +3410,7 @@
     }
 
     function checkCondition(parms, targets = undefined) {
-      let i, j, k, target, paramResults={};
+      let i, j, k, target, paramResults={}, isDebug;
       targets ??= [g().battle.monsterStatus[0]];
       if (!parms || !Object.keys(parms).length) {
         return targets[0];
@@ -3421,7 +3421,8 @@
         if (debug) str = str.replace(/^#/, '');
 
         const onResult = (r) => {
-          if (debug) paramResults[str] = r;
+          if (debug || isDebug) paramResults[str] = r;
+          if (debug) console.log([str], r);
           return r;
         }
 
@@ -3697,8 +3698,9 @@
                   return '!=';
               }
             }).replace('_1h', '_onehanded').replace('_2h', '_twohanded');
+            isDebug = k.match(/^@/);
             result = $RPN.evaluate(k.replace(/^@/, ''), returnValue);
-            if (k.match(/^@/)) console.log([k], result, paramResults);
+            if (isDebug) console.log([k], result, paramResults);
             if (!result) {
               parmResult = false;
               break;
