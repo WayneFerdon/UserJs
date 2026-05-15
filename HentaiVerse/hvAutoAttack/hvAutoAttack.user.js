@@ -462,9 +462,9 @@
               continue;
             }
 
-            if (/[a-zA-Z_.'",{}]/.test(ch)) {
+            if (/[a-zA-Z_.'",{}#]/.test(ch)) {
               let varName = '';
-              while (i < expression.length && /[a-zA-Z0-9_.'",{}]/.test(expression[i])) {
+              while (i < expression.length && /[a-zA-Z0-9_.'",{}#]/.test(expression[i])) {
                 varName += expression[i];
                 i++;
               }
@@ -483,7 +483,7 @@
           const stack = [];
           for (const token of infixTokens) {
             switch(true) {
-              case typeof token === 'number' || /[a-zA-Z_'",{}]/.test(token[0]):
+              case typeof token === 'number' || /[a-zA-Z_'",{}#]/.test(token[0]):
                 output.push(token);
                 break;
               case token === '(':
@@ -528,7 +528,7 @@
               stack.push(token);
               continue;
             }
-            if (typeof token === 'string' && /[a-zA-Z_.'",{}]/.test(token[0])) {
+            if (typeof token === 'string' && /[a-zA-Z_.'",{}#]/.test(token[0])) {
               let value = resolver ? resolver(token) : token;
               if (typeof value === 'string') {
                 if (value[0] !== `"` && value[0] != `'`) value = `'${value}'`;
@@ -2463,7 +2463,9 @@
         '    <l0>注意: 留空“姓名”一栏则表示删除该行，修改后请保存</l0><l1>注意: 留空“姓名”一欄則表示刪除該行，修改後請保存</l1><l2>Note: The "name" input box left blank will be deleted, after change please save in time.</l2>',
         '    <table><tbody><tr class="hvAATh"><td><l0>图标</l0><l1>圖標</l1><l2>ICON</l2></td><td><l0>名称</l0><l1>名稱</l1><l2>Name</l2></td><td><l0>链接</l0><l1>鏈接</l1><l2>Link</l2></td></tr></tbody></table></div>',
         '  <div><span class="hvAATitle"><l0>备份与还原</l0><l1>備份與還原</l1><l2>Backup and Restore</l2></span></br><button class="hvAABackup"><l0>备份设置</l0><l1>備份設置</l1><l2>Backup Confiuration</l2></button><button class="hvAARestore"><l0>还原设置</l0><l1>還原設置</l1><l2>Restore Confiuration</l2></button><button class="hvAADelete"><l0>删除设置</l0><l1>刪除設置</l1><l2>Delete Confiuration</l2></button><ul class="hvAABackupList"></ul></div>',
-        '  <div><span class="hvAATitle"><l0>导入与导出</l0><l1>導入與導出</l1><l2>Import and Export</l2></span></br><button class="hvAAExport"><l0>导出设置</l0><l1>導出設置</l1><l2>Export Confiuration</l2></button><button class="hvAAImport"><l0>导入设置</l0><l1>導入設置</l1><l2>Import Confiuration</l2></button><textarea class="hvAAConfig"></textarea></div></div>',
+        '  <div><span class="hvAATitle"><l0>导入与导出</l0><l1>導入與導出</l1><l2>Import and Export</l2></span></br><button class="hvAAExport"><l0>导出设置</l0><l1>導出設置</l1><l2>Export Confiuration</l2></button><button class="hvAAImport"><l0>导入设置</l0><l1>導入設置</l1><l2>Import Confiuration</l2></button><textarea class="hvAAConfig"></textarea></div>',
+        '  <div><input id="debugCheckCondition" type="checkbox"><label for="debugCheckCondition">debugCheckCondition:<br/>prefix@/# to log result in console, @for formula, #for param</label>: {{debugCondition}}</div>',
+        '</div>',
 
         '<div class="hvAATab" id="hvAATab-Feedback">',
         '  <span class="hvAATitle"><l01>反馈</l01><l2>Feedback</l2></span>',
@@ -3413,18 +3415,27 @@
         return targets[0];
       }
       const returnValue = function (str) {
+        let result;
+        const debug = str.match(/^#/);
+        if (debug) str = str.replace(/^#/, '');
+
+        const onResult = (r) => {
+          if (debug) console.log([str], r);
+          return r;
+        }
+
         // 旧版本/强制使用func
         if (str.match(/^_/) && !str.match(/\./)) {
           const arr = str.split('_');
-          return func[arr[1]](...[...arr].splice(2));
+          return onResult(func[arr[1]](...[...arr].splice(2)));
         }
         if (!isNaN(str * 1)) { // 数字直接返回
-          return str * 1;
+          return onResult(str * 1);
         }
         const paramList = str.replace(/[^\d](\.)/g, (match, ...p) => {
           return match.replace('.', '_'); // 将不是数字小数点的 . 转为 _ 以便进行参数分割
         }).split('_');
-        let result, isInData;
+        let isInData;
         while (paramList.length) {
           const key = paramList.shift();
           if (typeof result === 'undefined') { // 获取顶层数据
@@ -3454,7 +3465,7 @@
           result = result[key]
         }
         result ??= isInData ? 0 : result; // 存在顶层数据时默认为0
-        return isNaN(result * 1) ? result ?? str : (result * 1);
+        return onResult(isNaN(result * 1) ? result ?? str : (result * 1));
       };
       const func = {
         ar() {
@@ -3684,7 +3695,8 @@
                   return '!=';
               }
             }).replace('_1h', '_onehanded').replace('_2h', '_twohanded');
-            result = $RPN.evaluate(k, returnValue);
+            result = $RPN.evaluate(k.replace(/^@/, ''), returnValue);
+            if (k.match(/^@/)) console.log([k], result)
             if (!result) {
               parmResult = false;
               break;
@@ -4900,6 +4912,9 @@
       };
       const option = g().option;
       const names = option.battleOrderDefaultOnly ? [] : option.battleOrderName?.split(',') ?? [];
+      if (option.debugCheckCondition) {
+        checkCondition(option.debugCondition);
+      }
       for (let i = 0; i < names.length; i++) {
         if (taskList[names[i]]()) {
           onStepInDone();
