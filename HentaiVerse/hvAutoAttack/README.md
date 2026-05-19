@@ -111,10 +111,12 @@
     2. 其中类Boss型`_targetBossType`根据 名称进行判断:
         1. `Manbearpig`、`White Bunneh`、`Mithra`、`Dalek`: 1 (BOSS)
         2. `Konata`、`Mikuru Asahina`、`Ryouko Asakura`、`Yuki Nagato`: 2 (Legendaries)
-        3. `Skuld`、`Urd`、`Verdandi`、`Yggdrasil`: 3 (Trio and the Tree)
+        3. `Real Life`、`Invisible Pink Unicorn`、`Flying Spaghetti Monster`: 3 (Gods)
         4. `Rhaegal`、`Viserion`、`Drogon`: 4 (A Dance with Dragons)
-        5. `Real Life`、`Invisible Pink Unicorn`、`Flying Spaghetti Monster`: 5 (Gods)
-        6. 其他: 0 (非boss)
+        5. `Skuld`、`Urd`、`Verdandi`、`Yggdrasil`: 5 (Trio and the Tree)
+        6. `Recycled Boss Rush`、`Bottomless Dungeon`、`New Game +`、`Achievement Grind`、`Time Trial Mode`、`Hardcore Mode`：6 (Post Game Content)
+        7. `Fluttershy`、`Gummy`、`Rainbow Dash`、`Twilight Sparkle`、`Rarity`、`Applejack`、`Pinkie Pie`、`Angel Bunny`、`Spike`：7 (Ponies)
+        8. 其他: 0 (非boss)
 
 13. 空白(blank): 自己输入 (the value you want to put in)
 
