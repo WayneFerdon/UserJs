@@ -74,7 +74,7 @@
 
 1. `hp`/`mp`/`sp`: hp/mp/sp的*百分比的整数形式 (percent)*；`_hpDecimal`/`_mpDecimal`/`_spDecimal`: hp/mp/sp的*百分比的小数形式 (percent decimal)*
 2. `oc`: Overcharge, 250==>250% *百分比的整数形式 (percent)*；`_ocDecimal`: oc的*百分比的小数形式 (percent decimal)*
-3. `monsterAll`/`monsterAlive`/`bossAll`/`bossAlive`: 怪兽/Boss的总数目/存活数目
+3. `monsterAll`/`monsterAlive`/`bossAll`/`bossAlive`: 怪兽/Boss的总数目/存活数目，boss只按照有序号背景色的。包含`龙、大树、额外游戏内容、小马`的存活boss数可改为使用`_targetBossType_count`（见后11.3和12.）
 4. `roundNow`/`roundAll`/`roundLeft`: 当前回合数/总回合数/剩余回合数
 5. `isRoundType`、`ar`、`ba`、`iw`、`tw`、`gr`、`rb`: 当前是否是某战役模式，例如`_isRoundType_ar`或`_ar`均返回 `当前是否是The Arena`
 6. `roundType`: 战役模式 (`ar`: The Arena, `rb`: Ring of Blood, `gr`: GrindFest, `iw`: Item World, `ba`: Random Encounter, `tw`: The Tower)
@@ -105,7 +105,7 @@
         ![示例](https://github.com/user-attachments/assets/b4d0c57d-fdb1-464b-88d6-107643809339)
 
     2. `_targetRank`和攻击规则给出的顺序值相同（0~9，数字越小，优先级越高）
-    3. `targetBossType`（见12.）、`targetBuffTurn`、`targetHp`、`targetMp`、`targetSp`、`targetHpDecimal`、`targetMpDecimal`、`targetSpDecimal`可使用`max/min`后缀来表示所有**存活**怪物中的最大/最小值，如：`_targetBuffTurn_max_bleed`.
+    3. `targetBossType`（见12.）、`targetBuffTurn`、`targetHp`、`targetMp`、`targetSp`、`targetHpDecimal`、`targetMpDecimal`、`targetSpDecimal`可使用`max/min.count`后缀来表示所有**存活**怪物中的最大/最小值/sign和(`sum(sign(value))`)，如：`_targetBuffTurn_max_bleed`.
 12. `targetName`、`targetBossType`: 目标怪物的名称、Boss类型。
     1. `_targetName`返回目标的名称字符串（**注意**: 字符串之间的比较会自动去除最外层的引号，且请使用下划线`_`代替空格` `，如`Yugi_Nagato`/`'Yugi_Nagato'`/`"Yugi_Nagato"`）
     2. 其中类Boss型`_targetBossType`根据 名称进行判断:
