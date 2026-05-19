@@ -112,7 +112,9 @@ Four drop down lists and one button are visible in the box
         3. `Skuld`、`Urd`、`Verdandi`、`Yggdrasil`: 3 (Trio and the Tree)
         4. `Rhaegal`、`Viserion`、`Drogon`: 4 (A Dance with Dragons)
         5. `Real Life`、`Invisible Pink Unicorn`、`Flying Spaghetti Monster`: 5 (Gods)
-        6. others: 0 (not boss)
+        6. `Recycled Boss Rush`、`Bottomless Dungeon`、`New Game +`、`Achievement Grind`、`Time Trial Mode`、`Hardcore Mode`：6 (Post Game Content)
+        7. `Fluttershy`、`Gummy`、`Rainbow Dash`、`Twilight Sparkle`、`Rarity`、`Applejack`、`Pinkie Pie`、`Angel Bunny`、`Spike`：7 (Ponies)
+        8. others: 0 (not boss)
 
 13. blank: the value you want to put in
 
