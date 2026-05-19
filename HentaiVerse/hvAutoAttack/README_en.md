@@ -71,7 +71,7 @@ Four drop down lists and one button are visible in the box
 
 1. `hp`/`mp`/`sp`: **percent integer** of hp/mp/sp, 0-100; `_hpDecimal`/`_mpDecimal`/`_spDecimal`: **percent decimal** of hp/mp/sp, 0-1
 2. `oc`: Overcharge, 0-250 (integer); `_ocDecimal`: Overcharge in decimal 0-2.5
-3. `monsterAll`/`monsterAlive`/`bossAll`/`bossAlive`: amount of all monster/boss (alive)
+3. `monsterAll`/`monsterAlive`/`bossAll`/`bossAlive`: amount of all monster/boss (alive), only monster with serial letter background is considered as boss. Use `_targetBossType_count` (see 11.3 and 12. below) as the Alive boss count including `dragons, trio and the tree, Post Game Content, Ponies`
 4. `roundNow`/`roundAll`/`roundLeft`
 5. `isRoundType`、`ar`、`ba`、`iw`、`tw`、`gr`、`rb`: is current round type as the target type, such as: both `_isRoundType_ar` and `_ar` returns `is currently in The Arena`
 6. `roundType`: Battle Type (`ar`: The Arena, `rb`: Ring of Blood, `gr`: GrindFest, `iw`: Item World, `ba`: Random Encounter, `tw`: The Tower)
@@ -109,9 +109,9 @@ Four drop down lists and one button are visible in the box
     2. `_targetBossType` is determined by name:
         1. `Manbearpig`、`White Bunneh`、`Mithra`、`Dalek`: 1 (BOSS)
         2. `Konata`、`Mikuru Asahina`、`Ryouko Asakura`、`Yuki Nagato`: 2 (Legendaries)
-        3. `Skuld`、`Urd`、`Verdandi`、`Yggdrasil`: 3 (Trio and the Tree)
+        3. `Real Life`、`Invisible Pink Unicorn`、`Flying Spaghetti Monster`: 3 (Gods)
         4. `Rhaegal`、`Viserion`、`Drogon`: 4 (A Dance with Dragons)
-        5. `Real Life`、`Invisible Pink Unicorn`、`Flying Spaghetti Monster`: 5 (Gods)
+        5. `Skuld`、`Urd`、`Verdandi`、`Yggdrasil`: 5 (Trio and the Tree)
         6. `Recycled Boss Rush`、`Bottomless Dungeon`、`New Game +`、`Achievement Grind`、`Time Trial Mode`、`Hardcore Mode`：6 (Post Game Content)
         7. `Fluttershy`、`Gummy`、`Rainbow Dash`、`Twilight Sparkle`、`Rarity`、`Applejack`、`Pinkie Pie`、`Angel Bunny`、`Spike`：7 (Ponies)
         8. others: 0 (not boss)
