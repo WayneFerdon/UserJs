@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.195
+// @version      2.90.196
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -3595,19 +3595,36 @@
               case 'Ryouko Asakura':
               case 'Yuki Nagato':
                 return 2; // Legendaries
-              case 'Skuld':
-              case 'Urd':
-              case 'Verdandi':
-              case 'Yggdrasil':
-                return 3; // Trio and the Tree
+              case 'Real Life':
+              case 'Invisible Pink Unicorn':
+              case 'Flying Spaghetti Monster':
+                return 3; // Gods
               case 'Rhaegal':
               case 'Viserion':
               case 'Drogon':
                 return 4; // A Dance with Dragons
-              case 'Real Life':
-              case 'Invisible Pink Unicorn':
-              case 'Flying Spaghetti Monster':
-                return 5; // Gods
+              case 'Skuld':
+              case 'Urd':
+              case 'Verdandi':
+              case 'Yggdrasil':
+                return 5; // Trio and the Tree
+              case 'Recycled Boss Rush':
+              case 'Bottomless Dungeon':
+              case 'New Game +':
+              case 'Achievement Grind':
+              case 'Time Trial Mode':
+              case 'Hardcore Mode':
+                return 6; // Post Game Content
+              case 'Fluttershy':
+              case 'Gummy':
+              case 'Rainbow Dash':
+              case 'Twilight Sparkle':
+              case 'Rarity':
+              case 'Applejack':
+              case 'Pinkie Pie':
+              case 'Angel Bunny':
+              case 'Spike':
+                return 7; // Ponies
               default:
                 return 0;
             }});
@@ -3714,14 +3731,17 @@
       return undefined;
 
       function switchMaxMin(param, defaultResult) {
-        param ??= target;
         switch (param) {
+          case 'count':
+            return g().battle.monsterStatus.filter(t => !t.isDead).map(defaultResult).reduce((acc, cur) => acc + Math.sign(cur), 0);
+          case 'sum':
+            return g().battle.monsterStatus.filter(t => !t.isDead).map(defaultResult).reduce((acc, cur) => acc + cur, 0);
           case 'max':
-            return Math.max(...targets.filter(t => !t.isDead).map(defaultResult));
+            return Math.max(...g().battle.monsterStatus.filter(t => !t.isDead).map(defaultResult));
           case 'min':
-            return Math.min(...targets.filter(t => !t.isDead).map(defaultResult));
+            return Math.min(...g().battle.monsterStatus.filter(t => !t.isDead).map(defaultResult));
           default:
-            return defaultResult(param);
+            return defaultResult(target);
         }
       }
 
@@ -3925,7 +3945,7 @@
         const regex = /<div><div class="fc2 far fcb"><div>(.*) <\/div><\/div><\/div>\n\t<div><div class="fc2 fal fcb"><div>&nbsp;(.*)<\/div><\/div><\/div>/;
         const profs = gE('#stats_pane .stats_page:last-child .st2:last-child', doc).innerHTML.match( new RegExp(regex, regex.flags + 'g'));
         profs.forEach(p=>{
-        const exec = p.match(regex);
+          const exec = p.match(regex);
           proficiency[exec[2]] = exec[1]*1;
         });
       } else {
