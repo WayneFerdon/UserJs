@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.196
+// @version      2.90.197
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1229,20 +1229,29 @@
     }
 
     function getStartBattleButtons(doc = undefined, site = undefined) {
+      const idMap = {
+        ar: { 1:1, 10:3, 20:5, 30:8, 40:9, 50:11, 60:12, 70:13, 80:15, 90:16, 100:17, 110:19, 120:20, 130:21, 140:23, 150:24, 165:26, 180:27, 200:28, 225:29, 250:32, 300:33, 400:34, 500:35 },
+        rb: [105,106,107,108,109,110,111,112],
+      }
       const option = g().option;
-      const buttons = [];
       doc ??= document;
-      gE(`img[src*="startchallenge.png"], img[src*="startgrindfest.png"]`, 'all', doc).forEach(btn => {
-        const onclick = btn.getAttribute('onclick');
-        const key = btn.getAttribute('src').match(`${unsafeWindow.IMG_URL}(.*)/start(.*).png`)[1] === 'grindfest' ? 'gr' : undefined;
-        let temp = hvVersion < 91 ? onclick.match(/init_battle\((\d+),\s*(\d+,)*'(.*?)'\)/) : onclick.match(/init_battle\((\d+)(,\d+)*\)/);
-        btn.id = key ? key : temp[1] * 1;
-        btn.token = temp[3];
-        btn.cleared = site === 'gr' || gE('td:nth-child(2)>div>div', btn.parentNode.parentNode).innerText;
+      site ??= doc.location.href.match(/\?s=Battle\&ss=(.*)/)[1];
+      const buttons = gE(`img[src*="startchallenge.png"], img[src*="startgrindfest.png"], img[src*="startchallenge_d.png"]`, 'all', doc);
+      buttons.forEach(btn => {
+        const tr = btn.parentNode.parentNode;
+        if ('challenge_d' === btn.getAttribute('src').match(`${unsafeWindow.IMG_URL}(.*)/start(.*).png`)[2]) {
+          const key = site === 'ar' ? gE('td:nth-child(3)>div>div', tr).innerText.match(`Lv. (.*)`)[1]*1 : (Array.from(tr.parentNode.children).indexOf(tr)-1);
+          btn.id = idMap[site][key];
+        } else {
+          const onclick = btn.getAttribute('onclick');
+          const match = hvVersion < 91 ? onclick.match(/init_battle\((\d+),\s*(\d+,)*'(.*?)'\)/) : onclick.match(/init_battle\((\d+)(,\d+)*\)/);
+          btn.token = match[3] ?? null;
+          btn.id = site === 'gr' ? 'gr' : match[1] * 1;
+        }
+        btn.cleared = site === 'gr' || gE('td:nth-child(2)>div>div', tr).innerText;
         if (option.skipUnclearedArena && site !== 'gr') {
           btn.cleared = btn.cleared !== '-';
         }
-        buttons.push(btn);
       });
       return buttons;
     }
@@ -4598,7 +4607,7 @@
             const doc = $doc(await $ajax.insert(`?s=Battle&ss=${site}`));
             getStartBattleButtons(doc, site).forEach(btn => {
               if (btn.cleared) {
-                arena.token[btn.id] = btn.token ?? null;
+                arena.token[btn.id] = btn.token;
                 return;
               }
               delete arena.token[btn.id];
@@ -4649,12 +4658,12 @@
           id = undefined;
           continue;
         }
-        if (id in arena.token) {
+        if (arena.token[id] !== undefined) {
           break;
         }
         if (id >= 105) {
           arena.token = (await updateArena(true)).token;
-          if (id in arena.token) {
+          if (arena.token[id] !== undefined) {
             break;
           }
         }
@@ -5698,10 +5707,7 @@
       const isSameBattle = battle?.token === token;
       const prof = getValue('proficiency', true);
       if (isNew) {
-        battle = {
-          proficiency: isSameBattle ? battle?.proficiency ?? prof : prof,
-          skillOTOS: {}
-        };
+        battle = { proficiency: isSameBattle ? battle?.proficiency ?? prof : prof };
       }
       if (!battle) {
         battle = JSON.parse(JSON.stringify(g().battle ?? {}));
