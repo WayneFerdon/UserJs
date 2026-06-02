@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.198
+// @version      2.90.199
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -45,6 +45,7 @@
     const other = isIsekai ? 'persistent' : 'isekai';
 
     let ability = getValue('ability', true);
+    let lastResponsive = new Date().getTime();
 
     const scriptVersion = '2.90';
     let hvVersion;
@@ -634,12 +635,12 @@
         conn: 0,
         queue: [],
 
-        insert: function (url, data, method, context = {}, headers = {}) {
+        insert: function (url, data, method, context = {}, headers = {}, nocache) {
           return $ajax.fetch(url, data, method, context, headers, true);
         },
-        fetch: function (url, data, method, context = {}, headers = {}, isInsert = false) {
+        fetch: function (url, data, method, context = {}, headers = {}, isInsert = false, nocache) {
           return new Promise((resolve, reject) => {
-            $ajax.add(method, url, data, resolve, reject, context, headers, isInsert);
+            $ajax.add(method, url, data, resolve, reject, context, headers, isInsert, nocache);
           });
         },
         open: function (url, data, method, context = {}, headers = {}) {
@@ -655,7 +656,7 @@
           }
           return list;
         },
-        add: function (method, url, data, onload, onerror, context = {}, headers = {}, isInsert = false) {
+        add: function (method, url, data, onload, onerror, context = {}, headers = {}, isInsert = false, nocache) {
           method = !data ? 'GET' : method ?? 'POST';
           if (method === 'POST') {
             headers['Content-Type'] ??= 'application/x-www-form-urlencoded';
@@ -672,9 +673,9 @@
           context.onload = onload;
           context.onerror = onerror;
           if (isInsert) {
-            $ajax.queue.unshift({ method, url, data, headers, context, onload: $ajax.onload, onerror: $ajax.onerror });
+            $ajax.queue.unshift({ method, url, data, headers, context, onload: $ajax.onload, onerror: $ajax.onerror, nocache });
           } else {
-            $ajax.queue.push({ method, url, data, headers, context, onload: $ajax.onload, onerror: $ajax.onerror });
+            $ajax.queue.push({ method, url, data, headers, context, onload: $ajax.onload, onerror: $ajax.onerror, nocache });
           }
           $ajax.next();
         },
@@ -1060,6 +1061,8 @@
       if (!gE('#textlog')) {
         return false;
       }
+      checkResponsive();
+
       if (getValue('onriddle', true)) {
         console.log('onBattle clean onriddle');
         window.history.replaceState(null, '', window.location.href);
@@ -1125,6 +1128,7 @@
       window.location.href = window.location.search ? window.location.pathname + window.location.search : window.location.href;
       setTimeout(goto, 5000);
       setTimeout(()=>{window.location.href = window.location.href}, 10000);
+      return true;
     }
 
     function gotoAlt(isAltOnly) {
@@ -1138,6 +1142,7 @@
         next = isAltOnly ? current : current.replace(`://${alt}`, `://${hv}`);
       }
       $ajax.openNoFetch(next);
+      return true;
     }
 
     function pauseAsync(ms) {
@@ -4106,7 +4111,7 @@
           setValue('stamina', stamina);
         }
         $async.logSwitch(arguments);
-        return
+        return;
       }
       stamina.time = time(0);
       if (!stamina.punish) {
@@ -4743,6 +4748,7 @@
     // 战斗中//
     function onBattleRound() { // 主程序
       if (!gE('#battle_main')) return;
+      lastResponsive = time(0);
       let battle = getValue('battle', true);
       if (!battle || !battle.roundAll) { // 修复因多个页面/世界同时读写造成缓存数据异常的情况
         battle = JSON.parse(JSON.stringify(g().battle));
@@ -5085,6 +5091,7 @@
     }
 
     function setExitBattleTimeout(alarm) {
+      lastResponsive = Infinity;
       setAlarm(alarm);
       const option = g().option;
       if (alarm === 'Defeat' && !option.autoSkipDefeated) {
@@ -5094,34 +5101,43 @@
       setTimeoutOrExecute(() => $ajax.openNoFetch(getValue('lastUrl')), option.ExitBattleWaitTime * _1s);
     }
 
-    function reloader() {
+    async function checkResponsive() {
+      const option = g().option;
       const battleUnresponsive = {
         'Alert': { method: setAlarm },
         'Reload': { method: goto },
         'Alt': { method: gotoAlt }
       }
-      function clearBattleUnresponsive() {
-        Object.keys(battleUnresponsive).forEach(t => {
-          if (!battleUnresponsive[t].timeout) return;
-          clearTimeout(battleUnresponsive[t].timeout);
-        });
+      let min = Infinity;
+      for (let t in option.battleUnresponsive) {
+        if (!option.battleUnresponsive[t] || !battleUnresponsive[t]) {
+          delete battleUnresponsive[t];
+          continue;
+        }
+        battleUnresponsive[t].time = Math.max(1, option.battleUnresponsiveTime[t]) * _1s;
+        min = Math.min(min, battleUnresponsive[t].time);
       }
-      async function onBattleUnresponsive(method) { try {
+      if (!Object.keys(battleUnresponsive).length) return;
+      let isBreak;
+      while (true) {
         await waitPause();
-        method();
-      } catch (err) { console.error(err) } }
+        const waited = new Date() - lastResponsive;
+        for (let t in battleUnresponsive) {
+          if (battleUnresponsive[t].time > waited) continue;
+          isBreak ||= battleUnresponsive[t].method();
+        }
+        if (isBreak) break;
+        await pauseAsync(min - waited);
+      }
+    }
 
+    function reloader() {
       let obj, a, cost;
       const eventStart = cE('a');
       eventStart.id = 'eventStart';
       eventStart.onclick = function () {
         const option = g().option;
         a = unsafeWindow.info;
-        for (let t in option.battleUnresponsive) {
-          if (option.battleUnresponsive[t]) {
-            battleUnresponsive[t].timeout = setTimeout(() => onBattleUnresponsive(battleUnresponsive[t].method), Math.max(1, option.battleUnresponsiveTime[t]) * _1s);
-          }
-        }
         if (option.recordUsage) {
           obj = {
             mode: a.mode,
@@ -5141,6 +5157,7 @@
       const eventEnd = cE('a');
       eventEnd.id = 'eventEnd';
       eventEnd.onclick = function () {
+
         const option = g().option;
         const timeNow = time(0);
         g('runSpeed', (1000 / (timeNow - g().timeNow)).toFixed(2));
@@ -5155,7 +5172,6 @@
           recordUsage(obj);
         }
         if (g().monsterAlive && !gE('#btcp')) {
-          clearBattleUnresponsive();
           onBattleRound();
           return;
         }
@@ -5171,69 +5187,53 @@
           // $async.logSwitch(arguments);
           if (g().monsterAlive > 0) { // Defeat
             setExitBattleTimeout('Defeat');
-            clearBattleUnresponsive();
-          } else if (g().battle.roundNow === g().battle.roundAll) { // Victory
+            return;
+          }
+          if (g().battle.roundNow === g().battle.roundAll) { // Victory
             setExitBattleTimeout('Victory');
-            clearBattleUnresponsive();
-          } else { // Next Round
-            setTimeoutOrExecute(onNewRound, option.NewRoundWaitTime * _1s);
+            return;
           }
 
-          async function onNewRound() { try {
+          if (option.NewRoundWaitTime) { // Next Round
+            await pauseAsync(option.NewRoundWaitTime * _1s);
             await waitPause();
+          }
+          if (gE('#btcp')?.innerHTML.includes("finishbattle.png")) return console.error(`gE('#btcp')?.innerHTML.includes("finishbattle.png")`);// goto();
+          let url = option.checkURLBeforeNewRound;
+          if (url) {
+            lastResponsive = Infinity;
+            await until(async ()=>{ try {
+              await waitPause();
+              return await $ajax.insert(url,undefined,undefined,{},{},true);
+            } catch(e) { console.error('Connect failed:', url) }}, option.checkURLBeforeNewRoundRetry*_1s);
+            lastResponsive = time(0);
+          }
+          const doc = $doc(await $ajax.insert(window.location.href));
+          if (gE('#riddlecounter', doc)) {
+            lastResponsive = Infinity;
+            if (option.riddlePopup && !window.opener) {
+              window.open(window.location.href, 'riddleWindow', 'resizable,scrollbars,width=1241,height=707');
+              // $async.logSwitch(arguments);
+              return;
+            }
+            console.log(window.location.href);
+            goto();
             // $async.logSwitch(arguments);
-            if (gE('#btcp')?.innerHTML.includes("finishbattle.png")) {
-              goto();
-              // $async.logSwitch(arguments);
-              return;
-            }
-            clearBattleUnresponsive();
-            let urlChecked;
-            if (option.checkURLBeforeNewRound) {
-              while (!urlChecked) {
-                try {
-                  urlChecked = await $ajax.insert(option.checkURLBeforeNewRound);
-                } catch(e) {
-                  await waitPause();
-                  await pauseAsync(option.checkURLBeforeNewRoundRetry);
-                } finally {
-                  if (!!urlChecked) {
-                    // console.log('Done url check:', !!urlChecked, option.checkURLBeforeNewRound);
-                  } else {
-                    console.error('Connect failed:', option.checkURLBeforeNewRound);
-                  }
-                }
-              }
-            }
-            const html = await $ajax.insert(window.location.href);
-            const doc = $doc(html);
-            if (gE('#riddlecounter', doc)) {
-              console.log('url check:', option.checkURLBeforeNewRound, '\n', urlChecked);
-              if (option.riddlePopup && !window.opener) {
-                window.open(window.location.href, 'riddleWindow', 'resizable,scrollbars,width=1241,height=707');
-                // $async.logSwitch(arguments);
-                return;
-              }
-              console.log(window.location.href);
-              goto();
-              // $async.logSwitch(arguments);
-              return;
-            }
-            if (option.nativeNewRound) {
-              onStepInDone();
-              gE('#btcp').click();
-              // $async.logSwitch(arguments);
-              return;
-            }
-            gE('#pane_completion').removeChild(gE('#btcp'));
-            ['#battle_right', '#battle_left'].forEach(selector => { gE('#battle_main').replaceChild(gE(selector, doc), gE(selector)); });
-            unsafeWindow.battle = undefined;
-            await loadUnsafeWindowBattle();
-            newRound(true);
+            return;
+          }
+          if (option.nativeNewRound) {
             onStepInDone();
-            onBattleRound();
+            gE('#btcp').click();
             // $async.logSwitch(arguments);
-          } catch (err) { console.error(err) } }
+            return;
+          }
+          gE('#pane_completion').removeChild(gE('#btcp'));
+          ['#battle_right', '#battle_left'].forEach(selector => { gE('#battle_main').replaceChild(gE(selector, doc), gE(selector)); });
+          unsafeWindow.battle = undefined;
+          await loadUnsafeWindowBattle();
+          newRound(true);
+          onStepInDone();
+          onBattleRound();
           // $async.logSwitch(arguments);
         } catch (err) { console.error(err) } }
       };
