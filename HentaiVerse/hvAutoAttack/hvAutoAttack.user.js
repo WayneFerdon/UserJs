@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.197
+// @version      2.90.198
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1144,10 +1144,14 @@
       return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    async function waitPause(ms = _1s) {
-      while (getValue('disabled')) {
-        await pauseAsync(ms);
-      }
+    async function until(condition, delay){
+      let result;
+      while (!(result = await condition())) await pauseAsync(delay);
+      return result;
+    }
+
+    async function waitPause(ms) {
+      return await until(()=>!getValue('disabled'), ms);
     }
 
     function setTimeoutOrExecute(resolve, ms) {
@@ -2844,7 +2848,7 @@
         }
       }
       gE('.hvAABackup', optionBox).onclick = function () {
-        const code = _alert(2, '请输入当前配置代号', '請輸入當前配置代號', 'Please put in a name for the current configuration') || time(3);
+        const code = _alert(2, '请输入当前配置代号（或默认使用当前时间）', '請輸入當前配置代號（或默認使用當前時間）', 'Please put in a name for the current configuration (or use current time as default)') || time(3);
         const backups = getValue('backup', true) || {};
         if (code in backups) { // 覆写同名配置
           if (_alert(1, '是否覆盖已有的同名配置？', '是否覆蓋已有的同名配置？', 'Do you want to overwrite the configuration with the same name?')) {
@@ -4091,11 +4095,11 @@
           }
           const doc = $doc(html);
           const perks = gE('.stuffbox>table>tbody>tr', 'all', doc);
-          if (perks && perks[25].innerHTML.includes('Obtained') && !(perk ??= []).includes(currentID)) {
+          if (perks && perks[25]?.innerHTML.includes('Obtained') && !(perk ??= []).includes(currentID)) {
             perk.push(currentID);
           }
           return perk;
-        } catch(e) {console.error(e) }})()
+        } catch(e) { console.error(e) }})()
       ]);
       if (!stamina.current) {
         if (!getValue('stamina')) {
@@ -4557,12 +4561,10 @@
 
     async function onEncounter() { try {
       const option = g().option;
-      while (
-        !(await $ajax.insert(location))
-        || (option.checkURLBeforeNewRound && !(await $ajax.insert(option.checkURLBeforeNewRound)))
-      ) { // perhaps network connect not available
-        await pauseAsync(option.checkURLBeforeNewRoundRetry);
-      }
+      await until( // perhaps network connect not available
+        async ()=>await $ajax.insert(location) && (!option.checkURLBeforeNewRound || await $ajax.insert(option.checkURLBeforeNewRound)),
+        option.checkURLBeforeNewRoundRetry
+      );
       $async.logSwitchStrict('updateEncounter', true);
       if (getValue('disabled') || getValue('battle') || !await checkBattleReady(onEncounter, { staminaLow: option.staminaEncounter })) {
         $async.logSwitchStrict('updateEncounter', false);
@@ -4723,13 +4725,9 @@
       }
       await waitPause();
       writeArenaStart();
-      while(option.checkURLBeforeNewRound && !(await $ajax.insert(option.checkURLBeforeNewRound))) {
-        await pauseAsync(option.checkURLBeforeNewRoundRetry);
-      }
+      await until(async ()=>!option.checkURLBeforeNewRound || await $ajax.insert(option.checkURLBeforeNewRound), option.checkURLBeforeNewRoundRetry);
       await asyncCheckEnchant(id === 'gr');
-      while(!(await $ajax.insert(query, `initid=${id === 'gr' ? 1 : id}${token}`))) {
-        await pauseAsync(option.checkURLBeforeNewRoundRetry);
-      }
+      await until(async ()=>await $ajax.insert(query, `initid=${id === 'gr' ? 1 : id}${token}`), option.checkURLBeforeNewRoundRetry);
       stamina.lastCost = id === 'gr' ? undefined : cost;
       setValue('stamina', stamina);
       if (option.altBattleFirst && await $ajax.insert(location.replace('hentaiverse.org', 'alt.hentaiverse.org').replace('alt.alt', 'alt'))) {
@@ -5202,7 +5200,7 @@
                   if (!!urlChecked) {
                     // console.log('Done url check:', !!urlChecked, option.checkURLBeforeNewRound);
                   } else {
-                    console.error('Failed connect ', option.checkURLBeforeNewRound);
+                    console.error('Connect failed:', option.checkURLBeforeNewRound);
                   }
                 }
               }
@@ -5693,10 +5691,7 @@
     }
 
     async function loadUnsafeWindowBattle() { try {
-      while (!unsafeWindow.battle) {
-        await pauseAsync(300);
-        unsafeWindow.battle = new unsafeWindow.Battle();
-      }
+      unsafeWindow.battle = await until(()=>new unsafeWindow.Battle(), 300);
       unsafeWindow.battle.clear_infopane();
     } catch(e) { console.error(e) }}
 
