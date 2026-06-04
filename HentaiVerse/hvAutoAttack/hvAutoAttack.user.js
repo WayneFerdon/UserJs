@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.200
+// @version      2.90.201
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2364,6 +2364,7 @@
         '  <div><b>1. <l0>初始血量权重=Log10(目标血量/场上最低血量)</l0><l1>初始血量權重=Log10(目標血量/場上最低血量)</l1><l2>BaseHpWeight = BaseHpRatio*Log10(TargetHP/MaxHPOnField)</l2></b><br>',
         '    <l0>初始权重系数(>0:低血量优先;<0:高血量优先)</l0><l1>初始權重係數(>0:低血量優先;<0:高血量優先)</l1><l2>BaseHpRatio(>0:low hp first;<0:high hp first)</l2><input class="hvAANumber" name="baseHpRatio" placeholder="1" type="number"><br>',
         '    <l0>不可命中目标的权重</l0><l1>不可名中目標的權重</l1><l2>Unreachable Target Weight</l2><input class="hvAANumber" name="unreachableWeight" placeholder="1000" type="number"><br>',
+        '    <l0>BOSS:Yggdrasil额外权重</l0><l1>BOSS:Yggdrasil額外權重</l1><l2>BOSS:Yggdrasil Extra Weight</l2></b><input class="hvAANumber" name="YggdrasilExtraWeight" placeholder="-1000" type="number"><br>',
         '    <input id="cacheMonsterHP" type="checkbox"><label for="cacheMonsterHP"><l0>启用HP缓存</l0><l1>啟用HP緩存</l1><l2>Use HP Cache</l2></label><button class="clearMonsterHPCache"><l0>清空缓存</l0><l1>清空緩存</l1><l2>Clear HP Cache</l2></button><input id="portable_monsterDB" type="checkbox"><label for="portable_monsterDB"><l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2></label><input id="portable_monsterMID" type="checkbox" style="display:none"></div>',
         '  <div><b>2. <l0>初始权重与下述各Buff权重相加</l0><l1>初始權重與下述各Buff權重相加</l1><l2>PW(X) = BaseHpWeight + Accumulated_Weight_of_Deprecating_Spells_In_Effect(X)</l2></b><br>',
         '    <div class="hvAATable" style="display:grid; grid-template-columns:repeat(3, 1fr);">',
@@ -2414,22 +2415,22 @@
         '    </div>',
         '  </div>',
         '  <div><b>3. PW(X) += Log10(1 + <l0>武器攻击中央目标伤害倍率(副手及冲击技能)</l0><l1>乘以武器攻擊中央目標傷害倍率(副手及衝擊技能)</l1><l2>Weapon Attack Central Target Damage Ratio (Offhand & Strike)</l2>)</b><br><l0>额外伤害比例：</l0><l1>額外傷害比例：</l1><l2>Extra DMG Ratio: </l2><input class="hvAANumber" name="centralExtraRatio" placeholder="0" type="number">%</div>',
-        '  <div><b>4. <l0>额外权重公式</l0><l1>額外權重公式</l1><l2>Extra weight formula</l2><br></b><input name="extraWeightFormula" type="text"></div>',
-        '  <div><b>5. <l0>优先选择权重最低的目标</l0><l1>優先選擇權重最低的目標</l1><l2>Choose target with lowest rank first</l2><br><l0>BOSS:Yggdrasil额外权重</l0><l1>BOSS:Yggdrasil額外權重</l1><l2>BOSS:Yggdrasil Extra Weight</l2></b><input class="hvAANumber" name="YggdrasilExtraWeight" placeholder="-1000" type="number"></div>',
-        '  <div><input id="displayWeight" type="checkbox"><label for="displayWeight"><l0>显示权重及顺序</l0><l1>顯示權重及順序</l1><l2>DIsplay Weight and order</l2></label>',
-        '  <input id="displayWeightBackground" type="checkbox"><label for="displayWeightBackground"><l0>显示优先级背景色</l0><l1>顯示優先級背景色</l1><l2>DIsplay Priority Background Color</l2></label>',
-        '  </br><l0>CSS格式或可eval执行的公式（可用&lt;rank&gt;, &lt;all&gt;指代优先级和总优先级数量, &lt;style_x&gt;指代第x个的相同配置值），例如：</l0><l1>CSS格式或可eval執行的公式（可用&lt;rank&gt;, &lt;all&gt;指代優先級和總優先級數量, &lt;style_x&gt;指代第x個的相同配置值）：例如</l1><l2>CSS or eval executable formula(use &lt;rank&gt; and &lt;all&gt; to refer to priority rank and total rank count, &lt;style_x&gt; to refer to the same option value of option No.x)Such as: </l2><br>`hsl(${Math.round(240*&lt;rank&gt;/Math.max(1,&lt;all&gt;-1))}deg 50% 50%)`<br>',
-        '  <div style="display:grid;grid-template-columns: repeat(1, 0.1fr 1fr);width:100%;">',
-        '  <div>&nbsp;&nbsp;1.</div><div><input class="customizeInput" name="weightBackground_1" type="text"></div>',
-        '  <div>&nbsp;&nbsp;2.</div><div><input class="customizeInput" name="weightBackground_2" type="text"></div>',
-        '  <div>&nbsp;&nbsp;3.</div><div><input class="customizeInput" name="weightBackground_3" type="text"></div>',
-        '  <div>&nbsp;&nbsp;4.</div><div><input class="customizeInput" name="weightBackground_4" type="text"></div>',
-        '  <div>&nbsp;&nbsp;5.</div><div><input class="customizeInput" name="weightBackground_5" type="text"></div>',
-        '  <div>&nbsp;&nbsp;6.</div><div><input class="customizeInput" name="weightBackground_6" type="text"></div>',
-        '  <div>&nbsp;&nbsp;7.</div><div><input class="customizeInput" name="weightBackground_7" type="text"></div>',
-        '  <div>&nbsp;&nbsp;8.</div><div><input class="customizeInput" name="weightBackground_8" type="text"></div>',
-        '  <div>&nbsp;&nbsp;9.</div><div><input class="customizeInput" name="weightBackground_9" type="text"></div>',
-        '  <div>10.</div><div><input class="customizeInput" name="weightBackground_0" type="text"></div>',
+        '  <div><b>4. <l0>额外权重公式</l0><l1>額外權重公式</l1><l2>Extra weight formula</l2>: </b><input name="extraWeightFormula" type="text"></div>',
+        '  <div><b>5. <l0>优先选择权重最低的目标</l0><l1>優先選擇權重最低的目標</l1><l2>Choose target with lowest rank first</l2></b><br>',
+        '    <input id="displayWeight" type="checkbox"><label for="displayWeight"><l0>显示权重及顺序</l0><l1>顯示權重及順序</l1><l2>DIsplay Weight and order</l2></label>',
+        '    <input id="displayWeightBackground" type="checkbox"><label for="displayWeightBackground"><l0>显示优先级背景色</l0><l1>顯示優先級背景色</l1><l2>DIsplay Priority Background Color</l2></label></br>',
+        '    <l0>CSS格式或可eval执行的公式（可用&lt;rank&gt;, &lt;all&gt;指代优先级和总优先级数量, &lt;style_x&gt;指代第x个的相同配置值），例如：</l0><l1>CSS格式或可eval執行的公式（可用&lt;rank&gt;, &lt;all&gt;指代優先級和總優先級數量, &lt;style_x&gt;指代第x個的相同配置值）：例如</l1><l2>CSS or eval executable formula(use &lt;rank&gt; and &lt;all&gt; to refer to priority rank and total rank count, &lt;style_x&gt; to refer to the same option value of option No.x)Such as: </l2><br>`hsl(${Math.round(240*&lt;rank&gt;/Math.max(1,&lt;all&gt;-1))}deg 50% 50%)`<br>',
+        '    <div style="display:grid;grid-template-columns: repeat(1, 0.05fr 1fr);width:100%;">',
+        '    <div>&nbsp;&nbsp;1.</div><div><input class="customizeInput" name="weightBackground_1" type="text"></div>',
+        '    <div>&nbsp;&nbsp;2.</div><div><input class="customizeInput" name="weightBackground_2" type="text"></div>',
+        '    <div>&nbsp;&nbsp;3.</div><div><input class="customizeInput" name="weightBackground_3" type="text"></div>',
+        '    <div>&nbsp;&nbsp;4.</div><div><input class="customizeInput" name="weightBackground_4" type="text"></div>',
+        '    <div>&nbsp;&nbsp;5.</div><div><input class="customizeInput" name="weightBackground_5" type="text"></div>',
+        '    <div>&nbsp;&nbsp;6.</div><div><input class="customizeInput" name="weightBackground_6" type="text"></div>',
+        '    <div>&nbsp;&nbsp;7.</div><div><input class="customizeInput" name="weightBackground_7" type="text"></div>',
+        '    <div>&nbsp;&nbsp;8.</div><div><input class="customizeInput" name="weightBackground_8" type="text"></div>',
+        '    <div>&nbsp;&nbsp;9.</div><div><input class="customizeInput" name="weightBackground_9" type="text"></div>',
+        '    <div>10.</div><div><input class="customizeInput" name="weightBackground_0" type="text"></div>',
         '  </div>',
         '  </div>',
         '  <div>PS. <l0>如果你对各Buff权重有特别见解，请务必</l0><l1>如果你對各Buff權重有特別見解，請務必</l1><l2>If you have any suggestions, please </l2><a class="hvAAGoto" name="hvAATab-Feedback"><l0>告诉我</l0><l1>告訴我</l1><l2>let me know</l2></a>.<br><l0>参考公式为：</l0><l1>參考公式為：</l1><l2>Basic Weight Calculation as: </l2>PW(X) = Log10(<br>  (HP/MaxHPOnField/(1+CentralAttackDamageExtraRatio)<br>  *[HPActualEffectivenessRate:∏(1-debuff),debuff=Im|PA|Bl|Co|Dr|MN|St]<br>  /[DMGActualEffectivenessRate:∏(1-debuff),debuff=We|Bl|Slo|Si|Sl|Co|Dr|MN|St])<br>)</div>',
