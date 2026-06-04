@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.201
+// @version      2.90.202
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -3566,24 +3566,17 @@
         ...returnValueGetter.prototype.func,
         targetBuffTurn(...img) {
           const getBuffTurn = (t, i) => getBuffTurnFromImg(getBuff(imgArray2img(i), getMonsterID(t)));
-          const first = img.shift();
-          if (first === 'min') {
-            return Math.min(...g().battle.monsterStatus.filter(t => !t.isDead).map(t=>getBuffTurn(t, img)));
-          }
-          if (first === 'max') {
-            return Math.max(...g().battle.monsterStatus.filter(t => !t.isDead).map(t=>getBuffTurn(t, img)));
-          }
-          img.unshift(first);
-          return getBuffTurn(targetGetter(), img);
+          let param = ['min', 'max', 'count', 'sum'].includes(img[0]) ? img.shift() : undefined;
+          return switchMaxMin(param, t=>getBuffTurn(t, img));
         },
-        targetOrder() {
-          return targetGetter().order;
+        targetOrder(param) {
+          return switchMaxMin(param, t=>t.order);
         },
-        targetWeight() {
-          return targetGetter().finWeight;
+        targetWeight(param) {
+          return switchMaxMin(param, t=>t.finWeight);
         },
-        targetRank() {
-          return Object.entries(g().battle.monsterStatus).find(([k, v]) => v.order === targetGetter().order)[0] * 1;
+        targetRank(param) {
+          return switchMaxMin(param, t=>Object.entries(g().battle.monsterStatus).find(([k, v]) => v.order === t.order)[0] * 1);
         },
         targetName(param) {
           param ??= targetGetter();
@@ -3721,7 +3714,8 @@
           if (typeof result === 'string') {
             result = JSON.parse(result);
           }
-          result = result[key]
+          if (['number', 'string'].includes(typeof result)) continue;
+          result = result[key];
         }
         result ??= isInData ? 0 : result; // 存在顶层数据时默认为0
         return onResult(isNaN(result * 1) ? result ?? str : (result * 1));
