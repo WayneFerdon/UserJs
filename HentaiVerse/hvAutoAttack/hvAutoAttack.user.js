@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.202
+// @version      2.90.203
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -392,8 +392,9 @@
           '!=': { precedence : 0, func: (a, b) => a !== b ? 1 : 0 },
           '&&': { precedence : -1, func: (a, b) => a && b ? 1 : 0 },
           '||': { precedence : -1, func: (a, b) => a || b ? 1 : 0 },
-          '^': { precedence : -1, func: (a, b) => (!a) ^ (!b) ? 1 : 0 },
+          '^': { precedence : -1, func: (a, b) => ((!a) ^ (!b)) ? 1 : 0 },
           '**': { precedence:3, func: (a, b) => Math.pow(a, b)},
+          '~': { precedence : -2, func: (a) => Math.log10(a) },
           '!': { precedence : -2, func: (a) => a ? 0 : 1 },
           '+': { precedence : 1, func: (a, b) => a + b },
           '-': { precedence : 1, func: (a, b) => a - b },
@@ -409,8 +410,8 @@
         test: {
           isNumber: str=>/[0-9]/.test(str),
           number: str=>/[.0-9]/.test(str),
-          isParam: str=>/[a-zA-Z_'",{}#^]/.test(str),
-          param: str=>/[.a-zA-Z_'",{}#^0-9]/.test(str),
+          isParam: str=>/[a-zA-Z_'",{}#]/.test(str),
+          param: str=>/[.a-zA-Z_'",{}#^~0-9]/.test(str),
         },
 
         isOperator: function (token) {
