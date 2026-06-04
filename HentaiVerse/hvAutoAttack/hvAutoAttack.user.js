@@ -2414,7 +2414,7 @@
         '      <div><input class="hvAANumber" name="weight_AW" placeholder="0" type="number"> <l0>吸收结界(AW)</l0><l1>吸收結界(AW)</l1><l2><br>Absorbing Ward</l2></div>',
         '    </div>',
         '  </div>',
-        '  <div><b>3. PW(X) += Log10(1 + <l0>武器攻击中央目标伤害倍率(副手及冲击技能)</l0><l1>乘以武器攻擊中央目標傷害倍率(副手及衝擊技能)</l1><l2>Weapon Attack Central Target Damage Ratio (Offhand & Strike)</l2>)</b><br><l0>额外伤害比例：</l0><l1>額外傷害比例：</l1><l2>Extra DMG Ratio: </l2><input class="hvAANumber" name="centralExtraRatio" placeholder="0" type="number">%</div>',
+        '  <div><b>3. PW(X) -= Log10(1 + <l0>武器攻击中央目标伤害倍率(副手及冲击技能)</l0><l1>乘以武器攻擊中央目標傷害倍率(副手及衝擊技能)</l1><l2>Weapon Attack Central Target Damage Ratio (Offhand & Strike)</l2>)</b><br><l0>额外伤害比例：</l0><l1>額外傷害比例：</l1><l2>Extra DMG Ratio: </l2><input class="hvAANumber" name="centralExtraRatio" placeholder="0" type="number">%</div>',
         '  <div><b>4. <l0>额外权重公式</l0><l1>額外權重公式</l1><l2>Extra weight formula</l2>: </b><input name="extraWeightFormula" type="text"></div>',
         '  <div><b>5. <l0>优先选择权重最低的目标</l0><l1>優先選擇權重最低的目標</l1><l2>Choose target with lowest rank first</l2></b><br>',
         '    <input id="displayWeight" type="checkbox"><label for="displayWeight"><l0>显示权重及顺序</l0><l1>顯示權重及順序</l1><l2>DIsplay Weight and order</l2></label>',
