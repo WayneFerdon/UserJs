@@ -3293,6 +3293,7 @@
       if (g().option.alert && g().option.audioEnable && g().option.audioEnable[e]) {
         setAudioAlarm(e);
       }
+      return true;
     }
 
     function setAudioAlarm(e) { // 发出音频警报
@@ -3339,6 +3340,10 @@
             text: '游戏胜利\n页面将在3秒后刷新',
             time: 3,
           },
+          BattleUnresponsive: {
+            text: '战斗无响应',
+            time: 3,
+          },
           Test: {
             text: '测试文本',
             time: 3,
@@ -3364,6 +3369,10 @@
             text: '遊戲勝利\n頁面將在3秒後刷新',
             time: 3,
           },
+          BattleUnresponsive: {
+            text: '戰鬥無響應',
+            time: 3,
+          },
           Test: {
             text: '測試文本',
             time: 3,
@@ -3387,6 +3396,10 @@
           },
           Victory: {
             text: 'You\'re victorious.\nThis page will refresh in 3 seconds.',
+            time: 3,
+          },
+          BattleUnresponsive: {
+            text: 'Battle unresponsive',
             time: 3,
           },
           Test: {
@@ -5104,7 +5117,7 @@
     async function checkResponsive() {
       const option = g().option;
       const battleUnresponsive = {
-        'Alert': { method: setAlarm },
+        'Alert': { method: ()=>setAlarm('BattleUnresponsive') },
         'Reload': { method: goto },
         'Alt': { method: gotoAlt }
       }
