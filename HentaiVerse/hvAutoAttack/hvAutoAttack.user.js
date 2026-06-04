@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.199
+// @version      2.90.200
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -316,7 +316,6 @@
         description: "'The destruction the present has increased the attack speed of her allies.'"
       },
     } };
-
     const playerBuffSkillLib = {
       SS: {
         name: 'Spirit Shield',
@@ -393,6 +392,7 @@
           '!=': { precedence : 0, func: (a, b) => a !== b ? 1 : 0 },
           '&&': { precedence : -1, func: (a, b) => a && b ? 1 : 0 },
           '||': { precedence : -1, func: (a, b) => a || b ? 1 : 0 },
+          '^': { precedence : -1, func: (a, b) => (!a) ^ (!b) ? 1 : 0 },
           '**': { precedence:3, func: (a, b) => Math.pow(a, b)},
           '!': { precedence : -2, func: (a) => a ? 0 : 1 },
           '+': { precedence : 1, func: (a, b) => a + b },
@@ -406,19 +406,26 @@
 
         multiCharOperators: ['>=', '<=', '==', '!=', '&&', '||', '**'],
 
-        isOperator(token) {
-          return token in $RPN.operators || $RPN.multiCharOperators.includes(token);
+        test: {
+          isNumber: str=>/[0-9]/.test(str),
+          number: str=>/[.0-9]/.test(str),
+          isParam: str=>/[a-zA-Z_'",{}#^]/.test(str),
+          param: str=>/[.a-zA-Z_'",{}#^0-9]/.test(str),
         },
 
-        isMultiCharOperator(token) {
+        isOperator: function (token) {
+          return token in $RPN.operators;
+        },
+
+        isMultiCharOperator: function (token) {
           return $RPN.multiCharOperators.includes(token);
         },
 
-        hasHigherPrecedence(op1, op2) {
+        hasHigherPrecedence: function (op1, op2) {
           return $RPN.operators[op1].precedence >= $RPN.operators[op2].precedence;
         },
 
-        tokenize(expression) {
+        tokenize: function (expression) {
           const tokens = [];
           let i = 0;
 
@@ -453,9 +460,9 @@
               continue;
             }
 
-            if (/[0-9]/.test(ch)) {
+            if ($RPN.test.isNumber(ch)) {
               let num = '';
-              while (i < expression.length && /[0-9.]/.test(expression[i])) {
+              while (i < expression.length && $RPN.test.number(expression[i])) {
                 num += expression[i];
                 i++;
               }
@@ -463,9 +470,9 @@
               continue;
             }
 
-            if (/[a-zA-Z_.'",{}#]/.test(ch)) {
+            if ($RPN.test.isParam(ch)) {
               let varName = '';
-              while (i < expression.length && /[a-zA-Z0-9_.'",{}#]/.test(expression[i])) {
+              while (i < expression.length && $RPN.test.param(expression[i])) {
                 varName += expression[i];
                 i++;
               }
@@ -479,12 +486,12 @@
           return tokens;
         },
 
-        infixToPostfix(infixTokens) {
+        infixToPostfix: function (infixTokens) {
           const output = [];
           const stack = [];
           for (const token of infixTokens) {
             switch(true) {
-              case typeof token === 'number' || /[a-zA-Z_'",{}#]/.test(token[0]):
+              case typeof token === 'number' || $RPN.test.isParam(token[0]):
                 output.push(token);
                 break;
               case token === '(':
@@ -522,14 +529,14 @@
           return output;
         },
 
-        evaluatePostfix(postfixTokens, resolver) {
+        evaluatePostfix: function (postfixTokens, resolver) {
           const stack = [];
           for (const token of postfixTokens) {
             if (typeof token === 'number') {
               stack.push(token);
               continue;
             }
-            if (typeof token === 'string' && /[a-zA-Z_.'",{}#]/.test(token[0])) {
+            if (typeof token === 'string' && $RPN.test.isParam(token[0])) {
               let value = resolver ? resolver(token) : token;
               if (typeof value === 'string') {
                 if (value[0] !== `"` && value[0] != `'`) value = `'${value}'`;
@@ -573,7 +580,7 @@
           return stack[0];
         },
 
-        evaluate(expression, variableHandler = null) {
+        evaluate: function (expression, variableHandler = null) {
           const tokens = $RPN.tokenize(expression);
           const postfix = $RPN.infixToPostfix(tokens);
           return $RPN.evaluatePostfix(postfix, variableHandler);
@@ -2379,7 +2386,7 @@
         '      <div><input class="hvAANumber" name="weight_BS" placeholder="0" type="number"> <l0>焚燒的靈魂(BS)</l0><l1>焚燒的靈魂(BS)</l1><l2>Burning Soul</l2></div>',
         '      <div><input class="hvAANumber" name="weight_RS" placeholder="0" type="number"> <l0>鮮美的靈魂(RS)</l0><l1>鮮美的靈魂(RS)</l1><l2>Ripened Soul</l2></div>',
         '    </div>',
-        '    <b><l0>降抗性和攻击模式属性相同时</l0><l1>降抗性和攻擊模式屬性相同時</l1><l2>While elements between Resistance-lower-debuff and Attack-Mode matches</l2></b>  [' + attackStatusType[g().attackStatus] + '] : <br>',
+        '    <b><l0>降抗性和攻击模式属性</l0><l1>降抗性和攻擊模式屬性</l1><l2>While elements between Resistance-lower-debuff and Attack-Mode matches</l2>  [' + attackStatusType[g().option.attackStatus] + '] <l0>相同时</l0><l1>相同時</l1><l2></l2></b> : <br>',
         '    <div class="hvAATable" style="display:grid; grid-template-columns:repeat(3, 1fr);">',
         '      <div><input class="hvAANumber" name="weight_SS" placeholder="-14" type="number"> <l0>灼烧的皮肤(SS)</l0><l1>燒灼的皮膚(SS)</l1><l2>Searing Skin</l2></div>',
         '      <div><input class="hvAANumber" name="weight_FL" placeholder="-14" type="number"> <l0>冰封的肢体(FL)</l0><l1>冰封的肢體(FL)</l1><l2>Freezing Limbs</l2></div>',
@@ -2388,7 +2395,7 @@
         '      <div><input class="hvAANumber" name="weight_BD" placeholder="-19" type="number"> <l0>崩溃的防御(BD)</l0><l1>崩潰的防禦(BD)</l1><l2>Breached Defense</l2></div>',
         '      <div><input class="hvAANumber" name="weight_BA" placeholder="-14" type="number"> <l0>钝化的攻击(BA)</l0><l1>鈍化的攻擊(BA)</l1><l2>Blunted Attack</l2></div>',
         '    </div>',
-        '    <b><l0>降抗性和攻击模式属性不相同时</l0><l1>降抗性和攻擊模式屬性不相同時</l1><l2>While elements between Resistance-lower-debuff and Attack-Mode NOT matches</l2></b>  [' + attackStatusType[g().attackStatus] + '] : <br>',
+        '    <b><l0>降抗性和攻击模式属性</l0><l1>降抗性和攻擊模式屬性</l1><l2>While elements between Resistance-lower-debuff and Attack-Mode NOT matches</l2>  [' + attackStatusType[g().option.attackStatus] + '] <l0>不相同时</l0><l1>不相同時</l1><l2></l2></b>: <br>',
         '    <div class="hvAATable" style="display:grid; grid-template-columns:repeat(3, 1fr);">',
         '      <div><input class="hvAANumber" name="weight_SS1" placeholder="5" type="number"> <l0>灼烧的皮肤(SS)</l0><l1>燒灼的皮膚(SS)</l1><l2>Searing Skin</l2></div>',
         '      <div><input class="hvAANumber" name="weight_FL1" placeholder="5" type="number"> <l0>冰封的肢体(FL)</l0><l1>冰封的肢體(FL)</l1><l2>Freezing Limbs</l2></div>',
@@ -2407,7 +2414,8 @@
         '    </div>',
         '  </div>',
         '  <div><b>3. PW(X) += Log10(1 + <l0>武器攻击中央目标伤害倍率(副手及冲击技能)</l0><l1>乘以武器攻擊中央目標傷害倍率(副手及衝擊技能)</l1><l2>Weapon Attack Central Target Damage Ratio (Offhand & Strike)</l2>)</b><br><l0>额外伤害比例：</l0><l1>額外傷害比例：</l1><l2>Extra DMG Ratio: </l2><input class="hvAANumber" name="centralExtraRatio" placeholder="0" type="number">%</div>',
-        '  <div><b>4. <l0>优先选择权重最低的目标</l0><l1>優先選擇權重最低的目標</l1><l2>Choose target with lowest rank first</l2><br><l0>BOSS:Yggdrasil额外权重</l0><l1>BOSS:Yggdrasil額外權重</l1><l2>BOSS:Yggdrasil Extra Weight</l2></b><input class="hvAANumber" name="YggdrasilExtraWeight" placeholder="-1000" type="number"></div>',
+        '  <div><b>4. <l0>额外权重公式</l0><l1>額外權重公式</l1><l2>Extra weight formula</l2><br></b><input name="extraWeightFormula" type="text"></div>',
+        '  <div><b>5. <l0>优先选择权重最低的目标</l0><l1>優先選擇權重最低的目標</l1><l2>Choose target with lowest rank first</l2><br><l0>BOSS:Yggdrasil额外权重</l0><l1>BOSS:Yggdrasil額外權重</l1><l2>BOSS:Yggdrasil Extra Weight</l2></b><input class="hvAANumber" name="YggdrasilExtraWeight" placeholder="-1000" type="number"></div>',
         '  <div><input id="displayWeight" type="checkbox"><label for="displayWeight"><l0>显示权重及顺序</l0><l1>顯示權重及順序</l1><l2>DIsplay Weight and order</l2></label>',
         '  <input id="displayWeightBackground" type="checkbox"><label for="displayWeightBackground"><l0>显示优先级背景色</l0><l1>顯示優先級背景色</l1><l2>DIsplay Priority Background Color</l2></label>',
         '  </br><l0>CSS格式或可eval执行的公式（可用&lt;rank&gt;, &lt;all&gt;指代优先级和总优先级数量, &lt;style_x&gt;指代第x个的相同配置值），例如：</l0><l1>CSS格式或可eval執行的公式（可用&lt;rank&gt;, &lt;all&gt;指代優先級和總優先級數量, &lt;style_x&gt;指代第x個的相同配置值）：例如</l1><l2>CSS or eval executable formula(use &lt;rank&gt; and &lt;all&gt; to refer to priority rank and total rank count, &lt;style_x&gt; to refer to the same option value of option No.x)Such as: </l2><br>`hsl(${Math.round(240*&lt;rank&gt;/Math.max(1,&lt;all&gt;-1))}deg 50% 50%)`<br>',
@@ -2666,7 +2674,7 @@
       optionBox.onmousemove = function (e) { // 自定义条件相关事件
         const target = (e.target.className === 'customize') ? e.target : (e.target.parentNode.className === 'customize') ? e.target.parentNode : e.target.parentNode.parentNode;
         if (!gE('.customizeBox')) {
-          customizeBox();
+          creatCustomizeBox();
         }
         updateGroup();
         if (target.className !== 'customize' && target.parentNode.className !== 'customize') {
@@ -3137,10 +3145,10 @@
       input.style.cssText += `width:${length+1}ch;`
     }
 
-    function customizeBox() { // 自定义条件界面
+    function creatCustomizeBox() { // 自定义条件界面
       const customizeBox = gE('body').appendChild(cE('div'));
       customizeBox.className = 'customizeBox';
-      const statusOption = [
+      const statusOption = creatCustomizeBox.prototype.statusOption ??= [
         '<option value="hp">hp</option>',
         '<option value="mp">mp</option>',
         '<option value="sp">sp</option>',
@@ -3202,6 +3210,8 @@
         '<option value="_targetHpDecimal">targetHpDecimal</option>',
         '<option value="_targetMpDecimal">targetMpDecimal</option>',
         '<option value="_targetSpDecimal">targetSpDecimal</option>',
+        '<option value="_targetOrder">targetOrder</option>',
+        '<option value="_targetWeight">targetWeight</option>',
         '<option value="_targetRank">targetRank</option>',
         '<option value="_targetName">targetName</option>',
         '<option value="_targetBossType">targetBossType</option>',
@@ -3318,7 +3328,7 @@
     }
 
     function setNotification(e) { // 发出桌面通知
-      const notification = [
+      const notification = setNotification.prototype.notification ??= [
         {
           Common: {
             text: '未知',
@@ -3440,67 +3450,12 @@
       }
     }
 
-    function checkCondition(parms, targets = undefined) {
-      let i, j, k, target, paramResults={}, isDebug;
-      targets ??= [g().battle.monsterStatus[0]];
-      if (!parms || !Object.keys(parms).length) {
-        return targets[0];
-      }
-      const returnValue = function (str) {
-        let result;
-        const debug = str.match(/^#/);
-        if (debug) str = str.replace(/^#/, '');
+    function imgArray2img(...img) {
+      return img.join('_').replace('_png', 'png');
+    }
 
-        const onResult = (r) => {
-          if (debug || isDebug) paramResults[str] = r;
-          if (debug) console.log([str], r);
-          return r;
-        }
-
-        // 旧版本/强制使用func
-        if (str.match(/^_/) && !str.match(/\./)) {
-          const arr = str.split('_');
-          return onResult(func[arr[1]](...[...arr].splice(2)));
-        }
-        if (!isNaN(str * 1)) { // 数字直接返回
-          return onResult(str * 1);
-        }
-        const paramList = str.replace(/[^\d](\.)/g, (match, ...p) => {
-          return match.replace('.', '_'); // 将不是数字小数点的 . 转为 _ 以便进行参数分割
-        }).split('_');
-        let isInData;
-        while (paramList.length) {
-          const key = paramList.shift();
-          if (typeof result === 'undefined') { // 获取顶层数据
-            result = g().battle ? g().battle[key] : undefined;
-            if (typeof result === 'undefined' || result === null) {
-              result = getValue('battle', true) ? getValue('battle', true)[key] : undefined;
-            }
-            if (typeof result === 'undefined' || result === null) {
-              result = g(key);
-            }
-            if (typeof result === 'undefined' || result === null) {
-              result = getValue(key);
-            }
-            if (typeof result === 'undefined' || result === null) {
-              result = g().option?.[key];
-            }
-            if ((typeof result === 'undefined' || result === null) && func[key]) {
-              result = func[key](...paramList);
-            }
-            if (typeof result === 'undefined' || result === null) break;
-            isInData = true; // 存在顶层数据
-            continue;
-          }
-          if (typeof result === 'string') {
-            result = JSON.parse(result);
-          }
-          result = result[key]
-        }
-        result ??= isInData ? 0 : result; // 存在顶层数据时默认为0
-        return onResult(isNaN(result * 1) ? result ?? str : (result * 1));
-      };
-      const func = {
+    function returnValueGetter(paramResultsGetter, targetGetter) {
+      returnValueGetter.prototype.func ??= {
         ar() {
           return g().battle.roundType === 'ar' ? 1 : 0;
         },
@@ -3592,23 +3547,45 @@
         buffTurn(...img) {
           return getBuffTurnFromImg(getBuff(imgArray2img(img)));
         },
+        hpDecimal() {
+          return g().hp / 100;
+        },
+        mpDecimal() {
+          return g().mp / 100;
+        },
+        spDecimal() {
+          return g().sp / 100;
+        },
+        ocDecimal() {
+          return g().oc / 100;
+        },
+      };
+
+      const func = {
+        ...returnValueGetter.prototype.func,
         targetBuffTurn(...img) {
           const getBuffTurn = (t, i) => getBuffTurnFromImg(getBuff(imgArray2img(i), getMonsterID(t)));
           const first = img.shift();
           if (first === 'min') {
-            return Math.min(...targets.filter(t => !t.isDead).map(t=>getBuffTurn(t, img)));
+            return Math.min(...g().battle.monsterStatus.filter(t => !t.isDead).map(t=>getBuffTurn(t, img)));
           }
           if (first === 'max') {
-            return Math.max(...targets.filter(t => !t.isDead).map(t=>getBuffTurn(t, img)));
+            return Math.max(...g().battle.monsterStatus.filter(t => !t.isDead).map(t=>getBuffTurn(t, img)));
           }
           img.unshift(first);
-          return getBuffTurn(target, img);
+          return getBuffTurn(targetGetter(), img);
+        },
+        targetOrder() {
+          return targetGetter().order;
+        },
+        targetWeight() {
+          return targetGetter().finWeight;
         },
         targetRank() {
-          return Object.entries(g().battle.monsterStatus).find(([k, v]) => v.order === target.order)[0] * 1;
+          return Object.entries(g().battle.monsterStatus).find(([k, v]) => v.order === targetGetter().order)[0] * 1;
         },
         targetName(param) {
-          param ??= target
+          param ??= targetGetter();
           const mon = getMonster(getMonsterID(param));
           return gE(`.btm3>div>div`, mon).innerText.replace(' ', '_');
         },
@@ -3678,88 +3655,7 @@
         targetSpDecimal(param) {
           return switchMaxMin(param, t=>t.spNow);
         },
-        hpDecimal() {
-          return g().hp / 100;
-        },
-        mpDecimal() {
-          return g().mp / 100;
-        },
-        spDecimal() {
-          return g().sp / 100;
-        },
-        ocDecimal() {
-          return g().oc / 100;
-        },
       };
-      for (i in parms) {
-        for (target of targets) {
-          if (target.isDead) {
-            continue;
-          }
-          paramResults={};
-          let parmResult = true;
-          for (j = 0; j < parms[i].length; j++) {
-            let result = true;
-            if (!Array.isArray(parms[i])) {
-              continue;
-            }
-            k = parms[i][j].replace(/,\s*(.*)\s*,/, (match, p1) => {
-              switch (p1) {
-                case '>':
-                case '1':
-                  return '>';
-                case '<':
-                case '2':
-                  return '<';
-                case '≥':
-                case '>=':
-                case '3':
-                  return '>=';
-                case '≤':
-                case '<=':
-                case '4':
-                  return '<=';
-                case '=':
-                case '==':
-                case '===':
-                case '5':
-                  return '==';
-                case '≠':
-                case '~=':
-                case '<>':
-                case '!=':
-                case '6':
-                  return '!=';
-              }
-            }).replace(/(?<![=!~><])=(?!=)|≥|≤|≠|~=|<>/g, (match) => {
-              switch (match) {
-                case '≥':
-                  return '>=';
-                case '≤':
-                  return '<=';
-                case '=':
-                case '===':
-                  return '==';
-                case '≠':
-                case '~=':
-                case '<>':
-                  return '!=';
-              }
-            }).replace('_1h', '_onehanded').replace('_2h', '_twohanded');
-            isDebug = k.match(/^@/);
-            result = $RPN.evaluate(k.replace(/^@/, ''), returnValue);
-            if (isDebug) console.log([k], result, paramResults);
-            if (!result) {
-              parmResult = false;
-              break;
-            }
-          }
-          if (parmResult) {
-            return target;
-          }
-        }
-      }
-      return undefined;
 
       function switchMaxMin(param, defaultResult) {
         switch (param) {
@@ -3772,13 +3668,146 @@
           case 'min':
             return Math.min(...g().battle.monsterStatus.filter(t => !t.isDead).map(defaultResult));
           default:
-            return defaultResult(target);
+            return defaultResult(targetGetter());
         }
       }
 
-      function imgArray2img(...img) {
-        return img.join('_').replace('_png', 'png');
+      const getter = function (str, isDebug) {
+        const debug = str.match(/^#/);
+        if (debug) str = str.replace(/^#/, '');
+
+        const onResult = (r) => {
+          if (debug || isDebug) paramResultsGetter()[str] = r;
+          if (debug) console.log([str], r);
+          return r;
+        }
+
+        // 旧版本/强制使用func
+        if (str.match(/^_/) && !str.match(/\./)) {
+          const arr = str.split('_');
+          return onResult(func[arr[1]](...[...arr].splice(2)));
+        }
+        if (!isNaN(str * 1)) { // 数字直接返回
+          return onResult(str * 1);
+        }
+        const paramList = str.replace(/[^\d](\.)/g, (match, ...p) => {
+          return match.replace('.', '_'); // 将不是数字小数点的 . 转为 _ 以便进行参数分割
+        }).split('_');
+        let result, isInData;
+        while (paramList.length) {
+          const key = paramList.shift();
+          if (typeof result === 'undefined') { // 获取顶层数据
+            result = g().battle ? g().battle[key] : undefined;
+            if (typeof result === 'undefined' || result === null) {
+              result = getValue('battle', true) ? getValue('battle', true)[key] : undefined;
+            }
+            if (typeof result === 'undefined' || result === null) {
+              result = g(key);
+            }
+            if (typeof result === 'undefined' || result === null) {
+              result = getValue(key);
+            }
+            if (typeof result === 'undefined' || result === null) {
+              result = g().option?.[key];
+            }
+            if ((typeof result === 'undefined' || result === null) && func[key]) {
+              result = func[key](...paramList);
+            }
+            if (typeof result === 'undefined' || result === null) break;
+            isInData = true; // 存在顶层数据
+            continue;
+          }
+          if (typeof result === 'string') {
+            result = JSON.parse(result);
+          }
+          result = result[key]
+        }
+        result ??= isInData ? 0 : result; // 存在顶层数据时默认为0
+        return onResult(isNaN(result * 1) ? result ?? str : (result * 1));
       }
+      getter.paramResultsGetter = paramResultsGetter;
+      return getter;
+    }
+
+    function handleRPNFormula(formula, returnValue) {
+      let k, isDebug, result;
+      if (!formula) return 0;
+      k = formula.replace(/,\s*(.*)\s*,/, (match, p1) => {
+        switch (p1) {
+          case '>':
+          case '1':
+            return '>';
+          case '<':
+          case '2':
+            return '<';
+          case '≥':
+          case '>=':
+          case '3':
+            return '>=';
+          case '≤':
+          case '<=':
+          case '4':
+            return '<=';
+          case '=':
+          case '==':
+          case '===':
+          case '5':
+            return '==';
+          case '≠':
+          case '~=':
+          case '<>':
+          case '!=':
+          case '6':
+            return '!=';
+        }
+      }).replace(/(?<![=!~><])=(?!=)|≥|≤|≠|~=|<>/g, (match) => {
+        switch (match) {
+          case '≥':
+            return '>=';
+          case '≤':
+            return '<=';
+          case '=':
+          case '===':
+            return '==';
+          case '≠':
+          case '~=':
+          case '<>':
+            return '!=';
+        }
+      }).replace('_1h', '_onehanded').replace('_2h', '_twohanded');
+      isDebug = k.match(/^@/);
+      result = $RPN.evaluate(k.replace(/^@/, ''), (str)=>returnValue(str, isDebug));
+      if (isDebug) console.log([k], result, returnValue.paramResultsGetter());
+      return result;
+    }
+
+    function resolveRPNFormula(formula, target) {
+      let paramResults={};
+      const returnValue = returnValueGetter(() => paramResults, ()=>target);
+      return handleRPNFormula(formula, returnValue);
+    }
+
+    function checkCondition(parms, targets = undefined) {
+      let i, j, k, target, paramResults={};
+      targets ??= [g().battle.monsterStatus[0]];
+      if (!parms || !Object.keys(parms).length) {
+        return targets[0];
+      }
+      const returnValue = returnValueGetter(() => paramResults, ()=>target);
+      for (i in parms) { for (target of targets.filter(t=>!t.isDead)) {
+        paramResults={};
+        let parmResult = true;
+        for (j = 0; j < parms[i].length; j++) {
+          let result = true;
+          if (!Array.isArray(parms[i])) continue;
+          const formula = parms[i][j];
+          result = handleRPNFormula(formula, returnValue);
+          if (result) continue;
+          parmResult = false;
+          break;
+        }
+        if (parmResult) return target;
+      }} return undefined;
     }
 
     function pauseChange() { // 暂停状态更改
@@ -4794,7 +4823,7 @@
       }
 
       function getBattleTypeDisplay(isTitle) {
-        const battleInfoList = {
+        const battleInfoList = getBattleTypeDisplay.prototype.battleInfoList ??= {
           'gr': {
             name: ['压榨', '壓榨', 'Grindfest'],
             title: 'GF',
@@ -4927,7 +4956,6 @@
       countMonsterHP();
       displayMonsterWeight();
       displayPlayStatePercentage();
-
       if (getValue('disabled')) { // 如果禁用
         document.title = _alert(-1, 'hvAutoAttack暂停中', 'hvAutoAttack暫停中', 'hvAutoAttack Paused');
         gE('#hvAABox2>button').innerHTML = `<l0 style="color:red;">继续</l0><l1 style="color:red;">繼續</l1><l2 style="color:red;">Continue</l2><l012 style="color:red;">${(g().option.pauseHotkey && g().option.pauseHotkeyStr) ? `(${g().option.pauseHotkeyStr})` : '' }<l012>`;
@@ -5332,7 +5360,7 @@
       if (!(typeof GM_getValue === 'undefined' ? debuffAutoFill : g().option.debuffAutoFill)) return;
       const battle = getValue('battle', true);
       if (!battle?.monsterStatus) return;
-      let regExp = {
+      let regExp = updateMonsterEffects.prototype.regExp ??= {
         locationQueries: /\w+=\w+/g,
         playerInfo: /(\w+) Lv\.(\d+)/,
         staminaInfo: /Stamina:\s(\d+)/,
@@ -5914,6 +5942,17 @@
         }
         monsterStatus[i].finWeight = weight;
       }
+
+      // 先存一次，用于下面的额外权重公式
+      monsterStatus.sort(objArrSort('finWeight'));
+      battle.monsterStatus = monsterStatus;
+      g('battle', battle);
+
+      // 额外权重公式
+      for (let i = 0; i < battle.monsterStatus.length; i++) {
+        const target = battle.monsterStatus[i];
+        target.finWeight += resolveRPNFormula(option.extraWeightFormula, target);
+      }
       monsterStatus.sort(objArrSort('finWeight'));
       battle.monsterStatus = monsterStatus;
       g('battle', battle);
@@ -5957,7 +5996,7 @@
       if (!checkCondition(option.scrollCondition)) {
         return false;
       }
-      const scrollLib = {
+      const scrollLib = useScroll.prototype.scrollLib ??= {
         Go: {
           name: 'Scroll of the Gods',
           id: 13299,
@@ -6113,7 +6152,7 @@
         return true;
       }
 
-      const draughtPack = {
+      const draughtPack = useBuffSkill.prototype.draughtPack ??= {
         HD: {
           id: 11191,
           img: 'healthpot',
@@ -6158,7 +6197,7 @@
         itemBtn.click();
         return true;
       }
-      const infusionLib = [ null, {
+      const infusionLib = useInfusions.prototype.infusionLib ??= [ null, {
         id: 12101,
         img: 'fireinfusion',
         name: 'Flames',
@@ -6257,7 +6296,7 @@
         T2: fightStyle ? `2${fightStyle}02`*1 : undefined,
         T1: fightStyle ? `2${fightStyle}01`*1 : undefined,
       };
-      const skillInfos = {
+      const skillInfos = autoSkill.prototype.skillInfos ??= {
         1101: { oc: 4, range: 10 },
         1111: { oc: 8, range: 10 },
         2101: { oc: 4, range: 5 },
@@ -6459,7 +6498,7 @@
     }
 
     function onAttack(range, attackStatus, selectStatusOnly=false) {
-      const updateAbility = {
+      const updateAbility = onAttack.prototype.updateAbility ??= {
         4301: { //火
           111: [3, 4, 4, 5, 5, 5, 5, 5],
           112: [4, 4, 6, 6, 6, 6, 7, 7],
