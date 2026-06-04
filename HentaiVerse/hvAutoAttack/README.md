@@ -98,7 +98,7 @@
 
   **示例**: Protection的img为protection，则`_buffTurn_protection == 0`表示不存在Protection的buff，`_buffTurn_protection >= 10`表示Protection的buff至少剩余10回合
 
-11. `_targetHp`、`_targetMp`、`_targetSp`、`_targetHpDecimal`、`_targetMpDecimal`、`_targetSpDecimal`、`_targetBuffTurn`、`_targetRank`、`_targetOrder`、`_targetWeight`: 目标怪物的HP%、SP%、MP%、HP%（小数形式）、SP%（小数形式）、MP%（小数形式）、buff剩余时间、优先级、位置、当前权重
+11. `_targetHp`、`_targetMp`、`_targetSp`、`_targetHpDecimal`、`_targetMpDecimal`、`_targetSpDecimal`、`_targetBuffTurn`、`_targetRank`、`_targetOrder`、`_targetWeight`、`_targetIsAlive`: 目标怪物的HP%、SP%、MP%、HP%（小数形式）、SP%（小数形式）、MP%（小数形式）、buff剩余时间、优先级、位置、当前权重、是否存活
     1. `_targetBuffTurn_`后缀参照8.`buffTurn`（如：`_targetBuffTurn_bleed != 0`表示目标bleed的buff剩余回合不等于0）。target的目标怪物遵循以下规则
        1. 默认情况的target均为权重优先级最高的目标
        2. 武器技能（马炮、T1~T3等）、法术技能（中阶、高阶）：按照 逐条条件判断>按权重逐个目标>满足任意一条条件内的所有子条目，则对该目标释放。例如下图最后的慈悲的条件：仅释放hp小于25%、拥有流血buff
