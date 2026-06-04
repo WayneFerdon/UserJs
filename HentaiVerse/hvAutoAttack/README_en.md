@@ -49,7 +49,7 @@ Scripts get information through text, and if you have not yet modified the font,
 
 Each area with a red dotted border can be set to a customize condition.
 
-Customizable Formula is support now, such as `hp > mp` or `2 * ( hp + mp ) > sp`, supported operators: `+` `-` `*` `/` `%` `**`(pow) `^`(xor) `&&` `||` `!` `>` `<` `>=`(`≥`) `<=`(`≤`) `==`(`=`,`===`) `!=`(`≠`,`~=`,`<>`), logical operators returns 0 or 1 (as false or true)
+Customizable Formula is support now, such as `hp > mp` or `2 * ( hp + mp ) > sp`, supported operators: `+` `-` `*` `/` `%` `**`(pow) `^`(xor) `~`(Log10) `&&` `||` `!` `>` `<` `>=`(`≥`) `<=`(`≤`) `==`(`=`,`===`) `!=`(`≠`,`~=`,`<>`), logical operators returns 0 or 1 (as false or true)
 
 * If these areas are left blank (a condition is not set), then it's equivalent to true.
 
