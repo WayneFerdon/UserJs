@@ -95,7 +95,7 @@ Four drop down lists and one button are visible in the box
 
   **example 1**: the image of Protection is protection, `_buffTurn_protection == 0` means you don't have the buff of Protection or `_buffTurn_protection >= 10` means the buff of Protection on you last at least 10 turns
 
-11. `_targetHp`/`_targetMp`/`_targetSp`/`_targetHpDecimal`/`_targetMpDecimal`/`_targetSpDecimal`/`_targetBuffTurn`/`_targetRank`: `HP%`/`SP%`/`MP%`/`HP% in decimal`/`SP%  in decimal`/`MP%  in decimal`/`buffRemainTime`/`attackRank`/`_targetRank`/`_targetOrder`/`_targetWeight` of target monster
+11. `_targetHp`/`_targetMp`/`_targetSp`/`_targetHpDecimal`/`_targetMpDecimal`/`_targetSpDecimal`/`_targetBuffTurn`/`_targetRank`: `HP%`/`SP%`/`MP%`/`HP% in decimal`/`SP%  in decimal`/`MP%  in decimal`/`buffRemainTime`/`attackRank`/`_targetRank`/`_targetOrder`/`_targetWeight`/`_targetIsAlive` of target monster
     1. ,  suffix of `_targetBuffTurn_` is same as 10.`buffTurn`（such as：`_targetBuffTurn_bleed != 0` means remain turns of bleed buff on target monster is not equal to 0. Target that is calculating is chosen by following rules:
         1. The highest priority monster by rank in default situations.
         2. Weapon skills (OFC, T1~T3, etc.), Offensive Spell skills (Tire2, Tire3): by each condition > for each ranked target > find the target fit all sub-condition in the condition and cast to it. Such as the pic below: condition for Merciful Blow: only cast to targets which with hp below 25% and a bleed buff.
@@ -103,7 +103,7 @@ Four drop down lists and one button are visible in the box
         ![example](https://github.com/user-attachments/assets/da181eac-e634-41ad-97a7-ff59a7b28b6d)
     
     2. `_targetBuffTurn` returns the value as same as the ranked order given by Attack Rule (0~9, smaller number as higher priority)
-    3. `targetBossType`(see 12.) /`targetBuffTurn`/`targetHp`/`targetMp`/`targetSp`/`targetHpDecimal`/`targetMpDecimal`/`targetSpDecimal` can get maxim/minimum/sum/'sign_sum(`sum(sign(value))`)' value from all alive monsters by using suffix `max/min/sum/count` such as: `_targetBuffTurn_max_bleed`.
+    3. `targetBossType`(see 12.) & other target params (except `targetName`) can get maxim/minimum/sum/'sign_sum(`sum(sign(value))`)' value from all alive monsters by using suffix `max/min/sum/count` such as: `_targetBuffTurn_max_bleed`.
 12. `targetName`/`targetBossType`: name and boss type for target monster
     1. `_targetName` returns a string of the target name (**Note**: Comparison between strings will automatically remove the outermost quotation marks, meanwhile **please replace space` ` with underline`_`**, such as `Yugi_Nagato`/`'Yugi_Nagato'`/`"Yugi_Nagato"`)
     2. `_targetBossType` is determined by name:
