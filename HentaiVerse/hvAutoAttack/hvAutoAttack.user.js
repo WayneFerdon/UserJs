@@ -448,7 +448,6 @@
               let raw = '';
               let j = i;
               while (j < expression.length) {
-                console.log(i, j, expression.slice(i, j));
                 const current = expression[j];
                 j++;
                 if (current === '\\' && expression[j] === quote) {
@@ -460,7 +459,6 @@
               if (j > expression.length) {
                 throw new Error(`Unclosed ${quote} string`);
               }
-              console.log(i, j, expression.slice(i, j));
               tokens.push(expression.slice(i, j));
               i = j+1;
               lastTokenWasOperatorOrLeftParen = false;
