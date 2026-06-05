@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.205
+// @version      2.90.206
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -394,6 +394,7 @@
           '||': { precedence : -1, func: (a, b) => a || b ? 1 : 0 },
           '^': { precedence : -1, func: (a, b) => ((!a) ^ (!b)) ? 1 : 0 },
           '**': { precedence:3, func: (a, b) => Math.pow(a, b)},
+          '-neg': { precedence: -2, func: (a) => -a },
           '~': { precedence : -2, func: (a) => Math.log10(a) },
           '!': { precedence : -2, func: (a) => a ? 0 : 1 },
           '+': { precedence : 1, func: (a, b) => a + b },
@@ -418,10 +419,6 @@
           return token in $RPN.operators;
         },
 
-        isMultiCharOperator: function (token) {
-          return $RPN.multiCharOperators.includes(token);
-        },
-
         hasHigherPrecedence: function (op1, op2) {
           return $RPN.operators[op1].precedence >= $RPN.operators[op2].precedence;
         },
@@ -429,6 +426,7 @@
         tokenize: function (expression) {
           const tokens = [];
           let i = 0;
+          let lastTokenWasOperatorOrLeftParen = true;
 
           while (i < expression.length) {
             const ch = expression[i];
@@ -441,6 +439,31 @@
             if (ch === '(' || ch === ')') {
               tokens.push(ch);
               i++;
+              lastTokenWasOperatorOrLeftParen = (ch === '(');
+              continue;
+            }
+
+            if (ch === "'" || ch === '"') {
+              const quote = ch;
+              let raw = '';
+              let j = i;
+              while (j < expression.length) {
+                console.log(i, j, expression.slice(i, j));
+                const current = expression[j];
+                j++;
+                if (current === '\\' && expression[j] === quote) {
+                  j++;
+                  continue;
+                }
+                if (i !== j-1 && current === quote) break; // 字符串结束
+              }
+              if (j > expression.length) {
+                throw new Error(`Unclosed ${quote} string`);
+              }
+              console.log(i, j, expression.slice(i, j));
+              tokens.push(expression.slice(i, j));
+              i = j+1;
+              lastTokenWasOperatorOrLeftParen = false;
               continue;
             }
 
@@ -449,6 +472,7 @@
               if (expression.startsWith(op, i)) {
                 tokens.push(op);
                 i += op.length;
+                lastTokenWasOperatorOrLeftParen = true;
                 isMultiChar = true;
                 break;
               }
@@ -456,8 +480,13 @@
             if (isMultiChar) continue;
 
             if ($RPN.isOperator(ch)) {
-              tokens.push(ch);
+              if (ch === '-' && lastTokenWasOperatorOrLeftParen) {
+                tokens.push('-neg');
+              } else {
+                tokens.push(ch);
+              }
               i++;
+              lastTokenWasOperatorOrLeftParen = true;
               continue;
             }
 
@@ -468,6 +497,7 @@
                 i++;
               }
               tokens.push(parseFloat(num));
+              lastTokenWasOperatorOrLeftParen = false;
               continue;
             }
 
@@ -478,6 +508,7 @@
                 i++;
               }
               tokens.push(varName);
+              lastTokenWasOperatorOrLeftParen = false;
               continue;
             }
 
@@ -3775,15 +3806,13 @@
           case '6':
             return '!=';
         }
-      }).replace(/(?<![=!~><])=(?!=)|≥|≤|≠|~=|<>/g, (match) => {
+      }).replace(/===/g, '==').replace(/(?<![=<>!~])=(?!=)/g, '==')
+        .replace(/≥|≤|≠|~=|<>/g, (match) => {
         switch (match) {
           case '≥':
             return '>=';
           case '≤':
             return '<=';
-          case '=':
-          case '===':
-            return '==';
           case '≠':
           case '~=':
           case '<>':
