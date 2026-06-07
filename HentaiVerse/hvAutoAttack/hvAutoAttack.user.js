@@ -3773,6 +3773,7 @@
             case 'o': // 按照指定order
               {
                 const [startOrder, endOrder] = numArgs;
+                startOrder??=-1;
                 if ([undefined, -1].includes(endOrder))
                 {
                   endOrder = 10;
