@@ -116,7 +116,7 @@ Four drop down lists and one button are visible in the box
         6. `Recycled Boss Rush`、`Bottomless Dungeon`、`New Game +`、`Achievement Grind`、`Time Trial Mode`、`Hardcore Mode`：6 (Post Game Content)
         7. `Fluttershy`、`Gummy`、`Rainbow Dash`、`Twilight Sparkle`、`Rarity`、`Applejack`、`Pinkie Pie`、`Angel Bunny`、`Spike`：7 (Ponies)
         8. others: 0 (not boss)
-13. `targetGroup`: amount of target in group by certain mode (including dead targets), and change the `grouped targets` of current formula (see 11.3.1).1). For each calculation of each formula, `grouped targets` is dafault as a empty `undefined` group. Available group modes：
+13. `targetGroup`: amount of target in group by certain mode (including dead targets), and change the `grouped targets` of current formula (see 11.3.1).1). For each calculation of each formula, `grouped targets` is dafault as a empty `null` group. Available group modes：
     1. `a`: Select all targets. `targetGroup_a`
     2. `s`: Split by given amount from the top down‌, and select the group contains current target.  `targetGroup_s_2` means 2 targets as a group.
     3. `r`: A ranged group using the current target as a central starting point
@@ -124,7 +124,7 @@ Four drop down lists and one button are visible in the box
         2. For 2 param, params as `targetGroup_r_[up]_[down]`. `targetGroup_r_1_2` means \[`current_target - 1`, `current_target + 2`\] (4 targets)
         3. While `param(distance) >= 10`, overflows as `9 - param`, such as: `targetGroup_r_4_10` means  \[`current_target - 4`, `current_target - 1`\] (4 targets)
         4. Params default as `-1`/`10`: `targetGroup_r_` means `targetGroup_r_10`; `targetGroup_r_1_` means `targetGroup_r_1_10`; `targetGroup_r__1` means `targetGroup_r_10_1`. The second param will be completed by default only if 2 `_` are spliting the expression.
-    5. `o`/`oa`: Select the range by given order(0~9). `o` requires the current target is in the range, or returns 0 and selecting a empty `undefined` group; `oa` do NOT requires the current target is in the range. `targetGroup_o_1_3` means `order=[1,2,3]` (the 2nd, 3rd, 4th target)
+    5. `o`/`oa`: Select the range by given order(0~9). `o` requires the current target is in the range, or returns 0 and selecting a empty `null` group; `oa` do NOT requires the current target is in the range. `targetGroup_o_1_3` means `order=[1,2,3]` (the 2nd, 3rd, 4th target)
         1. Params as `targetGroup_[o/oa]_[top]_[bottom]` and default as `-1`/`10`
 15. blank: the value you want to put in
 
