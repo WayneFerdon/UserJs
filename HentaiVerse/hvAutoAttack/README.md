@@ -105,7 +105,8 @@
         ![示例](https://github.com/user-attachments/assets/b4d0c57d-fdb1-464b-88d6-107643809339)
 
     2. `_targetRank`和攻击规则给出的顺序值相同（0~9，数字越小，优先级越高）
-    3. `targetBossType`（见12.）和除了`targetName`的其他 目标参数可使用`max/min/sum/count`后缀来表示所有**存活**怪物中的最大/最小值/总和/sign和(`sum(sign(value))`)，如：`_targetBuffTurn_max_bleed`.
+    3. `targetBossType(见12.)`和除了`targetName`的其他 目标参数可使用`max/min/sum/count`后缀来表示所有**存活**怪物中的最大/最小值/总和/sign和(`sum(sign(value))`)，如：`_targetBuffTurn_max_bleed`.
+       1. `max/min/sum/count`可加前缀`a`/`ag`or`ga`/`g`表示按照`包含死亡目标`/`分组内统计且忽略死亡目标`/`分组内统计`. 分组相关见(13. `targetGroup`)
 12. `targetName`、`targetBossType`: 目标怪物的名称、Boss类型。
     1. `_targetName`返回目标的名称字符串（**注意**: 字符串之间的比较会自动去除最外层的引号，且请使用下划线`_`代替空格` `，如`Yugi_Nagato`/`'Yugi_Nagato'`/`"Yugi_Nagato"`）
     2. 其中类Boss型`_targetBossType`根据 名称进行判断:
@@ -117,8 +118,17 @@
         6. `Recycled Boss Rush`、`Bottomless Dungeon`、`New Game +`、`Achievement Grind`、`Time Trial Mode`、`Hardcore Mode`：6 (Post Game Content)
         7. `Fluttershy`、`Gummy`、`Rainbow Dash`、`Twilight Sparkle`、`Rarity`、`Applejack`、`Pinkie Pie`、`Angel Bunny`、`Spike`：7 (Ponies)
         8. 其他: 0 (非boss)
-
-13. 空白(blank): 自己输入 (the value you want to put in)
+13. `targetGroup`: 获取分组内的目标个数（包含死亡），并更改当前公式内的`目标分组`(见11.3.1). 每次公式计算的初始目标分组为`undefined`的空分组. 可选模式如下：
+    1. `a`: 选择全体. `targetGroup_a`
+    2. `s`: 按照给定数量从上往下划分，然后选取包含当前目标的一组 `targetGroup_s_2` 相当于每2个1组
+    3. `r`: 按照给定的距离，以当前目标为起点划分
+        1. 只有一个参数时，为对称范围. `targetGroup_r_1` 相当于`当前目标 ± 1`（共3格）
+        2. 两个参数时，分别为 `targetGroup_r_向上_向下`. `targetGroup_r_1_2` 相当于当前 \[`目标 - 1`, `目标 + 2`\]（共4格）
+        3. `距离 >= 10`时，溢出为 `9 - 距离`，例如：`targetGroup_r_4_10` 相当于 \[`目标 - 4`, `目标 - 1`\] （共4格）
+        4. 参数缺省=`-1`/`10`: `targetGroup_r_` 相当于 `targetGroup_r_10`;`targetGroup_r_1_` 相当于 `targetGroup_r_1_10`; `targetGroup_r__1` 相当于 `targetGroup_r_10_1`. 仅在有2个`_`划分参数时会补充第2个参数
+    5. `o`/`oa`: 按照给定的order(0~9)划定区域. `o`需要当前目标在区域内，否则返回0和空分组；`oa`不需要当前目标在区域内. `targetGroup_o_1_3` 相当于 `order=[1,2,3]` 即第2,3,4格
+        1. 两个参数分别为上下界，缺省分别为`-1`/`10`
+14. 空白(blank): 自己输入 (the value you want to put in)
 
 PS: 对于需要带下划线`_`开头的func式变量，可以省略`_`开头（省略时，获取值会先尝试按照dict式获取，失败时再按照func式获取）
 
