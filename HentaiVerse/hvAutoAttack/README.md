@@ -106,7 +106,7 @@
 
     2. `_targetRank`和攻击规则给出的顺序值相同（0~9，数字越小，优先级越高）
     3. `targetBossType(见12.)`和除了`targetName`的其他 目标参数可使用`max/min/sum/count`后缀来表示所有**存活**怪物中的最大/最小值/总和/sign和(`sum(sign(value))`)，如：`_targetBuffTurn_max_bleed`.
-       1. `max/min/sum/count`可加前缀`a`/`ag`or`ga`/`g`表示按照`包含死亡目标`/`分组内统计且忽略死亡目标`/`分组内统计`. 分组相关见(13. `targetGroup`)
+       1. `max/min/sum/count`可加前缀`a`/`ag`or`ga`/`g`表示按照`包含死亡目标（仍是全体目标）`/`分组内统计且包含死亡目标`/`分组内统计（仍忽略死亡目标）`. 分组相关见(13. `targetGroup`)
 12. `targetName`、`targetBossType`: 目标怪物的名称、Boss类型。
     1. `_targetName`返回目标的名称字符串（**注意**: 字符串之间的比较会自动去除最外层的引号，且请使用下划线`_`代替空格` `，如`Yugi_Nagato`/`'Yugi_Nagato'`/`"Yugi_Nagato"`）
     2. 其中类Boss型`_targetBossType`根据 名称进行判断:
