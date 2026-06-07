@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.207
+// @version      2.90.208
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -681,7 +681,7 @@
           });
         },
         open: function (url, data, method, context = {}, headers = {}) {
-          $ajax.fetch(url, data, method, context, headers).then(goto).catch(e => { console.error(e) });
+          $ajax.fetch(url, data, method, context, headers).then(goto).catch( err => { console.error(err) });
         },
         openNoFetch: function (url, newTab) {
           window.open(url, newTab ? '_blank' : '_self');
@@ -947,7 +947,7 @@
         console.error('ERROR: Failed fetch submit.');
       }
       goto();
-    } catch(e) { console.error(e) }}
+    } catch (err) { console.error(err) }}
 
     function checkIsWindowTop() {
       const currentUrl = window.self.location.href;
@@ -963,7 +963,8 @@
           if (!gE('#riddlecounter,#battle_main', window.opener.document)) { // opener不处于战斗或答题中
             return true;
           }
-        } catch(e) {
+        } catch (err) {
+          console.error(err);
           return true;
         }
         try {
@@ -1186,15 +1187,15 @@
       return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    async function until(condition, delay){
+    async function until(condition, delay){ try {
       let result;
       while (!(result = await condition())) await pauseAsync(delay);
       return result;
-    }
+    } catch (err) { console.error(err); }}
 
-    async function waitPause(ms) {
+    async function waitPause(ms) { try {
       return await until(()=>!getValue('disabled'), ms);
-    }
+    } catch (err) { console.error(err); }}
 
     function setTimeoutOrExecute(resolve, ms) {
       if (ms) {
@@ -1941,7 +1942,7 @@
         '      <div><input id="isCheck_11199" type="checkbox"><label for="isCheck_11199"><input class="hvAANumber" name="checkItem_11199" placeholder="0" type="number"><l0>体力秘药</l0><l1>體力秘藥</l1><l2>Health Elixir</l2></label></div>',
         '      <div><input id="isCheck_11299" type="checkbox"><label for="isCheck_11299"><input class="hvAANumber" name="checkItem_11299" placeholder="0" type="number"><l0>魔力秘药</l0><l1>魔力秘藥</l1><l2>Mana Elixir</l2></label></div>',
         '      <div><input id="isCheck_11399" type="checkbox"><label for="isCheck_11399"><input class="hvAANumber" name="checkItem_11399" placeholder="0" type="number"><l0>灵力秘药</l0><l1>靈力秘藥</l1><l2>Spirit Elixir</l2></label></div>',
-                '      <div><input id="isCheck_12501" type="checkbox"><label for="isCheck_12501"><input class="hvAANumber" name="checkItem_12501" placeholder="0" type="number"><l0>神圣魔药</l0><l1>神聖魔藥</l1><l2>Infusion of Divinity</l2></label></div>',
+        '      <div><input id="isCheck_12501" type="checkbox"><label for="isCheck_12501"><input class="hvAANumber" name="checkItem_12501" placeholder="0" type="number"><l0>神圣魔药</l0><l1>神聖魔藥</l1><l2>Infusion of Divinity</l2></label></div>',
         '      <div><input id="isCheck_12601" type="checkbox"><label for="isCheck_12601"><input class="hvAANumber" name="checkItem_12601" placeholder="0" type="number"><l0>黑暗魔药</l0><l1>黑暗魔藥</l1><l2>Infusion of Darkness</l2></label></div>',
 
         '      <div><input id="isCheck_19111" type="checkbox"><label for="isCheck_19111"><input class="hvAANumber" name="checkItem_19111" placeholder="0" type="number"><l0>花瓶</l0><l1>花瓶</l1><l2>Flower Vase</l2></label></div>',
@@ -1981,7 +1982,7 @@
         '      <div><input id="isCheckGF_11199" type="checkbox"><label for="isCheckGF_11199"><input class="hvAANumber" name="checkItemGF_11199" placeholder="0" type="number"><l0>体力秘药</l0><l1>體力秘藥</l1><l2>Health Elixir</l2></label></div>',
         '      <div><input id="isCheckGF_11299" type="checkbox"><label for="isCheckGF_11299"><input class="hvAANumber" name="checkItemGF_11299" placeholder="0" type="number"><l0>魔力秘药</l0><l1>魔力秘藥</l1><l2>Mana Elixir</l2></label></div>',
         '      <div><input id="isCheckGF_11399" type="checkbox"><label for="isCheckGF_11399"><input class="hvAANumber" name="checkItemGF_11399" placeholder="0" type="number"><l0>灵力秘药</l0><l1>靈力秘藥</l1><l2>Spirit Elixir</l2></label></div>',
-                '      <div><input id="isCheckGF_12501" type="checkbox"><label for="isCheckGF_12501"><input class="hvAANumber" name="checkItemGF_12501" placeholder="0" type="number"><l0>神圣魔药</l0><l1>神聖魔藥</l1><l2>Infusion of Divinity</l2></label></div>',
+        '      <div><input id="isCheckGF_12501" type="checkbox"><label for="isCheckGF_12501"><input class="hvAANumber" name="checkItemGF_12501" placeholder="0" type="number"><l0>神圣魔药</l0><l1>神聖魔藥</l1><l2>Infusion of Divinity</l2></label></div>',
         '      <div><input id="isCheckGF_12601" type="checkbox"><label for="isCheckGF_12601"><input class="hvAANumber" name="checkItemGF_12601" placeholder="0" type="number"><l0>黑暗魔药</l0><l1>黑暗魔藥</l1><l2>Infusion of Darkness</l2></label></div>',
 
         '      <div><input id="isCheckGF_19111" type="checkbox"><label for="isCheckGF_19111"><input class="hvAANumber" name="checkItemGF_19111" placeholder="0" type="number"><l0>花瓶</l0><l1>花瓶</l1><l2>Flower Vase</l2></label></div>',
@@ -3645,7 +3646,7 @@
           return g().oc / 100;
         },
       };
-
+      let currentGroup;
       const func = {
         ...returnValueGetter.prototype.func,
         targetBuffTurn(...img) {
@@ -3736,19 +3737,83 @@
         targetSpDecimal(param) {
           return switchMaxMin(param, t=>t.spNow);
         },
+        targetGroup(...args) {
+          const groupMode = args.shift();
+          const numArgs = args.map(arg=> arg === '' ? -1 : parseInt(arg));
+          if (numArgs.some(isNaN)) throw new Error(`Error args for targetGroup, args: ${args}.`);
+          const currentTarget = targetGetter();
+          const targets = g().battle.monsterStatus
+          switch(groupMode) {
+            case 'a': // all targets (as default if currentGroup is undefined)
+              currentGroup = targets;
+              break;
+            case 's': // 等数量自动分组
+              {
+                const groupSize = numArgs[0];
+                if (groupSize <= 0) throw new Error(`Using zero/subzero or error groupSize in targetGroup, args: ${args}.`);
+                const getGroupIndex = t => Math.floor(t.order / groupSize);
+                const groupIndex = getGroupIndex(currentTarget);
+                currentGroup = targets.filter(t => getGroupIndex(t) === groupIndex);
+              }
+              break;
+            case 'r': // 按照和current的距离
+              {
+                let [rangeUp, rangeDown] = [numArgs[0], numArgs[1]];
+                if (rangeUp === undefined) throw new Error(`1 args at least is required for targetGroup as mode 'r'.`);
+                // 对称范围. 只有单参数的 `targetGroup_r_[r1]` 时会是该情况，双参数的`targetGroup_r_[r1]_`时range2在param split后赋值为 ''，然后在numArgs中赋值为-1
+                rangeDown ??= rangeUp;
+                // >= 10 的，视作反方向。即 10 <=> -1 <=> ''(省略但有_分割)
+                [rangeUp, rangeDown] = [rangeUp, rangeDown].map(r=> r >= 10 ? 9-r : r );
+                const center = currentTarget.order;
+                const [startOrder, endOrder] = [center-rangeUp, center+rangeDown];
+                currentGroup = targets.filter(t => t.order >= startOrder && t.order <= endOrder);
+              }
+              break;
+            case 'oa': // 按照指定order，忽略current是否在内
+            case 'o': // 按照指定order
+              {
+                const [startOrder, endOrder] = numArgs;
+                if ([undefined, -1].includes(endOrder))
+                {
+                  endOrder = 10;
+                }
+                // 检查当前评估的怪物是否在区间内
+                if (groupMode!=='oa' && (currentTarget.order < startOrder || currentTarget.order > endOrder)) {
+                  currentGroup = null;
+                } else {
+                  // 检查该区间内是否有活怪带有此 Buff
+                  currentGroup = targets.filter(t => t.order >= startOrder && t.order <= endOrder);
+                }
+              }
+              break;
+            default:
+              throw new Error(`Unsupported targetGroup mode: ${groupMode}.`);
+          }
+          return Object.keys(currentGroup).length;
+        }
       };
 
-      function switchMaxMin(param, defaultResult) {
+      function switchMaxMin(param, defaultResult, skipAliveCheck=false, targets=undefined) {
+        if (['gacount', 'gasum', 'gamax', 'gamin', 'gcount', 'gsum', 'gmax', 'gmin'].includes(param)) {
+          return switchMaxMin(param.replace(/^g/,''), defaultResult, skipAliveCheck, currentGroup);
+        }
+        if (['acount', 'asum', 'amax', 'amin', 'agcount', 'agsum', 'agmax', 'agmin'].includes(param)) {
+          return switchMaxMin(param.replace(/^a/,''), defaultResult, true, targets);
+        }
+        if (targets === undefined) targets = g().battle.monsterStatus; // 只处理 undefined，null 是空 group
+        if (!targets) return 0;
+        if (!skipAliveCheck) targets = targets.filter(t => !t.isDead);
         switch (param) {
           case 'count':
-            return g().battle.monsterStatus.filter(t => !t.isDead).map(defaultResult).reduce((acc, cur) => acc + Math.sign(cur), 0);
+            return targets.map(defaultResult).reduce((acc, cur) => acc + Math.sign(cur), 0);
           case 'sum':
-            return g().battle.monsterStatus.filter(t => !t.isDead).map(defaultResult).reduce((acc, cur) => acc + cur, 0);
+            return targets.map(defaultResult).reduce((acc, cur) => acc + cur, 0);
           case 'max':
-            return Math.max(...g().battle.monsterStatus.filter(t => !t.isDead).map(defaultResult));
+            return Math.max(...targets.map(defaultResult));
           case 'min':
-            return Math.min(...g().battle.monsterStatus.filter(t => !t.isDead).map(defaultResult));
+            return Math.min(...targets.map(defaultResult));
           default:
+            if (param !== undefined) console.warn(`Unknown param ${param} for switchMaxMin, fallback to default.`);
             return defaultResult(targetGetter());
         }
       }
@@ -3976,34 +4041,34 @@
         (async () => { try {
           ready.proficiency = await asyncSetProficiency() || true;
           await tryEncounter();
-        } catch (err) { console.error(err) } })(),
+        } catch (err) { console.error(err); }})(),
         // ability
         (async () => { try {
           ready.ability = await asyncSetAbilityData() || true;
           await tryEncounter();
-        } catch (err) { console.error(err) } })(),
+        } catch (err) { console.error(err); }})(),
         // stamina & hathperk
         (async () => { try {
           ready.stamina = await asyncSetStamina() || true;
           await tryEncounter();
-        } catch (err) { console.error(err) } })(),
+        } catch (err) { console.error(err); }})(),
         // item & supply
         (async () => { try {
           ready.item = await asyncGetItems() || true;
           await tryEncounter();
           ready.supply = checkSupply();
           await tryEncounter();
-        } catch (err) { console.error(err) } })(),
+        } catch (err) { console.error(err); }})(),
         // repair
         (async () => { try {
           ready.repair = await asyncCheckRepair();
           await tryEncounter();
-        } catch (err) { console.error(err) } })(),
+        } catch (err) { console.error(err); }})(),
         // equipment storage
         (async () => { try {
           ready.storage = await asyncCheckEquStorage();
           await tryEncounter();
-        } catch (err) { console.error(err) } })(),
+        } catch (err) { console.error(err); }})(),
         // arena data
         updateArena(),
       ]);
@@ -4039,8 +4104,8 @@
         $async.logSwitch(arguments);
         ready.encounter ||= !(await updateEncounter(option.encounter));
         $async.logSwitch(arguments);
-      } catch (err) { console.error(err) } }
-    } catch (err) { console.error(err) } }
+      } catch (err) { console.error(err); }}
+    } catch (err) { console.error(err); }}
 
     function setEncounter(encounter) {
       return g('encounter', setValue('encounter', encounter));
@@ -4096,7 +4161,7 @@
       }
       localStorage.setItem(`hvAA-${current}_proficiency`, JSON.stringify(proficiency));
       $async.logSwitch(arguments);
-    } catch (err) { console.error(err) } }
+    } catch (err) { console.error(err); }}
 
     async function asyncSetAbilityData() { try {
       await waitPause();
@@ -4193,7 +4258,7 @@
       setValue('ability', newAbility);
       ability = Object.keys(newAbility).length ? newAbility : ability;
       $async.logSwitch(arguments);
-    } catch (err) { console.error(err) } }
+    } catch (err) { console.error(err); }}
 
     async function asyncSetStamina() { try {
       await waitPause();
@@ -4226,7 +4291,7 @@
             perk.push(currentID);
           }
           return perk;
-        } catch(e) { console.error(e) }})()
+        } catch (err) { console.error(err) }})()
       ]);
       if (!stamina.current) {
         if (!getValue('stamina')) {
@@ -4268,7 +4333,7 @@
       setValue('stamina', stamina);
       console.log('stamina', stamina, '\n', last, '->', stamina.current, '=', lastCost, '*', ratio);
       $async.logSwitch(arguments);
-    } catch (err) { console.error(err) } }
+    } catch (err) { console.error(err); }}
 
     async function asyncGetItems() { try {
       if (!g().option.checkSupply && (isIsekai || !g().option.restoreStamina)) {
@@ -4292,7 +4357,7 @@
       }
       g('items', items);
       $async.logSwitch(arguments);
-    } catch (err) { console.error(err) } }
+    } catch (err) { console.error(err); }}
 
     function checkSupply(isGFStandalone) {
       const option = g().option;
@@ -4460,7 +4525,7 @@
           }
           const after = $doc(await $ajax.insert(url, `select_item=${id}`));
           return gE('.messagebox_error', )?.innerText ? undefined : json[id].t;
-        } catch (err) { console.error(err) } }));
+        } catch (err) { console.error(err); }}));
       } else {
         const url = `?s=Bazaar&ss=am&screen=repair&filter=equipped`;
         const doc = $doc(await $ajax.insert(url));
@@ -4477,7 +4542,7 @@
           }
           const after = $doc(await $ajax.insert(url, `&eqids[]=${id}&postoken=${token}&replace_charms=on`));
           return gE(`#e${id}`, after) ? gE('.lc', eqp).childNodes[2].textContent : undefined;
-        } catch (err) { console.error(err) } }));
+        } catch (err) { console.error(err); }}));
       }
       eqps = eqps.filter(e=>e);
       if (eqps.length) {
@@ -4589,7 +4654,7 @@
       const punish = !!gE('#stamina_readout .fc4.far', doc).parentNode.title;
       $async.logSwitch(arguments);
       return [current, punish ? punish : undefined];
-    } catch(e) { console.error(e); }}
+    } catch (err) { console.error(err); }}
 
     async function checkStamina(low, cost) {
       // await waitPause();
@@ -4631,7 +4696,7 @@
         return false;
       }
       // await waitPause();
-      // $async.logSwitch(arguments);
+      $async.logSwitch(arguments);
       const encounter = getEncounter();
       const count = encounter.filter(e => e.url).length;
       const option = g().option;
@@ -4669,22 +4734,22 @@
         if (!cd) {
           await waitPause();
           onEncounter();
-          // $async.logSwitch(arguments);
+          $async.logSwitch(arguments);
           return true;
         }
         if (cd < 30 * _1m && encounter[0]?.url && !encounter[0].encountered) {
           await waitPause();
           $ajax.openNoFetch(encounter[0].url);
-          // $async.logSwitch(arguments);
+          $async.logSwitch(arguments);
           return true;
         }
       }
       let interval = cd > _1h ? _1m : (!option.encounterQuickCheck || cd > _1m) ? _1s : 80;
       interval = (option.encounterQuickCheck && cd > _1m) ? (interval - cd % interval) / 4 : interval; // 让倒计时显示更平滑
       setTimeout(() => updateEncounter(engage), interval);
-      // $async.logSwitch(arguments);
+      $async.logSwitch(arguments);
       return engage && cd <= waitCD;
-    } catch (err) { console.error(err) } }
+    } catch (err) { console.error(err); }}
 
     async function onEncounter() { try {
       const option = g().option;
@@ -4704,7 +4769,7 @@
       if (option.enchantEncounter) await asyncCheckEnchant();
       $ajax.openNoFetch('https://e-hentai.org/news.php?encounter');
       $async.logSwitchStrict('updateEncounter', false);
-    } catch (err) { console.error(err) } }
+    } catch (err) { console.error(err); }}
 
     async function startUpdateArena(idleStart, startIdleArena = true) { try {
       $async.logSwitchStrict('startUpdateArena', true);
@@ -4722,7 +4787,7 @@
       const last = getValue('arena', true)?.date ?? now;
       setTimeout(startUpdateArena, Math.max(0, Math.floor(last / _1d + 1) * _1d - now));
       $async.logSwitchStrict('startUpdateArena', false);
-    } catch (err) { console.error(err) } }
+    } catch (err) { console.error(err); }}
 
     async function updateArena(forceUpdateToken = false) { try {
       await waitPause();
@@ -4757,7 +4822,7 @@
       arena.arrayDone = arena.arrayDone.filter(id => id === 'gr' || !Object.keys(arena.token).includes(id.toString()));
       $async.logSwitch(arguments);
       return setValue('arena', arena);
-    } catch (err) { console.error(err) } }
+    } catch (err) { console.error(err); }}
 
     async function idleArena() { try { // 闲置竞技场
       let id;
@@ -4865,7 +4930,7 @@
         goto();
       }
       $async.logSwitch(arguments);
-    } catch (err) { console.error(err) } }
+    } catch (err) { console.error(err); }}
 
     // 战斗中//
     function onBattleRound() { // 主程序
@@ -5300,7 +5365,7 @@
         onRoundEnd();
         async function onRoundEnd() { try {
           await waitPause();
-          // $async.logSwitch(arguments);
+          $async.logSwitch(arguments);
           if (g().monsterAlive > 0) { // Defeat
             setExitBattleTimeout('Defeat');
             return;
@@ -5314,14 +5379,14 @@
             await pauseAsync(option.NewRoundWaitTime * _1s);
             await waitPause();
           }
-          if (gE('#btcp')?.innerHTML.includes("finishbattle.png")) return console.error(`gE('#btcp')?.innerHTML.includes("finishbattle.png")`);// goto();
+          if (gE('#btcp')?.innerHTML.includes("finishbattle.png")) return console.error(`gE('#btcp')?.innerHTML.includes("finishbattle.png")`);
           let url = option.checkURLBeforeNewRound;
           if (url) {
             lastResponsive = Infinity;
             await until(async ()=>{ try {
               await waitPause();
               return await $ajax.insert(url,undefined,undefined,{},{},true);
-            } catch(e) { console.error('Connect failed:', url) }}, option.checkURLBeforeNewRoundRetry*_1s);
+            } catch (err) { console.error('Connect failed:', url) }}, option.checkURLBeforeNewRoundRetry*_1s);
             lastResponsive = time(0);
           }
           const doc = $doc(await $ajax.insert(window.location.href));
@@ -5329,29 +5394,31 @@
             lastResponsive = Infinity;
             if (option.riddlePopup && !window.opener) {
               window.open(window.location.href, 'riddleWindow', 'resizable,scrollbars,width=1241,height=707');
-              // $async.logSwitch(arguments);
+              $async.logSwitch(arguments);
               return;
             }
             console.log(window.location.href);
             goto();
-            // $async.logSwitch(arguments);
+            $async.logSwitch(arguments);
             return;
           }
-          if (option.nativeNewRound) {
-            onStepInDone();
-            gE('#btcp').click();
-            // $async.logSwitch(arguments);
-            return;
+          if (gE('#btcp')) { // 在没有btcp时跳过，例如被Monsterbation、jpx等其他脚本移除时
+            if (option.nativeNewRound) {
+              onStepInDone();
+              gE('#btcp').click();
+              $async.logSwitch(arguments);
+              return;
+            }
+            gE('#pane_completion').removeChild(gE('#btcp'));
           }
-          gE('#pane_completion').removeChild(gE('#btcp'));
           ['#battle_right', '#battle_left'].forEach(selector => { gE('#battle_main').replaceChild(gE(selector, doc), gE(selector)); });
           unsafeWindow.battle = undefined;
           await loadUnsafeWindowBattle();
           newRound(true);
           onStepInDone();
           onBattleRound();
-          // $async.logSwitch(arguments);
-        } catch (err) { console.error(err) } }
+          $async.logSwitch(arguments);
+        } catch (err) { console.error(err); }}
       };
       gE('body').appendChild(eventEnd);
 
@@ -5814,7 +5881,7 @@
     async function loadUnsafeWindowBattle() { try {
       unsafeWindow.battle = await until(()=>new unsafeWindow.Battle(), 300);
       unsafeWindow.battle.clear_infopane();
-    } catch(e) { console.error(e) }}
+    } catch (err) { console.error(err) }}
 
     function newRound(isNew) { // New Round
       $debug.log('______________newRound', isNew);
