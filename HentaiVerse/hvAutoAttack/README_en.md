@@ -104,7 +104,7 @@ Four drop down lists and one button are visible in the box
     
     2. `_targetBuffTurn` returns the value as same as the ranked order given by Attack Rule (0~9, smaller number as higher priority)
     3. `targetBossType`(see 12.) & other target params (except `targetName`) can get maxim/minimum/sum/'sign_sum(`sum(sign(value))`)' value from all alive monsters by using suffix `max/min/sum/count` such as: `_targetBuffTurn_max_bleed`.
-      1.  For `max/min/sum/count` , prefixs `a`/`ag`or`ga`/`g` are available and represent `a: including dead target`/`ag/ga: only from grouped and including dead target`/`g: only from grouped`. About grouping, see 13. `targetGroup`.
+      1.  For `max/min/sum/count` , prefixs `a`/`ag`or`ga`/`g` are available and represent `a: including dead targets (still from all targets)`/`ag/ga: only from grouped and including dead targets`/`g: only from grouped (still ingore dead targets)`. About grouping, see 13. `targetGroup`.
 12. `targetName`/`targetBossType`: name and boss type for target monster
     1. `_targetName` returns a string of the target name (**Note**: Comparison between strings will automatically remove the outermost quotation marks, meanwhile **please replace space` ` with underline`_`**, such as `Yugi_Nagato`/`'Yugi_Nagato'`/`"Yugi_Nagato"`)
     2. `_targetBossType` is determined by name:
