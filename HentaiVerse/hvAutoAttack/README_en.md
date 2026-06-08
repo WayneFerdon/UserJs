@@ -126,6 +126,10 @@ Four drop down lists and one button are visible in the box
         4. Params default as `-1`/`10`: `targetGroup_r_` means `targetGroup_r_10`; `targetGroup_r_1_` means `targetGroup_r_1_10`; `targetGroup_r__1` means `targetGroup_r_10_1`. The second param will be completed by default only if 2 `_` are spliting the expression.
     5. `o`/`oa`: Select the range by given order(0~9). `o` requires the current target is in the range, or returns 0 and selecting a empty `null` group; `oa` do NOT requires the current target is in the range. `targetGroup_o_1_3` means `order=[1,2,3]` (the 2nd, 3rd, 4th target)
         1. Params as `targetGroup_[o/oa]_[top]_[bottom]` and default as `-1`/`10`
+14. `skillOTOS`: Amount of the **auto cast times** of Skill / Spell / Item / Defend / Focus / Spirit On / Spirit Off (not including the manually ones), `skillOTOS_[type]` such as `skillOTOS_FRD` (FUS RO DAH) /`skillOTOS_T1`(Tire 1 weapon skill) /`skillOTOS_defend`(Defend) 
+    - Skills: `OFC`/`FRD`/`T3`/`T2`/`T1`
+    - Spells/Items: Spell or item `id`
+    - Defend/Focus/Spirit On/Spirit Off: `defend`/`focus`/`spiriton`/`spiritoff`
 15. blank: the value you want to put in
 
 PS: For params get from func (starts with `_`), `_` from start can be omited (while omited, params will try get values as dict than as func if failed)
