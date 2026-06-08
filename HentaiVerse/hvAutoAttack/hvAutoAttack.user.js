@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.212
+// @version      2.91.0
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -43,6 +43,8 @@
     const isIsekai = location.indexOf('isekai') !== -1;
     const current = isIsekai ? 'isekai' : 'persistent';
     const other = isIsekai ? 'persistent' : 'isekai';
+    const isEquipDetail = window.location.href.includes('/equip/')?'0':'1255';
+    const isMaintaining = !gE('#csp') && !isEquipDetail;
 
     let ability = getValue('ability', true);
     let lastResponsive = new Date().getTime();
@@ -824,7 +826,7 @@
 
     function checkIsHV() {
       if (window.location.host !== 'e-hentai.org') {
-        if (!gE('#csp')) {
+        if (isMaintaining) {
           // 维护中? 过一个小时再刷新
           (async function onwait() {
             let remain = _1h;
@@ -1046,14 +1048,15 @@
       g('lang', option.lang || '0');
       addStyle();
 
-      if (option.version.substr(0, 4) !== g().version.substr(0, 4)) {
-        gE('.hvAAButton').click();
-        if (_alert(1, 'hvAutoAttack版本更新，请重新设置\n强烈推荐【重置设置】后再设置。\n是否查看更新说明？', 'hvAutoAttack版本更新，請重新設置\n強烈推薦【重置設置】後再設置。\n是否查看更新說明？', 'hvAutoAttack version update, please reset\nIt\'s recommended to reset all configuration.\nDo you want to read the changelog?')) {
-          $ajax.openNoFetch('https://github.com/dodying/UserJs/commits/master/HentaiVerse/hvAutoAttack/hvAutoAttack.user.js', true);
-        }
-        gE('.hvAAReset').focus();
-        return false;
-      }
+      // README等合并到主分支后再取消掉注释
+      // if (option.version.substr(0, 4) !== g().version.substr(0, 4)) {
+      //   gE('.hvAAButton').click();
+      //   if (_alert(1, 'hvAutoAttack版本更新，请重新设置\n强烈推荐【重置设置】后再设置。\n是否查看更新说明？', 'hvAutoAttack版本更新，請重新設置\n強烈推薦【重置設置】後再設置。\n是否查看更新說明？', 'hvAutoAttack version update, please reset\nIt\'s recommended to reset all configuration.\nDo you want to read the changelog?')) {
+      //     $ajax.openNoFetch('https://github.com/dodying/UserJs/commits/master/HentaiVerse/hvAutoAttack/hvAutoAttack.user.js', true);
+      //   }
+      //   gE('.hvAAReset').focus();
+      //   return false;
+      // }
 
       if (gE('[class^="c5"],[class^="c4"]') && _alert(1, '请设置字体\n使用默认字体可能使某些功能失效\n是否查看相关说明？', '請設置字體\n使用默認字體可能使某些功能失效\n是否查看相關說明？', 'Please set the font\nThe default font may make some functions fail to work\nDo you want to see instructions?')) {
         $ajax.openNoFetch(`https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README${g().lang === '2' ? '_en.md#about-font' : '.md#关于字体的说明'}`, true);
@@ -1159,7 +1162,6 @@
 
     // ----------methods----------
     // 通用//
-
     function unique(arr) {
       const newArr = [];
       for (let i = 0; i < arr.length; i++) {
@@ -1685,7 +1687,7 @@
         '#hvAABox2{position:absolute;left:1075px;padding-top: 6px;}',
         '.hvAALog{font-size:20px;}',
         '.hvAAPauseUI{top:30px;left:1246px;position:absolute;z-index:9999; width:80px}',
-        '.hvAAButton{top:5px;left:1255px;position:absolute;z-index:9999;cursor:pointer;width:40px;height:24px;background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAADi0lEQVRIiZVWPYgUZxj+dvGEk7vsNdPYCMul2J15n+d991PIMkWmOEyMyRW2FoJIUojYp5ADFbZJkyISY3EqKGpgz+Ma4bqrUojICaIsKGIXSSJcsZuD3RT3zWZucquXDwYG5n2f9/d5vnFuHwfAZySfAXgN4DXJzTiOj+3H90OnkmXZAe/9FMm3JJ8AuBGepyRfle2yLDvgnKt8EDVJkq8B3DGzjve+1m63p0n2AVzJbUh2SG455yre+5qZ/aCq983sxMfATwHYJvlCVYckHwFYVdURgO8LAS6RHJJcM7N1VR0CeE5yAGBxT3AR+QrA3wA20tQOq+pFkgOS90Tk85J51Xs9qaorqjoAcC6KohmSGyQHcRx/kbdv7AHgDskXaWqH0zSddc5Voyia2SOXapqmswsLvpam6ez8/Pwn+YcoimYAvARw04XZ5N8qZtZR1aGqXnTOVSd0cRd42U5EzqvqSFWX2u32tPd+yjnnXNiCGslHJAf7ybwM7r2vAdgWkYdZls157w+NK/DeT7Xb7WkAqyTvlZHjOD5oxgtmtqrKLsmze1VJsquqKwsLO9vnnKvkJHpLsq+qo/JAd8BtneTvqvqTiPwoIu9EZKUUpGpmi2Y2UtU+yTdJkhx1JJ8FEl0pruK/TrwA4F2r1WrkgI1G4wjJP0XkdLF9WaZzZnZZVa8GMj5xgf43JvXczFZbLb1ebgnJn0nenjQbEVkG0JsUYOykyi6Aa+XoQTJuTRr8OADJzVBOh+SlckYkz5L8Q0TquXOj0fhURN6r6pkSeAXAUsDaJPnYxXF8jOQrklskh97ryZJTVURWAPwF4DqAX0TkvRl/zTKdK2aeJMnxICFbAHrNZtOKVVdIrrVa2t1jz6sicprkbQC3VPVMGTzMpQvgQY63i8lBFddVdVCk/6TZlMFzopFci+P44H+YHCR3CODc/wUvDPY7ksMg9buZrKr3ATwvyoT3vrafzPP3er1eA9Azs7tjJhcqOBHkeSOKohkROR9K7prZYqnnlSRJjofhb4vIt/V6vUbyN1Xtt1qtb1zpZqs45xyAxXAnvCQ5FJGHqrpiZiMzu5xnHlZxCOABybXw3gvgp/Zq3/gA+BLATVVdyrJsbods2lfVq7lN4crMtapjZndD5pPBixWFLTgU7uQ3AJ6KyLKILAdy9sp25bZMBC//JSRJcjQIYg9Aj+TjZrNp+/mb+Ad711sdZZ1k/QAAAABJRU5ErkJggg==) center no-repeat transparent;}',
+        '.hvAAButton{top:5px;left:' + (isMaintaining||isEquipDetail?'0':'1255') + 'px;position:absolute;z-index:9999;cursor:pointer;width:40px;height:24px;background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAADi0lEQVRIiZVWPYgUZxj+dvGEk7vsNdPYCMul2J15n+d991PIMkWmOEyMyRW2FoJIUojYp5ADFbZJkyISY3EqKGpgz+Ma4bqrUojICaIsKGIXSSJcsZuD3RT3zWZucquXDwYG5n2f9/d5vnFuHwfAZySfAXgN4DXJzTiOj+3H90OnkmXZAe/9FMm3JJ8AuBGepyRfle2yLDvgnKt8EDVJkq8B3DGzjve+1m63p0n2AVzJbUh2SG455yre+5qZ/aCq983sxMfATwHYJvlCVYckHwFYVdURgO8LAS6RHJJcM7N1VR0CeE5yAGBxT3AR+QrA3wA20tQOq+pFkgOS90Tk85J51Xs9qaorqjoAcC6KohmSGyQHcRx/kbdv7AHgDskXaWqH0zSddc5Voyia2SOXapqmswsLvpam6ez8/Pwn+YcoimYAvARw04XZ5N8qZtZR1aGqXnTOVSd0cRd42U5EzqvqSFWX2u32tPd+yjnnXNiCGslHJAf7ybwM7r2vAdgWkYdZls157w+NK/DeT7Xb7WkAqyTvlZHjOD5oxgtmtqrKLsmze1VJsquqKwsLO9vnnKvkJHpLsq+qo/JAd8BtneTvqvqTiPwoIu9EZKUUpGpmi2Y2UtU+yTdJkhx1JJ8FEl0pruK/TrwA4F2r1WrkgI1G4wjJP0XkdLF9WaZzZnZZVa8GMj5xgf43JvXczFZbLb1ebgnJn0nenjQbEVkG0JsUYOykyi6Aa+XoQTJuTRr8OADJzVBOh+SlckYkz5L8Q0TquXOj0fhURN6r6pkSeAXAUsDaJPnYxXF8jOQrklskh97ryZJTVURWAPwF4DqAX0TkvRl/zTKdK2aeJMnxICFbAHrNZtOKVVdIrrVa2t1jz6sicprkbQC3VPVMGTzMpQvgQY63i8lBFddVdVCk/6TZlMFzopFci+P44H+YHCR3CODc/wUvDPY7ksMg9buZrKr3ATwvyoT3vrafzPP3er1eA9Azs7tjJhcqOBHkeSOKohkROR9K7prZYqnnlSRJjofhb4vIt/V6vUbyN1Xtt1qtb1zpZqs45xyAxXAnvCQ5FJGHqrpiZiMzu5xnHlZxCOABybXw3gvgp/Zq3/gA+BLATVVdyrJsbods2lfVq7lN4crMtapjZndD5pPBixWFLTgU7uQ3AJ6KyLKILAdy9sp25bZMBC//JSRJcjQIYg9Aj+TjZrNp+/mb+Ad711sdZZ1k/QAAAABJRU5ErkJggg==) center no-repeat transparent;}',
         '#hvAABox{left:0;top:50px;font-size:16px!important;z-index:4;width:1238px;height:650px;position:absolute;text-align:left;background-color:#E3E0D1;border:1px solid #000;border-radius:10px;font-family:"Microsoft Yahei";}',
         '.hvAATablist{position:relative;left:14px;width:calc(100% - 55px);height:calc(100% - 85px);}',
         '.hvAATabmenu{position:absolute;left:-9px;}',
@@ -2021,8 +2023,8 @@
         '      <div><input id="isCheckGF_61501" type="checkbox"><label for="isCheckGF_61501"><input class="hvAANumber" name="checkItemGF_61501" placeholder="0" type="number"><l0>羽毛碎片</l0><l1>羽毛碎片</l1><l2>Featherweight Shard</l2></label></div>',
         '    </div>',
         '  </div>',
-        '  <div>',
-        '    <input id="checkEnchant" type="checkbox"><label for="checkEnchant"><b><l0>检查附魔</l0><l1>檢查附魔</l1><l2>Check enchant</l2></b>(<l0>请在库存检查设置中预留附魔所需份额</l0><l1>請在庫存檢查中預留附魔所需份額</l1><l2>Please includes portions in supply check</l2>);</label></br>',
+        '  <div style="text-decoration: line-through;">',
+        '    <input id="checkEnchant" type="checkbox"><label for="checkEnchant"><b><l0>（v091中已废弃）检查附魔</l0><l1>（v091中已廢棄）檢查附魔</l1><l2>(Obsolete in v091)Check enchant</l2></b>(<l0>请在库存检查设置中预留附魔所需份额</l0><l1>請在庫存檢查中預留附魔所需份額</l1><l2>Please includes portions in supply check</l2>);</label></br>',
         '    <input id="enchantEncounter" type="checkbox"><label for="enchantEncounter"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label>',
         '    <div class="hvAATable" style="grid-template-columns: 2fr repeat(7, 1fr);">' ,
         '      <div><span class="hvAATitle"><b><l0>阈值(分钟)</l0><l1>閾值(分鐘)</l1><l2>Thresholds(m)</l2></b></span></br></div>',
@@ -2105,8 +2107,8 @@
         '      <div><input id="isEnchant_1260115" type="checkbox"><label for="isEnchant_1260115">:<input class="hvAANumber" name="enchant_1260115" placeholder="0" type="number"></label></div>',
         '    </div>',
         '  </div>',
-        '  <div>',
-        '    <input id="checkEnchantGF" type="checkbox"><label for="checkEnchantGF"><b><l0>压榨界使用额外的附魔检查</l0><l1>壓榨界使用額外的附魔檢查</l1><l2>Extra enchant check for Grind Fest</l2></b></br><l0>若压榨界使用额外库存检查，则在对应设置中预留附魔所需份额</l0><l1>若壓榨界使用額外庫存檢查，則在對應配置中預留附魔所需份額</l1><l2>Includes portions in extra supply check for Grind Fest instead if it\'s enabled.</l2></label>',
+        '  <div style="text-decoration: line-through;">',
+        '    <input id="checkEnchantGF" type="checkbox"><label for="checkEnchantGF"><b><l0>（v091中已废弃）压榨界使用额外的附魔检查</l0><l1>（v091中已廢棄）壓榨界使用額外的附魔檢查</l1><l2>(Obsolete in v091)Extra enchant check for Grind Fest</l2></b></br><l0>若压榨界使用额外库存检查，则在对应设置中预留附魔所需份额</l0><l1>若壓榨界使用額外庫存檢查，則在對應配置中預留附魔所需份額</l1><l2>Includes portions in extra supply check for Grind Fest instead if it\'s enabled.</l2></label>',
         '    <div class="hvAATable" style="grid-template-columns: 2fr repeat(7, 1fr);">',
         '      <div><span class="hvAATitle"><b><l0>阈值(分钟)</l0><l1>閾值(分鐘)</l1><l2>Thresholds(m)</l2></b></span></br></div>',
         '      <div><l0>主手</l0><l1>主手</l1><l2>Main Hand</l2></div>',
@@ -3764,7 +3766,7 @@
           const numArgs = args.map(arg=> arg === '' ? -1 : parseInt(arg));
           if (numArgs.some(isNaN)) throw new Error(`Error args for targetGroup, args: ${args}.`);
           const currentTarget = targetGetter();
-          const targets = g().battle.monsterStatus
+          const targets = g().battle.monsterStatus;
           switch(groupMode) {
             case 'a': // all targets (as default if currentGroup is undefined)
               currentGroup = targets;
@@ -4445,82 +4447,82 @@
       return !needs.length;
     }
 
-    async function asyncCheckEnchant(isGrindFest) {
-      try {
-        if (hvVersion >= 91) return true;
-        $async.logSwitch(arguments);
-        const option = g().option;
-        const [isEnchant, thresholds] = isGrindFest && option.checkEnchantGF ? [option.isEnchantGF, option.enchantGF] : [option.isEnchant, option.enchant];
-        if (!isEnchant) return true;
-        await waitPause();
+    //     async function asyncCheckEnchant(isGrindFest) {
+    //       try {
+    //         if (hvVersion >= 91) return true;
+    //         $async.logSwitch(arguments);
+    //         const option = g().option;
+    //         const [isEnchant, thresholds] = isGrindFest && option.checkEnchantGF ? [option.isEnchantGF, option.enchantGF] : [option.isEnchant, option.enchant];
+    //         if (!isEnchant) return true;
+    //         await waitPause();
 
-        const enchant = {};
-        Object.keys(isEnchant).forEach(id => {
-          if (!isEnchant[id]) return;
-          const item = Math.floor(id/100);
-          const slot = id % 100;
-          (enchant[slot] ??= {})[item] = thresholds[id];
-        });
+    //         const enchant = {};
+    //         Object.keys(isEnchant).forEach(id => {
+    //           if (!isEnchant[id]) return;
+    //           const item = Math.floor(id/100);
+    //           const slot = id % 100;
+    //           (enchant[slot] ??= {})[item] = thresholds[id];
+    //         });
 
-        const url = `?s=Forge&ss=re`;
-        const enchant_data= {
-          "Voidseeker's Blessing" : { Weapon: 'vseek', item:61001, }, // 'Voidseeker Shard'
-          'Suffused Aether' : { Weapon: 'ether', item:61101, }, // 'Aether Shard'
-          'Featherweight Charm' : { Weapon: 'feath', Armor: 'feath', item:61501, }, // 'Featherweight Shard'
-          'Infused Flames' : { Weapon: 'sfire', Armor: 'pfire', item:12101, }, // 'Infusion of Flames'
-          'Infused Frost' : { Weapon: 'scold', Armor: 'pcold', item:12201, }, // 'Infusion of Frost'
-          'Infused Lightning' : { Weapon: 'selec', Armor: 'pelec', item:12301, }, // 'Infusion of Lightning'
-          'Infused Storms' : { Weapon: 'swind', Armor: 'pwind', item:12401, }, // 'Infusion of Storms'
-          'Infused Divinity' : { Weapon: 'sholy', Armor: 'pholy', item:12501, }, // 'Infusion of Divinity'
-          'Infused Darkness' : { Weapon: 'sdark', Armor: 'pdark', item:12601, }, // 'Infusion of Darkness'
-        }
-        const item2Enchant = {
-          61001: "Voidseeker's Blessing",
-          61101: 'Suffused Aether',
-          61501: 'Featherweight Charm',
-          12101: 'Infused Flames',
-          12201: 'Infused Frost',
-          12301: 'Infused Lightning',
-          12401: 'Infused Storms',
-          12501: 'Infused Divinity',
-          12601: 'Infused Darkness',
-        }
-        const d = $doc(await $ajax.insert(`?s=Character&ss=eq`));
-        const eqps = {};
-        Array.from(gE('.eqb', 'all', d)).forEach(eqb=> {
-          const slot = eqb.getAttribute('onclick').match(`equip_slot=(.*)'`)[1] * 1;
-          const id = gE('div[onmouseover*="equips.set"]', eqb)?.id.replace('e', '') * 1;
-          eqps[id]=slot;
-        });
-        const doc = $doc(await $ajax.insert(url));
-        const eqpdoc = await $ajax.insert(gE('#mainpane>script[src]', doc).src);
-        const json = JSON.parse(eqpdoc.match(/{.*}/)[0]);
-        await Promise.all(Array.from(gE('.eqp>[id]', 'all', doc)).map(e => (async eqp => { try {
-          const id = eqp.id.match(/\d+/)[0];
-          const slot = eqps[id];
-          const data = json[id];
-          if (!enchant[slot]) return;
-          const enchanted = {};
-          Array.from(gE('#ee>span', 'all', $doc(await $ajax.insert(`equip/${id}/${data.k}`))))?.forEach(s=> {
-            const info = s.innerHTML.match(/(.*) \[(\d+)m\]/);
-            enchanted[enchant_data[info[1]].item] = info[2]*1
-            return;
-          });
-          let type = data.d.match(`<div class=\"eq e.\"><div>.* *(Armor|Weapon|Shield|Staff).*</div><div>Condition`)[1];
-          type = (type === 'Shield') ? 'Armor' : (type === 'Staff' ? 'Weapon' : type);
-          return await Promise.all(Object.keys(enchant[slot]).map(i => (async item => { try {
-            const threshold = enchant[slot][item];
-            const current = enchanted[item] ?? 0;
-            const enc = enchant_data[item2Enchant[item]][type];
-            if (!enc) return;
-            if (current && current >= threshold) return;
-            const failed = $doc(await $ajax.insert(`?s=Forge&ss=en`, `select_item=${id}&enchantment=${enc}`))?.innerText;
-            if (failed) {
-              console.error(failed, ':', data.t, ':', enc, '=', current, '>?', threshold, '=', current >= threshold);
-            }
-          } catch (err) { console.error(err) }; })(i)));
-        } catch (err) { console.error(err) }; })(e)));
-      } catch (err) { console.error(err) }; return false; }
+    //         const url = `?s=Forge&ss=re`;
+    //         const enchant_data= {
+    //           "Voidseeker's Blessing" : { Weapon: 'vseek', item:61001, }, // 'Voidseeker Shard'
+    //           'Suffused Aether' : { Weapon: 'ether', item:61101, }, // 'Aether Shard'
+    //           'Featherweight Charm' : { Weapon: 'feath', Armor: 'feath', item:61501, }, // 'Featherweight Shard'
+    //           'Infused Flames' : { Weapon: 'sfire', Armor: 'pfire', item:12101, }, // 'Infusion of Flames'
+    //           'Infused Frost' : { Weapon: 'scold', Armor: 'pcold', item:12201, }, // 'Infusion of Frost'
+    //           'Infused Lightning' : { Weapon: 'selec', Armor: 'pelec', item:12301, }, // 'Infusion of Lightning'
+    //           'Infused Storms' : { Weapon: 'swind', Armor: 'pwind', item:12401, }, // 'Infusion of Storms'
+    //           'Infused Divinity' : { Weapon: 'sholy', Armor: 'pholy', item:12501, }, // 'Infusion of Divinity'
+    //           'Infused Darkness' : { Weapon: 'sdark', Armor: 'pdark', item:12601, }, // 'Infusion of Darkness'
+    //         }
+    //         const item2Enchant = {
+    //           61001: "Voidseeker's Blessing",
+    //           61101: 'Suffused Aether',
+    //           61501: 'Featherweight Charm',
+    //           12101: 'Infused Flames',
+    //           12201: 'Infused Frost',
+    //           12301: 'Infused Lightning',
+    //           12401: 'Infused Storms',
+    //           12501: 'Infused Divinity',
+    //           12601: 'Infused Darkness',
+    //         }
+    //         const d = $doc(await $ajax.insert(`?s=Character&ss=eq`));
+    //         const eqps = {};
+    //         Array.from(gE('.eqb', 'all', d)).forEach(eqb=> {
+    //           const slot = eqb.getAttribute('onclick').match(`equip_slot=(.*)'`)[1] * 1;
+    //           const id = gE('div[onmouseover*="equips.set"]', eqb)?.id.replace('e', '') * 1;
+    //           eqps[id]=slot;
+    //         });
+    //         const doc = $doc(await $ajax.insert(url));
+    //         const eqpdoc = await $ajax.insert(gE('#mainpane>script[src]', doc).src);
+    //         const json = JSON.parse(eqpdoc.match(/{.*}/)[0]);
+    //         await Promise.all(Array.from(gE('.eqp>[id]', 'all', doc)).map(e => (async eqp => { try {
+    //           const id = eqp.id.match(/\d+/)[0];
+    //           const slot = eqps[id];
+    //           const data = json[id];
+    //           if (!enchant[slot]) return;
+    //           const enchanted = {};
+    //           Array.from(gE('#ee>span', 'all', $doc(await $ajax.insert(`equip/${id}/${data.k}`))))?.forEach(s=> {
+    //             const info = s.innerHTML.match(/(.*) \[(\d+)m\]/);
+    //             enchanted[enchant_data[info[1]].item] = info[2]*1
+    //             return;
+    //           });
+    //           let type = data.d.match(`<div class=\"eq e.\"><div>.* *(Armor|Weapon|Shield|Staff).*</div><div>Condition`)[1];
+    //           type = (type === 'Shield') ? 'Armor' : (type === 'Staff' ? 'Weapon' : type);
+    //           return await Promise.all(Object.keys(enchant[slot]).map(i => (async item => { try {
+    //             const threshold = enchant[slot][item];
+    //             const current = enchanted[item] ?? 0;
+    //             const enc = enchant_data[item2Enchant[item]][type];
+    //             if (!enc) return;
+    //             if (current && current >= threshold) return;
+    //             const failed = $doc(await $ajax.insert(`?s=Forge&ss=en`, `select_item=${id}&enchantment=${enc}`))?.innerText;
+    //             if (failed) {
+    //               console.error(failed, ':', data.t, ':', enc, '=', current, '>?', threshold, '=', current >= threshold);
+    //             }
+    //           } catch (err) { console.error(err) }; })(i)));
+    //         } catch (err) { console.error(err) }; })(e)));
+    //       } catch (err) { console.error(err) }; return false; }
 
     async function asyncCheckRepair(isGrindFestStandalone) { try {
       const option = g().option;
@@ -4789,7 +4791,7 @@
       if (!window.top.location.href.endsWith(`?s=Battle`)) {
         setValue('lastUrl', window.top.location.href);
       }
-      if (option.enchantEncounter) await asyncCheckEnchant();
+      // if (option.enchantEncounter) await asyncCheckEnchant();
       $ajax.openNoFetch('https://e-hentai.org/news.php?encounter');
       $async.logSwitchStrict('updateEncounter', false);
     } catch (err) { console.error(err); }}
@@ -4941,7 +4943,7 @@
       await waitPause();
       writeArenaStart();
       await until(async ()=>!option.checkURLBeforeNewRound || await $ajax.insert(option.checkURLBeforeNewRound), option.checkURLBeforeNewRoundRetry);
-      await asyncCheckEnchant(id === 'gr');
+      // await asyncCheckEnchant(id === 'gr');
       await until(async ()=>await $ajax.insert(query, `initid=${id === 'gr' ? 1 : id}${token}`), option.checkURLBeforeNewRoundRetry);
       stamina.lastCost = id === 'gr' ? undefined : cost;
       setValue('stamina', stamina);
@@ -5288,6 +5290,7 @@
     function autoDefend() {
       const option = g().option;
       if (option.defend && checkCondition(option.defendCondition)) {
+        updateSkillOTOS('defende');
         gE('#ckey_defend').click();
         return true;
       }
@@ -6141,6 +6144,7 @@
           continue;
         }
         if (option.item[name[i]] && checkCondition(option[`item${name[i]}Condition`]) && isOn(id)) {
+          updateSkillOTOS(id);
           (gE(`.bti3>div[onmouseover*="(${id})"]`) ?? gE(id)).click();
           return true;
         }
@@ -6217,7 +6221,8 @@
         if (!option.scroll[i]) {
           continue;
         }
-        if (!gE(`.bti3>div[onmouseover*="(${scrollLib[i].id})"]`)) {
+        const id = scrollLib[i].id;
+        if (!gE(`.bti3>div[onmouseover*="(${id})"]`)) {
           continue;
         }
         if (!checkCondition(option[`scroll${i}Condition`])) {
@@ -6227,7 +6232,8 @@
           if (getBuff(scrollLib[i][`img${j}`] + scrollFirst)) {
             continue;
           }
-          gE(`.bti3>div[onmouseover*="(${scrollLib[i].id})"]`).click();
+          updateSkillOTOS(id);
+          gE(`.bti3>div[onmouseover*="(${id})"]`).click();
           return true;
         }
       }
@@ -6247,12 +6253,15 @@
       if (option.channelSkill) {
         const skillPack = splitOrders(option.buffSkillOrderValue, ['SS', 'SL', 'Pr', 'Ab', 'SV', 'Re', 'Ha', 'He', 'AF']);
         for (const buff of skillPack) {
-          const current = getBuffTurnFromImg(getBuff(playerBuffSkillLib[buff].img));
+          const buffObj = getBuff(playerBuffSkillLib[buff].img);
+          const current = getBuffTurnFromImg(buffObj);
           const threshold = option.channelThreshold ? option.channelThreshold[buff] : 0;
           if (threshold > 0 && current >= threshold) continue;
-          if (!option.channelSkill[buff] || getBuff(playerBuffSkillLib[buff].img)) continue;
-          if (!isOn(playerBuffSkillLib[buff].id)) continue;
-          gE(playerBuffSkillLib[buff].id).click();
+          if (!option.channelSkill[buff] || buffObj) continue;
+          const id = playerBuffSkillLib[buff].id;
+          if (!isOn(id)) continue;
+          updateSkillOTOS(id);
+          gE(id).click();
           return true;
         }
       }
@@ -6266,6 +6275,7 @@
             if (threshold > 0 && current > threshold) continue;
           }
           if (!isOn(id)) continue;
+          updateSkillOTOS(id);
           gE(id).click();
           return true;
         }
@@ -6273,12 +6283,13 @@
       if (option.channelRebuff) {
         let minBuff, minTime;
         for (const buff in playerBuffSkillLib) {
-          let current = getBuffTurnFromImg(getBuff(playerBuffSkillLib[buff].img));
+          const buffObj = getBuff(playerBuffSkillLib[buff].img);
+          let current = getBuffTurnFromImg(buffObj);
           const threshold = option.channelThreshold ? option.channelThreshold[buff] : 0;
           if (threshold > 0 && current > threshold) continue;
 
           current = isNaN(current) ? 0 : current;
-          if (getBuff(playerBuffSkillLib[buff].img)?.src.match(/_scroll.png$/) || (minTime && current >= minTime)) {
+          if (buffObj?.src.match(/_scroll.png$/) || (minTime && current >= minTime)) {
             continue;
           }
           if (!current && (!option.buffSkillSwitch || !option.buffSkill[buff])) continue;
@@ -6288,7 +6299,8 @@
           minBuff = id;
           minTime = current;
         }
-        if (minBuff) {
+        if (minBuff && gE(minBuff)) {
+          updateSkillOTOS(minBuff);
           gE(minBuff).click();
           return true;
         }
@@ -6312,12 +6324,14 @@
       for (i = 0; i < skillPack.length; i++) {
         let buff = skillPack[i];
         if (!option.buffSkill[buff]) continue;
-        if (!isOn(playerBuffSkillLib[buff].id)) continue;
+        const id = playerBuffSkillLib[buff].id;
+        if (!isOn(id)) continue;
         if (!checkCondition(option[`buffSkill${buff}Condition`])) continue;
         const current = getBuffTurnFromImg(getBuff(playerBuffSkillLib[buff].img));
         const threshold = option.buffSkillThreshold ? option.buffSkillThreshold[buff] : 0;
         if (threshold >= 0 && current > threshold) continue;
-        gE(playerBuffSkillLib[buff].id).click();
+        updateSkillOTOS(id);
+        gE(id).click();
         return true;
       }
 
@@ -6344,8 +6358,10 @@
         },
       };
       for (i in draughtPack) {
-        if (!getBuff(draughtPack[i].img) && option.buffSkill && option.buffSkill[i] && checkCondition(option[`buffSkill${i}Condition`]) && gE(`.bti3>div[onmouseover*="(${draughtPack[i].id})"]`)) {
-          gE(`.bti3>div[onmouseover*="(${draughtPack[i].id})"]`).click();
+        const id = draughtPack[i].id;
+        if (!getBuff(draughtPack[i].img) && option.buffSkill && option.buffSkill[i] && checkCondition(option[`buffSkill${i}Condition`]) && gE(`.bti3>div[onmouseover*="(${id})"]`)) {
+          updateSkillOTOS(id);
+          gE(`.bti3>div[onmouseover*="(${id})"]`).click();
           return true;
         }
       }
@@ -6363,6 +6379,7 @@
         if (getBuff(infusionLib[status].img)) return false;
         const itemBtn = gE(`.bti3>div[onmouseover*="(${infusionLib[status].id})"]`);
         if (!itemBtn) return false;
+        updateSkillOTOS(infusionLib[status].id);
         itemBtn.click();
         return true;
       }
@@ -6412,6 +6429,7 @@
     function autoFocus() {
       const option = g().option;
       if (option.focus && checkCondition(option.focusCondition)) {
+        updateSkillOTOS('focus');
         gE('#ckey_focus').click();
         return true;
       }
@@ -6430,6 +6448,7 @@
         (!isDisableOnly && option.turnOnSS && checkCondition(option.turnOnSSCondition) && !enabled)
         || (option.turnOffSS && checkCondition(option.turnOffSSCondition) && enabled)
       ) {
+        updateSkillOTOS(enabled ? 'spiritoff' : 'spiriton');
         gE('#ckey_spirit').click();
         return true;
       }
@@ -6493,14 +6512,12 @@
         if (option.skillOTOS && option.skillOTOS[skill] && skillOTOS[skill] >= 1) {
           continue;
         }
-        skillOTOS[skill]++;
-        setValue('skillOTOS', skillOTOS);
         let target = checkCondition(option[`skill${skill}Condition`], monsterStatus);
         if (!target) {
           continue;
         }
+        updateSkillOTOS(skill, skillOTOS);
         gE(id).click();
-
         clickMonster(getRangeCenter(target, skillInfos[id]?.range ?? 1).id);
         return true;
       }
@@ -6630,6 +6647,7 @@
             return false;
         }
       }
+      updateSkillOTOS(skill.id);
       gE(skill.id).click();
       clickMonster(id);
       return true;
@@ -6715,8 +6733,9 @@
         if (selectStatusOnly) {
           return true;
         }
-        if (skill) {
-          gE(skill)?.click();
+        if (skill && gE(skill)) {
+          updateSkillOTOS(skill);
+          gE(skill).click();
         }
         clickMonster(getRangeCenter(target, range, !attackStatus).id);
         return true;
@@ -6760,11 +6779,14 @@
       if (!tryAttack(skill)) {
         return false;
       }
-      const skillOTOS = getValue('skillOTOS', true) ?? {};
-      skillOTOS[skill] ??= 0;
-      skillOTOS[skill]++;
-      setValue('skillOTOS', skillOTOS);
       return true;
+    }
+
+    function updateSkillOTOS(id, skillOTOS) {
+      skillOTOS ??= getValue('skillOTOS', true) ?? {};
+      skillOTOS[id] ??= 0;
+      skillOTOS[id]++;
+      return setValue('skillOTOS', skillOTOS);
     }
 
     function getHPFromMonsterDB(mdb, name, lv) {
