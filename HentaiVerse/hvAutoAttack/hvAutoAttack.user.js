@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.210
+// @version      2.90.211
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -824,6 +824,19 @@
 
     function checkIsHV() {
       if (window.location.host !== 'e-hentai.org') {
+        if (!gE('#csp')) {
+          // 维护中? 过一个小时再刷新
+          (async function onwait() {
+            let remain = _1h;
+            await until(() => {
+              document.title = `[M]${pad(Math.floor(remain/_1m))}:${pad(Math.floor((remain%_1m)/_1s))}`;
+              remain-=_1s;
+              return remain <= 0;
+            }, _1s);
+            goto();
+          })();
+          return true;
+        }
         setValue('url', window.location.origin);
         const hvver = gE('script[src*="hvc.js"]', document).src.match(/z\/(\d+)(.*)\/hvc.js/);
         hvVersion = hvver[1] * 1;
@@ -1203,6 +1216,10 @@
         return;
       }
       resolve();
+    }
+
+    function pad(num, pad='0', total=2) {
+      return num.toString().padStart(total, pad);
     }
 
     function gE(ele, mode, parent) { // 获取元素
@@ -4730,7 +4747,7 @@
       } else {
         ui.style.cssText += 'color:unset!important;';
       }
-      ui.innerHTML = `${formatTime(cd).slice(0, 2).map(cdi => cdi.toString().padStart(2, '0')).join(`:`)}[${encounter.length ? (count >= 24 ? `☯` : count) : `✪`}${missed ? `-${missed}` : ``}]`;
+      ui.innerHTML = `${formatTime(cd).slice(0, 2).map(cdi => pad(cdi)).join(`:`)}[${encounter.length ? (count >= 24 ? `☯` : count) : `✪`}${missed ? `-${missed}` : ``}]`;
       if (engage) {
         if (!cd) {
           await waitPause();
