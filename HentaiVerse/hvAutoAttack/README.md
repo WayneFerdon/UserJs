@@ -128,7 +128,11 @@
         4. 参数缺省=`-1`/`10`: `targetGroup_r_` 相当于 `targetGroup_r_10`;`targetGroup_r_1_` 相当于 `targetGroup_r_1_10`; `targetGroup_r__1` 相当于 `targetGroup_r_10_1`. 仅在有2个`_`划分参数时会补充第2个参数
     5. `o`/`oa`: 按照给定的order(0~9)划定区域. `o`需要当前目标在区域内，否则返回0和`null`的空分组；`oa`不需要当前目标在区域内. `targetGroup_o_1_3` 相当于 `order=[1,2,3]` 即第2,3,4格
         1. 两个参数分别为上下界，缺省分别为`-1`/`10`
-14. 空白(blank): 自己输入 (the value you want to put in)
+14. `skillOTOS`: 获取对应技能/法术/道具/防御/集中/灵动架势开/关 的**自动使用次数**（不包含手动释放的次数）, `skillOTOS_[类型]` 如 `skillOTOS_FRD`(马炮) /`skillOTOS_T1`(武器T1技能) /`skillOTOS_defend`(防御) 
+    - 技能: `OFC`/`FRD`/`T3`/`T2`/`T1`
+    - 法术/道具: 按 `id`
+    - 防御/集中/SS开关: `defend`/`focus`/`spiriton`/`spiritoff`
+15.  空白(blank): 自己输入 (the value you want to put in)
 
 PS: 对于需要带下划线`_`开头的func式变量，可以省略`_`开头（省略时，获取值会先尝试按照dict式获取，失败时再按照func式获取）
 
