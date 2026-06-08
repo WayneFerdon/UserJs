@@ -3303,6 +3303,7 @@
         '<option value="_dw">dw</option>',
         '<option value="_staff">staff</option>',
         '<option value="">- - - -</option>',
+        '<option value="skillOTOS">skillOTOS</option>',
         '<option value="_isCd_">isCd</option>',
         '<option value="_spirit">spirit</option>',
         '<option value="_buffTurn_">buffTurn</option>',
