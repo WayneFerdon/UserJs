@@ -5290,7 +5290,7 @@
     function autoDefend() {
       const option = g().option;
       if (option.defend && checkCondition(option.defendCondition)) {
-        updateSkillOTOS('defende');
+        updateSkillOTOS('defend');
         gE('#ckey_defend').click();
         return true;
       }
