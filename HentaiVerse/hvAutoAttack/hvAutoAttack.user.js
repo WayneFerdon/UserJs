@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.90.211
+// @version      2.90.212
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -3558,6 +3558,11 @@
     }
 
     function returnValueGetter(paramResultsGetter, targetGetter) {
+      let minmaxModes = returnValueGetter.prototype.minmaxModes ??= (()=> {
+        const modes = ['min', 'max', 'count', 'sum'];
+        const flags = ['a', 'ag', 'g'];
+        return flags.reduce((result, f) => result.concat(modes.map(m => f + m)), []);
+      })();
       returnValueGetter.prototype.func ??= {
         ar() {
           return g().battle.roundType === 'ar' ? 1 : 0;
@@ -3668,7 +3673,7 @@
         ...returnValueGetter.prototype.func,
         targetBuffTurn(...img) {
           const getBuffTurn = (t, i) => getBuffTurnFromImg(getBuff(imgArray2img(i), getMonsterID(t)));
-          let param = ['min', 'max', 'count', 'sum'].includes(img[0]) ? img.shift() : undefined;
+          let param = minmaxModes.includes(img[0]) ? img.shift() : undefined;
           return switchMaxMin(param, t=>getBuffTurn(t, img));
         },
         targetOrder(param) {
