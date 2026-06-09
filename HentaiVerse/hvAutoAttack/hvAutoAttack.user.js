@@ -2639,519 +2639,519 @@
       gE('select[name="lang"]').value = g().lang;
 
       // 绑定事件
-    (function bindEvents() {
-      gE('select[name="lang"]', optionBox).onchange = function () { // 选择语言
-        gE('.hvAA-LangStyle').textContent = `l${this.value}{display:inline!important;}`;
-        if (/^[01]$/.test(this.value)) {
-          gE('.hvAA-LangStyle').textContent += 'l01{display:inline!important;}';
-        }
-        g('lang', this.value);
-      };
-      gE('.hvAATabmenu', optionBox).onclick = function (e) { // 标签页事件
-        if (e.target.tagName === 'INPUT') {
-          return;
-        }
-        const target = (e.target.tagName === 'SPAN') ? e.target : e.target.parentNode;
-        const name = target.getAttribute('name');
-        let i, _html;
-        if (name === 'Drop') { // 掉落监测
-          let drop = getValue('drop', true) || {};
-          const dropOld = getValue('dropOld', true) || [];
-          drop = objSort(drop);
-          _html = '<tbody>';
-          if (dropOld.length === 0 || (dropOld.length === 1 && !getValue('drop', true))) {
-            if (dropOld.length === 1) {
-              drop = dropOld[0];
-            }
-            _html = `${_html}<tr class="hvAATh"><td></td><td><l0>数量</l0><l1>數量</l1><l2>Amount</l2></td></tr>`;
-            for (i in drop) {
-              _html = `${_html}<tr><td>${i}</td><td>${drop[i]}</td></tr>`;
-            }
-          } else {
-            if (getValue('drop')) {
-              drop.__name = getValue('battleCode', true)?.name;
-              dropOld.push(drop);
-            }
-            dropOld.reverse();
-            _html = `${_html}<tr class="hvAATh"><td class="selectTable"></td>`;
-            dropOld.forEach((_dropOld) => {
-              _html = `${_html}<td>${_dropOld.__name}</td>`;
-            });
-            _html = `${_html}</tr>`;
-            getKeys(dropOld).forEach((key) => {
-              if (key === '__name') {
-                return;
+      (function bindEvents() {
+        gE('select[name="lang"]', optionBox).onchange = function () { // 选择语言
+          gE('.hvAA-LangStyle').textContent = `l${this.value}{display:inline!important;}`;
+          if (/^[01]$/.test(this.value)) {
+            gE('.hvAA-LangStyle').textContent += 'l01{display:inline!important;}';
+          }
+          g('lang', this.value);
+        };
+        gE('.hvAATabmenu', optionBox).onclick = function (e) { // 标签页事件
+          if (e.target.tagName === 'INPUT') {
+            return;
+          }
+          const target = (e.target.tagName === 'SPAN') ? e.target : e.target.parentNode;
+          const name = target.getAttribute('name');
+          let i, _html;
+          if (name === 'Drop') { // 掉落监测
+            let drop = getValue('drop', true) || {};
+            const dropOld = getValue('dropOld', true) || [];
+            drop = objSort(drop);
+            _html = '<tbody>';
+            if (dropOld.length === 0 || (dropOld.length === 1 && !getValue('drop', true))) {
+              if (dropOld.length === 1) {
+                drop = dropOld[0];
               }
-              _html = `${_html}<tr><td>${key}</td>`;
+              _html = `${_html}<tr class="hvAATh"><td></td><td><l0>数量</l0><l1>數量</l1><l2>Amount</l2></td></tr>`;
+              for (i in drop) {
+                _html = `${_html}<tr><td>${i}</td><td>${drop[i]}</td></tr>`;
+              }
+            } else {
+              if (getValue('drop')) {
+                drop.__name = getValue('battleCode', true)?.name;
+                dropOld.push(drop);
+              }
+              dropOld.reverse();
+              _html = `${_html}<tr class="hvAATh"><td class="selectTable"></td>`;
               dropOld.forEach((_dropOld) => {
-                if (key in _dropOld) {
-                  _html = `${_html}<td>${_dropOld[key]}</td>`;
-                } else {
-                  _html = `${_html}<td></td>`;
-                }
+                _html = `${_html}<td>${_dropOld.__name}</td>`;
               });
               _html = `${_html}</tr>`;
-            });
-          }
-          _html = `${_html}</tbody>`;
-          gE('#hvAATab-Drop>table').innerHTML = _html;
-        } else if (name === 'Usage') { // 数据记录
-          let stats = getValue('stats', true) || {};
-          const statsOld = getValue('statsOld', true) || [];
-          const translation = {
-            self: '<l0>自身</l0><l1>自身</l1><l2>Self</l2>',
-            restore: '<l0>回复 (总量)</l0><l1>回复 (總量)</l1><l2>Restore (Amount)</l2>',
-            items: '<l0>物品 (次数)</l0><l1>物品 (次數)</l1><l2>Items (Frequency)</l2>',
-            magic: '<l0>技能 (次数)</l0><l1>技能 (次數)</l1><l2>Magic (Frequency)</l2>',
-            damage: '<l0>伤害 (总量)</l0><l1>傷害 (總量)</l1><l2>Damage (Amount)</l2>',
-            proficiency: '<l0>熟练度 (总量)</l0><l1>熟練度 (總量)</l1><l2>Proficiency (Amount)</l2>',
-            hurt: '<l0>受伤 (总量)</l0><l1>受傷 (總量)</l1><l2>Loss (Amount)</l2>',
-          };
-          _html = '<tbody>';
-          if (statsOld.length === 0 || (statsOld.length === 1 && !getValue('stats', true))) {
-            if (statsOld.length === 1) {
-              stats = statsOld[0];
-            }
-            for (i in stats) {
-              _html = `${_html}<tr class="hvAATh"><td>${translation[i]}</td><td><l01>值</l01><l2>Value</l2></td></tr>`;
-              stats[i] = objSort(stats[i]);
-              for (const j in stats[i]) {
-                _html = `${_html}<tr><td>${j}</td><td>${stats[i][j]}</td></tr>`;
-              }
-            }
-          } else {
-            if (getValue('stats')) {
-              stats.__name = getValue('battleCode', true)?.name;
-              statsOld.push(stats);
-            }
-            statsOld.reverse();
-            _html = `${_html}<tr class="hvAATh"><td class="selectTable"></td>`;
-            statsOld.forEach((_dropOld) => {
-              _html = `${_html}<td>${_dropOld.__name}</td>`;
-            });
-            _html = `${_html}</tr>`;
-            Object.keys(translation).forEach((i) => {
-              if (i === '__name') {
-                return;
-              }
-              _html = `${_html}<tr class="hvAATh"><td colspan="${statsOld.length + 1}">${translation[i]}</td></tr>`;
-              getKeys(statsOld, i).forEach((key) => {
+              getKeys(dropOld).forEach((key) => {
+                if (key === '__name') {
+                  return;
+                }
                 _html = `${_html}<tr><td>${key}</td>`;
-                statsOld.forEach((_statsOld) => {
-                  if (_statsOld[i] && (key in _statsOld[i])) {
-                    _html = `${_html}<td>${_statsOld[i][key]}</td>`;
+                dropOld.forEach((_dropOld) => {
+                  if (key in _dropOld) {
+                    _html = `${_html}<td>${_dropOld[key]}</td>`;
                   } else {
                     _html = `${_html}<td></td>`;
                   }
                 });
+                _html = `${_html}</tr>`;
               });
+            }
+            _html = `${_html}</tbody>`;
+            gE('#hvAATab-Drop>table').innerHTML = _html;
+          } else if (name === 'Usage') { // 数据记录
+            let stats = getValue('stats', true) || {};
+            const statsOld = getValue('statsOld', true) || [];
+            const translation = {
+              self: '<l0>自身</l0><l1>自身</l1><l2>Self</l2>',
+              restore: '<l0>回复 (总量)</l0><l1>回复 (總量)</l1><l2>Restore (Amount)</l2>',
+              items: '<l0>物品 (次数)</l0><l1>物品 (次數)</l1><l2>Items (Frequency)</l2>',
+              magic: '<l0>技能 (次数)</l0><l1>技能 (次數)</l1><l2>Magic (Frequency)</l2>',
+              damage: '<l0>伤害 (总量)</l0><l1>傷害 (總量)</l1><l2>Damage (Amount)</l2>',
+              proficiency: '<l0>熟练度 (总量)</l0><l1>熟練度 (總量)</l1><l2>Proficiency (Amount)</l2>',
+              hurt: '<l0>受伤 (总量)</l0><l1>受傷 (總量)</l1><l2>Loss (Amount)</l2>',
+            };
+            _html = '<tbody>';
+            if (statsOld.length === 0 || (statsOld.length === 1 && !getValue('stats', true))) {
+              if (statsOld.length === 1) {
+                stats = statsOld[0];
+              }
+              for (i in stats) {
+                _html = `${_html}<tr class="hvAATh"><td>${translation[i]}</td><td><l01>值</l01><l2>Value</l2></td></tr>`;
+                stats[i] = objSort(stats[i]);
+                for (const j in stats[i]) {
+                  _html = `${_html}<tr><td>${j}</td><td>${stats[i][j]}</td></tr>`;
+                }
+              }
+            } else {
+              if (getValue('stats')) {
+                stats.__name = getValue('battleCode', true)?.name;
+                statsOld.push(stats);
+              }
+              statsOld.reverse();
+              _html = `${_html}<tr class="hvAATh"><td class="selectTable"></td>`;
+              statsOld.forEach((_dropOld) => {
+                _html = `${_html}<td>${_dropOld.__name}</td>`;
+              });
+              _html = `${_html}</tr>`;
+              Object.keys(translation).forEach((i) => {
+                if (i === '__name') {
+                  return;
+                }
+                _html = `${_html}<tr class="hvAATh"><td colspan="${statsOld.length + 1}">${translation[i]}</td></tr>`;
+                getKeys(statsOld, i).forEach((key) => {
+                  _html = `${_html}<tr><td>${key}</td>`;
+                  statsOld.forEach((_statsOld) => {
+                    if (_statsOld[i] && (key in _statsOld[i])) {
+                      _html = `${_html}<td>${_statsOld[i][key]}</td>`;
+                    } else {
+                      _html = `${_html}<td></td>`;
+                    }
+                  });
+                });
+              });
+            }
+            _html = `${_html}</tbody>`;
+            gE('#hvAATab-Usage>table').innerHTML = _html;
+          } else if (name === 'Tools') { // 关于本脚本
+            gE('.hvAADebug', 'all', optionBox).forEach((input) => {
+              if (getValue('battle') && getValue('battle')[input.name]) {
+                input.value = getValue('battle')[input.name];
+              } else if (getValue(input.name)) {
+                input.value = getValue(input.name);
+              }
+            });
+          } else if (name === 'Drop' || name === 'Usage') {
+            gE('.selectTable', 'all', optionBox).forEach((i) => {
+              i.onclick = null;
+              i.onclick = function (e) {
+                const select = window.getSelection();
+                select.removeAllRanges();
+                const range = document.createRange();
+                range.selectNodeContents(e.target.parentNode.parentNode.parentNode);
+                select.addRange(range);
+              };
             });
           }
-          _html = `${_html}</tbody>`;
-          gE('#hvAATab-Usage>table').innerHTML = _html;
-        } else if (name === 'Tools') { // 关于本脚本
-          gE('.hvAADebug', 'all', optionBox).forEach((input) => {
-            if (getValue('battle') && getValue('battle')[input.name]) {
-              input.value = getValue('battle')[input.name];
-            } else if (getValue(input.name)) {
-              input.value = getValue(input.name);
-            }
+          gE('.hvAATab', 'all', optionBox).forEach((i) => {
+            i.style.display = (i.id === `hvAATab-${name}`) ? 'block' : 'none';
           });
-        } else if (name === 'Drop' || name === 'Usage') {
-          gE('.selectTable', 'all', optionBox).forEach((i) => {
-            i.onclick = null;
-            i.onclick = function (e) {
-              const select = window.getSelection();
-              select.removeAllRanges();
-              const range = document.createRange();
-              range.selectNodeContents(e.target.parentNode.parentNode.parentNode);
-              select.addRange(range);
-            };
-          });
-        }
-        gE('.hvAATab', 'all', optionBox).forEach((i) => {
-          i.style.display = (i.id === `hvAATab-${name}`) ? 'block' : 'none';
-        });
-      };
-      gE('.hvAAGoto', 'all', optionBox).forEach((i) => {
-        i.onclick = function () {
-          gE(`.hvAATabmenu>span[name="${this.name.replace('hvAATab-', '')}"]`).click();
         };
-      });
-
-      function updateGroup() {
-        const group = gE('.customizeGroup', 'all', g().customizeTarget);
-        const customizeBox = gE('.customizeBox');
-        if (group.length + 1 === gE('select[name="groupChoose"]>option', 'all', customizeBox).length) {
-          return;
-        }
-        const select = gE('select[name="groupChoose"]', customizeBox);
-        select.textContent = '';
-        for (let i = 0; i <= group.length; i++) {
-          const option = select.appendChild(cE('option'));
-          if (i === group.length) {
-            option.value = 'new';
-            option.textContent = 'new';
-          } else {
-            option.value = i + 1;
-            option.textContent = i + 1;
-          }
-        }
-      }
-      optionBox.onmousemove = function (e) { // 自定义条件相关事件
-        const target = (e.target.className === 'customize') ? e.target : (e.target.parentNode.className === 'customize') ? e.target.parentNode : e.target.parentNode.parentNode;
-        if (!gE('.customizeBox')) {
-          creatCustomizeBox();
-        }
-        updateGroup();
-        if (target.className !== 'customize' && target.parentNode.className !== 'customize') {
-          if (!target.className.match('customize')) {
-            gE('.customizeBox').style.zIndex = -1;
-          }
-          return;
-        }
-        g('customizeTarget', target);
-        const position = target.getBoundingClientRect();
-        const bodyPosition = document.body.getBoundingClientRect();
-        gE('.customizeBox').style.zIndex = 5;
-        gE('.customizeBox').style.top = `${position.bottom - bodyPosition.top}px`;
-        gE('.customizeBox').style.left = `${position.left - bodyPosition.left}px`;
-        gE('.customizeBox').style.cssText += `display: block; height: ${gE('.customizeGroup', 'all', g().customizeTarget).length * 30 + 30}px;`
-      };
-      // 标签页-主要选项
-      gE('input[name="pauseHotkeyStr"]', optionBox).onkeyup = function (e) {
-        this.value = (/^[a-z]$/.test(e.key)) ? e.key.toUpperCase() : e.key;
-        gE('input[name="pauseHotkeyCode"]', optionBox).value = e.keyCode;
-      };
-      gE('input[name="stepInHotkeyStr"]', optionBox).onkeyup = function (e) {
-        this.value = (/^[a-z]$/.test(e.key)) ? e.key.toUpperCase() : e.key;
-        gE('input[name="stepInHotkeyCode"]', optionBox).value = e.keyCode;
-      };
-      gE('input[name="altHotkeyStr"]', optionBox).onkeyup = function (e) {
-        this.value = (/^[a-z]$/.test(e.key)) ? e.key.toUpperCase() : e.key;
-        gE('input[name="altHotkeyCode"]', optionBox).value = e.keyCode;
-      };
-      gE('.testNotification', optionBox).onclick = function () {
-        _alert(0, '接下来开始预处理。\n如果询问是否允许，请选择允许', '接下來開始預處理。\n如果詢問是否允許，請選擇允許', 'Now, pretreat.\nPlease allow to receive notifications if you are asked for permission');
-        setNotification('Test');
-      };
-      gE('.testPopup', optionBox).onclick = function () {
-        _alert(0, '接下来开始预处理。\n关闭本警告框之后，请切换到其他标签页，\n并在足够长的时间后再打开本标签页', '接下來開始預處理。\n關閉本警告框之後，請切換到其他標籤頁，\n並在足夠長的時間後再打開本標籤頁', 'Now, pretreat.\nAfter dismissing this alert, focus other tab,\nfocus this tab again after long time.');
-        setTimeout(() => {
-          const riddleWindow = window.open(window.location.href, 'riddleWindow', 'resizable,scrollbars,width=1241,height=707');
-          if (riddleWindow) {
-            setTimeout(() => {
-              riddleWindow.close();
-            }, 200);
-          }
-        }, 3000);
-      };
-      gE('.idleArenaReset', optionBox).onclick = function () {
-        if (_alert(1, '是否重置', '是否重置', 'Whether to reset')) {
-          delValue('arena');
-        }
-      };
-      gE('.hvAAShowLevels', optionBox).onclick = function () {
-        gE('.hvAAArenaLevels').style.display = (gE('.hvAAArenaLevels').style.display === 'grid') ? 'none' : 'grid';
-      };
-      gE('.hvAALevelsClear', optionBox).onclick = function () {
-        gE('[name="idleArenaLevels"]', optionBox).value = '';
-        gE('[name="idleArenaValue"]', optionBox).value = '';
-        gE('.hvAAArenaLevels>input', 'all', optionBox).forEach((input) => {
-          input.checked = false;
+        gE('.hvAAGoto', 'all', optionBox).forEach((i) => {
+          i.onclick = function () {
+            gE(`.hvAATabmenu>span[name="${this.name.replace('hvAATab-', '')}"]`).click();
+          };
         });
-      };
 
-      const optionBox2Order = (ids, valueFrom=undefined, index=0) => function (e) {
-        if (Array.isArray(ids)) {
-          for (const i in ids) {
-            optionBox2Order(ids[i], valueFrom, i)(e);
+        function updateGroup() {
+          const group = gE('.customizeGroup', 'all', g().customizeTarget);
+          const customizeBox = gE('.customizeBox');
+          if (group.length + 1 === gE('select[name="groupChoose"]>option', 'all', customizeBox).length) {
+            return;
           }
-          return;
-        }
-        if (e.target.tagName !== 'INPUT' && e.target.type !== 'checkbox') {
-          return;
-        }
-        valueFrom ??= e => e.target.value.split(',');
-        const valueArray = valueFrom(e);
-        const latest = Array.isArray(valueArray) ? valueArray[index] : valueArray;
-
-        const orderObject = gE(`input[${ids}]`);
-        let value = orderObject.value;
-        const regExp = new RegExp(`(^|,)${latest}(,|$)`, 'g');
-        while (value.match(regExp)) {
-          value = value.replace(regExp, '$2').replace(/^,/, '');
-        }
-        if (e.target.checked) {
-          value = value + ((value) ? `,${latest}` : latest);
-        }
-        orderObject.value = value;
-      }
-      const getOrderFromId = e => e.target.id.match(/_(.*)/)[1];
-      const orderValues = {
-        '.attackStatusOrder': ['name="attackStatusOrderName"', 'name="attackStatusOrderValue"'],
-        '.battleOrder': 'name="battleOrderName"',
-        // 标签页-战斗开启
-        '.hvAAArenaLevels': ['Name="idleArenaLevels"', 'name="idleArenaValue"'],
-        // 标签页-恢复技能
-        '.itemOrder': ['name="itemOrderName"', 'name="itemOrderValue"'],
-
-        // 标签页-引导技能
-        '.channelSkill2Order': ['name="channelSkill2OrderName"', 'name="channelSkill2OrderValue"'],
-        // 标签页-BUFF技能
-        '.buffSkillOrder': 'name="buffSkillOrderValue"',
-        // 标签页-DEBUFF技能
-        '.debuffSkillOrder': 'name="debuffSkillOrderValue"',
-        '.debuffSkillOrderAll': 'name="debuffSkillOrderAllValue"',
-        // 标签页-其他技能
-        '.skillOrder': 'name="skillOrderValue"',
-        // 标签页-,
-        '.infusionOrder': 'name = "infusionOrderName"',
-      }
-      const isGetOrderFromId = ['.buffSkillOrder', '.debuffSkillOrder', '.debuffSkillOrderAll', '.skillOrder', '.infusionOrder'];
-      for (let ui in orderValues) {
-        gE(ui, optionBox).onclick = optionBox2Order(orderValues[ui], isGetOrderFromId.includes(ui) ? getOrderFromId : undefined);
-      }
-
-      // 标签页-警报
-      gE('input[name="audio_Text"]', optionBox).onchange = function () {
-        if (this.value === '') {
-          return;
-        }
-        if (!/^http(s)?:|^ftp:|^data:audio/.test(this.value)) {
-          _alert(0, '地址必须以"http:","https:","ftp:","data:audio"开头', '地址必須以"http:","https:","ftp:","data:audio"開頭', 'The address must start with "http:", "https:", "ftp:", and "data:audio"');
-          return;
-        }
-        _alert(0, '接下来将测试该音频\n如果该音频无法播放或无法载入，请变更\n请测试完成后再键入另一个音频', '接下來將測試該音頻\n如果該音頻無法播放或無法載入，請變更\n請測試完成後再鍵入另一個音頻', 'The audio will be tested after you close this prompt\nIf the audio doesn\'t load or play, change the url');
-        const box = gE('#hvAATab-Alarm').appendChild(cE('div'));
-        box.innerHTML = this.value;
-        const audio = box.appendChild(cE('audio'));
-        audio.controls = true;
-        audio.src = this.value;
-        audio.play();
-      };
-      // 标签页-攻击规则
-      gE('.clearMonsterHPCache', optionBox).onclick = function () {
-        delValue('monsterDB', true);
-        delValue('monsterDB', false);
-        delValue('monsterMID', true);
-        delValue('monsterMID', false);
-      };
-      gE('#portable_monsterDB', optionBox).onclick = function () {
-        gE('#portable_monsterMID', optionBox).checked = this.checked;
-      }
-      // 标签页-掉落监测
-      gE('.reDropMonitor', optionBox).onclick = function () {
-        if (_alert(1, '是否重置', '是否重置', 'Whether to reset')) {
-          delValue('drop', true);
-          delValue('drop', false);
-          delValue('dropOld', true);
-          delValue('dropOld', false);
-        }
-      };
-      gE('#portable_drop', optionBox).onclick = function () {
-        gE('#portable_dropOld', optionBox).checked = this.checked;
-      }
-      // 标签页-数据记录
-      gE('.reRecordUsage', optionBox).onclick = function () {
-        if (_alert(1, '是否重置', '是否重置', 'Whether to reset')) {
-          delValue('stats', true);
-          delValue('stats', false);
-          delValue('statsOld', true);
-          delValue('statsOld', false);
-        }
-      };
-      gE('#portable_stats', optionBox).onclick = function () {
-        gE('#portable_statsOld', optionBox).checked = this.checked;
-      }
-      // 标签页-关于本脚本
-      gE('.hvAAFix', optionBox).onclick = function () {
-        gE('.hvAADebug[name^="round"]', 'all', optionBox).forEach((input) => {
-          setValue(input.name, input.value || input.placeholder);
-        });
-      };
-      gE('.quickSiteAdd', optionBox).onclick = function () {
-        const tr = gE('.hvAAQuickSite>table>tbody', optionBox).appendChild(cE('tr'));
-        tr.innerHTML = '<td><input class="hvAADebug" type="text"></td><td><input class="hvAADebug" type="text"></td><td><input class="hvAADebug" type="text"></td>';
-      };
-      gE('.hvAAConfig', optionBox).onclick = function () {
-        this.style.height = 0;
-        this.style.height = `${this.scrollHeight}px`;
-        this.select();
-      };
-      function rmListItem(code) { // 同步删除界面显示对应的项
-        const configs = gE('#hvAATab-Tools > * > ul[class="hvAABackupList"] > li', 'all');
-        for (const config of configs) {
-          if (config.textContent == code) {
-            config.remove();
+          const select = gE('select[name="groupChoose"]', customizeBox);
+          select.textContent = '';
+          for (let i = 0; i <= group.length; i++) {
+            const option = select.appendChild(cE('option'));
+            if (i === group.length) {
+              option.value = 'new';
+              option.textContent = 'new';
+            } else {
+              option.value = i + 1;
+              option.textContent = i + 1;
+            }
           }
         }
-      }
-      gE('.hvAABackup', optionBox).onclick = function () {
-        const code = _alert(2, '请输入当前配置代号（或默认使用当前时间）', '請輸入當前配置代號（或默認使用當前時間）', 'Please put in a name for the current configuration (or use current time as default)') || time(3);
-        const backups = getValue('backup', true) || {};
-        if (code in backups) { // 覆写同名配置
-          if (_alert(1, '是否覆盖已有的同名配置？', '是否覆蓋已有的同名配置？', 'Do you want to overwrite the configuration with the same name?')) {
-            delete backups[code];
-            rmListItem(code);
-          } else return;
+        optionBox.onmousemove = function (e) { // 自定义条件相关事件
+          const target = (e.target.className === 'customize') ? e.target : (e.target.parentNode.className === 'customize') ? e.target.parentNode : e.target.parentNode.parentNode;
+          if (!gE('.customizeBox')) {
+            creatCustomizeBox();
+          }
+          updateGroup();
+          if (target.className !== 'customize' && target.parentNode.className !== 'customize') {
+            if (!target.className.match('customize')) {
+              gE('.customizeBox').style.zIndex = -1;
+            }
+            return;
+          }
+          g('customizeTarget', target);
+          const position = target.getBoundingClientRect();
+          const bodyPosition = document.body.getBoundingClientRect();
+          gE('.customizeBox').style.zIndex = 5;
+          gE('.customizeBox').style.top = `${position.bottom - bodyPosition.top}px`;
+          gE('.customizeBox').style.left = `${position.left - bodyPosition.left}px`;
+          gE('.customizeBox').style.cssText += `display: block; height: ${gE('.customizeGroup', 'all', g().customizeTarget).length * 30 + 30}px;`
+        };
+        // 标签页-主要选项
+        gE('input[name="pauseHotkeyStr"]', optionBox).onkeyup = function (e) {
+          this.value = (/^[a-z]$/.test(e.key)) ? e.key.toUpperCase() : e.key;
+          gE('input[name="pauseHotkeyCode"]', optionBox).value = e.keyCode;
+        };
+        gE('input[name="stepInHotkeyStr"]', optionBox).onkeyup = function (e) {
+          this.value = (/^[a-z]$/.test(e.key)) ? e.key.toUpperCase() : e.key;
+          gE('input[name="stepInHotkeyCode"]', optionBox).value = e.keyCode;
+        };
+        gE('input[name="altHotkeyStr"]', optionBox).onkeyup = function (e) {
+          this.value = (/^[a-z]$/.test(e.key)) ? e.key.toUpperCase() : e.key;
+          gE('input[name="altHotkeyCode"]', optionBox).value = e.keyCode;
+        };
+        gE('.testNotification', optionBox).onclick = function () {
+          _alert(0, '接下来开始预处理。\n如果询问是否允许，请选择允许', '接下來開始預處理。\n如果詢問是否允許，請選擇允許', 'Now, pretreat.\nPlease allow to receive notifications if you are asked for permission');
+          setNotification('Test');
+        };
+        gE('.testPopup', optionBox).onclick = function () {
+          _alert(0, '接下来开始预处理。\n关闭本警告框之后，请切换到其他标签页，\n并在足够长的时间后再打开本标签页', '接下來開始預處理。\n關閉本警告框之後，請切換到其他標籤頁，\n並在足夠長的時間後再打開本標籤頁', 'Now, pretreat.\nAfter dismissing this alert, focus other tab,\nfocus this tab again after long time.');
+          setTimeout(() => {
+            const riddleWindow = window.open(window.location.href, 'riddleWindow', 'resizable,scrollbars,width=1241,height=707');
+            if (riddleWindow) {
+              setTimeout(() => {
+                riddleWindow.close();
+              }, 200);
+            }
+          }, 3000);
+        };
+        gE('.idleArenaReset', optionBox).onclick = function () {
+          if (_alert(1, '是否重置', '是否重置', 'Whether to reset')) {
+            delValue('arena');
+          }
+        };
+        gE('.hvAAShowLevels', optionBox).onclick = function () {
+          gE('.hvAAArenaLevels').style.display = (gE('.hvAAArenaLevels').style.display === 'grid') ? 'none' : 'grid';
+        };
+        gE('.hvAALevelsClear', optionBox).onclick = function () {
+          gE('[name="idleArenaLevels"]', optionBox).value = '';
+          gE('[name="idleArenaValue"]', optionBox).value = '';
+          gE('.hvAAArenaLevels>input', 'all', optionBox).forEach((input) => {
+            input.checked = false;
+          });
+        };
+
+        const optionBox2Order = (ids, valueFrom=undefined, index=0) => function (e) {
+          if (Array.isArray(ids)) {
+            for (const i in ids) {
+              optionBox2Order(ids[i], valueFrom, i)(e);
+            }
+            return;
+          }
+          if (e.target.tagName !== 'INPUT' && e.target.type !== 'checkbox') {
+            return;
+          }
+          valueFrom ??= e => e.target.value.split(',');
+          const valueArray = valueFrom(e);
+          const latest = Array.isArray(valueArray) ? valueArray[index] : valueArray;
+
+          const orderObject = gE(`input[${ids}]`);
+          let value = orderObject.value;
+          const regExp = new RegExp(`(^|,)${latest}(,|$)`, 'g');
+          while (value.match(regExp)) {
+            value = value.replace(regExp, '$2').replace(/^,/, '');
+          }
+          if (e.target.checked) {
+            value = value + ((value) ? `,${latest}` : latest);
+          }
+          orderObject.value = value;
         }
-        backups[code] = getValue('option');
-        setValue('backup', backups);
-        const li = gE('.hvAABackupList', optionBox).appendChild(cE('li'));
-        li.textContent = code;
-      };
-      gE('.hvAARestore', optionBox).onclick = function () {
-        const code = _alert(2, '请输入配置代号', '請輸入配置代號', 'Please put in a name for a configuration');
-        const backups = getValue('backup', true) || {};
-        if (!(code in backups) || !code) {
-          return;
+        const getOrderFromId = e => e.target.id.match(/_(.*)/)[1];
+        const orderValues = {
+          '.attackStatusOrder': ['name="attackStatusOrderName"', 'name="attackStatusOrderValue"'],
+          '.battleOrder': 'name="battleOrderName"',
+          // 标签页-战斗开启
+          '.hvAAArenaLevels': ['Name="idleArenaLevels"', 'name="idleArenaValue"'],
+          // 标签页-恢复技能
+          '.itemOrder': ['name="itemOrderName"', 'name="itemOrderValue"'],
+
+          // 标签页-引导技能
+          '.channelSkill2Order': ['name="channelSkill2OrderName"', 'name="channelSkill2OrderValue"'],
+          // 标签页-BUFF技能
+          '.buffSkillOrder': 'name="buffSkillOrderValue"',
+          // 标签页-DEBUFF技能
+          '.debuffSkillOrder': 'name="debuffSkillOrderValue"',
+          '.debuffSkillOrderAll': 'name="debuffSkillOrderAllValue"',
+          // 标签页-其他技能
+          '.skillOrder': 'name="skillOrderValue"',
+          // 标签页-,
+          '.infusionOrder': 'name = "infusionOrderName"',
         }
-        setValue('option', backups[code]);
-        goto();
-      };
-      gE('.hvAADelete', optionBox).onclick = function () {
-        const code = _alert(2, '请输入配置代号', '請輸入配置代號', 'Please put in a name for a configuration');
-        const backups = getValue('backup', true) || {};
-        if (!(code in backups) || !code) {
-          return;
+        const isGetOrderFromId = ['.buffSkillOrder', '.debuffSkillOrder', '.debuffSkillOrderAll', '.skillOrder', '.infusionOrder'];
+        for (let ui in orderValues) {
+          gE(ui, optionBox).onclick = optionBox2Order(orderValues[ui], isGetOrderFromId.includes(ui) ? getOrderFromId : undefined);
         }
-        delete backups[code];
-        setValue('backup', backups);
-        rmListItem(code);
-      };
-      gE('.hvAAExport', optionBox).onclick = function () {
-        const t = getValue('option');
-        gE('.hvAAConfig').value = typeof t === 'string' ? t : JSON.stringify(t);
-      };
-      gE('.hvAAImport', optionBox).onclick = function () {
-        const option = JSON.parse(gE('.hvAAConfig').value);
-        if (!option) {
-          return;
+
+        // 标签页-警报
+        gE('input[name="audio_Text"]', optionBox).onchange = function () {
+          if (this.value === '') {
+            return;
+          }
+          if (!/^http(s)?:|^ftp:|^data:audio/.test(this.value)) {
+            _alert(0, '地址必须以"http:","https:","ftp:","data:audio"开头', '地址必須以"http:","https:","ftp:","data:audio"開頭', 'The address must start with "http:", "https:", "ftp:", and "data:audio"');
+            return;
+          }
+          _alert(0, '接下来将测试该音频\n如果该音频无法播放或无法载入，请变更\n请测试完成后再键入另一个音频', '接下來將測試該音頻\n如果該音頻無法播放或無法載入，請變更\n請測試完成後再鍵入另一個音頻', 'The audio will be tested after you close this prompt\nIf the audio doesn\'t load or play, change the url');
+          const box = gE('#hvAATab-Alarm').appendChild(cE('div'));
+          box.innerHTML = this.value;
+          const audio = box.appendChild(cE('audio'));
+          audio.controls = true;
+          audio.src = this.value;
+          audio.play();
+        };
+        // 标签页-攻击规则
+        gE('.clearMonsterHPCache', optionBox).onclick = function () {
+          delValue('monsterDB', true);
+          delValue('monsterDB', false);
+          delValue('monsterMID', true);
+          delValue('monsterMID', false);
+        };
+        gE('#portable_monsterDB', optionBox).onclick = function () {
+          gE('#portable_monsterMID', optionBox).checked = this.checked;
         }
-        if (_alert(1, '是否重置', '是否重置', 'Whether to reset')) {
-          setValue('option', option);
+        // 标签页-掉落监测
+        gE('.reDropMonitor', optionBox).onclick = function () {
+          if (_alert(1, '是否重置', '是否重置', 'Whether to reset')) {
+            delValue('drop', true);
+            delValue('drop', false);
+            delValue('dropOld', true);
+            delValue('dropOld', false);
+          }
+        };
+        gE('#portable_drop', optionBox).onclick = function () {
+          gE('#portable_dropOld', optionBox).checked = this.checked;
+        }
+        // 标签页-数据记录
+        gE('.reRecordUsage', optionBox).onclick = function () {
+          if (_alert(1, '是否重置', '是否重置', 'Whether to reset')) {
+            delValue('stats', true);
+            delValue('stats', false);
+            delValue('statsOld', true);
+            delValue('statsOld', false);
+          }
+        };
+        gE('#portable_stats', optionBox).onclick = function () {
+          gE('#portable_statsOld', optionBox).checked = this.checked;
+        }
+        // 标签页-关于本脚本
+        gE('.hvAAFix', optionBox).onclick = function () {
+          gE('.hvAADebug[name^="round"]', 'all', optionBox).forEach((input) => {
+            setValue(input.name, input.value || input.placeholder);
+          });
+        };
+        gE('.quickSiteAdd', optionBox).onclick = function () {
+          const tr = gE('.hvAAQuickSite>table>tbody', optionBox).appendChild(cE('tr'));
+          tr.innerHTML = '<td><input class="hvAADebug" type="text"></td><td><input class="hvAADebug" type="text"></td><td><input class="hvAADebug" type="text"></td>';
+        };
+        gE('.hvAAConfig', optionBox).onclick = function () {
+          this.style.height = 0;
+          this.style.height = `${this.scrollHeight}px`;
+          this.select();
+        };
+        function rmListItem(code) { // 同步删除界面显示对应的项
+          const configs = gE('#hvAATab-Tools > * > ul[class="hvAABackupList"] > li', 'all');
+          for (const config of configs) {
+            if (config.textContent == code) {
+              config.remove();
+            }
+          }
+        }
+        gE('.hvAABackup', optionBox).onclick = function () {
+          const code = _alert(2, '请输入当前配置代号（或默认使用当前时间）', '請輸入當前配置代號（或默認使用當前時間）', 'Please put in a name for the current configuration (or use current time as default)') || time(3);
+          const backups = getValue('backup', true) || {};
+          if (code in backups) { // 覆写同名配置
+            if (_alert(1, '是否覆盖已有的同名配置？', '是否覆蓋已有的同名配置？', 'Do you want to overwrite the configuration with the same name?')) {
+              delete backups[code];
+              rmListItem(code);
+            } else return;
+          }
+          backups[code] = getValue('option');
+          setValue('backup', backups);
+          const li = gE('.hvAABackupList', optionBox).appendChild(cE('li'));
+          li.textContent = code;
+        };
+        gE('.hvAARestore', optionBox).onclick = function () {
+          const code = _alert(2, '请输入配置代号', '請輸入配置代號', 'Please put in a name for a configuration');
+          const backups = getValue('backup', true) || {};
+          if (!(code in backups) || !code) {
+            return;
+          }
+          setValue('option', backups[code]);
           goto();
-        }
-      };
-      gE('.hvAAReset', optionBox).onclick = function () {
-        if (_alert(1, '是否重置', '是否重置', 'Whether to reset')) {
-          const option = getValue('option');
-          const newOption = {};
-          setValue('option', Object.fromEntries(excludeStandalone.option.map(ex => [ex, option[ex]])));
-          if (_alert(1, '已重置，是否刷新', '已重置，是否刷新', 'Reseted. Page reload?')) {
+        };
+        gE('.hvAADelete', optionBox).onclick = function () {
+          const code = _alert(2, '请输入配置代号', '請輸入配置代號', 'Please put in a name for a configuration');
+          const backups = getValue('backup', true) || {};
+          if (!(code in backups) || !code) {
+            return;
+          }
+          delete backups[code];
+          setValue('backup', backups);
+          rmListItem(code);
+        };
+        gE('.hvAAExport', optionBox).onclick = function () {
+          const t = getValue('option');
+          gE('.hvAAConfig').value = typeof t === 'string' ? t : JSON.stringify(t);
+        };
+        gE('.hvAAImport', optionBox).onclick = function () {
+          const option = JSON.parse(gE('.hvAAConfig').value);
+          if (!option) {
+            return;
+          }
+          if (_alert(1, '是否重置', '是否重置', 'Whether to reset')) {
+            setValue('option', option);
             goto();
           }
-        }
-      };
-      gE('.hvAAApply', optionBox).onclick = function () {
-        if (gE('select[name="attackStatus"] option[value="-1"]:checked', optionBox) || !gE('select[name="attackStatus"] option:checked', optionBox)) {
-          _alert(0, '请选择攻击模式', '請選擇攻擊模式', 'Please select the attack mode');
-          gE('.hvAATabmenu>span[name="Main"]').click();
-          gE('#attackStatus', optionBox).style.border = '1px solid red';
-          setTimeout(() => {
-            gE('#attackStatus', optionBox).style.border = '';
-          }, 0.5 * _1s);
-          return;
-        }
-        const arenaPrev = g().option?.idleArenaValue;
-        const _option = {
-          version: g().version,
         };
-        let inputs = gE('input,select', 'all', optionBox);
-        let itemName, itemArray, itemValue, i;
-        for (i = 0; i < inputs.length; i++) {
-          if (inputs[i].className === 'hvAADebug') {
-            continue;
-          } else if (inputs[i].type === 'number' || inputs[i].className === 'hvAANumber') {
-            itemName = inputs[i].name;
-            itemValue = inputs[i].value ? inputs[i].value * 1 : '';
-            if (isNaN(itemValue)) {
-              continue;
+        gE('.hvAAReset', optionBox).onclick = function () {
+          if (_alert(1, '是否重置', '是否重置', 'Whether to reset')) {
+            const option = getValue('option');
+            const newOption = {};
+            setValue('option', Object.fromEntries(excludeStandalone.option.map(ex => [ex, option[ex]])));
+            if (_alert(1, '已重置，是否刷新', '已重置，是否刷新', 'Reseted. Page reload?')) {
+              goto();
             }
-          } else if (inputs[i].type === 'text' || inputs[i].type === 'hidden') {
-            itemName = inputs[i].name;
-            itemValue = inputs[i].value || '';
-            if (itemValue === '') {
+          }
+        };
+        gE('.hvAAApply', optionBox).onclick = function () {
+          if (gE('select[name="attackStatus"] option[value="-1"]:checked', optionBox) || !gE('select[name="attackStatus"] option:checked', optionBox)) {
+            _alert(0, '请选择攻击模式', '請選擇攻擊模式', 'Please select the attack mode');
+            gE('.hvAATabmenu>span[name="Main"]').click();
+            gE('#attackStatus', optionBox).style.border = '1px solid red';
+            setTimeout(() => {
+              gE('#attackStatus', optionBox).style.border = '';
+            }, 0.5 * _1s);
+            return;
+          }
+          const arenaPrev = g().option?.idleArenaValue;
+          const _option = {
+            version: g().version,
+          };
+          let inputs = gE('input,select', 'all', optionBox);
+          let itemName, itemArray, itemValue, i;
+          for (i = 0; i < inputs.length; i++) {
+            if (inputs[i].className === 'hvAADebug') {
               continue;
-            }
-          } else if (inputs[i].type === 'checkbox') {
-            itemName = inputs[i].id;
-            itemValue = inputs[i].checked;
-            if (itemValue === false) {
-              if (!inputs[i].placeholder) {
+            } else if (inputs[i].type === 'number' || inputs[i].className === 'hvAANumber') {
+              itemName = inputs[i].name;
+              itemValue = inputs[i].value ? inputs[i].value * 1 : '';
+              if (isNaN(itemValue)) {
                 continue;
               }
-              itemValue = 0;
-            }
-          } else if (inputs[i].type === 'select-one') {
-            itemName = inputs[i].name;
-            itemValue = inputs[i].value;
-          }
-          itemArray = itemName.split('_');
-          if (itemArray.length === 1) {
-            _option[itemName] = itemValue;
-            if (inputs[i].placeholder && (_option[itemName] === '' || _option[itemName] === inputs[i].placeholder || _option[itemName] === inputs[i].placeholder * 1) || (_option[itemName] === true && inputs[i].placeholder)) {
-              delete _option[itemName]
-            }
-          } else {
-            if (!(itemArray[0] in _option)) {
-              _option[itemArray[0]] = {};
-            }
-            if (inputs[i].className === 'customizeInput') {
-              if (typeof _option[itemArray[0]][itemArray[1]] === 'undefined') {
-                _option[itemArray[0]][itemArray[1]] = [];
+            } else if (inputs[i].type === 'text' || inputs[i].type === 'hidden') {
+              itemName = inputs[i].name;
+              itemValue = inputs[i].value || '';
+              if (itemValue === '') {
+                continue;
               }
-              _option[itemArray[0]][itemArray[1]].push(itemValue);
+            } else if (inputs[i].type === 'checkbox') {
+              itemName = inputs[i].id;
+              itemValue = inputs[i].checked;
+              if (itemValue === false) {
+                if (!inputs[i].placeholder) {
+                  continue;
+                }
+                itemValue = 0;
+              }
+            } else if (inputs[i].type === 'select-one') {
+              itemName = inputs[i].name;
+              itemValue = inputs[i].value;
+            }
+            itemArray = itemName.split('_');
+            if (itemArray.length === 1) {
+              _option[itemName] = itemValue;
+              if (inputs[i].placeholder && (_option[itemName] === '' || _option[itemName] === inputs[i].placeholder || _option[itemName] === inputs[i].placeholder * 1) || (_option[itemName] === true && inputs[i].placeholder)) {
+                delete _option[itemName]
+              }
             } else {
-              _option[itemArray[0]][itemArray[1]] = itemValue;
-              if (inputs[i].placeholder && (_option[itemArray[0]][itemArray[1]] === '' || _option[itemArray[0]][itemArray[1]] === inputs[i].placeholder || _option[itemArray[0]][itemArray[1]] === inputs[i].placeholder * 1 || (_option[itemArray[0]][itemArray[1]] === true && inputs[i].placeholder))) {
-                delete _option[itemArray[0]][itemArray[1]]
+              if (!(itemArray[0] in _option)) {
+                _option[itemArray[0]] = {};
+              }
+              if (inputs[i].className === 'customizeInput') {
+                if (typeof _option[itemArray[0]][itemArray[1]] === 'undefined') {
+                  _option[itemArray[0]][itemArray[1]] = [];
+                }
+                _option[itemArray[0]][itemArray[1]].push(itemValue);
+              } else {
+                _option[itemArray[0]][itemArray[1]] = itemValue;
+                if (inputs[i].placeholder && (_option[itemArray[0]][itemArray[1]] === '' || _option[itemArray[0]][itemArray[1]] === inputs[i].placeholder || _option[itemArray[0]][itemArray[1]] === inputs[i].placeholder * 1 || (_option[itemArray[0]][itemArray[1]] === true && inputs[i].placeholder))) {
+                  delete _option[itemArray[0]][itemArray[1]]
+                }
+              }
+              if (!Object.keys(_option[itemArray[0]]).length) {
+                delete _option[itemArray[0]]
               }
             }
-            if (!Object.keys(_option[itemArray[0]]).length) {
-              delete _option[itemArray[0]]
+          }
+          inputs = gE('.hvAAQuickSite input[type="text"], .hvAAQuickSite input[type="number"]', 'all', optionBox);
+          for (i = 0; 3 * i < inputs.length; i++) {
+            if (i === 0 && inputs.length !== 0) {
+              _option.quickSite = [];
             }
+            if (inputs[3 * i + 1].value === '') {
+              continue;
+            }
+            _option.quickSite.push({
+              fav: inputs[3 * i].value,
+              name: inputs[3 * i + 1].value,
+              url: inputs[3 * i + 2].value,
+            });
           }
-        }
-        inputs = gE('.hvAAQuickSite input[type="text"], .hvAAQuickSite input[type="number"]', 'all', optionBox);
-        for (i = 0; 3 * i < inputs.length; i++) {
-          if (i === 0 && inputs.length !== 0) {
-            _option.quickSite = [];
+          setValue('option', _option);
+          optionBox.style.display = 'none';
+          // 清除不再需要的portable数据
+          for (const key of portable) {
+            if (_option.portable && Object.keys(_option.portable).includes(key)) continue;
+            delValue(key, true, true);
           }
-          if (inputs[3 * i + 1].value === '') {
-            continue;
+          // 更改设置后实时刷新竞技场数据
+          const arenaNew = _option.idleArenaValue;
+          if (arenaNew === arenaPrev) {
+            goto();
+            return;
           }
-          _option.quickSite.push({
-            fav: inputs[3 * i].value,
-            name: inputs[3 * i + 1].value,
-            url: inputs[3 * i + 2].value,
-          });
-        }
-        setValue('option', _option);
-        optionBox.style.display = 'none';
-        // 清除不再需要的portable数据
-        for (const key of portable) {
-          if (_option.portable && Object.keys(_option.portable).includes(key)) continue;
-          delValue(key, true, true);
-        }
-        // 更改设置后实时刷新竞技场数据
-        const arenaNew = _option.idleArenaValue;
-        if (arenaNew === arenaPrev) {
-          goto();
-          return;
-        }
-        if (_option.idleArena && _option.idleArenaValue) {
-          const arena = getValue('arena', true);
-          arena.isOptionUpdated = undefined;
-          setValue('arena', arena);
-          goto();
-        }
-      };
-      gE('.hvAACancel', optionBox).onclick = function () {
-        optionBox.style.display = 'none';
-      };
-    })();
+          if (_option.idleArena && _option.idleArenaValue) {
+            const arena = getValue('arena', true);
+            arena.isOptionUpdated = undefined;
+            setValue('arena', arena);
+            goto();
+          }
+        };
+        gE('.hvAACancel', optionBox).onclick = function () {
+          optionBox.style.display = 'none';
+        };
+      })();
 
       // 加载UI数据
       if (option) {
