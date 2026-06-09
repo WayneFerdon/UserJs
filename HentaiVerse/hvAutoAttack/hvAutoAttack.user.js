@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.1
+// @version      2.91.2
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -46,10 +46,10 @@
     const isEquipDetail = window.location.href.includes('/equip/');
     const isMaintaining = !gE('#csp') && !isEquipDetail;
 
-    let ability = getValue('ability', true);
+    let ability = getValue('ability', true)??{};
     let lastResponsive = new Date().getTime();
 
-    const scriptVersion = '2.90';
+    const scriptVersion = '2.91';
     let hvVersion;
 
     const _1s = 1000;
@@ -1327,11 +1327,13 @@
 
       // 迁移2.90.162及之前的targetHp等到targetHpDecimal等
       const version = option.version.split('.').map(v=>isNaN(v*1) ? v : v*1);
-      if (version[0] < 2 || version[1] < 90 || isNaN(1*version[2]) || version[2]<=162) {
-        option = JSON.parse(JSON.stringify(option).replace('targetHp', 'targetHpDecimal').replace('targetMp', 'targetMpDecimal').replace('targetSp', 'targetSpDecimal'));
-        option.version = '2.90.163'
+      if (version[0] < 2 || version[1] < 90 || (version[1] === 90 && (isNaN(1*version[2]) || version[2]<=162))) {
+        option = JSON.parse(JSON.stringify(option).replace('targetHp', 'targetHpDecimal').replace('targetMp', 'targetMpDecimal').replace('targetSp', 'targetSpDecimal').replace('DecimalDecimal', 'Decimal'));
+        option.version = GM_info ? GM_info.script.version : scriptVersion;
         g('version', option.version);
       }
+      option = JSON.parse(JSON.stringify(option).replace('DecimalDecimal', 'Decimal'));
+
       // 迁移2.90.168及之前的channelSkill2Order_Cure的Name错误
       option.channelSkill2Order_Cure = option.channelSkill2Order_Cu;
       option.channelSkill2Order_Cu = undefined;
