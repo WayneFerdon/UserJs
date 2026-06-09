@@ -674,16 +674,16 @@
         conn: 0,
         queue: [],
 
-        insert: function (url, data, method, context = {}, headers = {}, nocache) {
+        insert: function (url, data, method, context = {}, headers = {}) {
           return $ajax.fetch(url, data, method, context, headers, true);
         },
-        fetch: function (url, data, method, context = {}, headers = {}, isInsert = false, nocache) {
+        fetch: function (url, data, method, context = {}, headers = {}, isInsert = false) {
           return new Promise((resolve, reject) => {
-            $ajax.add(method, url, data, resolve, reject, context, headers, isInsert, nocache);
+            $ajax.add(method, url, data, resolve, reject, context, headers, isInsert);
           });
         },
         open: function (url, data, method, context = {}, headers = {}) {
-          $ajax.fetch(url, data, method, context, headers).then(goto).catch( err => { console.error(err) });
+          $ajax.fetch(url, data, method, context, headers).then(goto).catch( err => { console.error(err); });
         },
         openNoFetch: function (url, newTab) {
           window.open(url, newTab ? '_blank' : '_self');
@@ -695,7 +695,7 @@
           }
           return list;
         },
-        add: function (method, url, data, onload, onerror, context = {}, headers = {}, isInsert = false, nocache) {
+        add: function (method, url, data, onload, onerror, context = {}, headers = {}, isInsert = false) {
           method = !data ? 'GET' : method ?? 'POST';
           if (method === 'POST') {
             headers['Content-Type'] ??= 'application/x-www-form-urlencoded';
@@ -712,9 +712,9 @@
           context.onload = onload;
           context.onerror = onerror;
           if (isInsert) {
-            $ajax.queue.unshift({ method, url, data, headers, context, onload: $ajax.onload, onerror: $ajax.onerror, nocache });
+            $ajax.queue.unshift({ method, url, data, headers, context, onload: $ajax.onload, onerror: $ajax.onerror });
           } else {
-            $ajax.queue.push({ method, url, data, headers, context, onload: $ajax.onload, onerror: $ajax.onerror, nocache });
+            $ajax.queue.push({ method, url, data, headers, context, onload: $ajax.onload, onerror: $ajax.onerror });
           }
           $ajax.next();
         },
@@ -962,7 +962,7 @@
         console.error('ERROR: Failed fetch submit.');
       }
       goto();
-    } catch (err) { console.error(err) }}
+    } catch (err) { console.error(err); }}
 
     function checkIsWindowTop() {
       const currentUrl = window.self.location.href;
@@ -1182,7 +1182,7 @@
     function goto() { // 前进
       window.location.href = window.location.search ? window.location.pathname + window.location.search : window.location.href;
       setTimeout(goto, 5000);
-      setTimeout(()=>{window.location.href = window.location.href}, 10000);
+      setTimeout(()=>{ window.location.href = window.location.href }, 10000);
       return true;
     }
 
@@ -1433,7 +1433,7 @@
         return;
       }
       document.addEventListener('keydown', (e) => {
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        if (e.target.tagName.toUpperCase() === 'INPUT' || e.target.tagName.toUpperCase() === 'TEXTAREA') {
           return;
         }
         if (e.keyCode === option.pauseHotkeyCode) {
@@ -1459,7 +1459,7 @@
         return;
       }
       document.addEventListener('keydown', (e) => {
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        if (e.target.tagName.toUpperCase() === 'INPUT' || e.target.tagName.toUpperCase() === 'TEXTAREA') {
           return;
         }
         if (e.keyCode === option.stepInHotkeyCode) {
@@ -1485,7 +1485,7 @@
         return;
       }
       document.addEventListener('keydown', (e) => {
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        if (e.target.tagName.toUpperCase() === 'INPUT' || e.target.tagName.toUpperCase() === 'TEXTAREA') {
           return;
         }
         if (e.keyCode === option.altHotkeyCode) {
@@ -2648,10 +2648,10 @@
           g('lang', this.value);
         };
         gE('.hvAATabmenu', optionBox).onclick = function (e) { // 标签页事件
-          if (e.target.tagName === 'INPUT') {
+          if (e.target.tagName.toUpperCase() === 'INPUT') {
             return;
           }
-          const target = (e.target.tagName === 'SPAN') ? e.target : e.target.parentNode;
+          const target = (e.target.tagName.toUpperCase() === 'SPAN') ? e.target : e.target.parentNode;
           const name = target.getAttribute('name');
           let i, _html;
           if (name === 'Drop') { // 掉落监测
@@ -2813,7 +2813,7 @@
           g('customizeTarget', target);
           const position = target.getBoundingClientRect();
           const bodyPosition = document.body.getBoundingClientRect();
-          gE('.customizeBox').style.zIndex = 5;
+          gE('.customizeBox').style.zIndex = 20;
           gE('.customizeBox').style.top = `${position.bottom - bodyPosition.top}px`;
           gE('.customizeBox').style.left = `${position.left - bodyPosition.left}px`;
           gE('.customizeBox').style.cssText += `display: block; height: ${gE('.customizeGroup', 'all', g().customizeTarget).length * 30 + 30}px;`
@@ -2869,7 +2869,7 @@
             }
             return;
           }
-          if (e.target.tagName !== 'INPUT' && e.target.type !== 'checkbox') {
+          if (e.target.tagName.toUpperCase() !== 'INPUT' && e.target.type !== 'checkbox') {
             return;
           }
           valueFrom ??= e => e.target.value.split(',');
@@ -3368,7 +3368,7 @@
         let find = attr(target);
         while (!find) {
           target = target.parentNode;
-          if (target.id === 'csp' || target.tagName === 'BODY') {
+          if (target.id === 'csp' || target.tagName.toUpperCase() === 'BODY') {
             box.style.display = 'none';
             return;
           }
@@ -4343,7 +4343,7 @@
             perk.push(currentID);
           }
           return perk;
-        } catch (err) { console.error(err) }})()
+        } catch (err) { console.error(err); }})()
       ]);
       if (!stamina.current) {
         if (!getValue('stamina')) {
@@ -4548,9 +4548,9 @@
     //             if (failed) {
     //               console.error(failed, ':', data.t, ':', enc, '=', current, '>?', threshold, '=', current >= threshold);
     //             }
-    //           } catch (err) { console.error(err) }; })(i)));
-    //         } catch (err) { console.error(err) }; })(e)));
-    //       } catch (err) { console.error(err) }; return false; }
+    //           } catch (err) { console.error(err); }})(i)));
+    //         } catch (err) { console.error(err); }})(e)));
+    //       } catch (err) { console.error(err); }; return false; }
 
     async function asyncCheckRepair(isGrindFestStandalone) { try {
       const option = g().option??{};
@@ -4616,7 +4616,7 @@
       }
       $async.logSwitch(arguments);
       return !eqps.length;
-    } catch (err) { console.error(err) }; return false; }
+    } catch (err) { console.error(err); }; return false; }
 
     async function asyncCheckEquStorage() { try {
       const option = g().option??{};
@@ -4645,7 +4645,7 @@
       }
       $async.logSwitch(arguments);
       return count * 1 <= option.equStorageValue;
-    } catch (err) { console.error(err) }; return false; }
+    } catch (err) { console.error(err); }; return false; }
 
     async function checkBattleReady(method, condition = {}) {
       await waitPause();
@@ -4849,18 +4849,16 @@
       const isToday = arena.date && time(2, arena.date) === time(2);
       if (forceUpdateToken || !isToday || !arena.isOptionUpdated) {
         arena.token = {};
-        await Promise.all(['gr', 'ar', 'rb'].map(s => (async site => {
-          try {
-            const doc = $doc(await $ajax.insert(`?s=Battle&ss=${site}`));
-            getStartBattleButtons(doc, site).forEach(btn => {
-              if (btn.cleared) {
-                arena.token[btn.id] = btn.token;
-                return;
-              }
-              delete arena.token[btn.id];
-            });
-          } catch (err) { console.error(err) }
-        })(s)));
+        await Promise.all(['gr', 'ar', 'rb'].map(s => (async site => { try {
+          const doc = $doc(await $ajax.insert(`?s=Battle&ss=${site}`));
+          getStartBattleButtons(doc, site).forEach(btn => {
+            if (btn.cleared) {
+              arena.token[btn.id] = btn.token;
+              return;
+            }
+            delete arena.token[btn.id];
+          });
+        } catch (err) { console.error(err); }})(s)));
       }
 
       const option = g().option??{};
@@ -5938,7 +5936,7 @@
     async function loadUnsafeWindowBattle() { try {
       unsafeWindow.battle = await until(()=>new unsafeWindow.Battle(), 300);
       unsafeWindow.battle.clear_infopane();
-    } catch (err) { console.error(err) }}
+    } catch (err) { console.error(err); }}
 
     function newRound(isNew) { // New Round
       $debug.log('______________newRound', isNew);
