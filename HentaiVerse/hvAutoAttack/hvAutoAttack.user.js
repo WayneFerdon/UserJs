@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.2
+// @version      2.91.3
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -922,7 +922,7 @@
         }
       } else { // 战斗外，自动跳转
         checkOption();
-        $ajax.openNoFetch(`${g().option.altBattleFirst ? location.replace('hentaiverse.org', 'alt.hentaiverse.org').replace('alt.alt', 'alt') : location}/${url}`);
+        $ajax.openNoFetch(`${g().option?.altBattleFirst ? location.replace('hentaiverse.org', 'alt.hentaiverse.org').replace('alt.alt', 'alt') : location}/${url}`);
       }
       return false;
     }
@@ -930,7 +930,7 @@
     // 答题//
     async function riddleAlert() { try {
       setAlarm('Riddle');
-      const option = g().option;
+      const option = g().option??{};
       const answerTime = option.riddleAnswerTime;
       let time;
       const timeDiv = gE('#riddlecounter>div>div', 'all');
@@ -968,7 +968,7 @@
       const currentUrl = window.self.location.href;
       if (!isFrame) {
         checkOption();
-        if (!g().option.riddlePopup || gE('#riddlecounter')) { // 未开启使用弹窗或仍处于答题
+        if (!g().option?.riddlePopup || gE('#riddlecounter')) { // 未开启使用弹窗或仍处于答题
           return true;
         }
         if (!window.opener || window.opener === window.self || window.opener.closed) { // 没有仍存在的opener
@@ -1044,7 +1044,7 @@
       loadOption();
       writePortables();
 
-      const option = g().option;
+      const option = g().option??{};
       g('lang', option.lang || '0');
       addStyle();
 
@@ -1066,7 +1066,7 @@
     }
 
     function writePortables() {
-      const option = g().option;
+      const option = g().option??{};
       if (!option.portable) return;
       for (const key of portable) {
         if (!(Object.keys(option.portable).includes)) continue;
@@ -1079,7 +1079,7 @@
         return false;
       }
       setValue('onriddle', true);
-      if (!g().option.riddlePopup || window.opener) {
+      if (!g().option?.riddlePopup || window.opener) {
         riddleAlert();
         return true;
       }
@@ -1101,7 +1101,8 @@
         setArenaDisplay();
       }
       delValue(1);
-      if (g().option.showQuickSite && g().option.quickSite) {
+      const option = g().option??{};
+      if (option.showQuickSite && option.quickSite) {
         quickSite();
       }
       const hvAAPauseUI = document.body.appendChild(cE('div'));
@@ -1127,7 +1128,8 @@
       box2.id = 'hvAABox2';
       setPauseUI(box2);
       reloader();
-      g('attackStatus', g().option.attackStatus);
+      const option = g().option??{};
+      g('attackStatus', option.attackStatus);
       // 1二天 2单手 3双手 4双持 5法杖
       for (let fightingStyle = 1; fightingStyle < 6; fightingStyle++) {
         if (gE(`2${fightingStyle}01`)) {
@@ -1139,7 +1141,7 @@
       newRound(false);
       updateMonsterEffects(false);
       onBattleRound();
-      if (g().option.recordEach) {
+      if (option.recordEach) {
         const token = document.body.innerHTML.match(`var battle_token = \"(.*)\";`)[1];
         let code = getValue('battleCode', true);
         if (code?.token != token || !code?.r || !code?.rc) {
@@ -1247,7 +1249,7 @@
     }
 
     function popup(text) {
-      if (!g().option.popup) return;
+      if (!g().option?.popup) return;
       const popupWindow = cE('div');
       popupWindow.style.cssText += 'position:fixed;top:0;left:0;width:100%;height:100%;background-color:#0006;z-index:1001;cursor:pointer;display:flex;justify-content:center;align-items:center;'
       popupWindow.addEventListener('click', r);
@@ -1276,13 +1278,14 @@
     }
 
     function setArenaDisplay() {
-      if (!g().option.obscureNotIdleArena) {
+      const option = g().option??{};
+      if (!option.obscureNotIdleArena) {
         return;
       }
       if (window.location.href.indexOf(`?s=Battle&ss=ar`) === -1 && window.location.href.indexOf(`?s=Battle&ss=rb`) === -1) {
         return;
       }
-      const ar = g().option.idleArenaValue?.split(',');
+      const ar = option.idleArenaValue?.split(',');
       if (!ar || ar.length === 0) {
         return;
       }
@@ -1299,7 +1302,7 @@
         ar: { 1:1, 10:3, 20:5, 30:8, 40:9, 50:11, 60:12, 70:13, 80:15, 90:16, 100:17, 110:19, 120:20, 130:21, 140:23, 150:24, 165:26, 180:27, 200:28, 225:29, 250:32, 300:33, 400:34, 500:35 },
         rb: [105,106,107,108,109,110,111,112],
       }
-      const option = g().option;
+      const option = g().option??{};
       doc ??= document;
       site ??= doc.location.href.match(/\?s=Battle\&ss=(.*)/)[1];
       const buttons = gE(`img[src*="startchallenge.png"], img[src*="startgrindfest.png"], img[src*="startchallenge_d.png"]`, 'all', doc);
@@ -1410,76 +1413,82 @@
     }
 
     function setPauseButton(parent) {
-      if (!g().option.pauseButton) {
+      const option = g().option??{};
+      if (!option.pauseButton) {
         return;
       }
       const button = parent.appendChild(cE('button'));
-      button.innerHTML = `<l0>暂停</l0><l1>暫停</l1><l2>Pause</l2>${(g().option.pauseHotkey && g().option.pauseHotkeyStr) ? `(${g().option.pauseHotkeyStr})` : '' }`;
+      button.innerHTML = `<l0>暂停</l0><l1>暫停</l1><l2>Pause</l2>${(option.pauseHotkey && option.pauseHotkeyStr) ? `(${option.pauseHotkeyStr})` : '' }`;
       if (getValue('disabled')) { // 如果禁用
         document.title = _alert(-1, 'hvAutoAttack暂停中', 'hvAutoAttack暫停中', 'hvAutoAttack Paused');
-        button.innerHTML = `<l0 style="color:red;">继续</l0><l1 style="color:red;">繼續</l1><l2 style="color:red;">Continue</l2><l012 style="color:red;">${(g().option.pauseHotkey && g().option.pauseHotkeyStr) ? `(${g().option.pauseHotkeyStr})` : '' }</012>`;
+        button.innerHTML = `<l0 style="color:red;">继续</l0><l1 style="color:red;">繼續</l1><l2 style="color:red;">Continue</l2><l012 style="color:red;">${(option.pauseHotkey && option.pauseHotkeyStr) ? `(${option.pauseHotkeyStr})` : '' }</012>`;
       }
       button.className = 'pauseChange';
       button.onclick = pauseChange;
     }
 
     function setPauseHotkey() {
-      if (!g().option.pauseHotkey) {
+      const option = g().option??{};
+      if (!option.pauseHotkey) {
         return;
       }
       document.addEventListener('keydown', (e) => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
           return;
         }
-        if (e.keyCode === g().option.pauseHotkeyCode) {
+        if (e.keyCode === option.pauseHotkeyCode) {
           pauseChange();
         }
       }, false);
     }
 
     function setStepInButton(parent) {
-      if (!g().option.stepInButton) {
+      const option = g().option??{};
+      if (!option.stepInButton) {
         return;
       }
       const button = parent.appendChild(cE('button'));
-      button.innerHTML = `<l0>步进</l0><l1>步進</l1><l2>StepIn</l2>${(g().option.stepInHotkey && g().option.stepInHotkeyStr) ? `(${g().option.stepInHotkeyStr})` : '' }`;
+      button.innerHTML = `<l0>步进</l0><l1>步進</l1><l2>StepIn</l2>${(option.stepInHotkey && option.stepInHotkeyStr) ? `(${option.stepInHotkeyStr})` : '' }`;
       button.className = 'stepIn';
       button.onclick = stepIn;
     }
 
     function setStepInHotkey() {
-      if (!g().option.stepInHotkey) {
+      const option = g().option??{};
+      if (!option.stepInHotkey) {
         return;
       }
       document.addEventListener('keydown', (e) => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
           return;
         }
-        if (e.keyCode === g().option.stepInHotkeyCode) {
+        if (e.keyCode === option.stepInHotkeyCode) {
           stepIn();
         }
       }, false);
     }
 
     function setAltButton(parent) {
-      if (!g().option.altButton) {
+      const option = g().option??{};
+      if (!option.altButton) {
         return;
       }
       const button = parent.appendChild(cE('button'));
-      button.innerHTML = (window.location.host.includes('alt') ? `<l012>ExitAlt</l012>` : `<l012>ToAlt</l012>`) + `${(g().option.altHotkey && g().option.altHotkeyStr) ? `(${g().option.altHotkeyStr})` : '' }`;
+      button.innerHTML = (window.location.host.includes('alt') ? `<l012>ExitAlt</l012>` : `<l012>ToAlt</l012>`) + `${(option.altHotkey && option.altHotkeyStr) ? `(${option.altHotkeyStr})` : '' }`;
       button.className = 'gotoAlt';
       button.onclick = () => gotoAlt();
     }
 
     function setAltHotkey() {
-      if (!g().option.altHotkey) {
+      const option = g().option??{};
+      if (!option.altHotkey) {
         return;
       }
       document.addEventListener('keydown', (e) => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
           return;
         }
-        if (e.keyCode === g().option.altHotkeyCode) {
+        if (e.keyCode === option.altHotkeyCode) {
           gotoAlt();
         }
       }, false);
@@ -1487,7 +1496,8 @@
 
     function formatTime(t, size = 2) {
       t = [t / _1h, (t / _1m) % 60, (t / _1s) % 60, (t % _1s) / 10].map(cdi => Math.floor(cdi));
-      while (t.length > Math.max(size, g().option.encounterQuickCheck ? 2 : 3)) { // remove zero front
+      const option = g().option??{};
+      while (t.length > Math.max(size, option.encounterQuickCheck ? 2 : 3)) { // remove zero front
         const front = t.shift();
         if (!front) {
           continue;
@@ -1553,11 +1563,13 @@
     }
 
     function getLocal(key, isLocalStorage, toJSON) {
+      let value;
       if (isLocalStorage || typeof GM_getValue === 'undefined' || !GM_getValue(key, null)) {
         key = `hvAA-${key}`;
-        return (key in window.localStorage) ? (toJSON ? JSON.parse(window.localStorage[key]) : window.localStorage[key]) : null;
+        value = window.localStorage[key];
+        return toJSON ? JSONParse(value) : value;
       }
-      let value = GM_getValue(key, null);
+      value = GM_getValue(key, null);
       if (!isLocalStorage) {
         return value;
       }
@@ -1566,8 +1578,15 @@
         return value;
       }
       value = window.localStorage[key];
-      value = toJSON ? JSON.parse(value) : value;
-      return value
+      value = toJSON ? JSONParse(value) : value;
+      return value;
+
+      function JSONParse(object) {
+        if (object === undefined || object === '') {
+          return object;
+        }
+        return JSON.parse(object)
+      }
     }
 
     function getValue(key, toJSON) { // 读取数据
@@ -1776,6 +1795,7 @@
     }
 
     function optionBox() { // 配置界面
+      const option = g().option??{};
       const optionBox = gE('body').appendChild(cE('div'));
       optionBox.id = 'hvAABox';
       optionBox.innerHTML = [
@@ -1785,7 +1805,7 @@
         '  <l012><span style="font-size:small;"><a target="_blank" href="https://greasyfork.org/forum/profile/18194/Koko191" style="color:#E3E0D1;background-color:#E3E0D1;" title="Thanks to Koko191 who give help in the translation">by Koko191</a></span></l012>',
         '  <h1 style="display:inline;">hvAutoAttack</h1>',
         '  <select name="lang"><option value="0">简体中文</option><option value="1">繁體中文</option><option value="2">English</option></select>',
-        (g().option?.optionStandalone ? isIsekai ? '<l0>当前为异世界单独配置</l0><l1>當前為異世界單獨配置</l1><l2>Using Isekai standalone option</l2>' : '<l0>当前为恒定世界单独配置</l0><l1>當前為恆定世界單獨配置</l1><l2>Using Persistent standalone option</l2>' : ''),
+        (option.optionStandalone ? isIsekai ? '<l0>当前为异世界单独配置</l0><l1>當前為異世界單獨配置</l1><l2>Using Isekai standalone option</l2>' : '<l0>当前为恒定世界单独配置</l0><l1>當前為恆定世界單獨配置</l1><l2>Using Persistent standalone option</l2>' : ''),
         '</div>',
         '<div class="hvAATablist">',
 
@@ -2492,7 +2512,7 @@
         '      <div><input class="hvAANumber" name="weight_BS" placeholder="0" type="number"> <l0>焚燒的靈魂(BS)</l0><l1>焚燒的靈魂(BS)</l1><l2>Burning Soul</l2></div>',
         '      <div><input class="hvAANumber" name="weight_RS" placeholder="0" type="number"> <l0>鮮美的靈魂(RS)</l0><l1>鮮美的靈魂(RS)</l1><l2>Ripened Soul</l2></div>',
         '    </div>',
-        '    <b><l0>降抗性和攻击模式属性</l0><l1>降抗性和攻擊模式屬性</l1><l2>While elements between Resistance-lower-debuff and Attack-Mode matches</l2>  [' + attackStatusType[g().option.attackStatus] + '] <l0>相同时</l0><l1>相同時</l1><l2></l2></b> : <br>',
+        '    <b><l0>降抗性和攻击模式属性</l0><l1>降抗性和攻擊模式屬性</l1><l2>While elements between Resistance-lower-debuff and Attack-Mode matches</l2>  [' + attackStatusType[option.attackStatus??0] + '] <l0>相同时</l0><l1>相同時</l1><l2></l2></b> : <br>',
         '    <div class="hvAATable" style="grid-template-columns: repeat(4, 1fr) repeat(2, 1.25fr);">',
         '      <div><input class="hvAANumber" name="weight_SS" placeholder="-14" type="number"> <l0>灼烧的皮肤(SS)</l0><l1>燒灼的皮膚(SS)</l1><l2>Searing Skin</l2></div>',
         '      <div><input class="hvAANumber" name="weight_FL" placeholder="-14" type="number"> <l0>冰封的肢体(FL)</l0><l1>冰封的肢體(FL)</l1><l2>Freezing Limbs</l2></div>',
@@ -2501,7 +2521,7 @@
         '      <div><input class="hvAANumber" name="weight_BD" placeholder="-19" type="number"> <l0>崩溃的防御(BD)</l0><l1>崩潰的防禦(BD)</l1><l2>Breached Defense</l2></div>',
         '      <div><input class="hvAANumber" name="weight_BA" placeholder="-14" type="number"> <l0>钝化的攻击(BA)</l0><l1>鈍化的攻擊(BA)</l1><l2>Blunted Attack</l2></div>',
         '    </div>',
-        '    <b><l0>降抗性和攻击模式属性</l0><l1>降抗性和攻擊模式屬性</l1><l2>While elements between Resistance-lower-debuff and Attack-Mode NOT matches</l2>  [' + attackStatusType[g().option.attackStatus] + '] <l0>不相同时</l0><l1>不相同時</l1><l2></l2></b>: <br>',
+        '    <b><l0>降抗性和攻击模式属性</l0><l1>降抗性和攻擊模式屬性</l1><l2>While elements between Resistance-lower-debuff and Attack-Mode NOT matches</l2>  [' + attackStatusType[option.attackStatus??0] + '] <l0>不相同时</l0><l1>不相同時</l1><l2></l2></b>: <br>',
         '    <div class="hvAATable" style="grid-template-columns: repeat(4, 1fr) repeat(2, 1.25fr);">',
         '      <div><input class="hvAANumber" name="weight_SS1" placeholder="5" type="number"> <l0>灼烧的皮肤(SS)</l0><l1>燒灼的皮膚(SS)</l1><l2>Searing Skin</l2></div>',
         '      <div><input class="hvAANumber" name="weight_FL1" placeholder="5" type="number"> <l0>冰封的肢体(FL)</l0><l1>冰封的肢體(FL)</l1><l2>Freezing Limbs</l2></div>',
@@ -2619,6 +2639,7 @@
       gE('select[name="lang"]').value = g().lang;
 
       // 绑定事件
+    (function bindEvents() {
       gE('select[name="lang"]', optionBox).onchange = function () { // 选择语言
         gE('.hvAA-LangStyle').textContent = `l${this.value}{display:inline!important;}`;
         if (/^[01]$/.test(this.value)) {
@@ -3130,9 +3151,9 @@
       gE('.hvAACancel', optionBox).onclick = function () {
         optionBox.style.display = 'none';
       };
+    })();
 
       // 加载UI数据
-      const option = g().option;
       if (option) {
         let i, j, k;
         const inputs = gE('input,select', 'all', optionBox);
@@ -3404,17 +3425,19 @@
     }
 
     function setAlarm(e) { // 发出警报
+      const option = g().option??{};
       e = e || 'Common';
-      if (g().option.notification) {
+      if (option.notification) {
         setNotification(e);
       }
-      if (g().option.alert && g().option.audioEnable && g().option.audioEnable[e]) {
+      if (option.alert && option.audioEnable && option.audioEnable[e]) {
         setAudioAlarm(e);
       }
       return true;
     }
 
     function setAudioAlarm(e) { // 发出音频警报
+      const option = g().option??{};
       let audio;
       if (gE(`#hvAAAlert-${e}`)) {
         audio = gE(`#hvAAAlert-${e}`);
@@ -3422,7 +3445,7 @@
         audio = gE('body').appendChild(cE('audio'));
         audio.id = `hvAAAlert-${e}`;
         const fileType = '.ogg'; // var fileType = (/Chrome|Safari/.test(navigator.userAgent)) ? '.mp3' : '.wav';
-        audio.src = (g().option.audio && g().option.audio[e]) ? g().option.audio[e] : `https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/${e}${fileType}`;
+        audio.src = (option.audio && option.audio[e]) ? option.audio[e] : `https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/${e}${fileType}`;
         audio.controls = true;
         audio.loop = (e === 'Riddle');
       }
@@ -3868,10 +3891,12 @@
           return match.replace('.', '_'); // 将不是数字小数点的 . 转为 _ 以便进行参数分割
         }).split('_');
         let result, isInData;
+        const option = g().option??{};
+        const battle = g().battle??{};
         while (paramList.length) {
           const key = paramList.shift();
           if (typeof result === 'undefined') { // 获取顶层数据
-            result = g().battle ? g().battle[key] : undefined;
+            result = battle[key];
             if (typeof result === 'undefined' || result === null) {
               result = getValue('battle', true) ? getValue('battle', true)[key] : undefined;
             }
@@ -3882,7 +3907,7 @@
               result = getValue(key);
             }
             if (typeof result === 'undefined' || result === null) {
-              result = g().option?.[key];
+              result = option[key];
             }
             if ((typeof result === 'undefined' || result === null) && func[key]) {
               result = func[key](...paramList);
@@ -3984,9 +4009,10 @@
     }
 
     function pauseChange() { // 暂停状态更改
+      const option = g().option??{};
       if (getValue('disabled')) {
         if (gE('.pauseChange')) {
-          gE('.pauseChange').innerHTML = `<l0>暂停</l0><l1>暫停</l1><l2>Pause</l2>${(g().option.pauseHotkey && g().option.pauseHotkeyStr) ? `(${g().option.pauseHotkeyStr})` : '' }`;
+          gE('.pauseChange').innerHTML = `<l0>暂停</l0><l1>暫停</l1><l2>Pause</l2>${(option.pauseHotkey && option.pauseHotkeyStr) ? `(${option.pauseHotkeyStr})` : '' }`;
         }
         document.title = gE('#navbar') ? 'The Hentaiverse' : getValue('disabled');
         delValue(0);
@@ -3995,7 +4021,7 @@
         }
       } else {
         if (gE('.pauseChange')) {
-          gE('.pauseChange').innerHTML = `<l0 style="color:red;">继续</l0><l1 style="color:red;">繼續</l1><l2 style="color:red;">Continue</l2><l012 style="color:red;">${(g().option.pauseHotkey && g().option.pauseHotkeyStr) ? `(${g().option.pauseHotkeyStr})` : '' }</l012>`;
+          gE('.pauseChange').innerHTML = `<l0 style="color:red;">继续</l0><l1 style="color:red;">繼續</l1><l2 style="color:red;">Continue</l2><l012 style="color:red;">${(option.pauseHotkey && option.pauseHotkeyStr) ? `(${option.pauseHotkeyStr})` : '' }</l012>`;
         }
         setValue('disabled', document.title);
         document.title = _alert(-1, 'hvAutoAttack暂停中', 'hvAutoAttack暫停中', 'hvAutoAttack Paused');
@@ -4033,11 +4059,9 @@
       const quickSiteBar = gE('body').appendChild(cE('div'));
       quickSiteBar.className = 'quickSiteBar';
       quickSiteBar.innerHTML = '<span><a href="javascript:void(0);"class="quickSiteBarToggle">&lt;&lt;</a></span><span><a href="https://tieba.baidu.com/f?kw=hv网页游戏"target="_blank"><img src="https://www.baidu.com/favicon.ico" class="favicon"></img>贴吧</a></span><span><a href="https://forums.e-hentai.org/index.php?showforum=76"target="_blank"><img src="https://forums.e-hentai.org/favicon.ico" class="favicon"></img>Forums</a></span>';
-      if (g().option.quickSite) {
-        g().option.quickSite.forEach((site) => {
-          quickSiteBar.innerHTML = `${quickSiteBar.innerHTML}<span title="${site.name}"><a href="${site.url}"target="_self">${(site.fav) ? `<img src="${site.fav}"class="favicon"></img>` : ''}${site.name}</a></span>`;
-        });
-      }
+      g().option?.quickSite?.forEach((site) => {
+        quickSiteBar.innerHTML = `${quickSiteBar.innerHTML}<span title="${site.name}"><a href="${site.url}"target="_self">${(site.fav) ? `<img src="${site.fav}"class="favicon"></img>` : ''}${site.name}</a></span>`;
+      });
       gE('.quickSiteBarToggle', quickSiteBar).onclick = function () {
         const spans = gE('span', 'all', quickSiteBar);
         for (let i = 1; i < spans.length; i++) {
@@ -4048,7 +4072,7 @@
     }
 
     function autoSwitchIsekai() {
-      if (!g().option.isekai) {
+      if (!g().option?.isekai) {
         // 若不启用自动跳转
         return;
       }
@@ -4059,7 +4083,7 @@
       await updateEncounter(false);
       await waitPause();
       $async.logSwitch(arguments);
-      const option = g().option;
+      const option = g().option??{};
       const ready = {
         isChecked: () => ready.supply && ready.repair && ready.encounter,
       };
@@ -4303,7 +4327,7 @@
           if (!perk?.length) {
             perk = undefined;
           }
-          if (isIsekai || !g().option.restoreStamina) {
+          if (isIsekai || !g().option?.restoreStamina) {
             return perk;
           }
           let currentID, html;
@@ -4364,7 +4388,8 @@
     } catch (err) { console.error(err); }}
 
     async function asyncGetItems() { try {
-      if (!g().option.checkSupply && (isIsekai || !g().option.restoreStamina)) {
+      const option = g().option??{};
+      if (!option.checkSupply && (isIsekai || !option.restoreStamina)) {
         return;
       }
       await waitPause();
@@ -4388,7 +4413,7 @@
     } catch (err) { console.error(err); }}
 
     function checkSupply(isGFStandalone) {
-      const option = g().option;
+      const option = g().option??{};
       if (!option.checkSupply) {
         return true;
       }
@@ -4454,7 +4479,7 @@
     //       try {
     //         if (hvVersion >= 91) return true;
     //         $async.logSwitch(arguments);
-    //         const option = g().option;
+    //         const option = g().option??{};
     //         const [isEnchant, thresholds] = isGrindFest && option.checkEnchantGF ? [option.isEnchantGF, option.enchantGF] : [option.isEnchant, option.enchant];
     //         if (!isEnchant) return true;
     //         await waitPause();
@@ -4528,7 +4553,7 @@
     //       } catch (err) { console.error(err) }; return false; }
 
     async function asyncCheckRepair(isGrindFestStandalone) { try {
-      const option = g().option;
+      const option = g().option??{};
       if (!option.repair) {
         return true;
       }
@@ -4594,7 +4619,7 @@
     } catch (err) { console.error(err) }; return false; }
 
     async function asyncCheckEquStorage() { try {
-      const option = g().option;
+      const option = g().option??{};
       if (!option.equStorage) {
         return true;
       }
@@ -4631,7 +4656,7 @@
           return;
         }
       }
-      const option = g().option;
+      const option = g().option??{};
       const stamina = getValue('stamina', true);
       const [low, lowNR, cost, ratio] = [condition.staminaLow??option.staminaLow, option.staminaLowWithReNat??0, Math.round((condition.staminaCost??0) * 100) / 100, stamina.punish ? stamina.ratio??1 : 1]
       const checked = await checkStamina(low, cost);
@@ -4688,7 +4713,7 @@
       // await waitPause();
       $async.logSwitch(arguments);
       const stamina = getValue('stamina', true);
-      const option = g().option;
+      const option = g().option??{};
       let now = time(0);
       let hours = Math.floor(now / _1h);
       let [current, punish] = await getCurrentStamina();
@@ -4719,7 +4744,8 @@
     }
 
     async function updateEncounter(engage) { try {
-      if (!g().option.encounter && !g().option.encounterDisplay) {
+      const option = g().option??{};
+      if (!option.encounter && !option.encounterDisplay) {
         console.log("skip encounter check");
         return false;
       }
@@ -4727,7 +4753,6 @@
       $async.logSwitch(arguments);
       const encounter = getEncounter();
       const count = encounter.filter(e => e.url).length;
-      const option = g().option;
       const now = time(0);
       const last = encounter[0]?.time ?? getValue('lastEH', true) ?? 0; // 上次遭遇 或 上次打开EH 或 0
       let cd;
@@ -4780,7 +4805,7 @@
     } catch (err) { console.error(err); }}
 
     async function onEncounter() { try {
-      const option = g().option;
+      const option = g().option??{};
       await until( // perhaps network connect not available
         async ()=>await $ajax.insert(location) && (!option.checkURLBeforeNewRound || await $ajax.insert(option.checkURLBeforeNewRound)),
         option.checkURLBeforeNewRoundRetry
@@ -4805,7 +4830,7 @@
       if (!idleStart) {
         await updateArena();
       }
-      let timeout = g().option.idleArenaTime * _1s;
+      let timeout = g().option?.idleArenaTime * _1s;
       if (idleStart) {
         timeout -= time(0) - idleStart;
       }
@@ -4838,13 +4863,14 @@
         })(s)));
       }
 
+      const option = g().option??{};
       if (!isToday) {
         arena.date = time(0);
-        arena.gr = g().option.idleArenaGrTime;
+        arena.gr = option.idleArenaGrTime;
         arena.arrayDone = [];
       }
       if (!isToday || !arena.isOptionUpdated) {
-        arena.array = g().option.idleArenaValue?.split(',') ?? [];
+        arena.array = option.idleArenaValue?.split(',') ?? [];
         arena.array.reverse();
       }
       arena.arrayDone = arena.arrayDone.filter(id => id === 'gr' || !Object.keys(arena.token).includes(id.toString()));
@@ -4855,7 +4881,7 @@
     async function idleArena() { try { // 闲置竞技场
       let id;
       let arena = getValue('arena', true);
-      const option = g().option;
+      const option = g().option??{};
       const writeArenaStart = function () {
         console.log('Arena Start', id);
         document.title = _alert(-1, '闲置竞技场开始', '閒置競技場開始', 'Idle Arena start');
@@ -5129,9 +5155,10 @@
       countMonsterHP();
       displayMonsterWeight();
       displayPlayStatePercentage();
+      const option = g().option??{};
       if (getValue('disabled')) { // 如果禁用
         document.title = _alert(-1, 'hvAutoAttack暂停中', 'hvAutoAttack暫停中', 'hvAutoAttack Paused');
-        gE('#hvAABox2>button').innerHTML = `<l0 style="color:red;">继续</l0><l1 style="color:red;">繼續</l1><l2 style="color:red;">Continue</l2><l012 style="color:red;">${(g().option.pauseHotkey && g().option.pauseHotkeyStr) ? `(${g().option.pauseHotkeyStr})` : '' }<l012>`;
+        gE('#hvAABox2>button').innerHTML = `<l0 style="color:red;">继续</l0><l1 style="color:red;">繼續</l1><l2 style="color:red;">Continue</l2><l012 style="color:red;">${(option.pauseHotkey && option.pauseHotkeyStr) ? `(${option.pauseHotkeyStr})` : '' }<l012>`;
         return;
       }
       battle = getValue('battle', true);
@@ -5140,7 +5167,7 @@
       setValue('battle', battle);
       killBug(); // 解决 HentaiVerse 可能出现的 bug
 
-      if (g().option.autoFlee && checkCondition(g().option.fleeCondition)) {
+      if (option.autoFlee && checkCondition(option.fleeCondition)) {
         gE('1001').click();
         setExitBattleTimeout('Flee');
         return;
@@ -5161,7 +5188,6 @@
         'Skill': autoSkill,
         'Atk': attack,
       };
-      const option = g().option;
       const names = option.battleOrderDefaultOnly ? [] : option.battleOrderName?.split(',') ?? [];
       if (option.debugCheckCondition) {
         checkCondition(option.debugCondition);
@@ -5240,7 +5266,7 @@
       if (!range || range >= msTemp.length) {
         return { id: getMonsterID(target), weight: minWeight };
       }
-      const option = g().option;
+      const option = g().option??{};
       const centralExtraWeight = -1 * Math.log10(1 + (isWeaponAttack ? option.centralExtraRatio / 100 : 0));
       let order = target.order;
       let newOrder = order;
@@ -5282,7 +5308,7 @@
     }
 
     function autoPause() {
-      const option = g().option;
+      const option = g().option??{};
       if (option.autoPause && checkCondition(option.pauseCondition)) {
         pauseChange();
         return true;
@@ -5291,7 +5317,7 @@
     }
 
     function autoDefend() {
-      const option = g().option;
+      const option = g().option??{};
       if (option.defend && checkCondition(option.defendCondition)) {
         updateSkillOTOS('defend');
         gE('#ckey_defend').click();
@@ -5303,7 +5329,7 @@
     function setExitBattleTimeout(alarm) {
       lastResponsive = Infinity;
       setAlarm(alarm);
-      const option = g().option;
+      const option = g().option??{};
       if (alarm === 'Defeat' && !option.autoSkipDefeated) {
         return;
       }
@@ -5312,7 +5338,7 @@
     }
 
     async function checkResponsive() {
-      const option = g().option;
+      const option = g().option??{};
       const battleUnresponsive = {
         'Alert': { method: ()=>setAlarm('BattleUnresponsive') },
         'Reload': { method: goto },
@@ -5346,7 +5372,7 @@
       const eventStart = cE('a');
       eventStart.id = 'eventStart';
       eventStart.onclick = function () {
-        const option = g().option;
+        const option = g().option??{};
         a = unsafeWindow.info;
         if (option.recordUsage) {
           obj = {
@@ -5368,7 +5394,7 @@
       eventEnd.id = 'eventEnd';
       eventEnd.onclick = function () {
 
-        const option = g().option;
+        const option = g().option??{};
         const timeNow = time(0);
         g('runSpeed', (1000 / (timeNow - g().timeNow)).toFixed(2));
         g('timeNow', timeNow);
@@ -5451,8 +5477,9 @@
       };
       gE('body').appendChild(eventEnd);
 
-      window.sessionStorage.delay = g().option.delay;
-      window.sessionStorage.delay2 = g().option.delay2;
+      const option = g().option??{};
+      window.sessionStorage.delay = option.delay;
+      window.sessionStorage.delay2 = option.delay2;
       const fakeApiCall = cE('script');
       fakeApiCall.textContent = `api_call = ${function (b, a, d) {
         let delay = window.sessionStorage.delay * 1;
@@ -5481,9 +5508,9 @@
       }.toString()};
       // bool
       const isIsekai = ${isIsekai};
-      const isDisplay = ${g().option.isDisplayAllDebuff};
-      const debuffAutoFill = ${g().option.debuffAutoFill?.toString() ?? 'undefined'};
-      const debuffAutoFillRec = ${g().option.debuffAutoFillRec?.toString() ?? 'undefined'};
+      const isDisplay = ${option.isDisplayAllDebuff};
+      const debuffAutoFill = ${option.debuffAutoFill?.toString() ?? 'undefined'};
+      const debuffAutoFillRec = ${option.debuffAutoFillRec?.toString() ?? 'undefined'};
       // string
       const current = "${current}";
       const other = "${other}";
@@ -5528,7 +5555,8 @@
     }
 
     function updateMonsterEffects(isNewTurn=true) {
-      if (!(typeof GM_getValue === 'undefined' ? debuffAutoFill : g().option.debuffAutoFill)) return;
+      const option = typeof GM_getValue === 'undefined' ? {} : g().option??{};
+      if (!(typeof GM_getValue === 'undefined' ? debuffAutoFill : option.debuffAutoFill)) return;
       let battle = getValue('battle', true);
       if (!battle?.monsterStatus) return;
       if (battle.monsterStatus.map(m=>getMonster(getMonsterID(m))).filter(mon=>mon===null).length) {
@@ -5799,7 +5827,7 @@
         let effects = Object.keys(effectObj);
 
         // DEBUG ---------------------
-        if (typeof GM_getValue === 'undefined' ? debuffAutoFillRec : g().option.debuffAutoFillRec) {
+        if (typeof GM_getValue === 'undefined' ? debuffAutoFillRec : option.debuffAutoFillRec) {
           // 统计持续时间及熟练度相关数据，以便进行核验和测试
           const rec = JSON.parse(localStorage.getItem(`hvAA-${current}_rec`) ?? `{}`);
           for (const effect of effects) {
@@ -5914,6 +5942,7 @@
 
     function newRound(isNew) { // New Round
       $debug.log('______________newRound', isNew);
+      const option = g().option??{};
       const token = document.documentElement.outerHTML.match(/var battle_token = "(.*)";/)[1];
       let battle = getValue('battle', true);
       const isSameBattle = battle?.token === token;
@@ -6010,7 +6039,7 @@
           monsterStatus[order] = { order, hp };
           order++;
         }
-        if (g().option.cacheMonsterHP) {
+        if (option.cacheMonsterHP) {
           setValue('monsterDB', monsterDB);
           setValue('monsterMID', monsterMID);
         }
@@ -6076,7 +6105,7 @@
 
       const monsterBuff = gE(monsterStateKeys.buffs, 'all');
       const hpMin = Math.min.apply(null, hpArray);
-      const option = g().option;
+      const option = g().option??{};
       const yggdrasilExtraWeight = option.YggdrasilExtraWeight;
       const baseHpRatio = option.baseHpRatio;
       // 权重越小，优先级越高
@@ -6134,7 +6163,7 @@
     }
 
     function autoRecover(isCureOnly) { // 自动回血回魔
-      const option = g().option;
+      const option = g().option??{};
       if (!option.item) {
         return false;
       }
@@ -6156,7 +6185,7 @@
     }
 
     function useScroll() { // 自动使用卷轴
-      const option = g().option;
+      const option = g().option??{};
       if (!option.scrollSwitch) {
         return false;
       }
@@ -6244,7 +6273,7 @@
     }
 
     function useChannelSkill() { // 自动施法Channel技能
-      const option = g().option;
+      const option = g().option??{};
       if (!option.channelSkillSwitch) {
         return false;
       }
@@ -6312,7 +6341,7 @@
     }
 
     function useBuffSkill() { // 自动施法BUFF技能
-      const option = g().option;
+      const option = g().option??{};
       if (!option.buffSkillSwitch) {
         return false;
       }
@@ -6372,7 +6401,7 @@
     }
 
     function useInfusions() { // 自动使用魔药
-      const option = g().option;
+      const option = g().option??{};
       if (!option.infusionSwitch) return false;
       if (!checkCondition(option.infusionCondition)) {
         return false;
@@ -6430,7 +6459,7 @@
     }
 
     function autoFocus() {
-      const option = g().option;
+      const option = g().option??{};
       if (option.focus && checkCondition(option.focusCondition)) {
         updateSkillOTOS('focus');
         gE('#ckey_focus').click();
@@ -6445,7 +6474,7 @@
       if (spValue <= 1) {
         return false;
       }
-      const option = g().option;
+      const option = g().option??{};
       const enabled = gE('#ckey_spirit[src*="spirit_a"]');
       if (
         (!isDisableOnly && option.turnOnSS && checkCondition(option.turnOnSSCondition) && !enabled)
@@ -6472,7 +6501,7 @@
          * 优先释放先天和武器技能
          */
     function autoSkill() {
-      const option = g().option;
+      const option = g().option??{};
       if (!option.skillSwitch) return false;
       if (!option.skill) return false;
       if (option.skillSSOnly && !gE('#ckey_spirit[src*="spirit_a"]')) {
@@ -6528,7 +6557,7 @@
     }
 
     function useDeSkill() { // 自动施法DEBUFF技能
-      const option = g().option;
+      const option = g().option??{};
       const monsterStatus = g().battle.monsterStatus;
       if (!option.debuffSkillSwitch || !checkCondition(option.debuffSkillCondition, monsterStatus)) { // 总开关是否开启
         return false;
@@ -6585,7 +6614,7 @@
         break;
       }
       // 获取目标
-      const option = g().option;
+      const option = g().option??{};
       const excludedWeight = target => resolveRPNFormula(option.excludedWeightFormula[buff], target);
       let exclusiveBuffs;
       if (isAll && option.debuffAllExclusive) {
@@ -6667,7 +6696,7 @@
 
     function attack(selectStatusOnly=false) { // 自动打怪
       let range = g().fightingStyle === '1' ? 3 : 1;
-      const option = g().option;
+      const option = g().option??{};
       const monsters = g().battle.monsterStatus;
       let attackStatusOrder = option.attackStatusOrderValue?.split(',').map(x=>x*1) ?? [];
       attackStatusOrder = attackStatusOrder.concat([0,6,5,1,2,4,3].filter(x=> !(attackStatusOrder.includes(x))));
@@ -6726,7 +6755,7 @@
       // 使用物理普通攻击，跳过Offensive Magic
       // 否则按照属性攻击模式释放Spell > Offensive Magic
 
-      const option = g().option;
+      const option = g().option??{};
       const monsters = g().battle.monsterStatus;
       let target = monsters[0];
       const tryAttack = (skill) => {
@@ -6830,7 +6859,8 @@
       const sec = Math.max(1, weights.length - 1);
       const max = 360 * 2 / 3;
       const colorTextList = [];
-      const weightBG = g().option.weightBackground
+      const option = g().option??{};
+      const weightBG = option.weightBackground;
       if (weightBG) {
         status.forEach(s => {
           const rank = weights.indexOf(s.finWeight);
@@ -6844,7 +6874,7 @@
         if (!getMonster(id) || !gE(monsterStateKeys.name, getMonster(id))) {
           return;
         }
-        if (g().option.displayWeightBackground && weightBG) {
+        if (option.displayWeightBackground && weightBG) {
           let colorText = colorTextList[rank];
           let remainAttemp = 10; // 避免无穷递归
           while (remainAttemp > 0 && colorText && colorText.indexOf(`<style_`) !== -1) {
@@ -6860,7 +6890,7 @@
           getMonster(id).style.cssText += `background: ${colorText};`;
         }
         gE(monsterStateKeys.name, getMonster(id)).style.cssText += 'display: flex; flex-direction: row;'
-        if (g().option.displayWeight) {
+        if (option.displayWeight) {
           gE(monsterStateKeys.name, getMonster(id)).innerHTML += `<div style='font-weight: bolder; right:0px; position: absolute;'>[${rank}|-${-rank + weights.length - 1}|${s.finWeight.toPrecision(s.finWeight >= 1 ? 5 : 4)}]</div>`;
         }
       });
@@ -6907,6 +6937,7 @@
         '#EXP': 0,
         '#Credit': 0,
       };
+      const option = g().option??{};
       let item, name, amount, regexp;
       for (let i = 0; i < battleLog.length; i++) {
         if (/^You gain \d+ (EXP|Credit)/.test(battleLog[i].textContent)) {
@@ -6919,7 +6950,7 @@
           name = item.textContent.match(/^\[(.*?)\]$/)[1];
           if (item.style.color === 'rgb(255, 0, 0)') {
             const quality = ['Crude', 'Fair', 'Average', 'Superior', 'Exquisite', 'Magnificent', 'Legendary', 'Peerless'];
-            for (let j = g().option.dropQuality; j < quality.length; j++) {
+            for (let j = option.dropQuality; j < quality.length; j++) {
               if (name.match(quality[j])) {
                 name = `Equipment of ${name.match(/^\w+/)[0]}`;
                 drop[name] = (name in drop) ? drop[name] + 1 : 1;
@@ -6946,7 +6977,7 @@
         }
       }
       const battle = g().battle;
-      if (g().option.recordEach && battle.roundNow === battle.roundAll) {
+      if (option.recordEach && battle.roundNow === battle.roundAll) {
         const old = getValue('dropOld', true) || [];
         drop.__name = getValue('battleCode', true).name;
         drop['#endTime'] = time(3);
@@ -6978,7 +7009,7 @@
     }
 
     function recordUsage(parm) {
-      const filter = g().option.record;
+      const filter = g().option?.record;
       if (!filter) {
         return;
       }
@@ -7168,7 +7199,8 @@
     }
 
     function recordUsage2() {
-      const filter = g().option.record;
+      const option = g().option??{};
+      const filter = option.record;
       if (!filter) {
         return;
       }
@@ -7180,7 +7212,7 @@
         stats.self._boss += g().bossAll;
       }
       const battle = g().battle;
-      if (g().option.recordEach && battle.roundNow === battle.roundAll) {
+      if (option.recordEach && battle.roundNow === battle.roundAll) {
         const old = getValue('statsOld', true) || [];
         stats.__name = getValue('battleCode', true).name;
         stats.self._endTime = time(3);
