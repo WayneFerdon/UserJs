@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.3
+// @version      2.91.4
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -747,11 +747,11 @@
           function ontimer() {
             const now = new Date().getTime();
             const last = $ajax.getLast();
-            if (last && now - last >= $ajax.interval) {
+            if (!last || now - last >= $ajax.interval) {
               $ajax.next();
+              $ajax.setLast(now);
               return;
             }
-            $ajax.setLast(now);
             $ajax.tid = null;
             $ajax.next();
           };
@@ -779,14 +779,14 @@
           const text = r.responseText;
           if (r.status !== 200) {
             $ajax.error = `${r.status} ${r.statusText}: ${r.finalUrl}`;
-            r.context.onerror?.();
+            r.context.onerror?.(new Error($ajax.error));
           } else if (text === 'state lock limiter in effect') {
             if ($ajax.error !== text) {
               popup(`<p style="color: #f00; font-weight: bold;">${text}</p><p>Your connection speed is so fast that <br>you have reached the maximum connection limit.</p><p>Try again later.</p>`);
               console.error(`${text}\nYour connection speed is so fast that you have reached the maximum connection limit. Try again later.`);
             }
             $ajax.error = text;
-            r.context.onerror?.();
+            r.context.onerror?.(new Error($ajax.error));
           } else {
             r.context.onload?.(text);
             $ajax.next();
@@ -795,7 +795,7 @@
         onerror: function (r) {
           $ajax.conn--;
           $ajax.error = `${r.status} ${r.statusText}: ${r.finalUrl}`;
-          r.context.onerror?.();
+          r.context.onerror?.(new Error($ajax.error));
           $ajax.next();
         },
       };
@@ -829,7 +829,9 @@
         if (isMaintaining) {
           // 维护中? 过一个小时再刷新
           (async function onwait() {
-            let remain = _1h;
+            let remain = document.body.innerText?.match(/Blocking requests for (\d+) seconds due to excessive request rate/);
+            if (remain && remain[1]) remain = remain[1]*_1s;
+            remain ??= _1h
             await until(() => {
               document.title = `[M]${pad(Math.floor(remain/_1m))}:${pad(Math.floor((remain%_1m)/_1s))}`;
               remain-=_1s;
