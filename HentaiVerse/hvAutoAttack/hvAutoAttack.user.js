@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.4
+// @version      2.91.5
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1849,10 +1849,12 @@
         '    <div><l0>警告相关</l0><l1>警告相關</l1><l2>To Warn</l2>: ',
         '      <input id="alert" type="checkbox"><label for="alert"><l0>音频警报</l0><l1>音頻警報</l1><l2>Audio Alarms</l2></label>; ',
         '      <input id="notification" type="checkbox"><label for="notification"><l0>桌面通知</l0><l1>桌面通知</l1><l2>Notifications</l2></label> ',
-        '      <button class="testNotification"><l0>预处理</l0><l1>預處理</l1><l2>Pretreat</l2></button></div>',
+        '      <button class="testNotification"><l0>预处理</l0><l1>預處理</l1><l2>Pretreat</l2></button>',
+        '      <input id="focusNotification" placeholder="true" type="checkbox"><label for="focusNotification"><l0>桌面通知时聚焦页面（需要GM_notification）</l0><l1>桌面通知時聚焦頁面（需要GM_notification）</l1><l2>Focus while Notifications (Requires GM_notification)</l2></label></div>',
         '    <div><l0>掉落及数据记录</l0><l1>掉落及數據記錄</l1><l2>Drops and Usage Tracking</l2>: <input id="recordEach" type="checkbox"><label for="recordEach"><l0>单独记录每场战役</l0><l1>單獨記錄每場戰役</l1><l2>Record each battle separately</l2></label></div>',
         '    <div><l0>延迟</l0><l1>延遲</l1><l2>Delay</l2>: 1. <l0>Buff/Debuff/其他技能</l0><l1>Buff/Debuff/其他技能</l1><l2>Skills&BUFF/DEBUFF Spells</l2>: <input class="hvAANumber" name="delay" placeholder="200" type="number">ms 2. <l01>其他</l01><l2>Other</l2>: <input class="hvAANumber" name="delay2" placeholder="30" type="number">ms (',
         '      <l0>说明: 单位毫秒，且在设定值基础上取其的50%-150%进行延迟，0表示不延迟</l0><l1>說明: 單位毫秒，且在設定值基礎上取其的50%-150%進行延遲，0表示不延遲</l1><l2>Note: unit milliseconds, and based on the set value multiply 50% -150% to delay, 0 means no delay</l2>)</div>',
+        '    <div><l0>频率指示符号</l0><l1>頻率指示符號</l1><l2>Frequency Signal</l2>: <input name="frequencySign1" type="text"> & <input name="frequencySign2" type="text"></div>',
         '  </div>',
         '  <div id="attackStatus" style="color:red;"><b>*<l0>默认攻击模式</l0><l1>默認攻擊模式</l1><l2>Default Attack Mode</l2></b>:',
         '    <select class="hvAANumber" name="attackStatus"><option value="-1"></option><option value="0">物理 / Physical</option><option value="1">火 / Fire</option><option value="2">冰 / Cold</option><option value="3">雷 / Elec</option><option value="4">风 / 風 / Wind</option><option value="5">圣 / 聖 / Divine</option><option value="6">暗 / Forbidden</option></select></div>',
@@ -3555,7 +3557,7 @@
         GM_notification({
           text: notification.text,
           image: `${window.location.origin}${unsafeWindow.IMG_URL}hentaiverse.png`,
-          highlight: true,
+          highlight: g().option?.focusNotification,
           timeout: 1000 * notification.time,
         });
       }
@@ -5147,7 +5149,8 @@
         pauseChange();
         $debug.shiftLog();
       }
-      document.title = `${getBattleTypeDisplay(true)}:R${battle.roundNow}/${battle.roundAll}:T${currentTurn}@${g().runSpeed}tps,${g().monsterAlive}/${g().monsterAll}`;
+      const option = g().option??{};
+      document.title = `${currentTurn%2?option.frequencySign1??'':option.frequencySign2??''}${getBattleTypeDisplay(true)}:R${battle.roundNow}/${battle.roundAll}:T${currentTurn}@${g().runSpeed}tps,${g().monsterAlive}/${g().monsterAll}`;
       setValue('battle', battle);
       if (!battle.monsterStatus || battle.monsterStatus.length !== g().monsterAll) {
         fixMonsterStatus();
@@ -5155,7 +5158,6 @@
       countMonsterHP();
       displayMonsterWeight();
       displayPlayStatePercentage();
-      const option = g().option??{};
       if (getValue('disabled')) { // 如果禁用
         document.title = _alert(-1, 'hvAutoAttack暂停中', 'hvAutoAttack暫停中', 'hvAutoAttack Paused');
         gE('#hvAABox2>button').innerHTML = `<l0 style="color:red;">继续</l0><l1 style="color:red;">繼續</l1><l2 style="color:red;">Continue</l2><l012 style="color:red;">${(option.pauseHotkey && option.pauseHotkeyStr) ? `(${option.pauseHotkeyStr})` : '' }<l012>`;
