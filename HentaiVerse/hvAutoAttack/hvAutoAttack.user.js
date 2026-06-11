@@ -1401,7 +1401,7 @@
 
       // 迁移2.90.168及之前的channelSkill2Order_Cure的Name错误
       option.channelSkill2Order_Cure = option.channelSkill2Order_Cu;
-      option.channelSkill2Order_Cu = undefined;
+      delete option.channelSkill2Order_Cu;
       option.channelSkill2OrderName = option.channelSkill2OrderName?.replace('Cu', 'Cure').replace('Curere', 'Cure');
       // 迁移2.90.178及之前的debuff警报设置
       if (option.debuffSkillTurnAlert === true) {
@@ -1413,23 +1413,24 @@
         'debuffSkillWeAll': 'debuffSkillAllWk',
         'debuffSkillAllImCondition': 'debuffSkillImpCondition',
         'debuffSkillAllWeCondition': 'debuffSkillWkCondition',
+        'debuffSkillImAllCondition': 'debuffSkillAllImCondition',
+        'debuffSkillWeAllCondition': 'debuffSkillAllWeCondition',
         'battleUnresponsive_Alert': 'delayAlert',
         'battleUnresponsive_Reload': 'delayReload',
         'battleUnresponsive_Alt': 'delayAlt',
         'battleUnresponsiveTime_Alert': 'delayAlertTime',
         'battleUnresponsiveTime_Reload': 'delayReloadTime',
         'battleUnresponsiveTime_Alt': 'delayAltTime',
-        'lastUrl': 'lastHref',
       }
       for (let key in aliasDict) {
         const array = key.split('_');
         const alias = aliasDict[key];
         if (array.length === 1) {
           option[key] ??= option[alias];
-          option[alias] = undefined;
         } else {
           (option[array[0]] ??= {})[array[1]] ??= option[alias];
         }
+        delete option[alias];
       }
       // 迁移旧版本最后的慈悲条件为可配置条件
       const mercifulBlowCondition = option.skillT3Condition ?? { "0": [] };
@@ -1901,6 +1902,7 @@
         '  <h1 style="display:inline;">hvAutoAttack</h1>',
         '  <select name="lang"><option value="0">简体中文</option><option value="1">繁體中文</option><option value="2">English</option></select>',
         (option.optionStandalone ? isIsekai ? '<l0>当前为异世界单独配置</l0><l1>當前為異世界單獨配置</l1><l2>Using Isekai standalone option</l2>' : '<l0>当前为恒定世界单独配置</l0><l1>當前為恆定世界單獨配置</l1><l2>Using Persistent standalone option</l2>' : ''),
+        '<l0>配置版本</l0><l1>配置版本</l1><l2>Option Version</l2><input name="version" type="text" disabled="true">',
         '</div>',
         '<div class="hvAATablist">',
 
@@ -3048,6 +3050,22 @@
 
       // 加载UI数据
       if (option) {
+
+        for (const obj in option) {
+          if (gE(`[name="${obj}"],[id="${obj}"]`, optionBox)) continue;
+          if (option[obj] instanceof Object) {
+            let found = false;
+            for (const key in option[obj]) {
+              if (found ||= gE(`[name="${obj}_${key}"],[id="${obj}_${key}"]`, optionBox)) continue;
+              console.log(`Legacy option deleted: ${obj}_${key}`);
+              delete option[obj][key];
+            }
+            if (found) continue;
+          }
+          console.log(`Legacy option deleted: ${obj}`);
+          delete option[obj];
+        }
+
         let i, j, k;
         const inputs = gE('input,select', 'all', optionBox);
         const displayCheckBoxNotDefault = function (input) {
@@ -3151,7 +3169,7 @@
     }
 
     function customizeInputAutoFit(input) {
-      if (input.type === 'select-one' || input.disabled) return;
+      if (input.type === 'select-one' || input.disabled && input.name!=='version') return;
       customizerInpuFit(input);
       input.addEventListener('input', function(event) {
         customizerInpuFit(input);
