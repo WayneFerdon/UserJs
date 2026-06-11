@@ -1408,7 +1408,7 @@
         option.debuffSkillTurnAlert = 1;
       }
 
-      const aliasDict = {
+      const legacies = { // current <= legacy
         'debuffSkillImAll': 'debuffSkillAllIm',
         'debuffSkillWeAll': 'debuffSkillAllWk',
         'debuffSkillAllImCondition': 'debuffSkillImpCondition',
@@ -1422,15 +1422,15 @@
         'battleUnresponsiveTime_Reload': 'delayReloadTime',
         'battleUnresponsiveTime_Alt': 'delayAltTime',
       }
-      for (let key in aliasDict) {
+      for (let key in legacies) {
         const array = key.split('_');
-        const alias = aliasDict[key];
+        const legacy = legacies[key];
         if (array.length === 1) {
-          option[key] ??= option[alias];
+          option[key] ??= option[legacy];
         } else {
-          (option[array[0]] ??= {})[array[1]] ??= option[alias];
+          (option[array[0]] ??= {})[array[1]] ??= option[legacy];
         }
-        delete option[alias];
+        delete option[legacy];
       }
       // 迁移旧版本最后的慈悲条件为可配置条件
       const mercifulBlowCondition = option.skillT3Condition ?? { "0": [] };
