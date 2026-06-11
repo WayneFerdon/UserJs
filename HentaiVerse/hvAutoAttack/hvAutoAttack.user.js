@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.5
+// @version      2.91.6
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1362,14 +1362,13 @@
         'lastUrl': 'lastHref',
       }
       for (let key in aliasDict) {
-        const itemArray = key.split('_');
+        const array = key.split('_');
         const alias = aliasDict[key];
-        if (itemArray.length === 1) {
+        if (array.length === 1) {
           option[key] ??= option[alias];
           option[alias] = undefined;
         } else {
-          option[itemArray[0]] ??= {};
-          option[itemArray[0]][itemArray[1]] ??= option[alias];
+          (option[array[0]] ??= {})[array[1]] ??= option[alias];
         }
       }
       // 迁移旧版本最后的慈悲条件为可配置条件
@@ -1832,7 +1831,7 @@
         '<div class="hvAATab" id="hvAATab-Main">',
         '  <div><b><l0>异世界相关</l0><l1>異世界相關</l1><l2>Isekai</l2></b>: ',
         '    <input id="optionStandalone" type="checkbox"><label for="optionStandalone"><l0>两个世界使用不同的配置</l0><l1>兩個世界使用不同的配置</l1><l2>Use standalone options.</l2></label>; ',
-        '    <br><input id="isekai" type="checkbox"><label for="isekai"><l0>在任意页面停留</l0><l1>在任意頁面停留</l1><l2>While idle in any page for </l2><input class="hvAANumber" name="isekaiTime" type="number"><l0>秒后，自动切换恒定世界和异世界</l0><l1>秒後，自動切換恆定世界和異世界</l1><l2>s, auto switch between Isekai and Persistent</l2></label></div>',
+        '    <br><input id="isekai" type="checkbox"><label for="isekai"><l0>在任意页面停留</l0><l1>在任意頁面停留</l1><l2>While idle in any page for </l2><input class="hvAANumber" name="isekaiTime" placeholder="0" type="number"><l0>秒后，自动切换恒定世界和异世界</l0><l1>秒後，自動切換恆定世界和異世界</l1><l2>s, auto switch between Isekai and Persistent</l2></label></div>',
         '  <div>',
         '    <b><l0>小马答题</l0><l1>小馬答題</l1><l2>RIDDLE</l2></b>: <input id="riddlePopup" type="checkbox"><label for="riddlePopup"><l0>弹窗答题(Firefox中可能导致报错)</l0><l1>弹窗答题(Firefox中可能導致報錯)</l1><l2>POPUP a window to answer(Might cause in Firefox)</l2></label>; <button class="testPopup"><l0>预处理</l0><l1>預處理</l1><l2>Pretreat</l2></button>',
         '    <div><l0>时间</l0><l1>時間</l1><l2>If ETR</l2> ≤ <input class="hvAANumber" name="riddleAnswerTime" placeholder="3" type="number"><l0>秒，提交当前选中答案 或 为空时随机选中</l0><l1>秒，提交當前選中答案 或 為空時隨機選中</l1><l2>s submit chosen answers or random </l2> <input class="hvAANumber" name="riddleAnswerChoose" placeholder="0" type="number"><l0>个答案并提交<br><a style="color:red;" href="https://ehwiki.org/wiki/RiddleMaster/Chinese#.E6.AD.A3.E7.A2.BA.E6.88.96.E9.8C.AF.E8.AA.A4">注意：错选小马比漏选小马的错误计数更多 - 所以有疑问时，最好不要猜测，留空就好</a></l0><l1>个答案並提交<br><a style="color:red;" href="https://ehwiki.org/wiki/RiddleMaster/Chinese#.E6.AD.A3.E7.A2.BA.E6.88.96.E9.8C.AF.E8.AA.A4">注意：錯選小馬比漏選小馬的錯誤計數更多 - 所以有疑問時，最好不要猜測，留空就好</a></l1><l2>answers if none is chosen.<br><a style="color:red;" href="https://ehwiki.org/wiki/RiddleMaster#Correct_or_Incorrect">Notice: Selecting a pony that is not in the picture will count more severe towards a penalty than missing one pony - so when in doubt, best not to guess but leave one blank</a></l2></div>',
@@ -1920,9 +1919,9 @@
         '  </div>',
         '  <div>',
         '    <div class="hvAATable" style="grid-template-columns: 1fr 1fr 1.5fr 2fr;"><div><b><l0>战斗页面停留</l0><l1>戰鬥頁面停留</l1><l2>If not active for </l2>: </b></div>',
-        '      <div><input id="battleUnresponsive_Alert" type="checkbox"><label for="battleUnresponsive_Alert"><input class="hvAANumber" name="battleUnresponsiveTime_Alert" type="number"> <l0>秒，警报</l0><l1>秒，警報</l1><l2>(s), alarm</l2></label></div>',
-        '      <div><input id="battleUnresponsive_Reload" type="checkbox"><label for="battleUnresponsive_Reload"><input class="hvAANumber" name="battleUnresponsiveTime_Reload" type="number"> <l0>秒，刷新页面</l0><l1>秒，刷新頁面</l1><l2>(s), reload page</l2></label></div>',
-        '      <div><input id="battleUnresponsive_Alt" type="checkbox"><label for="battleUnresponsive_Alt"><input class="hvAANumber" name="battleUnresponsiveTime_Alt" type="number"> <l0>秒，切换主服务器与alt服务器</l0><l1>秒，切換主服務器與alt服務器</l1><l2>(s), switch between alt.hentaiverse</l2></label></div>',
+        '      <div><input id="battleUnresponsive_Alert" type="checkbox"><label for="battleUnresponsive_Alert"><input class="hvAANumber" name="battleUnresponsiveTime_Alert" placeholder="1" type="number"> <l0>秒，警报</l0><l1>秒，警報</l1><l2>(s), alarm</l2></label></div>',
+        '      <div><input id="battleUnresponsive_Reload" type="checkbox"><label for="battleUnresponsive_Reload"><input class="hvAANumber" name="battleUnresponsiveTime_Reload" placeholder="1" type="number"> <l0>秒，刷新页面</l0><l1>秒，刷新頁面</l1><l2>(s), reload page</l2></label></div>',
+        '      <div><input id="battleUnresponsive_Alt" type="checkbox"><label for="battleUnresponsive_Alt"><input class="hvAANumber" name="battleUnresponsiveTime_Alt" placeholder="1" type="number"> <l0>秒，切换主服务器与alt服务器</l0><l1>秒，切換主服務器與alt服務器</l1><l2>(s), switch between alt.hentaiverse</l2></label></div>',
         '  </div>',
         '  </div>',
         '  </div>',
@@ -1936,7 +1935,7 @@
         '  <l0>遭遇战倒计时</l0><l1>遭遇戰倒計時</l1><l2>Wait for encounter first while count down</l2> ≤ <input class="hvAANumber" name="encounterWaitCD" placeholder="0" type="number">s<l0>时优先等待</l0><l1>時優先等待</l1><l2>.</l2>',
         '  </div>',
         '  <div><input id="idleArena" type="checkbox"><label for="idleArena"><b><l0>闲置竞技场</l0><l1>閒置競技場</l1><l2>Idle Arena</l2>: </b>',
-        '    <l0>在任意页面停留</l0><l1>在任意頁面停留</l1><l2>Idle in any page for </l2><input class="hvAANumber" name="idleArenaTime" type="number"><l0>秒后，开始竞技场</l0><l1>秒後，開始競技場</l1><l2> (s), start Arena</l2></label> <button class="idleArenaReset"><l01>重置</l01><l2>Reset</l2></button>;<br>',
+        '    <l0>在任意页面停留</l0><l1>在任意頁面停留</l1><l2>Idle in any page for </l2><input class="hvAANumber" name="idleArenaTime" placeholder="0" type="number"><l0>秒后，开始竞技场</l0><l1>秒後，開始競技場</l1><l2> (s), start Arena</l2></label> <button class="idleArenaReset"><l01>重置</l01><l2>Reset</l2></button>;<br>',
         '    <l0>进行的竞技场相对应等级</l0><l1>進行的競技場相對應等級</l1><l2>The levels of the Arena you want to complete</l2>:  ',
         '      <button class="hvAAShowLevels"><l0>显示更多</l0><l1>顯示更多</l1><l2>Show more</l2></button><button class="hvAALevelsClear"><l01>清空</l01><l2>Clear</l2></button><br>',
         '      <input name="idleArenaLevels" style="width:calc(100% - 20px);" type="text" disabled="true"><input name="idleArenaValue" style="width:98%;" type="hidden" disabled="true">',
@@ -2616,7 +2615,7 @@
         '    <l0>如果脚本长期暂停且网络无问题，请点击</l0><l1>如果腳本長期暫停且網絡無問題，請點擊</l1><l2>If the script does not work and you are sure that it\'s not because of your internet, click</l2><button class="hvAAFix"><l0>尝试修复</l0><l1>嘗試修復</l1><l2>Try to fix</l2></button><br>',
         '    <l0>战役模式</l0><l1>戰役模式</l1><l2>Battle type</l2>: <select class="hvAADebug" name="roundType"><option></option><option value="ar">The Arena</option><option value="rb">Ring of Blood</option><option value="gr">GrindFest</option><option value="iw">Item World</option><option value="ba">Encounter</option><option value="tw">The Tower</option></select> <l0>当前回合</l0><l1>當前回合</l1><l2>Current round</l2>: <input name="roundNow" class="hvAADebug hvAANumber" type="number"> <l0>总回合</l0><l1>總回合</l1><l2>Total rounds</l2>: <input name="roundAll" class="hvAADebug hvAANumber" type="number"></div>',
         '  <div class="hvAAQuickSite"><input id="showQuickSite" type="checkbox"><label for="showQuickSite"><span class="hvAATitle"><l0>快捷站点</l0><l1>快捷站點</l1><l2>Quick Site</l2></span></label><button class="quickSiteAdd"><l01>新增</l01><l2>Add</l2></button><br>',
-        '    <l0>注意: 留空“姓名”一栏则表示删除该行，修改后请保存</l0><l1>注意: 留空“姓名”一欄則表示刪除該行，修改後請保存</l1><l2>Note: The "name" input box left blank will be deleted, after change please save in time.</l2>',
+        '    <l0>注意: 留空“名称”一栏则表示删除该行，修改后请保存</l0><l1>注意: 留空“名稱”一欄則表示刪除該行，修改後請保存</l1><l2>Note: The "name" input box left blank will be deleted, after change please save in time.</l2>',
         '    <table><tbody><tr class="hvAATh"><td><l0>图标</l0><l1>圖標</l1><l2>ICON</l2></td><td><l0>名称</l0><l1>名稱</l1><l2>Name</l2></td><td><l0>链接</l0><l1>鏈接</l1><l2>Link</l2></td></tr></tbody></table></div>',
         '  <div><span class="hvAATitle"><l0>备份与还原</l0><l1>備份與還原</l1><l2>Backup and Restore</l2></span></br><button class="hvAABackup"><l0>备份设置</l0><l1>備份設置</l1><l2>Backup Confiuration</l2></button><button class="hvAARestore"><l0>还原设置</l0><l1>還原設置</l1><l2>Restore Confiuration</l2></button><button class="hvAADelete"><l0>删除设置</l0><l1>刪除設置</l1><l2>Delete Confiuration</l2></button><ul class="hvAABackupList"></ul></div>',
         '  <div><span class="hvAATitle"><l0>导入与导出</l0><l1>導入與導出</l1><l2>Import and Export</l2></span></br><button class="hvAAExport"><l0>导出设置</l0><l1>導出設置</l1><l2>Export Confiuration</l2></button><button class="hvAAImport"><l0>导入设置</l0><l1>導入設置</l1><l2>Import Confiuration</l2></button><textarea class="hvAAConfig"></textarea></div>',
@@ -3049,90 +3048,69 @@
           }
         };
         gE('.hvAAApply', optionBox).onclick = function () {
-          if (gE('select[name="attackStatus"] option[value="-1"]:checked', optionBox) || !gE('select[name="attackStatus"] option:checked', optionBox)) {
+          if (gE('select[name="attackStatus"] option[value="-1"]:checked', optionBox) ||
+              !gE('select[name="attackStatus"] option:checked', optionBox)) {
             _alert(0, '请选择攻击模式', '請選擇攻擊模式', 'Please select the attack mode');
             gE('.hvAATabmenu>span[name="Main"]').click();
             gE('#attackStatus', optionBox).style.border = '1px solid red';
-            setTimeout(() => {
-              gE('#attackStatus', optionBox).style.border = '';
-            }, 0.5 * _1s);
+            setTimeout(() => { gE('#attackStatus', optionBox).style.border = ''; }, 0.5 * _1s);
             return;
           }
+
           const arenaPrev = g().option?.idleArenaValue;
-          const _option = {
-            version: g().version,
-          };
-          let inputs = gE('input,select', 'all', optionBox);
-          let itemName, itemArray, itemValue, i;
-          for (i = 0; i < inputs.length; i++) {
-            if (inputs[i].className === 'hvAADebug') {
-              continue;
-            } else if (inputs[i].type === 'number' || inputs[i].className === 'hvAANumber') {
-              itemName = inputs[i].name;
-              itemValue = inputs[i].value ? inputs[i].value * 1 : '';
-              if (isNaN(itemValue)) {
-                continue;
-              }
-            } else if (inputs[i].type === 'text' || inputs[i].type === 'hidden') {
-              itemName = inputs[i].name;
-              itemValue = inputs[i].value || '';
-              if (itemValue === '') {
-                continue;
-              }
-            } else if (inputs[i].type === 'checkbox') {
-              itemName = inputs[i].id;
-              itemValue = inputs[i].checked;
-              if (itemValue === false) {
-                if (!inputs[i].placeholder) {
-                  continue;
-                }
-                itemValue = 0;
-              }
-            } else if (inputs[i].type === 'select-one') {
-              itemName = inputs[i].name;
-              itemValue = inputs[i].value;
+
+          const _option = { version: g().version };
+          let name, array, value, type;
+          for (const input of gE('input,select', 'all', optionBox)) {
+            [name, type, value] = [input.name, input.type, input.value];
+            switch(input.className) {
+              case 'hvAADebug': continue;
+              case 'hvAANumber': type = 'number';
             }
-            itemArray = itemName.split('_');
-            if (itemArray.length === 1) {
-              _option[itemName] = itemValue;
-              if (inputs[i].placeholder && (_option[itemName] === '' || _option[itemName] === inputs[i].placeholder || _option[itemName] === inputs[i].placeholder * 1) || (_option[itemName] === true && inputs[i].placeholder)) {
-                delete _option[itemName]
-              }
+            switch (type) {
+              case 'number':
+                value = (value||(value===0)) ? value * 1 : '';
+                if (isNaN(value)) continue;
+                break;
+              case 'text': case 'hidden':
+                value = value || '';
+                if (['', 'undefined'].includes(value)) continue;
+                break;
+              case 'checkbox':
+                [name, value] = [input.id, input.checked];
+                if (value === false) {
+                  if (!input.placeholder) continue;
+                  value = 0;
+                }
+                break;
+              case 'select-one':
+                break;
+            }
+            if (['', 'undefined', input.placeholder, input.placeholder*1, !!input.placeholder].includes(value))
+            {
+              continue;
+            }
+
+            if ((array = name.split('_')).length === 1) {
+              _option[name] = value;
+              continue;
+            }
+            if (input.className === 'customizeInput') {
+              ((_option[array[0]] ??= {})[array[1]]??=[]).push(value);
             } else {
-              if (!(itemArray[0] in _option)) {
-                _option[itemArray[0]] = {};
-              }
-              if (inputs[i].className === 'customizeInput') {
-                if (typeof _option[itemArray[0]][itemArray[1]] === 'undefined') {
-                  _option[itemArray[0]][itemArray[1]] = [];
-                }
-                _option[itemArray[0]][itemArray[1]].push(itemValue);
-              } else {
-                _option[itemArray[0]][itemArray[1]] = itemValue;
-                if (inputs[i].placeholder && (_option[itemArray[0]][itemArray[1]] === '' || _option[itemArray[0]][itemArray[1]] === inputs[i].placeholder || _option[itemArray[0]][itemArray[1]] === inputs[i].placeholder * 1 || (_option[itemArray[0]][itemArray[1]] === true && inputs[i].placeholder))) {
-                  delete _option[itemArray[0]][itemArray[1]]
-                }
-              }
-              if (!Object.keys(_option[itemArray[0]]).length) {
-                delete _option[itemArray[0]]
-              }
+              (_option[array[0]] ??= {})[array[1]] = value;
             }
           }
-          inputs = gE('.hvAAQuickSite input[type="text"], .hvAAQuickSite input[type="number"]', 'all', optionBox);
-          for (i = 0; 3 * i < inputs.length; i++) {
-            if (i === 0 && inputs.length !== 0) {
-              _option.quickSite = [];
-            }
-            if (inputs[3 * i + 1].value === '') {
-              continue;
-            }
-            _option.quickSite.push({
-              fav: inputs[3 * i].value,
-              name: inputs[3 * i + 1].value,
-              url: inputs[3 * i + 2].value,
-            });
+
+          const inputs = gE('.hvAAQuickSite input[type="text"], .hvAAQuickSite input[type="number"]', 'all', optionBox);
+          if (inputs.length) _option.quickSite = [];
+          for (let i = 0; i < inputs.length; i += 3) {
+            const [fav, name, url] = Array.from(inputs).slice(i,i+3).map(input=>input.value);
+            if (name === '') continue;
+            _option.quickSite.push({ fav, name, url });
           }
           setValue('option', _option);
+
           optionBox.style.display = 'none';
           // 清除不再需要的portable数据
           for (const key of portable) {
@@ -3161,86 +3139,88 @@
       if (option) {
         let i, j, k;
         const inputs = gE('input,select', 'all', optionBox);
-        const displayNotDefault = function (input, value) {
+        const displayCheckBoxNotDefault = function (input) {
           if (!gE(`label[for="${input.id}"]`) || input.placeholder === undefined) {
             return;
           }
-          if (!!value !== !!input.placeholder) {
+          if (!!input.checked !== !!input.placeholder) {
             gE(`label[for="${input.id}"]`).classList.add('optionEdited');
           } else {
             gE(`label[for="${input.id}"]`).classList.remove('optionEdited');
           }
         }
-        let itemName, itemArray, itemValue, _html;
-        for (i = 0; i < inputs.length; i++) {
-          if (inputs[i].className === 'hvAADebug') {
-            continue;
+        let name, array, value, type, placeholder, num;
+        function formatValue(value, placeholder) {
+          if (['', undefined].includes(value) && placeholder) {
+            value = placeholder;
           }
-          itemName = inputs[i].name || inputs[i].id;
-          if (typeof option[itemName] !== 'undefined') {
-            itemValue = option[itemName];
-          } else {
-            itemArray = itemName.split('_');
-            itemValue = '';
-            if (itemArray.length === 2 && inputs[i].className !== 'hvAACustomize') {
-              option[itemArray[0]] ??= {}
-              itemValue = option[itemArray[0]][itemArray[1]];
-              if ((itemValue === '' || itemValue === undefined) && inputs[i].placeholder) {
-                itemValue = inputs[i].placeholder;
-                const num = itemValue * 1;
-                if ((inputs[i].type === 'number' || inputs[i].classList.contains('hvAANumber')) && !isNaN(num)) {
-                  itemValue = num;
-                }
-                option[itemArray[0]][itemArray[1]] = itemValue;
-              }
-            }
+          switch (type) {
+            case 'text':
+            case 'hidden':
+            case 'select-one':
+            case 'number':
+              num = value * 1;
+              return (!isNaN(num)) ? num : value;
+            case 'checkbox':
+              return value ? true : undefined;
+            default:
+              return value;
           }
-          if (inputs[i].type === 'text' || inputs[i].type === 'hidden' || inputs[i].type === 'select-one' || inputs[i].type === 'number' || (inputs[i].type === 'text' && inputs[i].classList.contains('hvAANumber'))) {
-            if ((itemValue === '' || itemValue === undefined) && inputs[i].placeholder) {
-              itemValue = inputs[i].placeholder;
-              const num = itemValue * 1;
-              if (inputs[i].type === 'number' || inputs[i].classList.contains('hvAANumber') && !isNaN(num)) {
-                itemValue = num;
-              }
-              option[itemName] = itemValue;
-            } else if (itemValue !== inputs[i].placeholder * 1 && itemValue !== inputs[i].placeholder) {
-              inputs[i].value = itemValue;
-            }
-            if (inputs[i].type !== 'select-one' && !inputs[i].disabled) {
-              customizeInputAutoFit(inputs[i]);
-            }
-          } else if (inputs[i].type === 'checkbox') {
-            if (itemValue === '' && inputs[i].placeholder) {
-              itemValue = !!inputs[i].placeholder;
-              option[itemName] = itemValue;
-            }
-            inputs[i].checked = itemValue;
-            displayNotDefault(inputs[i], itemValue);
-            inputs[i].addEventListener('change', function() {
-              displayNotDefault(this, this.checked);
-            });
+        }
+        for (const input of inputs) {
+          [name, type, placeholder] = [input.name || input.id, input.type, input.placeholder];
+          switch(input.className) {
+            case 'hvAADebug': continue;
+            case 'hvAANumber': type = type === 'text' ? 'number' : type;
+          }
+          [array, value] = [name.split('_'), undefined];
+          if (array.length === 1) {
+            value = formatValue(option[name], placeholder);
+            if (value||value===0) option[name] = value;
+          } else if (input.className !== 'hvAACustomize') {
+            value = formatValue(option[array[0]]?.[array[1]], placeholder);
+            if (value||value===0) (option[array[0]] ??= {})[array[1]] = value;
+          }
+          if (type !== 'checkbox' && ![placeholder * 1, placeholder].includes(value)) {
+            value = value === undefined ? '' : value;
+          }
+          switch (type) {
+            case 'select-one' :
+            case 'text':
+            case 'hidden':
+            case 'number':
+              input.value = value;
+              customizeInputAutoFit(input);
+              break;
+            case 'checkbox':
+              input.checked = !!value;
+              displayCheckBoxNotDefault(input);
+              input.addEventListener('change', () => displayCheckBoxNotDefault(input));
           }
         }
         g('option', option);
+
         const customize = gE('.customize', 'all', optionBox);
         for (i = 0; i < customize.length; i++) {
-          itemName = customize[i].getAttribute('name');
-          if (itemName in option) {
-            for (j in option[itemName]) {
+          name = customize[i].getAttribute('name');
+          if (name in option) {
+            for (j in option[name]) {
               const group = customize[i].appendChild(cE('div'));
               group.className = 'customizeGroup';
               group.innerHTML = `${j * 1 + 1}. `;
-              for (k = 0; k < option[itemName][j].length; k++) {
+              for (k = 0; k < option[name][j].length; k++) {
                 const input = group.appendChild(cE('input'));
                 input.type = 'text';
                 input.className = 'customizeInput';
-                input.name = `${itemName}_${j}`;
-                input.value = option[itemName][j][k];
+                input.name = `${name}_${j}`;
+                input.value = option[name][j][k];
                 customizeInputAutoFit(input);
               }
             }
           }
         }
+
+        let _html;
         if (option.quickSite) {
           _html = '<tr class="hvAATh"><td><l0>图标</l0><l1>圖標</l1><l2>ICON</l2></td><td><l0>名称</l0><l1>名稱</l1><l2>Name</l2></td><td><l0>链接</l0><l1>鏈接</l1><l2>Link</l2></td></tr>';
           option.quickSite.forEach((i) => {
@@ -3260,6 +3240,7 @@
     }
 
     function customizeInputAutoFit(input) {
+      if (input.type === 'select-one' || input.disabled) return;
       customizerInpuFit(input);
       input.addEventListener('input', function(event) {
         customizerInpuFit(input);
@@ -3936,6 +3917,7 @@
     function handleRPNFormula(formula, returnValue) {
       let k, isDebug, result;
       if (!formula) return 0;
+      if (!isNaN(formula*1)) return formula * 1; // 纯数字直接处理
       k = formula.replace(/,\s*(.*)\s*,/, (match, p1) => {
         switch (p1) {
           case '>':
@@ -4565,7 +4547,7 @@
       $async.logSwitch(arguments);
       let eqps;
       const threshold = isGrindFestStandalone ? option.repairValueGF : option.repairValue;
-      if (!threshold) { // skip because default repair has been checked before idleArena>GF
+      if (threshold === undefined || threshold < 0) { // skip because default repair has been checked before idleArena>GF
         $async.logSwitch(arguments);
         return true;
       }
@@ -5143,7 +5125,7 @@
         `${getBattleTypeDisplay()}`, // 战役模式显示
         `R${battle.roundNow}/${battle.roundAll}:T${currentTurn}`,
         `TPS: ${g().runSpeed}`,
-        `<l0>敌人</l0><l1>敌人</l1><l2>Monsters</l2>: ${g().monsterAlive}/${g().monsterAll}`,
+        `<l0>敌人</l0><l1>敵人</l1><l2>Monsters</l2>: ${g().monsterAlive}/${g().monsterAll}`,
       ].join(`<br>`);
       if (!battle.roundAll) {
         pauseChange();
