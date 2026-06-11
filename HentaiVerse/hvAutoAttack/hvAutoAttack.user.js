@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.6
+// @version      2.91.7
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -49,8 +49,8 @@
     let ability = getValue('ability', true)??{};
     let lastResponsive = new Date().getTime();
 
-    const scriptVersion = '2.91';
-    let hvVersion;
+    const scriptVersion = Version(GM_info ? GM_info.script.version : '2.91');
+    let hvVersion = Version(gE('script[src*="hvc.js"]', document)?.src.match(/z\/(\d+)(.*)\/hvc.js/)?.slice(1,2));
 
     const _1s = 1000;
     const _1m = 60 * _1s;
@@ -67,10 +67,10 @@
     ];
     const monsterStateKeys = { obj: `div.btm1`, lv: `div.btm2`, name: `div.btm3`, bars: `div.btm4>div.btm5`, buffs: `div.btm6` };
     let monsterBuffSkillLib;
-    const setMonsterBuffSkillLib = (hvVersion) => { return {
+    const setMonsterBuffSkillLib = () => { return {
       // debuff skill ------------
       We: {
-        proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 0, 345], // ???
+        proficiency: ['Deprecating', 0, 345], // ???
         buff: 'Weakened',
         name: 'Weaken',
         img: 'weaken',
@@ -81,7 +81,7 @@
         description: "'The target has been weakened, making it deal less damage, and preventing it from scoring critical hits.'"
       },
       Im: {
-        proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 30, 495], // ???
+        proficiency: ['Deprecating', 30, 495], // ???
         buff: 'Imperiled',
         name: 'Imperil',
         img: 'imperil',
@@ -89,10 +89,10 @@
         range: { 4204: [1, 1, 2, 3] },
         duration: { 4203: [10,11,12,13,14,15] },
         channeling: true,
-        description: hvVersion < 91 ? "'The target has been imperiled, reducing physical and magical mitigation as well as elemental mitigations.'" : "'The target has been imperiled, reducing physical and magical mitigation as well as elemental mitigation.'"
+        description: "'The target has been imperiled, reducing physical and magical mitigation as well as elemental mitigation.'"
       },
       Bl: {
-        proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 30, 610], // ???
+        proficiency: ['Deprecating', 30, 610], // ???
         buff: 'Blinded',
         name: 'Blind',
         img: 'blind',
@@ -103,7 +103,7 @@
         description: "'The target has been blinded, reducing the chance of landing attacks and hitting with magic spells.'"
       },
       Sle: {
-        proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 0, 410], // ???
+        proficiency: ['Deprecating', 0, 410], // ???
         buff: 'Asleep',
         name: 'Sleep',
         img: 'sleep',
@@ -114,7 +114,7 @@
         description: "'The target has been lulled to sleep, preventing it from taking any actions. Any attacks against this target are guaranteed to hit, but can also wake it up.'"
       },
       Co: {
-        proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 45, 620], // ???
+        proficiency: ['Deprecating', 45, 620], // ???
         buff: 'Confused',
         name: 'Confuse',
         img: 'confuse',
@@ -125,7 +125,7 @@
         description: "'The target has been confused, making it lunge out wildly and strike friends and foes alike.'"
       },
       Si: {
-        proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 40, 600], // ???
+        proficiency: ['Deprecating', 40, 600], // ???
         buff: 'Silenced',
         name: 'Silence',
         img: 'silence',
@@ -136,18 +136,18 @@
         description: "'The target has been silenced, preventing it from using special attacks and magic.'"
       },
       MN: {
-        proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 100, 700], // ???
-        buff: hvVersion < 91 ? 'Magically Snared' : 'Immobilized',
+        proficiency: ['Deprecating', 100, 700], // ???
+        buff: 'Immobilized',
         name: 'MagNet',
         img: 'magnet',
         id: '233',
         range: { 4212: [1, 1, 1, 2, 2, 3] },
         duration: { 4212: [10,11,12,13,14,15] },
         channeling: true,
-        description: hvVersion < 91 ? "'The target has been hit with a magic net, eliminating its chance to evade or resist attacks.'" : "'The target has been immobilized, eliminating its chance to evade and reducing its magic resistance.'"
+        description: "'The target has been immobilized, eliminating its chance to evade and reducing its magic resistance.'"
       },
       Slo: {
-        proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 0, 300], // ???
+        proficiency: ['Deprecating', 0, 300], // ???
         buff: 'Slowed',
         name: 'Slow',
         img: 'slow',
@@ -159,32 +159,32 @@
       },
       // debuff skills not checked ------------ ??
       Dr: {
-        proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 0, 300], // ???
+        proficiency: ['Deprecating', 0, 300], // ???
         buff: 'Vital Theft',
         name: 'Drain',
         img: 'drainhp',
         id: '211',
         duration: 10,
         channeling: true,
-        description: hvVersion < 91 ? "'Siphons off the target\'s life essence over time. This causes a damage-over-time effect, and returns a small amount of health to the player.'" : "'Siphons off the target\\'s life essence over time, and gives it to the player.'"
+        description: "'Siphons off the target\\'s life essence over time, and gives it to the player.'"
       },
       ET: {
-        proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 0, 300], // ???
+        proficiency: ['Deprecating', 0, 300], // ???
         name: 'Ether Theft',
         img: 'drainmp',
         duration: 10, // ??
-        description: hvVersion < 91 ? "'Siphons off the target\'s mana over time. This returns a small amount of mana to the player.'" : "'Siphons off the target\\'s mana over time, and gives it to the player.'"
+        description: "'Siphons off the target\\'s mana over time, and gives it to the player.'"
       },
       ST: {
-        proficiency: [hvVersion < 91 ? 'deprecating' : 'Deprecating', 0, 300], // ???
+        proficiency: ['Deprecating', 0, 300], // ???
         name: 'Spirit Theft',
         img: 'drainsp',
         duration: 10, // ??
-        description: hvVersion < 91 ? "'Siphons off the target\'s spirit over time. This returns a small amount of spirit to the player.'" : "'Siphons off the target\\'s spirit over time, and gives it to the player.'"
+        description: "'Siphons off the target\\'s spirit over time, and gives it to the player.'"
       },
       // elem attack debuff ------------ ??
       SS: {
-        proficiency: [hvVersion < 91 ? 'elemental' : 'Elemental', 0, 800], // ???
+        proficiency: ['Elemental', 0, 800], // ???
         name: 'Searing Skin',
         img: 'firedot',
         elem: 2,
@@ -193,7 +193,7 @@
         description: "'The skin of the target has been scorched, inhibiting its attack damage. Cold resistance is lowered.'"
       },
       FL: {
-        proficiency: [hvVersion < 91 ? 'elemental' : 'Elemental', 0, 800], // ???
+        proficiency: ['Elemental', 0, 800], // ???
         name: 'Freezing Limbs',
         img: 'coldslow',
         elem: 1,
@@ -202,7 +202,7 @@
         description: "'The limbs of the target have been frozen, causing slower movement. Wind resistance is lowered.'"
       },
       TA: {
-        proficiency: [hvVersion < 91 ? 'elemental' : 'Elemental', 0, 800], // ???
+        proficiency: ['Elemental', 0, 800], // ???
         name: 'Turbulent Air',
         img: 'windmiss',
         elem: 4,
@@ -211,7 +211,7 @@
         description: "'The air around the target has been upset, blowing up dust and increasing its miss chance. Elec resistance is lowered.'"
       },
       DB: {
-        proficiency: [hvVersion < 91 ? 'elemental' : 'Elemental', 0, 800], // ???
+        proficiency: ['Elemental', 0, 800], // ???
         name: 'Deep Burns',
         img: 'elecweak',
         elem: 3,
@@ -220,7 +220,7 @@
         description: "'Internal damage causes slower reactions and lowers evade and resist chance. Fire resistance is lowered.'"
       },
       BD: {
-        proficiency: [hvVersion < 91 ? 'forbidden' : 'Forbidden', 0, 800], // ???
+        proficiency: ['Forbidden', 0, 800], // ???
         name: 'Breached Defense',
         img: 'holybreach',
         elem: 6,
@@ -229,7 +229,7 @@
         description: "'The holy attack has penetrated the target defenses, making it take more damage. Dark resistance is lowered.'"
       },
       BA: {
-        proficiency: [hvVersion < 91 ? 'divine' : 'Divine', 0, 800], // ???
+        proficiency: ['Divine', 0, 800], // ???
         name: 'Blunted Attack',
         img: 'darknerf',
         elem: 5,
@@ -238,7 +238,7 @@
         description: "'The decaying effects of the spell has blunted the target offenses, making it deal less damage. Holy resistance is lowered.'"
       },
       BS: {
-        proficiency: [hvVersion < 91 ? 'divine' : 'Divine', 0, 800], // ???
+        proficiency: ['Divine', 0, 800], // ???
         name: 'Burning Soul',
         img: 'soulfire',
         duration: 7,
@@ -246,7 +246,7 @@
         description: "'The life essence of the target has been set ablaze, damaging its physical form over time.'"
       },
       RS: {
-        proficiency: [hvVersion < 91 ? 'forbidden' : 'Forbidden', 0, 800], // ???
+        proficiency: ['Forbidden', 0, 800], // ???
         name: 'Ripened Soul',
         img: 'ripesoul',
         duration: 7,
@@ -264,7 +264,7 @@
         name: 'Bleeding Wound',
         img: 'wpn_bleed',
         duration: 7,
-        description: hvVersion < 91 ? "'A gashing wound is making this target take damage over time.'" : "'Gashing wounds are making this target take damage over time.'"
+        description: "'Gashing wounds are making this target take damage over time.'"
       },
       Stun: {
         name: 'Stunned',
@@ -295,26 +295,26 @@
       FoS: {
         name: 'Fury of the Sisters',
         img: 'trio_furyofthesisters',
-        duration: hvVersion < 91 ? 777 :'permanent',
-        description: hvVersion < 91 ? "'The destruction of the world tree has infuriated its defenders, increasing their hit and crit chances.'" : "'The destruction of the world tree has infuriated its defenders, increasing their accuracy.'"
+        duration: 'permanent',
+        description: "'The destruction of the world tree has infuriated its defenders, increasing their accuracy.'"
       },
       LoF: {
         name: 'Lamentations of the Future',
         img: 'trio_skuld',
-        duration: hvVersion < 91 ? 777 :'permanent',
+        duration: 'permanent',
         description: "'The destruction of the future has increased the attack power of her allies.'"
       },
       SoP: {
         name: 'Screams of the Past',
         img: 'trio_urd',
-        duration: hvVersion < 91 ? 777 :'permanent',
+        duration: 'permanent',
         description: "'The destruction of the past has increased the defensive power of her allies.'"
       },
       WoP: {
         buff: 'Wails of the Present',
         name: 'Wailings of the Present',
         img: 'trio_verdandi',
-        duration: hvVersion < 91 ? 777 :'permanent',
+        duration: 'permanent',
         description: "'The destruction the present has increased the attack speed of her allies.'"
       },
     } };
@@ -842,10 +842,7 @@
           return true;
         }
         setValue('url', window.location.origin);
-        const hvver = gE('script[src*="hvc.js"]', document).src.match(/z\/(\d+)(.*)\/hvc.js/);
-        hvVersion = hvver[1] * 1;
-        hvVersion.sub = hvver[2];
-        monsterBuffSkillLib = setMonsterBuffSkillLib(hvVersion);
+        monsterBuffSkillLib = setMonsterBuffSkillLib();
 
         // 补充记录（因写入冲突、网络卡顿等）未被记录的encounter链接
         if (window.location.href.indexOf(`?s=Battle&ss=ba`) !== -1) {
@@ -1035,7 +1032,7 @@
     } catch (err) { console.error('Opener reload or popup close failed:', err) } }
 
     function checkOption() {
-      g('version', GM_info ? GM_info.script.version : scriptVersion);
+      g('version', scriptVersion);
       if (!getValue('option')) {
         g('lang', window.prompt('请输入以下语言代码对应的数字\nPlease put in the number of your preferred language (0, 1 or 2)\n0.简体中文\n1.繁體中文\n2.English', 0) || 2);
         addStyle();
@@ -1051,7 +1048,7 @@
       addStyle();
 
       // README等合并到主分支后再取消掉注释
-      // if (option.version.substr(0, 4) !== g().version.substr(0, 4)) {
+      // if (option.version.substr(0, 4) !== scriptVersion.ver.substr(0, 4)) {
       //   gE('.hvAAButton').click();
       //   if (_alert(1, 'hvAutoAttack版本更新，请重新设置\n强烈推荐【重置设置】后再设置。\n是否查看更新说明？', 'hvAutoAttack版本更新，請重新設置\n強烈推薦【重置設置】後再設置。\n是否查看更新說明？', 'hvAutoAttack version update, please reset\nIt\'s recommended to reset all configuration.\nDo you want to read the changelog?')) {
       //     $ajax.openNoFetch('https://github.com/dodying/UserJs/commits/master/HentaiVerse/hvAutoAttack/hvAutoAttack.user.js', true);
@@ -1310,14 +1307,13 @@
       const buttons = gE(`img[src*="startchallenge.png"], img[src*="startgrindfest.png"], img[src*="startchallenge_d.png"]`, 'all', doc);
       buttons.forEach(btn => {
         const tr = btn.parentNode.parentNode;
-        if ('challenge_d' === btn.getAttribute('src').match(`${unsafeWindow.IMG_URL}(.*)/start(.*).png`)[2]) {
+        if (btn.enabled = 'challenge_d' !== btn.getAttribute('src').match(`${unsafeWindow.IMG_URL}(.*)/start(.*).png`)[2]) {
+          const onclick = btn.getAttribute('onclick');
+          const match = onclick.match(/init_battle\((\d+)(,\d+)*\)/);
+          btn.id = site === 'gr' ? 'gr' : match[1] * 1;
+        } else {
           const key = site === 'ar' ? gE('td:nth-child(3)>div>div', tr).innerText.match(`Lv. (.*)`)[1]*1 : (Array.from(tr.parentNode.children).indexOf(tr)-1);
           btn.id = idMap[site][key];
-        } else {
-          const onclick = btn.getAttribute('onclick');
-          const match = hvVersion < 91 ? onclick.match(/init_battle\((\d+),\s*(\d+,)*'(.*?)'\)/) : onclick.match(/init_battle\((\d+)(,\d+)*\)/);
-          btn.token = match[3] ?? null;
-          btn.id = site === 'gr' ? 'gr' : match[1] * 1;
         }
         btn.cleared = site === 'gr' || gE('td:nth-child(2)>div>div', tr).innerText;
         if (option.skipUnclearedArena && site !== 'gr') {
@@ -1327,14 +1323,78 @@
       return buttons;
     }
 
+    function Version(...verArgs) {
+      if (!(this instanceof Version)) {
+        return new Version(...verArgs);
+      }
+      this.ver = verArgs.join('.');
+
+      Version.prototype.upto ??= function(...args) {
+        return this.compareWith(...args) >= 0;
+      }
+      Version.prototype.eq ??= function(...args) {
+        return this.compareWith(...args) === 0;
+      };
+      Version.prototype.compareWith ??= function(...args) {
+        return Version.compare(this, Version.asString(...args));
+      }
+      Version.asString ??= function(...args) {
+        return args[0] instanceof Version ? args[0].ver : args.join('.');
+      }
+      Version.compare ??= function(...args) {
+        const seg = args.slice(0, 2).map(arg=> {
+          if (typeof arg === 'number') arg = String(arg);
+          if (arg instanceof Version) arg = arg.ver;
+          return arg.split('.');
+        });
+        const maxLen = Math.max(...seg.map(s=>s.length));
+
+        for (let i = 0; i < maxLen; i++) {
+          const si = seg.map(s=>s[i]);
+
+          const isEmpty = si.map(s => [undefined, ''].includes(s));
+
+          if (!isEmpty.some(x => !x)) continue;
+          if (isEmpty[0]) return -1;
+          if (isEmpty[1]) return 1;
+
+          const isNum = si.map(s => /^\d+$/.test(s));
+          if (isNum.some(x => !x)) {
+            if (!isNum[0] && isNum[1]) return -1;
+            if (isNum[0] && !isNum[1]) return 1;
+
+            if (si[0] < si[1]) return -1;
+            if (si[0] > si[1]) return 1;
+            continue;
+          }
+          const trim = si.map(s => s.replace(/^0+/, '') || '0');
+          const length = trim.map(t=>t.length);
+          if (length[0] !== length[1]) return length[0] > length[1] ? 1 : -1;
+          for (let i = 0; i < length[0]; i++) {
+            if (trim[0][i] !== trim[1][i]) return trim[0][i] > trim[1][i] ? 1 : -1;
+          }
+        }
+        return 0;
+      }
+    }
+
     function loadOption() {
       let option = getValue('option', true);
+      const version = Version(option.version);
+
+      if (!version.upto(scriptVersion)) { // 脚本升级时备份
+        const backups = getValue('backup', true) || {};
+        const autos = Object.values(backups).filter(b => b.auto);
+        autos.sort((a, b) => -Version.compare(a.version, b.version));
+        if (!Version(autos[0]?.version).upto(version)) {
+          backup();
+        }
+      }
 
       // 迁移2.90.162及之前的targetHp等到targetHpDecimal等
-      const version = option.version.split('.').map(v=>isNaN(v*1) ? v : v*1);
-      if (version[0] < 2 || version[1] < 90 || (version[1] === 90 && (isNaN(1*version[2]) || version[2]<=162))) {
+      if (!version.upto(2,90,162)) {
         option = JSON.parse(JSON.stringify(option).replace('targetHp', 'targetHpDecimal').replace('targetMp', 'targetMpDecimal').replace('targetSp', 'targetSpDecimal').replace('DecimalDecimal', 'Decimal'));
-        option.version = GM_info ? GM_info.script.version : scriptVersion;
+        option.version = scriptVersion.ver;
         g('version', option.version);
       }
       option = JSON.parse(JSON.stringify(option).replace('DecimalDecimal', 'Decimal'));
@@ -1795,6 +1855,40 @@
       };
     }
 
+    function rmListItem(code) { // 同步删除界面显示对应的项
+      const configs = gE('#hvAATab-Tools > * > ul[class="hvAABackupList"] > li', 'all');
+      for (const config of configs) {
+        if (config.textContent === code) config.remove();
+      }
+    }
+
+    function backup(code, alert) {
+      const current = getValue('option');
+      const auto = code ? undefined : `[auto backup for ${current.version}] ${time(3)}`;
+      const backups = getValue('backup', true) || {};
+      code ??= auto;
+      if (code in backups) { // 覆写同名配置
+        if (!alert || _alert(1, alert)) {
+          delete backups[code];
+          rmListItem(code);
+        } else return;
+      }
+      backups[code] = getValue('option');
+      backups[code].auto = auto ? time(0) : undefined;
+      const autos = Object.keys(backups).filter(c => backups[c].auto);
+      autos.sort(a => -backups[a].auto);
+      let i=0;
+      for (const a of autos) {
+        i++;
+        if (i <= 5) continue;
+        delete backups[a];
+      }
+      setValue('backup', backups);
+      if (!gE('#hvAABox')) return;
+      const li = gE('.hvAABackupList', gE('#hvAABox')).appendChild(cE('li'));
+      li.textContent = code;
+    }
+
     function optionBox() { // 配置界面
       const option = g().option??{};
       const optionBox = gE('body').appendChild(cE('div'));
@@ -1964,7 +2058,7 @@
         '    <l0>耐久度</l0><l1>耐久度</l1><l2>Durability</l2> ≤ <input class="hvAANumber" name="repairValue" type="number">% <l0>或 压榨届耐久度</l0><l1>或 壓榨屆耐久度</l1><l2>OR Grind Fest Durability</l2> ≤ <input class="hvAANumber" name="repairValueGF" type="number">%</br><input id="encounterRepair" type="checkbox"><label for="encounterRepair"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label>',
         '  </div>',
         '  <div>',
-        '    <input id="equStorage" type="checkbox"><label for="equStorage"><b>[E!]<l0>装备库存</l0><l1>裝備庫存</l1><l2>Equipment Storage</l2></b></label> ≤ <input class="hvAANumber" style="width: 32px;" name="equStorageValue" placeholder="2000" type="number">; <input id="encounterEquStorage" type="checkbox"><label for="encounterEquStorage"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label>',
+        '    <input id="equStorage" type="checkbox"><label for="equStorage"><b>[E!]<l0>装备库存</l0><l1>裝備庫存</l1><l2>Equipment Storage</l2></b></label> ≤ <input class="hvAANumber" style="width: 32px;" name="equStorageValue" placeholder="150" type="number">; <input id="encounterEquStorage" type="checkbox"><label for="encounterEquStorage"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label>',
         '  </div>',
         '  <div>',
         '    <input id="checkSupply" type="checkbox"><label for="checkSupply"><b>[C!]<l0>检查物品库存</l0><l1>檢查物品庫存</l1><l2>Check is item needs supply</l2></b>;</label>',
@@ -2985,27 +3079,9 @@
           this.style.height = `${this.scrollHeight}px`;
           this.select();
         };
-        function rmListItem(code) { // 同步删除界面显示对应的项
-          const configs = gE('#hvAATab-Tools > * > ul[class="hvAABackupList"] > li', 'all');
-          for (const config of configs) {
-            if (config.textContent == code) {
-              config.remove();
-            }
-          }
-        }
         gE('.hvAABackup', optionBox).onclick = function () {
-          const code = _alert(2, '请输入当前配置代号（或默认使用当前时间）', '請輸入當前配置代號（或默認使用當前時間）', 'Please put in a name for the current configuration (or use current time as default)') || time(3);
-          const backups = getValue('backup', true) || {};
-          if (code in backups) { // 覆写同名配置
-            if (_alert(1, '是否覆盖已有的同名配置？', '是否覆蓋已有的同名配置？', 'Do you want to overwrite the configuration with the same name?')) {
-              delete backups[code];
-              rmListItem(code);
-            } else return;
-          }
-          backups[code] = getValue('option');
-          setValue('backup', backups);
-          const li = gE('.hvAABackupList', optionBox).appendChild(cE('li'));
-          li.textContent = code;
+          const code = _alert(2, '请输入当前配置代号（或默认使用当前时间）', '請輸入當前配置代號（或默認使用當前時間）', 'Please put in a name for the current configuration (or use current time as default)');
+          backup(code, '是否覆盖已有的同名配置？', '是否覆蓋已有的同名配置？', 'Do you want to overwrite the configuration with the same name?')
         };
         gE('.hvAARestore', optionBox).onclick = function () {
           const code = _alert(2, '请输入配置代号', '請輸入配置代號', 'Please put in a name for a configuration');
@@ -3062,7 +3138,7 @@
 
           const arenaPrev = g().option?.idleArenaValue;
 
-          const _option = { version: g().version };
+          const _option = { version: scriptVersion.ver };
           let name, array, value, type;
           for (const input of gE('input,select', 'all', optionBox)) {
             [name, type, value] = [input.name, input.type, input.value];
@@ -4187,19 +4263,10 @@
       $async.logSwitch(arguments);
       const doc = $doc(await $ajax.insert('?s=Character'));
       const proficiency = {};
-      if (hvVersion < 91) {
-        const regex = /<div><div class="fc2 far fcb"><div>(.*) <\/div><\/div><\/div>\n\t<div><div class="fc2 fal fcb"><div>&nbsp;(.*)<\/div><\/div><\/div>/;
-        const profs = gE('#stats_pane .stats_page:last-child .st2:last-child', doc).innerHTML.match( new RegExp(regex, regex.flags + 'g'));
-        profs.forEach(p=>{
-          const exec = p.match(regex);
-          proficiency[exec[2]] = exec[1]*1;
-        });
-      } else {
-        gE('#stats_scrollable table:last-child tr', 'all', doc).forEach((tr) => {
-          const exec = tr.innerHTML.match(/<td>(.*)<\/td>.*<td>(.*)<\/td>/);
-          proficiency[exec[2]] = exec[1]*1;
-        });
-      }
+      gE('#stats_scrollable table:last-child tr', 'all', doc).forEach((tr) => {
+        const exec = tr.innerHTML.match(/<td>(.*)<\/td>.*<td>(.*)<\/td>/);
+        proficiency[exec[2]] = exec[1]*1;
+      });
       localStorage.setItem(`hvAA-${current}_proficiency`, JSON.stringify(proficiency));
       $async.logSwitch(arguments);
     } catch (err) { console.error(err); }}
@@ -4226,9 +4293,9 @@
         // 'DW Accuracy': { id: 2302, unlock: [50, 150], level: 0 },
         // 'DW Crit': { id: 2303, unlock: [250], level: 0 },
         // 'Staff Spell Damage': { id: 2501, unlock: [0, 100, 200], level: 0 },
-        // 'Staff Accuracy': { id: 2502, unlock: hvVersion < 91 ? [50, 150, 300] : [50, 150], level: 0 },
+        // 'Staff Accuracy': { id: 2502, unlock: [50, 150], level: 0 },
         // 'Staff Damage': { id: 2503, unlock: [0], level: 0 },
-        // 'Cloth Spellacc': { id: 3101, unlock: hvVersion < 91 ? [0, 120, 240] : [120], level: 0 },
+        // 'Cloth Spellacc': { id: 3101, unlock: [120], level: 0 },
         // 'Cloth Spellcrit': { id: 3102, unlock: [0, 40, 90, 130, 190], level: 0 },
         // 'Cloth Castspeed': { id: 3103, unlock: [150, 250], level: 0 },
         // 'Cloth MP': { id: 3104, unlock: [0, 60, 110, 170, 230, 290, 350], level: 0 },
@@ -4248,8 +4315,7 @@
         'Faster Blind': { id: 4206, unlock: [120, 215, 275], level: 0 },
         'Mind Control': { id: 4207, unlock: [80, 130, 170], level: 0 },
         'Better Silence': { id: 4211, unlock: [120, 170, 215], level: 0 },
-        'Better MagNet': hvVersion < 91 ? { id: 4212, unlock: [250, 295, 340, 370, 400], level: 0 } : undefined,
-        'Better Immobilize': hvVersion < 91 ? undefined : { id: 4212, unlock: [250, 295, 340, 370, 400], level: 0 },
+        'Better Immobilize': { id: 4212, unlock: [250, 295, 340, 370, 400], level: 0 },
         'Better Slow': { id: 4213, unlock: [30, 50, 75, 105, 135], level: 0 },
         // 'Better Drain': { id: 4216, unlock: [20, 50, 90], level: 0 },
         // 'Faster Drain': { id: 4217, unlock: [30, 70, 110, 150, 200], level: 0 },
@@ -4464,83 +4530,6 @@
       return !needs.length;
     }
 
-    //     async function asyncCheckEnchant(isGrindFest) {
-    //       try {
-    //         if (hvVersion >= 91) return true;
-    //         $async.logSwitch(arguments);
-    //         const option = g().option??{};
-    //         const [isEnchant, thresholds] = isGrindFest && option.checkEnchantGF ? [option.isEnchantGF, option.enchantGF] : [option.isEnchant, option.enchant];
-    //         if (!isEnchant) return true;
-    //         await waitPause();
-
-    //         const enchant = {};
-    //         Object.keys(isEnchant).forEach(id => {
-    //           if (!isEnchant[id]) return;
-    //           const item = Math.floor(id/100);
-    //           const slot = id % 100;
-    //           (enchant[slot] ??= {})[item] = thresholds[id];
-    //         });
-
-    //         const url = `?s=Forge&ss=re`;
-    //         const enchant_data= {
-    //           "Voidseeker's Blessing" : { Weapon: 'vseek', item:61001, }, // 'Voidseeker Shard'
-    //           'Suffused Aether' : { Weapon: 'ether', item:61101, }, // 'Aether Shard'
-    //           'Featherweight Charm' : { Weapon: 'feath', Armor: 'feath', item:61501, }, // 'Featherweight Shard'
-    //           'Infused Flames' : { Weapon: 'sfire', Armor: 'pfire', item:12101, }, // 'Infusion of Flames'
-    //           'Infused Frost' : { Weapon: 'scold', Armor: 'pcold', item:12201, }, // 'Infusion of Frost'
-    //           'Infused Lightning' : { Weapon: 'selec', Armor: 'pelec', item:12301, }, // 'Infusion of Lightning'
-    //           'Infused Storms' : { Weapon: 'swind', Armor: 'pwind', item:12401, }, // 'Infusion of Storms'
-    //           'Infused Divinity' : { Weapon: 'sholy', Armor: 'pholy', item:12501, }, // 'Infusion of Divinity'
-    //           'Infused Darkness' : { Weapon: 'sdark', Armor: 'pdark', item:12601, }, // 'Infusion of Darkness'
-    //         }
-    //         const item2Enchant = {
-    //           61001: "Voidseeker's Blessing",
-    //           61101: 'Suffused Aether',
-    //           61501: 'Featherweight Charm',
-    //           12101: 'Infused Flames',
-    //           12201: 'Infused Frost',
-    //           12301: 'Infused Lightning',
-    //           12401: 'Infused Storms',
-    //           12501: 'Infused Divinity',
-    //           12601: 'Infused Darkness',
-    //         }
-    //         const d = $doc(await $ajax.insert(`?s=Character&ss=eq`));
-    //         const eqps = {};
-    //         Array.from(gE('.eqb', 'all', d)).forEach(eqb=> {
-    //           const slot = eqb.getAttribute('onclick').match(`equip_slot=(.*)'`)[1] * 1;
-    //           const id = gE('div[onmouseover*="equips.set"]', eqb)?.id.replace('e', '') * 1;
-    //           eqps[id]=slot;
-    //         });
-    //         const doc = $doc(await $ajax.insert(url));
-    //         const eqpdoc = await $ajax.insert(gE('#mainpane>script[src]', doc).src);
-    //         const json = JSON.parse(eqpdoc.match(/{.*}/)[0]);
-    //         await Promise.all(Array.from(gE('.eqp>[id]', 'all', doc)).map(e => (async eqp => { try {
-    //           const id = eqp.id.match(/\d+/)[0];
-    //           const slot = eqps[id];
-    //           const data = json[id];
-    //           if (!enchant[slot]) return;
-    //           const enchanted = {};
-    //           Array.from(gE('#ee>span', 'all', $doc(await $ajax.insert(`equip/${id}/${data.k}`))))?.forEach(s=> {
-    //             const info = s.innerHTML.match(/(.*) \[(\d+)m\]/);
-    //             enchanted[enchant_data[info[1]].item] = info[2]*1
-    //             return;
-    //           });
-    //           let type = data.d.match(`<div class=\"eq e.\"><div>.* *(Armor|Weapon|Shield|Staff).*</div><div>Condition`)[1];
-    //           type = (type === 'Shield') ? 'Armor' : (type === 'Staff' ? 'Weapon' : type);
-    //           return await Promise.all(Object.keys(enchant[slot]).map(i => (async item => { try {
-    //             const threshold = enchant[slot][item];
-    //             const current = enchanted[item] ?? 0;
-    //             const enc = enchant_data[item2Enchant[item]][type];
-    //             if (!enc) return;
-    //             if (current && current >= threshold) return;
-    //             const failed = $doc(await $ajax.insert(`?s=Forge&ss=en`, `select_item=${id}&enchantment=${enc}`))?.innerText;
-    //             if (failed) {
-    //               console.error(failed, ':', data.t, ':', enc, '=', current, '>?', threshold, '=', current >= threshold);
-    //             }
-    //           } catch (err) { console.error(err); }})(i)));
-    //         } catch (err) { console.error(err); }})(e)));
-    //       } catch (err) { console.error(err); }; return false; }
-
     async function asyncCheckRepair(isGrindFestStandalone) { try {
       const option = g().option??{};
       if (!option.repair) {
@@ -4554,38 +4543,24 @@
         $async.logSwitch(arguments);
         return true;
       }
-      if (hvVersion < 91) {
-        const url = `?s=Forge&ss=re`;
-        const doc = $doc(await $ajax.insert(url));
-        const eqpdoc = await $ajax.insert(gE('#mainpane>script[src]', doc).src);
-        const json = JSON.parse(eqpdoc.match(/{.*}/)[0]);
-        eqps = await Promise.all(Array.from(gE('.eqp>[id]', 'all', doc)).map(async eqp => { try {
-          const id = eqp.id.match(/\d+/)[0];
-          const condition = 1 * json[id].d.match(/Condition: \d+ \/ \d+ \((\d+)%\)/)[1];
-          if (condition > threshold) {
-            return;
-          }
-          const after = $doc(await $ajax.insert(url, `select_item=${id}`));
-          return gE('.messagebox_error', )?.innerText ? undefined : json[id].t;
-        } catch (err) { console.error(err); }}));
-      } else {
-        const url = `?s=Bazaar&ss=am&screen=repair&filter=equipped`;
-        const doc = $doc(await $ajax.insert(url));
-        if (gE('#riddlecounter', doc) || gE('#battle_main', doc)) {
-          $async.logSwitch(arguments);
-          return undefined;
-        }
-        const token = gE('#equipform>input[name="postoken"]', doc).value;
-        eqps = await Promise.all(Array.from(gE('#equiplist>table>tbody>tr:not(.eqselall):not(.eqtplabel)', 'all', doc)).map(async eqp => { try {
-          const id = gE('input', eqp).value;
-          const condition = 1 * gE('td:last-child', eqp).textContent.replace('%', '');
-          if (condition > threshold) {
-            return;
-          }
-          const after = $doc(await $ajax.insert(url, `&eqids[]=${id}&postoken=${token}&replace_charms=on`));
-          return gE(`#e${id}`, after) ? gE('.lc', eqp).childNodes[2].textContent : undefined;
-        } catch (err) { console.error(err); }}));
+
+      const url = `?s=Bazaar&ss=am&screen=repair&filter=equipped`;
+      const doc = $doc(await $ajax.insert(url));
+      if (gE('#riddlecounter', doc) || gE('#battle_main', doc)) {
+        $async.logSwitch(arguments);
+        return undefined;
       }
+      const token = gE('#equipform>input[name="postoken"]', doc).value;
+      eqps = await Promise.all(Array.from(gE('#equiplist>table>tbody>tr:not(.eqselall):not(.eqtplabel)', 'all', doc)).map(async eqp => { try {
+        const id = gE('input', eqp).value;
+        const condition = 1 * gE('td:last-child', eqp).textContent.replace('%', '');
+        if (condition > threshold) {
+          return;
+        }
+        const after = $doc(await $ajax.insert(url, `&eqids[]=${id}&postoken=${token}&replace_charms=on`));
+        return gE(`#e${id}`, after) ? gE('.lc', eqp).childNodes[2].textContent : undefined;
+      } catch (err) { console.error(err); }}));
+
       eqps = eqps.filter(e=>e);
       if (eqps.length) {
         console.log('equips need repair:\n', eqps.join('\n '));
@@ -4615,23 +4590,15 @@
       await waitPause();
       $async.logSwitch(arguments);
       let count;
-      if (hvVersion < 91) {
-        const url = `?s=Character&ss=in`;
-        const doc = $doc(await $ajax.insert(url));
-        if (gE('#riddlecounter', doc) || gE('#battle_main', doc)) {
-          $async.logSwitch(arguments);
-          return false;
-        }
-        count = gE('#eqinv_bot>div>div>div', doc).innerText.match(/: (\d+) \/ \d+/)[1];
-      } else {
-        const url = `?s=Bazaar&ss=am`;
-        const doc = $doc(await $ajax.insert(url));
-        if (gE('#riddlecounter', doc) || gE('#battle_main', doc)) {
-          $async.logSwitch(arguments);
-          return false;
-        }
-        count = gE('#equipblurb>table>tbody>tr>td:nth-child(2)', doc).innerText;
+
+      const url = `?s=Bazaar&ss=am`;
+      const doc = $doc(await $ajax.insert(url));
+      if (gE('#riddlecounter', doc) || gE('#battle_main', doc)) {
+        $async.logSwitch(arguments);
+        return false;
       }
+      count = gE('#equipblurb>table>tbody>tr>td:nth-child(2)', doc).innerText;
+
       $async.logSwitch(arguments);
       return count * 1 <= option.equStorageValue;
     } catch (err) { console.error(err); }; return false; }
@@ -4837,15 +4804,17 @@
       let arena = getValue('arena', true) ?? {};
       const isToday = arena.date && time(2, arena.date) === time(2);
       if (forceUpdateToken || !isToday || !arena.isOptionUpdated) {
-        arena.token = {};
+        arena.enabled = [];
         await Promise.all(['gr', 'ar', 'rb'].map(s => (async site => { try {
           const doc = $doc(await $ajax.insert(`?s=Battle&ss=${site}`));
           getStartBattleButtons(doc, site).forEach(btn => {
+            if (!btn.enabled) return;
             if (btn.cleared) {
-              arena.token[btn.id] = btn.token;
+              arena.enabled.push(btn.id);
               return;
             }
-            delete arena.token[btn.id];
+            const index = arena.enabled.indexOf(btn.id);
+            if (index !== -1) arena.enabled.splice(index, 1);
           });
         } catch (err) { console.error(err); }})(s)));
       }
@@ -4860,7 +4829,7 @@
         arena.array = option.idleArenaValue?.split(',') ?? [];
         arena.array.reverse();
       }
-      arena.arrayDone = arena.arrayDone.filter(id => id === 'gr' || !Object.keys(arena.token).includes(id.toString()));
+      arena.arrayDone = arena.arrayDone.filter(id => id === 'gr' || !arena.enabled?.includes(id.toString()));
       $async.logSwitch(arguments);
       return setValue('arena', arena);
     } catch (err) { console.error(err); }}
@@ -4886,6 +4855,9 @@
       $async.logSwitch(arguments);
       const array = [...arena.array];
       const RBundone = [];
+      if (!arena.enabled?.length) {
+        arena.enabled = (await updateArena(true)).enabled;
+      }
       while (array.length > 0) {
         id = array.pop() * 1;
         id = isNaN(id) ? 'gr' : id;
@@ -4893,12 +4865,12 @@
           id = undefined;
           continue;
         }
-        if (arena.token[id] !== undefined) {
+        if (arena.enabled.includes(id)) {
           break;
         }
         if (id >= 105) {
-          arena.token = (await updateArena(true)).token;
-          if (arena.token[id] !== undefined) {
+          arena.enabled = (await updateArena(true)).enabled;
+          if (arena.enabled.includes(id)) {
             break;
           }
         }
@@ -4950,12 +4922,7 @@
         $async.logSwitch(arguments);
         return;
       }
-      let token = arena.token[id];
-      if (hvVersion < 91) {
-        token = `&inittoken=${token}`;
-      } else {
-        token = `&postoken=${gE('#initform>input[name="postoken"]', $doc(await $ajax.insert(query))).value}`;
-      }
+      let token = `&postoken=${gE('#initform>input[name="postoken"]', $doc(await $ajax.insert(query))).value}`;
       await waitPause();
       writeArenaStart();
       await until(async ()=>!option.checkURLBeforeNewRound || await $ajax.insert(option.checkURLBeforeNewRound), option.checkURLBeforeNewRoundRetry);
@@ -5509,14 +5476,14 @@
       const sharable = ${JSON.stringify(sharable)};
       const monsterStateKeys = ${JSON.stringify(monsterStateKeys)};
       const ability = ${JSON.stringify(ability)};
-      const hvVersion = ${JSON.stringify(hvVersion)};
       const monsterBuffSkillLib = ${JSON.stringify(monsterBuffSkillLib)};
+      const hvVersion = Version(${hvVersion.ver});
       // funciton
       ${[updateMonsterEffects, fixMonsterStatus,
          getMonsterID, getMonster, getMonster, getBuff,
          getValue, setValue, delValue,
          getLocal, setLocal, delLocal,
-         gE, cE].map(f=>f.toString()).join(';')};
+         gE, cE, Version].map(f=>f.toString()).join(';')};
       `;
       gE('head').appendChild(fakeApiCall);
       const fakeApiResponse = cE('script');
@@ -5735,20 +5702,7 @@
 
       // update proficiency
       const proficiency = battle.proficiency ?? {};
-      const ptypes = hvVersion < 91 ? {
-        'cloth armor': 'cloth armor',
-        'deprecating magic' : 'deprecating',
-        'divine': 'divine',
-        'dual wielding' : 'dual wielding',
-        'elemental': 'elemental',
-        'forbidden': 'forbidden',
-        'heavy armor': 'heavy armor',
-        'light armor': 'light armor',
-        'one-handed weapon': 'one-handed',
-        'staff': 'staff',
-        'supportive magic' : 'supportive',
-        'two-handed weapon': 'two-handed',
-      } :{
+      const ptypes = {
         'cloth armor': 'Cloth Armor',
         'deprecating magic' : 'Deprecating',
         'divine': 'Divine',
@@ -5827,7 +5781,7 @@
             // 获取新增时间（忽略非新增的情况）
             let [delta, added] = [turns - rec[effect].t, rec[effect].d];
             if (delta > 0) {
-              added = hvVersion < 91 ? turns : rec[effect].t ? delta : added;
+              added = rec[effect].t ? delta : added;
             }
             // 获取基础、熟练度计算倍率、熟练度，设置及初始化主要数据
             let [duration, base, profRatio, prof, channelingRatio] = getDuration(skill, channeling);
@@ -5890,7 +5844,7 @@
             if (savedEffects[name]) savedEffects[name][effect].channeling ??= channelingRatio;
             if (effects.includes(effect)) continue; // updated directly above
             if (!duration) { console.log('duration undefined saved effect:', effect, savedEffects[effect]) }
-            if (hvVersion >= 91 && savedEffects[effect]) {
+            if (savedEffects[effect]) {
               const turn = (savedEffects[effect].turns??0) * 1;
               if (isNewTurn && !isNaN(turn)) duration = turn + (duration ?? 0);
             }
