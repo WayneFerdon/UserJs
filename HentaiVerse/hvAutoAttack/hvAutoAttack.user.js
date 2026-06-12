@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.10
+// @version      2.91.11
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1392,7 +1392,7 @@
       }
 
       // 迁移2.91.9及之前的权重背景配置
-      if (Object.values(option.weightBackground).some(Array.isArray)) {
+      if (option.weightBackground && Object.values(option.weightBackground).some(Array.isArray)) {
         option.weightBackground = Object.fromEntries(Object.entries(option.weightBackground).map(([k,w])=>[(k*1+9)%10,w[0]]));
       }
 
@@ -1907,7 +1907,7 @@
         '  <h1 style="display:inline;">hvAutoAttack</h1>',
         '  <select name="lang"><option value="0">简体中文</option><option value="1">繁體中文</option><option value="2">English</option></select>',
         (option.optionStandalone ? isIsekai ? '<l0>当前为异世界单独配置</l0><l1>當前為異世界單獨配置</l1><l2>Using Isekai standalone option</l2>' : '<l0>当前为恒定世界单独配置</l0><l1>當前為恆定世界單獨配置</l1><l2>Using Persistent standalone option</l2>' : ''),
-        '<l0>配置版本</l0><l1>配置版本</l1><l2>Option Version</l2><input name="version" type="text" disabled="true">',
+        ' <l0>配置版本</l0><l1>配置版本</l1><l2>Option Version</l2><input name="version" type="text" disabled="true">',
         '</div>',
         '<div class="hvAATablist">',
 
