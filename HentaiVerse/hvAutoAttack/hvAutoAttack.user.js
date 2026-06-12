@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.8
+// @version      2.91.9
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -3684,13 +3684,13 @@
           return switchMaxMin(param, t=>t.isDead ? 0 : 1);
         },
         targetHp(param) {
-          return switchMaxMin(param, t=>Math.floor(func.targetHpDecimal(t) * 100));
+          return switchMaxMin(param, t=>Math.floor(func.targetHpDecimal(param) * 100));
         },
         targetMp(param) {
-          return switchMaxMin(param, t=>Math.floor(func.targetMpDecimal(t) * 100));
+          return switchMaxMin(param, t=>Math.floor(func.targetMpDecimal(param) * 100));
         },
         targetSp(param) {
-          return switchMaxMin(param, t=>Math.floor(func.targetSpDecimal(t) * 100));
+          return switchMaxMin(param, t=>Math.floor(func.targetSpDecimal(param) * 100));
         },
         targetHpDecimal(param) {
           return switchMaxMin(param, t=>t.hpNow / t.hp);
@@ -3778,7 +3778,7 @@
           case 'min':
             return Math.min(...targets.map(defaultResult));
           default:
-            if (param !== undefined) console.warn(`Unknown param ${param} for switchMaxMin, fallback to default.`);
+            if (param !== undefined) console.warn(`Unknown param`, param, `for switchMaxMin, fallback to default.`);
             return defaultResult(targetGetter());
         }
       }
