@@ -3684,13 +3684,13 @@
           return switchMaxMin(param, t=>t.isDead ? 0 : 1);
         },
         targetHp(param) {
-          return switchMaxMin(param, t=>Math.floor(func.targetHpDecimal(param) * 100));
+          return switchMaxMin(param, t=>Math.floor(func.targetHpDecimal() * 100));
         },
         targetMp(param) {
-          return switchMaxMin(param, t=>Math.floor(func.targetMpDecimal(param) * 100));
+          return switchMaxMin(param, t=>Math.floor(func.targetMpDecimal() * 100));
         },
         targetSp(param) {
-          return switchMaxMin(param, t=>Math.floor(func.targetSpDecimal(param) * 100));
+          return switchMaxMin(param, t=>Math.floor(func.targetSpDecimal() * 100));
         },
         targetHpDecimal(param) {
           return switchMaxMin(param, t=>t.hpNow / t.hp);
