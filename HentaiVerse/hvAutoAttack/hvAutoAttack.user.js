@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.7
+// @version      2.91.8
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -4709,8 +4709,7 @@
         arena.enabled = (await updateArena(true)).enabled;
       }
       while (array.length > 0) {
-        id = array.pop() * 1;
-        id = isNaN(id) ? 'gr' : id;
+        id = array.pop();
         if (arena.arrayDone?.includes(id)) {
           id = undefined;
           continue;
@@ -4744,11 +4743,12 @@
       let stamina = getValue('stamina', true);
       [stamina.current, stamina.punish] = await getCurrentStamina();
       stamina.time = time(0);
-      for (let id in staminaCost) {
-        staminaCost[id] *= (isIsekai ? 2 : 1) * (stamina.current >= 60 ? 0.03 : 0.02);
+      for (let idx in staminaCost) {
+        staminaCost[idx] *= (isIsekai ? 2 : 1) * (stamina.current >= 60 ? 0.03 : 0.02);
       }
 
       let query;
+      id = isNaN(id) ? 'gr' : id;
       if (id !== 'gr') {
         query = id >= 105 ? 'rb' : 'ar';
       } else {
