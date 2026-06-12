@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.9
+// @version      2.91.10
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1391,6 +1391,11 @@
         }
       }
 
+      // 迁移2.91.9及之前的权重背景配置
+      if (Object.values(option.weightBackground).some(Array.isArray)) {
+        option.weightBackground = Object.fromEntries(Object.entries(option.weightBackground).map(([k,w])=>[(k*1+9)%10,w[0]]));
+      }
+
       // 迁移2.90.162及之前的targetHp等到targetHpDecimal等
       if (!version.upto(2,90,162)) {
         option = JSON.parse(JSON.stringify(option).replace('targetHp', 'targetHpDecimal').replace('targetMp', 'targetMpDecimal').replace('targetSp', 'targetSpDecimal').replace('DecimalDecimal', 'Decimal'));
@@ -2482,16 +2487,16 @@
         '    <input id="displayWeightBackground" type="checkbox"><label for="displayWeightBackground"><l0>显示优先级背景色</l0><l1>顯示優先級背景色</l1><l2>DIsplay Priority Background Color</l2></label></br>',
         '    <l0>CSS格式或可eval执行的公式（可用&lt;rank&gt;, &lt;all&gt;指代优先级和总优先级数量, &lt;style_x&gt;指代第x个的相同配置值），例如：</l0><l1>CSS格式或可eval執行的公式（可用&lt;rank&gt;, &lt;all&gt;指代優先級和總優先級數量, &lt;style_x&gt;指代第x個的相同配置值）：例如</l1><l2>CSS or eval executable formula(use &lt;rank&gt; and &lt;all&gt; to refer to priority rank and total rank count, &lt;style_x&gt; to refer to the same option value of option No.x)Such as: </l2><br>`hsl(${Math.round(240*&lt;rank&gt;/Math.max(1,&lt;all&gt;-1))}deg 50% 50%)`<br>',
         '    <div class="hvAATable" style="grid-template-columns: repeat(1, 0.05fr 1fr);width:100%;">',
-        '    <div>&nbsp;&nbsp;1.</div><div><input class="customizeInput" name="weightBackground_1" type="text"></div>',
-        '    <div>&nbsp;&nbsp;2.</div><div><input class="customizeInput" name="weightBackground_2" type="text"></div>',
-        '    <div>&nbsp;&nbsp;3.</div><div><input class="customizeInput" name="weightBackground_3" type="text"></div>',
-        '    <div>&nbsp;&nbsp;4.</div><div><input class="customizeInput" name="weightBackground_4" type="text"></div>',
-        '    <div>&nbsp;&nbsp;5.</div><div><input class="customizeInput" name="weightBackground_5" type="text"></div>',
-        '    <div>&nbsp;&nbsp;6.</div><div><input class="customizeInput" name="weightBackground_6" type="text"></div>',
-        '    <div>&nbsp;&nbsp;7.</div><div><input class="customizeInput" name="weightBackground_7" type="text"></div>',
-        '    <div>&nbsp;&nbsp;8.</div><div><input class="customizeInput" name="weightBackground_8" type="text"></div>',
-        '    <div>&nbsp;&nbsp;9.</div><div><input class="customizeInput" name="weightBackground_9" type="text"></div>',
-        '    <div>10.</div><div><input class="customizeInput" name="weightBackground_0" type="text"></div>',
+        '    <div>&nbsp;&nbsp;1.</div><div><input name="weightBackground_0" type="text"></div>',
+        '    <div>&nbsp;&nbsp;2.</div><div><input name="weightBackground_1" type="text"></div>',
+        '    <div>&nbsp;&nbsp;3.</div><div><input name="weightBackground_2" type="text"></div>',
+        '    <div>&nbsp;&nbsp;4.</div><div><input name="weightBackground_3" type="text"></div>',
+        '    <div>&nbsp;&nbsp;5.</div><div><input name="weightBackground_4" type="text"></div>',
+        '    <div>&nbsp;&nbsp;6.</div><div><input name="weightBackground_5" type="text"></div>',
+        '    <div>&nbsp;&nbsp;7.</div><div><input name="weightBackground_6" type="text"></div>',
+        '    <div>&nbsp;&nbsp;8.</div><div><input name="weightBackground_7" type="text"></div>',
+        '    <div>&nbsp;&nbsp;9.</div><div><input name="weightBackground_8" type="text"></div>',
+        '    <div>10.</div><div><input name="weightBackground_9" type="text"></div>',
         '  </div>',
         '  </div>',
         '  <div>PS. <l0>如果你对各Buff权重有特别见解，请务必</l0><l1>如果你對各Buff權重有特別見解，請務必</l1><l2>If you have any suggestions, please </l2><a class="hvAAGoto" name="hvAATab-Feedback"><l0>告诉我</l0><l1>告訴我</l1><l2>let me know</l2></a>.<br><l0>参考公式为：</l0><l1>參考公式為：</l1><l2>Basic Weight Calculation as: </l2>PW(X) = Log10(<br>HP/MaxHPOnField/(1+CentralAttackDamageExtraRatio)<br>  *[HPActualEffectivenessRate:∏(1-debuff),debuff=Im|PA|Bl|Co|Dr|MN|St]<br>  /[DMGActualEffectivenessRate:∏(1-debuff),debuff=We|Bl|Slo|Si|Sl|Co|Dr|MN|St]<br>)</div>',
@@ -2752,7 +2757,7 @@
           gE('.customizeBox').style.zIndex = 20;
           gE('.customizeBox').style.top = `${position.bottom - bodyPosition.top}px`;
           gE('.customizeBox').style.left = `${position.left - bodyPosition.left}px`;
-          gE('.customizeBox').style.cssText += `display: block; height: ${gE('.customizeGroup', 'all', g().customizeTarget).length * 30 + 30}px;`
+          gE('.customizeBox').style.cssText += `display: block; height: ${gE('.customizeGroup', 'all', g().customizeTarget).length * 30 + 60}px;`
         };
         // 标签页-主要选项
         gE('input[name="pauseHotkeyStr"]', optionBox).onkeyup = function (e) {
@@ -3096,6 +3101,7 @@
               return value;
           }
         }
+
         for (const input of inputs) {
           [name, type, placeholder] = [input.name || input.id, input.type, input.placeholder];
           switch(input.className) {
@@ -3132,19 +3138,18 @@
         const customize = gE('.customize', 'all', optionBox);
         for (i = 0; i < customize.length; i++) {
           name = customize[i].getAttribute('name');
-          if (name in option) {
-            for (j in option[name]) {
-              const group = customize[i].appendChild(cE('div'));
-              group.className = 'customizeGroup';
-              group.innerHTML = `${j * 1 + 1}. `;
-              for (k = 0; k < option[name][j].length; k++) {
-                const input = group.appendChild(cE('input'));
-                input.type = 'text';
-                input.className = 'customizeInput';
-                input.name = `${name}_${j}`;
-                input.value = option[name][j][k];
-                customizeInputAutoFit(input);
-              }
+          if (!(name in option)) continue;
+          for (j in option[name]) {
+            const group = customize[i].appendChild(cE('div'));
+            group.className = 'customizeGroup';
+            group.innerHTML = `${j * 1 + 1}. `;
+            for (k = 0; k < option[name][j].length; k++) {
+              const input = group.appendChild(cE('input'));
+              input.type = 'text';
+              input.className = 'customizeInput';
+              input.name = `${name}_${j}`;
+              input.value = option[name][j][k];
+              customizeInputAutoFit(input);
             }
           }
         }
@@ -6653,11 +6658,9 @@
       const option = g().option??{};
       const weightBG = option.weightBackground;
       if (weightBG) {
-        status.forEach(s => {
-          const rank = weights.indexOf(s.finWeight);
-          let colorText = (weightBG[rank + 1] ?? [])[0];
-          colorTextList[rank] = colorText;
-        });
+        for (let i = 0; i < weights.length; i++) {
+          colorTextList[i] = weightBG[i];
+        }
       }
       status.forEach(s => {
         const rank = weights.indexOf(s.finWeight);
@@ -6670,7 +6673,7 @@
           let remainAttemp = 10; // 避免无穷递归
           while (remainAttemp > 0 && colorText && colorText.indexOf(`<style_`) !== -1) {
             for (let i = 0; i < colorTextList.length; i++) {
-              colorText = colorText.replace(`<style_${i + 1}>`, colorTextList[i]);
+              colorText = colorText.replace(`<style_${i+1}>`, colorTextList[i]);
             }
             remainAttemp--;
           }
