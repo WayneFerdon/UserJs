@@ -825,7 +825,6 @@
     }
 
     function checkIsHV() {
-      console.log('Blocking requests for 157 seconds due to excessive request rate'.replace(/Blocking requests for (\d+) seconds due to excessive request rate/, (...args) => args[0].replace(args[1], '111')));
       if (window.location.host !== 'e-hentai.org') {
         if (isMaintaining) {
           // 维护中? 过一个小时再刷新
