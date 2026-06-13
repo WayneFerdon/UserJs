@@ -411,10 +411,10 @@
         multiCharOperators: ['>=', '<=', '==', '!=', '&&', '||', '**'],
 
         test: {
-          isNumber: str=>/[0-9]/.test(str),
-          number: str=>/[.0-9]/.test(str),
-          isParam: str=>/[a-zA-Z_'",{}#]/.test(str),
-          param: str=>/[.a-zA-Z_'",{}#^~0-9]/.test(str),
+          isNumber: str => /[0-9]/.test(str),
+          number: str => /[.0-9]/.test(str),
+          isParam: str => /[a-zA-Z_'",{}#]/.test(str),
+          param: str => /[.a-zA-Z_'",{}#^~0-9]/.test(str),
         },
 
         isOperator: function (token) {
@@ -825,20 +825,25 @@
     }
 
     function checkIsHV() {
+      console.log('Blocking requests for 157 seconds due to excessive request rate'.replace(/Blocking requests for (\d+) seconds due to excessive request rate/, (...args) => args[0].replace(args[1], '111')));
       if (window.location.host !== 'e-hentai.org') {
         if (isMaintaining) {
           // 维护中? 过一个小时再刷新
-          (async function onwait() {
-            let remain = document.body.innerText?.match(/Blocking requests for (\d+) seconds due to excessive request rate/);
-            if (remain && remain[1]) remain = remain[1]*_1s;
-            remain ??= _1h
+          (async function onwait() { try {
+            const body = document.body;
+            const blockTip = /Blocking requests for (\d+) seconds due to excessive request rate/;
+            let blocked = body.innerText?.match(blockTip)?.[1] * _1s;
+            let remain = isNaN(blocked) ? _1h : blocked;
             await until(() => {
               document.title = `[M]${pad(Math.floor(remain/_1m))}:${pad(Math.floor((remain%_1m)/_1s))}`;
+              try { if (!isNaN(blocked)) {
+                body.innerText = body.innerText.replace(blockTip, (...args) => args[0].replace(args[1], remain));
+              } } catch (err) { console.log(err) };
               remain-=_1s;
               return remain <= 0;
             }, _1s);
             goto();
-          })();
+          } catch (err) { console.error(err)} })();
           return true;
         }
         setValue('url', window.location.origin);
@@ -955,7 +960,7 @@
       // if no answer selected
       const answers = ['aj', 'fs', 'pp', 'ra', 'rd', 'ts'];
       answers.sort(Math.random);
-      const answer = `riddlesubmit=Submit+Answer` + answers.slice(0, Math.max(0, Math.min(6, option.riddleAnswerChoose))).map(ans=>`&riddleanswer[]=${ans}`).join('');
+      const answer = `riddlesubmit=Submit+Answer` + answers.slice(0, Math.max(0, Math.min(6, option.riddleAnswerChoose))).map(ans => `&riddleanswer[]=${ans}`).join('');
       const battle = gE('#battle_main', $doc(await $ajax.fetch(window.location.href, answer)));
       if (!battle) {
         console.error('ERROR: Failed fetch submit.');
@@ -1181,7 +1186,7 @@
     function goto() { // 前进
       window.location.href = window.location.search ? window.location.pathname + window.location.search : window.location.href;
       setTimeout(goto, 5000);
-      setTimeout(()=>{ window.location.href = window.location.href }, 10000);
+      setTimeout(() => { window.location.href = window.location.href }, 10000);
       return true;
     }
 
@@ -1210,7 +1215,7 @@
     } catch (err) { console.error(err); }}
 
     async function waitPause(ms) { try {
-      return await until(()=>!getValue('disabled'), ms);
+      return await until(() => !getValue('disabled'), ms);
     } catch (err) { console.error(err); }}
 
     function setTimeoutOrExecute(resolve, ms) {
@@ -1342,15 +1347,15 @@
         return args[0] instanceof Version ? args[0].ver : args.join('.');
       }
       Version.compare ??= function(...args) {
-        const seg = args.slice(0, 2).map(arg=> {
+        const seg = args.slice(0, 2).map(arg => {
           if (typeof arg === 'number') arg = String(arg);
           if (arg instanceof Version) arg = arg.ver;
           return arg.split('.');
         });
-        const maxLen = Math.max(...seg.map(s=>s.length));
+        const maxLen = Math.max(...seg.map(s => s.length));
 
         for (let i = 0; i < maxLen; i++) {
-          const si = seg.map(s=>s[i]);
+          const si = seg.map(s => s[i]);
 
           const isEmpty = si.map(s => [undefined, ''].includes(s));
 
@@ -1368,7 +1373,7 @@
             continue;
           }
           const trim = si.map(s => s.replace(/^0+/, '') || '0');
-          const length = trim.map(t=>t.length);
+          const length = trim.map(t => t.length);
           if (length[0] !== length[1]) return length[0] > length[1] ? 1 : -1;
           for (let i = 0; i < length[0]; i++) {
             if (trim[0][i] !== trim[1][i]) return trim[0][i] > trim[1][i] ? 1 : -1;
@@ -1393,7 +1398,7 @@
 
       // 迁移2.91.9及之前的权重背景配置
       if (option.weightBackground && Object.values(option.weightBackground).some(Array.isArray)) {
-        option.weightBackground = Object.fromEntries(Object.entries(option.weightBackground).map(([k,w])=>[(k*1+9)%10,w[0]]));
+        option.weightBackground = Object.fromEntries(Object.entries(option.weightBackground).map(([k,w]) => [(k*1+9)%10,w[0]]));
       }
 
       // 迁移2.90.162及之前的targetHp等到targetHpDecimal等
@@ -1775,7 +1780,7 @@
         '#hvAABox2{position:absolute;left:1075px;padding-top: 6px;}',
         '.hvAALog{font-size:20px;}',
         '.hvAAPauseUI{top:30px;left:1246px;position:absolute;z-index:9999; width:80px}',
-        '.hvAAButton{top:5px;left:' + ((isMaintaining||isEquipDetail)?'0':'1255') + 'px;position:absolute;z-index:9999;cursor:pointer;width:40px;height:24px;background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAADi0lEQVRIiZVWPYgUZxj+dvGEk7vsNdPYCMul2J15n+d991PIMkWmOEyMyRW2FoJIUojYp5ADFbZJkyISY3EqKGpgz+Ma4bqrUojICaIsKGIXSSJcsZuD3RT3zWZucquXDwYG5n2f9/d5vnFuHwfAZySfAXgN4DXJzTiOj+3H90OnkmXZAe/9FMm3JJ8AuBGepyRfle2yLDvgnKt8EDVJkq8B3DGzjve+1m63p0n2AVzJbUh2SG455yre+5qZ/aCq983sxMfATwHYJvlCVYckHwFYVdURgO8LAS6RHJJcM7N1VR0CeE5yAGBxT3AR+QrA3wA20tQOq+pFkgOS90Tk85J51Xs9qaorqjoAcC6KohmSGyQHcRx/kbdv7AHgDskXaWqH0zSddc5Voyia2SOXapqmswsLvpam6ez8/Pwn+YcoimYAvARw04XZ5N8qZtZR1aGqXnTOVSd0cRd42U5EzqvqSFWX2u32tPd+yjnnXNiCGslHJAf7ybwM7r2vAdgWkYdZls157w+NK/DeT7Xb7WkAqyTvlZHjOD5oxgtmtqrKLsmze1VJsquqKwsLO9vnnKvkJHpLsq+qo/JAd8BtneTvqvqTiPwoIu9EZKUUpGpmi2Y2UtU+yTdJkhx1JJ8FEl0pruK/TrwA4F2r1WrkgI1G4wjJP0XkdLF9WaZzZnZZVa8GMj5xgf43JvXczFZbLb1ebgnJn0nenjQbEVkG0JsUYOykyi6Aa+XoQTJuTRr8OADJzVBOh+SlckYkz5L8Q0TquXOj0fhURN6r6pkSeAXAUsDaJPnYxXF8jOQrklskh97ryZJTVURWAPwF4DqAX0TkvRl/zTKdK2aeJMnxICFbAHrNZtOKVVdIrrVa2t1jz6sicprkbQC3VPVMGTzMpQvgQY63i8lBFddVdVCk/6TZlMFzopFci+P44H+YHCR3CODc/wUvDPY7ksMg9buZrKr3ATwvyoT3vrafzPP3er1eA9Azs7tjJhcqOBHkeSOKohkROR9K7prZYqnnlSRJjofhb4vIt/V6vUbyN1Xtt1qtb1zpZqs45xyAxXAnvCQ5FJGHqrpiZiMzu5xnHlZxCOABybXw3gvgp/Zq3/gA+BLATVVdyrJsbods2lfVq7lN4crMtapjZndD5pPBixWFLTgU7uQ3AJ6KyLKILAdy9sp25bZMBC//JSRJcjQIYg9Aj+TjZrNp+/mb+Ad711sdZZ1k/QAAAABJRU5ErkJggg==) center no-repeat transparent;}',
+        '.hvAAButton{top:5px;left:' + ((isMaintaining || isEquipDetail)?'0':'1255') + 'px;position:absolute;z-index:9999;cursor:pointer;width:40px;height:24px;background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAADi0lEQVRIiZVWPYgUZxj+dvGEk7vsNdPYCMul2J15n+d991PIMkWmOEyMyRW2FoJIUojYp5ADFbZJkyISY3EqKGpgz+Ma4bqrUojICaIsKGIXSSJcsZuD3RT3zWZucquXDwYG5n2f9/d5vnFuHwfAZySfAXgN4DXJzTiOj+3H90OnkmXZAe/9FMm3JJ8AuBGepyRfle2yLDvgnKt8EDVJkq8B3DGzjve+1m63p0n2AVzJbUh2SG455yre+5qZ/aCq983sxMfATwHYJvlCVYckHwFYVdURgO8LAS6RHJJcM7N1VR0CeE5yAGBxT3AR+QrA3wA20tQOq+pFkgOS90Tk85J51Xs9qaorqjoAcC6KohmSGyQHcRx/kbdv7AHgDskXaWqH0zSddc5Voyia2SOXapqmswsLvpam6ez8/Pwn+YcoimYAvARw04XZ5N8qZtZR1aGqXnTOVSd0cRd42U5EzqvqSFWX2u32tPd+yjnnXNiCGslHJAf7ybwM7r2vAdgWkYdZls157w+NK/DeT7Xb7WkAqyTvlZHjOD5oxgtmtqrKLsmze1VJsquqKwsLO9vnnKvkJHpLsq+qo/JAd8BtneTvqvqTiPwoIu9EZKUUpGpmi2Y2UtU+yTdJkhx1JJ8FEl0pruK/TrwA4F2r1WrkgI1G4wjJP0XkdLF9WaZzZnZZVa8GMj5xgf43JvXczFZbLb1ebgnJn0nenjQbEVkG0JsUYOykyi6Aa+XoQTJuTRr8OADJzVBOh+SlckYkz5L8Q0TquXOj0fhURN6r6pkSeAXAUsDaJPnYxXF8jOQrklskh97ryZJTVURWAPwF4DqAX0TkvRl/zTKdK2aeJMnxICFbAHrNZtOKVVdIrrVa2t1jz6sicprkbQC3VPVMGTzMpQvgQY63i8lBFddVdVCk/6TZlMFzopFci+P44H+YHCR3CODc/wUvDPY7ksMg9buZrKr3ATwvyoT3vrafzPP3er1eA9Azs7tjJhcqOBHkeSOKohkROR9K7prZYqnnlSRJjofhb4vIt/V6vUbyN1Xtt1qtb1zpZqs45xyAxXAnvCQ5FJGHqrpiZiMzu5xnHlZxCOABybXw3gvgp/Zq3/gA+BLATVVdyrJsbods2lfVq7lN4crMtapjZndD5pPBixWFLTgU7uQ3AJ6KyLKILAdy9sp25bZMBC//JSRJcjQIYg9Aj+TjZrNp+/mb+Ad711sdZZ1k/QAAAABJRU5ErkJggg==) center no-repeat transparent;}',
         '#hvAABox{left:0;top:50px;font-size:16px!important;z-index:4;width:1238px;height:650px;position:absolute;text-align:left;background-color:#E3E0D1;border:1px solid #000;border-radius:10px;font-family:"Microsoft Yahei";}',
         '.hvAATablist{position:relative;left:14px;width:calc(100% - 55px);height:calc(100% - 85px);}',
         '.hvAATabmenu{position:absolute;left:-9px;}',
@@ -2987,7 +2992,7 @@
             }
             switch (type) {
               case 'number':
-                value = (value||(value===0)) ? value * 1 : '';
+                value = (value || (value === 0)) ? value * 1 : '';
                 if (isNaN(value)) continue;
                 break;
               case 'text': case 'hidden':
@@ -3023,7 +3028,7 @@
           const inputs = gE('.hvAAQuickSite input[type="text"], .hvAAQuickSite input[type="number"]', 'all', optionBox);
           if (inputs.length) _option.quickSite = [];
           for (let i = 0; i < inputs.length; i += 3) {
-            const [fav, name, url] = Array.from(inputs).slice(i,i+3).map(input=>input.value);
+            const [fav, name, url] = Array.from(inputs).slice(i,i+3).map(input => input.value);
             if (name === '') continue;
             _option.quickSite.push({ fav, name, url });
           }
@@ -3111,10 +3116,10 @@
           [array, value] = [name.split('_'), undefined];
           if (array.length === 1) {
             value = formatValue(option[name], placeholder);
-            if (value||value===0) option[name] = value;
+            if (value || value === 0) option[name] = value;
           } else if (input.className !== 'hvAACustomize') {
             value = formatValue(option[array[0]]?.[array[1]], placeholder);
-            if (value||value===0) (option[array[0]] ??= {})[array[1]] = value;
+            if (value || value === 0) (option[array[0]] ??= {})[array[1]] = value;
           }
           if (type !== 'checkbox' && ![placeholder * 1, placeholder].includes(value)) {
             value = value === undefined ? '' : value;
@@ -3174,7 +3179,7 @@
     }
 
     function customizeInputAutoFit(input) {
-      if (input.type === 'select-one' || input.disabled && input.name!=='version') return;
+      if (input.type === 'select-one' || input.disabled && input.name !== 'version') return;
       customizerInpuFit(input);
       input.addEventListener('input', function(event) {
         customizerInpuFit(input);
@@ -3505,7 +3510,7 @@
     }
 
     function returnValueGetter(paramResultsGetter, targetGetter) {
-      let minmaxModes = returnValueGetter.prototype.minmaxModes ??= (()=> {
+      let minmaxModes = returnValueGetter.prototype.minmaxModes ??= (() => {
         const modes = ['min', 'max', 'count', 'sum'];
         const flags = ['a', 'ag', 'g'];
         return flags.reduce((result, f) => result.concat(modes.map(m => f + m)), []);
@@ -3621,16 +3626,16 @@
         targetBuffTurn(...img) {
           const getBuffTurn = (t, i) => getBuffTurnFromImg(getBuff(imgArray2img(i), getMonsterID(t)));
           let param = minmaxModes.includes(img[0]) ? img.shift() : undefined;
-          return switchMaxMin(param, t=>getBuffTurn(t, img));
+          return switchMaxMin(param, t => getBuffTurn(t, img));
         },
         targetOrder(param) {
-          return switchMaxMin(param, t=>t.order);
+          return switchMaxMin(param, t => t.order);
         },
         targetWeight(param) {
-          return switchMaxMin(param, t=>t.finWeight);
+          return switchMaxMin(param, t => t.finWeight);
         },
         targetRank(param) {
-          return switchMaxMin(param, t=>Object.entries(g().battle.monsterStatus).find(([k, v]) => v.order === t.order)[0] * 1);
+          return switchMaxMin(param, t => Object.entries(g().battle.monsterStatus).find(([k, v]) => v.order === t.order)[0] * 1);
         },
         targetName(param) {
           param ??= targetGetter();
@@ -3638,7 +3643,7 @@
           return gE(`.btm3>div>div`, mon).innerText.replace(' ', '_');
         },
         targetBossType(param) {
-          return switchMaxMin(param, t=> {
+          return switchMaxMin(param, t => {
             const name = func.targetName(t);
             switch(name.replace('_', ' ')) {
               case 'Manbearpig':
@@ -3686,29 +3691,29 @@
             }});
         },
         targetIsAlive(param) {
-          return switchMaxMin(param, t=>t.isDead ? 0 : 1);
+          return switchMaxMin(param, t => t.isDead ? 0 : 1);
         },
         targetHp(param) {
-          return switchMaxMin(param, t=>Math.floor(func.targetHpDecimal() * 100));
+          return switchMaxMin(param, t => Math.floor(func.targetHpDecimal() * 100));
         },
         targetMp(param) {
-          return switchMaxMin(param, t=>Math.floor(func.targetMpDecimal() * 100));
+          return switchMaxMin(param, t => Math.floor(func.targetMpDecimal() * 100));
         },
         targetSp(param) {
-          return switchMaxMin(param, t=>Math.floor(func.targetSpDecimal() * 100));
+          return switchMaxMin(param, t => Math.floor(func.targetSpDecimal() * 100));
         },
         targetHpDecimal(param) {
-          return switchMaxMin(param, t=>t.hpNow / t.hp);
+          return switchMaxMin(param, t => t.hpNow / t.hp);
         },
         targetMpDecimal(param) {
-          return switchMaxMin(param, t=>t.mpNow);
+          return switchMaxMin(param, t => t.mpNow);
         },
         targetSpDecimal(param) {
-          return switchMaxMin(param, t=>t.spNow);
+          return switchMaxMin(param, t => t.spNow);
         },
         targetGroup(...args) {
           const groupMode = args.shift();
-          const numArgs = args.map(arg=> arg === '' ? -1 : parseInt(arg));
+          const numArgs = args.map(arg => arg === '' ? -1 : parseInt(arg));
           if (numArgs.some(isNaN)) throw new Error(`Error args for targetGroup, args: ${args}.`);
           const currentTarget = targetGetter();
           const targets = g().battle.monsterStatus;
@@ -3732,7 +3737,7 @@
                 // 对称范围. 只有单参数的 `targetGroup_r_[r1]` 时会是该情况，双参数的`targetGroup_r_[r1]_`时range2在param split后赋值为 ''，然后在numArgs中赋值为-1
                 rangeDown ??= rangeUp;
                 // >= 10 的，视作反方向。即 10 <=> -1 <=> ''(省略但有_分割)
-                [rangeUp, rangeDown] = [rangeUp, rangeDown].map(r=> r >= 10 ? 9-r : r );
+                [rangeUp, rangeDown] = [rangeUp, rangeDown].map(r => r >= 10 ? 9 - r : r );
                 const center = currentTarget.order;
                 const [startOrder, endOrder] = [center-rangeUp, center+rangeDown];
                 currentGroup = targets.filter(t => t.order >= startOrder && t.order <= endOrder);
@@ -3748,7 +3753,7 @@
                   endOrder = 10;
                 }
                 // 检查当前评估的怪物是否在区间内
-                if (groupMode!=='oa' && (currentTarget.order < startOrder || currentTarget.order > endOrder)) {
+                if (groupMode !== 'oa' && (currentTarget.order < startOrder || currentTarget.order > endOrder)) {
                   currentGroup = null;
                 } else {
                   // 检查该区间内是否有活怪带有此 Buff
@@ -3894,14 +3899,14 @@
         }
       }).replace('_1h', '_onehanded').replace('_2h', '_twohanded');
       isDebug = k.match(/^@/);
-      result = $RPN.evaluate(k.replace(/^@/, ''), (str)=>returnValue(str, isDebug));
+      result = $RPN.evaluate(k.replace(/^@/, ''), str => returnValue(str, isDebug));
       if (isDebug) console.log([k], result, returnValue.paramResultsGetter());
       return result;
     }
 
     function resolveRPNFormula(formula, target) {
       let paramResults={};
-      const returnValue = returnValueGetter(() => paramResults, ()=>target);
+      const returnValue = returnValueGetter(() => paramResults, () => target);
       return handleRPNFormula(formula, returnValue);
     }
 
@@ -3911,8 +3916,8 @@
       if (!parms || !Object.keys(parms).length) {
         return targets[0];
       }
-      const returnValue = returnValueGetter(() => paramResults, ()=>target);
-      for (i in parms) { for (target of targets.filter(t=>!t.isDead)) {
+      const returnValue = returnValueGetter(() => paramResults, () => target);
+      for (i in parms) { for (target of targets.filter(t => !t.isDead)) {
         paramResults={};
         let parmResult = true;
         for (j = 0; j < parms[i].length; j++) {
@@ -4232,7 +4237,7 @@
         (async () => { try {
           let perk = stamina.perk;
           if (perk && !Array.isArray(perk)) {
-            perk = Object.keys(perk).map(id=>id*1);
+            perk = Object.keys(perk).map(id => id*1);
           }
           if (!perk?.length) {
             perk = undefined;
@@ -4416,7 +4421,7 @@
         return gE(`#e${id}`, after) ? gE('.lc', eqp).childNodes[2].textContent : undefined;
       } catch (err) { console.error(err); }}));
 
-      eqps = eqps.filter(e=>e);
+      eqps = eqps.filter(e => e);
       if (eqps.length) {
         console.log('equips need repair:\n', eqps.join('\n '));
         switch(option.lang * 1) {
@@ -4618,7 +4623,7 @@
     async function onEncounter() { try {
       const option = g().option??{};
       await until( // perhaps network connect not available
-        async ()=>await $ajax.insert(location) && (!option.checkURLBeforeNewRound || await $ajax.insert(option.checkURLBeforeNewRound)),
+        async () => await $ajax.insert(location) && (!option.checkURLBeforeNewRound || await $ajax.insert(option.checkURLBeforeNewRound)),
         option.checkURLBeforeNewRoundRetry
       );
       $async.logSwitchStrict('updateEncounter', true);
@@ -4780,9 +4785,9 @@
       let token = `&postoken=${gE('#initform>input[name="postoken"]', $doc(await $ajax.insert(query))).value}`;
       await waitPause();
       writeArenaStart();
-      await until(async ()=>!option.checkURLBeforeNewRound || await $ajax.insert(option.checkURLBeforeNewRound), option.checkURLBeforeNewRoundRetry);
+      await until(async () => !option.checkURLBeforeNewRound || await $ajax.insert(option.checkURLBeforeNewRound), option.checkURLBeforeNewRoundRetry);
       // await asyncCheckEnchant(id === 'gr');
-      await until(async ()=>await $ajax.insert(query, `initid=${id === 'gr' ? 1 : id}${token}`), option.checkURLBeforeNewRoundRetry);
+      await until(async () => await $ajax.insert(query, `initid=${id === 'gr' ? 1 : id}${token}`), option.checkURLBeforeNewRoundRetry);
       stamina.lastCost = id === 'gr' ? undefined : cost;
       setValue('stamina', stamina);
       if (option.altBattleFirst && await $ajax.insert(location.replace('hentaiverse.org', 'alt.hentaiverse.org').replace('alt.alt', 'alt'))) {
@@ -4982,10 +4987,10 @@
         return;
       }
       const taskList = {
-        'Cure': ()=>autoRecover(true),
+        'Cure': () => autoRecover(true),
         'Pause': autoPause,
-        'SSDisable': ()=>autoSS(true),
-        'Rec': ()=>autoRecover(false),
+        'SSDisable': () => autoSS(true),
+        'Rec': () => autoRecover(false),
         'Scroll': useScroll,
         'Infus': useInfusions,
         'Def': autoDefend,
@@ -4993,7 +4998,7 @@
         'Buff': useBuffSkill,
         'Debuff': useDeSkill,
         'Focus': autoFocus,
-        'SS': ()=>autoSS(false),
+        'SS': () => autoSS(false),
         'Skill': autoSkill,
         'Atk': attack,
       };
@@ -5149,7 +5154,7 @@
     async function checkResponsive() {
       const option = g().option??{};
       const battleUnresponsive = {
-        'Alert': { method: ()=>setAlarm('BattleUnresponsive') },
+        'Alert': { method: () => setAlarm('BattleUnresponsive') },
         'Reload': { method: goto },
         'Alt': { method: gotoAlt }
       }
@@ -5247,7 +5252,7 @@
           let url = option.checkURLBeforeNewRound;
           if (url) {
             lastResponsive = Infinity;
-            await until(async ()=>{ try {
+            await until(async () => { try {
               await waitPause();
               return await $ajax.insert(url,undefined,undefined,{},{},true);
             } catch (err) { console.error('Connect failed:', url) }}, option.checkURLBeforeNewRoundRetry*_1s);
@@ -5338,7 +5343,7 @@
          getMonsterID, getMonster, getMonster, getBuff,
          getValue, setValue, delValue,
          getLocal, setLocal, delLocal,
-         gE, cE, Version].map(f=>f.toString()).join(';')};
+         gE, cE, Version].map(f => f.toString()).join(';')};
       `;
       gE('head').appendChild(fakeApiCall);
       const fakeApiResponse = cE('script');
@@ -5368,7 +5373,7 @@
       if (!(typeof GM_getValue === 'undefined' ? debuffAutoFill : option.debuffAutoFill)) return;
       let battle = getValue('battle', true);
       if (!battle?.monsterStatus) return;
-      if (battle.monsterStatus.map(m=>getMonster(getMonsterID(m))).filter(mon=>mon===null).length) {
+      if (battle.monsterStatus.map(m => getMonster(getMonsterID(m))).filter(mon => mon === null).length) {
         fixMonsterStatus();
         battle = getValue('battle', true);
       }
@@ -5732,7 +5737,7 @@
     }
 
     async function loadUnsafeWindowBattle() { try {
-      unsafeWindow.battle = await until(()=>new unsafeWindow.Battle(), 300);
+      unsafeWindow.battle = await until(() => new unsafeWindow.Battle(), 300);
       unsafeWindow.battle.clear_infopane();
     } catch (err) { console.error(err); }}
 
@@ -5935,7 +5940,7 @@
           unknown = Array.from(unknown).filter(buff => {
             const img = buff.src.match(/\/y\/e\/(.*)\.png/)[1];
             return !(Object.keys(known).includes(img));
-          }).map(buff=>`${buff.getAttribute('onmouseover').match(/^battle.set_infopane_effect\('(.+)', *'.*',.+\)/)[1]}: ${buff.src.match(/\/y\/e\/(.*)\.png/)[1]}`);
+          }).map(buff => `${buff.getAttribute('onmouseover').match(/^battle.set_infopane_effect\('(.+)', *'.*',.+\)/)[1]}: ${buff.src.match(/\/y\/e\/(.*)\.png/)[1]}`);
           if (unknown.length) {
             console.log('unsupported buff weight:', unknown);
           }
@@ -6456,7 +6461,7 @@
         return false;
       }
       const imgs = gE('img', 'all', gE(monsterStateKeys.buffs, getMonster(id)));
-      const buffs = Object.fromEntries(Array.from(imgs).map(img=> [img.src.match(/\/y\/e\/(.*)\.png/)[1], img]));
+      const buffs = Object.fromEntries(Array.from(imgs).map(img => [img.src.match(/\/y\/e\/(.*)\.png/)[1], img]));
       // 已有buff小于6个
       // 未开启debuff失败警告
       // buff剩余持续时间大于等于警报时间
@@ -6494,8 +6499,8 @@
       let range = g().fightingStyle === '1' ? 3 : 1;
       const option = g().option??{};
       const monsters = g().battle.monsterStatus;
-      let attackStatusOrder = option.attackStatusOrderValue?.split(',').map(x=>x*1) ?? [];
-      attackStatusOrder = attackStatusOrder.concat([0,6,5,1,2,4,3].filter(x=> !(attackStatusOrder.includes(x))));
+      let attackStatusOrder = option.attackStatusOrderValue?.split(',').map(ord => ord*1) ?? [];
+      attackStatusOrder = attackStatusOrder.concat([0,6,5,1,2,4,3].filter(ord => !(attackStatusOrder.includes(ord))));
       if (option.attackStatusSwitch) {
         for (const status of attackStatusOrder) {
           if (!option.attackStatusSwitch[status]) continue;
