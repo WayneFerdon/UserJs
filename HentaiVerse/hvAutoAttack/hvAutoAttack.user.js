@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.11
+// @version      2.91.12
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1177,9 +1177,28 @@
       return newArr;
     }
 
-    function splitOrders(orderValue, defaultOrder) {
-      const order = orderValue?.split(',') ?? [];
-      return unique(order.concat(defaultOrder ?? []));
+    function object2Order(orderValue, ...args) {
+      switch (typeof orderValue) {
+        case 'string':
+          return orderValue?.split(',') ?? [];
+        case 'number':
+        case 'boolean':
+          return [orderValue];
+        case 'function':
+          return object2Order(orderValue(...args));
+        case 'object':
+        case 'undefined':
+          if (!orderValue) return []; // null or undefined
+          if (Array.isArray(orderValue)) return orderValue;
+          break;
+        default:
+          break;
+      }
+      throw new Error('Unsupported typeof orderValue:', orderValue, typeof orderValue);
+    }
+
+    function splitOrders(orderValue, defaultOrder, ...args) {
+      return unique(object2Order(orderValue, ...args).concat(defaultOrder ?? []).map(v=>isNaN(v*1)?v:v*1));
     }
 
     function goto() { // 前进
@@ -2851,7 +2870,7 @@
           // 标签页-其他技能
           '.skillOrder': 'name="skillOrderValue"',
           // 标签页-,
-          '.infusionOrder': 'name = "infusionOrderName"',
+          '.infusionOrder': 'name="infusionOrderName"',
         }
         const isGetOrderFromId = ['.buffSkillOrder', '.debuffSkillOrder', '.debuffSkillOrderAll', '.skillOrder', '.infusionOrder'];
         for (let ui in orderValues) {
@@ -6498,10 +6517,8 @@
       let range = g().fightingStyle === '1' ? 3 : 1;
       const option = g().option??{};
       const monsters = g().battle.monsterStatus;
-      let attackStatusOrder = option.attackStatusOrderValue?.split(',').map(ord => ord*1) ?? [];
-      attackStatusOrder = attackStatusOrder.concat([0,6,5,1,2,4,3].filter(ord => !(attackStatusOrder.includes(ord))));
       if (option.attackStatusSwitch) {
-        for (const status of attackStatusOrder) {
+        for (const status of splitOrders(option.attackStatusOrderValue, [0,6,5,1,2,4,3])) {
           if (!option.attackStatusSwitch[status]) continue;
           const current = g().attackStatusCurrent;
           g('attackStatusCurrent', status);
