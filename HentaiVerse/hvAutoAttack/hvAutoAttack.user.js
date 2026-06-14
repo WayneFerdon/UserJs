@@ -2989,13 +2989,13 @@
         }
         gE('.hvAADefault', optionBox).onclick = function () {
           if (getOptionDiff() && !alertDiffs('有未保存的选项，是否仍要设置为默认值', '有未保存的選項，是否仍要設置為默認值', 'Unsaved changes detected, continue to set options as default')) {
-             return;
+            return;
           }
           loadOptionUIData({});
         };
         gE('.hvAAReset', optionBox).onclick = function () {
           if (!alertDiffs('是否撤销未保存的更改', '是否撤銷未保存的更改', 'Whether to revert unsaved changes')) {
-             return;
+            return;
           }
           loadOptionUIData(option);
         };
@@ -3141,7 +3141,8 @@
               console.log(`Legacy option deleted: ${obj}_${key}`);
               delete option[obj][key];
             }
-            if (found) continue;
+            if (!found) delete option[obj];
+            continue;
           }
           console.log(`Legacy option deleted: ${obj}`);
           delete option[obj];
@@ -5247,7 +5248,7 @@
           delete battleUnresponsive[t];
           continue;
         }
-        battleUnresponsive[t].time = Math.max(1, option.battleUnresponsiveTime[t]) * _1s;
+        battleUnresponsive[t].time = Math.max(1, option.battleUnresponsiveTime?.[t]??1) * _1s;
         min = Math.min(min, battleUnresponsive[t].time);
       }
       if (!Object.keys(battleUnresponsive).length) return;
