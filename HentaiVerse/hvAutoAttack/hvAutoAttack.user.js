@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.12
+// @version      2.91.13
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1044,10 +1044,15 @@
         gE('.hvAAButton').click();
         return false;
       }
-      loadOption();
-      writePortables();
 
-      const option = g().option??{};
+      let option = loadOption();
+      if (isFrame) {
+        g('option', option);
+      } else {
+        g('option', setValue('option', option));
+      }
+      writePortables();
+      option = g().option??{};
       g('lang', option.lang || '0');
       addStyle();
 
@@ -1401,8 +1406,8 @@
       }
     }
 
-    function loadOption() {
-      let option = getValue('option', true);
+    function loadOption(option) {
+      option ??= getValue('option', true);
       const version = Version(option.version);
 
       if (!version.upto(scriptVersion)) { // 脚本升级时备份
@@ -1453,10 +1458,12 @@
       for (let key in legacies) {
         const array = key.split('_');
         const legacy = legacies[key];
+        const data = option[legacy];
+        if (!data) continue;
         if (array.length === 1) {
-          option[key] ??= option[legacy];
+          option[key] ??= data;
         } else {
-          (option[array[0]] ??= {})[array[1]] ??= option[legacy];
+          (option[array[0]] ??= {})[array[1]] ??= data;
         }
         delete option[legacy];
       }
@@ -1486,11 +1493,7 @@
         }
         option.skillT3Condition = newCondition;
       }
-      if (isFrame) {
-        g('option', option);
-      } else {
-        g('option', setValue('option', option));
-      }
+      return option;
     }
 
     function setPauseUI(parent) {
@@ -1826,8 +1829,9 @@
         '.hvAAGoto{cursor:pointer;text-decoration:underline;}',
         'input[type="text"], input[type="number"]{min-width:2ch;max-width:calc( 100% - 10px);text-overflow:ellipsis; width: 2ch;}',
         '.customizeInput{min-width:6ch;}',
+        '.optionUnsaved{color:red;}',
         '.optionEdited{color:#5C0D11;}',
-        '.optionOrigin{color:unset!important;}',
+        '.optionDefault{color:unset!important;}',
         '.hvAATable {display: grid;width: fit-content;}',
         '.hvAATable>* {border: 1px solid;}',
         '.hvAANew{width:25px;height:25px;float:left;background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAMCAYAAACX8hZLAAAAcElEQVQ4jbVRSQ4AIQjz/59mTiZIF3twmnCwFAq4FkeFXM+5vCzohYxjPMtfxS8CN6iqQ7TfE0wrODxVbzJNgoaTo4CmbBO1ZWICouQ0DHaL259MEzaU+w8pZOdSjcUgaPJDHCbO0A2kuAiuwPGQ+wBms12x8HExTwAAAABJRU5ErkJggg==) center no-repeat transparent;}',
@@ -1919,7 +1923,7 @@
     }
 
     function optionBox() { // 配置界面
-      const option = g().option??{};
+      let option = g().option??{};
       const optionBox = gE('body').appendChild(cE('div'));
       optionBox.id = 'hvAABox';
       optionBox.innerHTML = [
@@ -1957,7 +1961,7 @@
         '    <input id="optionStandalone" type="checkbox"><label for="optionStandalone"><l0>两个世界使用不同的配置</l0><l1>兩個世界使用不同的配置</l1><l2>Use standalone options.</l2></label>; ',
         '    <br><input id="isekai" type="checkbox"><label for="isekai"><l0>在任意页面停留</l0><l1>在任意頁面停留</l1><l2>While idle in any page for </l2><input class="hvAANumber" name="isekaiTime" placeholder="0" type="number"><l0>秒后，自动切换恒定世界和异世界</l0><l1>秒後，自動切換恆定世界和異世界</l1><l2>s, auto switch between Isekai and Persistent</l2></label></div>',
         '  <div>',
-        '    <b><l0>小马答题</l0><l1>小馬答題</l1><l2>RIDDLE</l2></b>: <input id="riddlePopup" type="checkbox"><label for="riddlePopup"><l0>弹窗答题(Firefox中可能导致报错)</l0><l1>弹窗答题(Firefox中可能導致報錯)</l1><l2>POPUP a window to answer(Might cause in Firefox)</l2></label>; <button class="testPopup"><l0>预处理</l0><l1>預處理</l1><l2>Pretreat</l2></button>',
+        '    <b><l0>小马答题</l0><l1>小馬答題</l1><l2>RIDDLE</l2></b>: <input id="riddlePopup" type="checkbox"><label for="riddlePopup"><l0>弹窗答题</l0><l1>弹窗答题</l1><l2>POPUP a window to answer</l2></label><l0>(Firefox中可能导致报错)</l0><l1>(Firefox中可能導致報錯)</l1><l2>(Might cause in Firefox)</l2>; <button class="testPopup"><l0>预处理</l0><l1>預處理</l1><l2>Pretreat</l2></button>',
         '    <div><l0>时间</l0><l1>時間</l1><l2>If ETR</l2> ≤ <input class="hvAANumber" name="riddleAnswerTime" placeholder="3" type="number"><l0>秒，提交当前选中答案 或 为空时随机选中</l0><l1>秒，提交當前選中答案 或 為空時隨機選中</l1><l2>s submit chosen answers or random </l2> <input class="hvAANumber" name="riddleAnswerChoose" placeholder="0" type="number"><l0>个答案并提交<br><a style="color:red;" href="https://ehwiki.org/wiki/RiddleMaster/Chinese#.E6.AD.A3.E7.A2.BA.E6.88.96.E9.8C.AF.E8.AA.A4">注意：错选小马比漏选小马的错误计数更多 - 所以有疑问时，最好不要猜测，留空就好</a></l0><l1>个答案並提交<br><a style="color:red;" href="https://ehwiki.org/wiki/RiddleMaster/Chinese#.E6.AD.A3.E7.A2.BA.E6.88.96.E9.8C.AF.E8.AA.A4">注意：錯選小馬比漏選小馬的錯誤計數更多 - 所以有疑問時，最好不要猜測，留空就好</a></l1><l2>answers if none is chosen.<br><a style="color:red;" href="https://ehwiki.org/wiki/RiddleMaster#Correct_or_Incorrect">Notice: Selecting a pony that is not in the picture will count more severe towards a penalty than missing one pony - so when in doubt, best not to guess but leave one blank</a></l2></div>',
         '  </div>',
         '  <div><b><l0>脚本行为</l0><l1>腳本行為</l1><l2>Script Activity</l2></b>',
@@ -1967,8 +1971,8 @@
         '      <input id="stepInButton" type="checkbox"><label for="stepInButton"><l0>步进按钮</l0><l1>步進按鈕</l1><l2>StepIn Button</l2></label>; ',
         '      <input id="stepInHotkey" type="checkbox"><label for="stepInHotkey"><l0>步进热键</l0><l1>步進熱鍵</l1><l2>StepIn Hotkey</l2>: <input class="text" name="stepInHotkeyStr" type="text"><input class="hvAANumber" name="stepInHotkeyCode" type="hidden" disabled="true"></label>',
         '  </div>',
-        ' <div><input id="altButton" type="checkbox"><label for="altButton">Alt<l0>切换按钮</l0><l1>切換按鈕</l1><l2>Switch Button</l2></label>; ',
-        '      <input id="altHotkey" type="checkbox"><label for="altHotkey"><l0>热键</l0><l1>熱鍵</l1><l2>Hotkey</l2>: <input class="text" name="altHotkeyStr" type="text"><input class="hvAANumber" name="altHotkeyCode" type="hidden" disabled="true"></label></div>',
+        ' <div><input id="altButton" type="checkbox"><label for="altButton"><l0>Alt切换按钮</l0><l1>Alt切換按鈕</l1><l2>Alt Switch Button</l2></label>; ',
+        '      <input id="altHotkey" type="checkbox"><label for="altHotkey"><l0>Alt切换热键</l0><l1>Alt切換熱鍵</l1><l2>Alt Switch Hotkey</l2>: <input class="text" name="altHotkeyStr" type="text"><input class="hvAANumber" name="altHotkeyCode" type="hidden" disabled="true"></label></div>',
         '    <div><l0>警告相关</l0><l1>警告相關</l1><l2>To Warn</l2>: ',
         '      <input id="alert" type="checkbox"><label for="alert"><l0>音频警报</l0><l1>音頻警報</l1><l2>Audio Alarms</l2></label>; ',
         '      <input id="notification" type="checkbox"><label for="notification"><l0>桌面通知</l0><l1>桌面通知</l1><l2>Notifications</l2></label> ',
@@ -2002,7 +2006,7 @@
         '       <div><input id="battleOrder_attack" value="Atk" type="checkbox"><label for="battleOrder_attack"><l0>自动攻击</l0><l1>自動攻擊</l1><l2>Attack</l2></label></div>',
         '    </div></div></div>',
 
-        '  <div><b><l0>次要攻击模式顺序(未配置的按照下面的顺序)</l0><l1>次要攻擊模式順序(未配置的按照下面的順序)</l1><l2>Attack Mode Order(Using order below as default if not configed)</l2></b>:',
+        '  <div><b><label for="attackStatusOrderName,attackStatusOrder_0,attackStatusOrder_1,attackStatusOrder_2,attackStatusOrder_3,attackStatusOrder_4,attackStatusOrder_5,attackStatusOrder_6,"><l0>次要攻击模式顺序</l0><l1>次要攻擊模式順序</l1><l2>Attack Mode Order</l2></label><l0>(未配置的按照下面的顺序)</l0><l1>(未配置的按照下面的順序)</l1><l2>(Using order below as default if not configed)</l2></b>:',
         '    <div class="attackStatusOrder"><input name="attackStatusOrderName" style="width:80%;" type="text" disabled="true"><input name="attackStatusOrderValue" style="width:80%;" type="hidden" disabled="true"><br>',
         '      <div class="hvAATable" style="display:grid; grid-template-columns:repeat(7, 1fr);">',
         '        <div><input id="attackStatusOrder_0" value="Phys,0" type="checkbox"><label for="attackStatusOrder_0"><l0>物理</l0><l1>物理</l1><l2>Physical</l2></label></div>',
@@ -2381,7 +2385,7 @@
         '  <div><input id="debuffSkill_Im" type="checkbox"><label for="debuffSkill_Im"><l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2>Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Im" type="number">; EWF: <input name="excludedWeightFormula_Im" placeholder="900" type="text">{{debuffSkillImCondition}}</div>',
         '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillImAll" type="checkbox"><label for="debuffSkillImAll"><l0>先给全体上陷危(Im)</l0><l1>先給全體上陷危(Im)</l1><l2>Imperil all enemies first.</l2></label><input id="debuffSkillImAllByIndex" type="checkbox"><label for="debuffSkillImAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label>{{debuffSkillImAllCondition}}</div>',
 
-        '  <div><input id="debuffSkill_MN" type="checkbox"><label for="debuffSkill_MN"><l0>魔磁网/固定(MN)</l0><l1>魔磁網/固定(MN)</l1><l2>MagNet/Immobilize</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2>Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold" type="number">; EWF: <input name="excludedWeightFormula_MN" placeholder="900" type="text">{{debuffSkillMNCondition}}</div>',
+        '  <div><input id="debuffSkill_MN" type="checkbox"><label for="debuffSkill_MN"><l0>魔磁网/固定(MN)</l0><l1>魔磁網/固定(MN)</l1><l2>MagNet/Immobilize</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2>Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_MN" type="number">; EWF: <input name="excludedWeightFormula_MN" placeholder="900" type="text">{{debuffSkillMNCondition}}</div>',
         '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillMNAll" type="checkbox"><label for="debuffSkillMNAll"><l0>先给全体上魔磁网/固定(MN)</l0><l1>先給全體上魔磁網/固定(MN)</l1><l2>MagNet/Immobilize all enemies first.</l2></label><input id="debuffSkillMNAllByIndex" type="checkbox"><label for="debuffSkillMNAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label>{{debuffSkillMNAllCondition}}</div>',
 
         '  <div><input id="debuffSkill_Co" type="checkbox"><label for="debuffSkill_Co"><l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2>Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Co" type="number">; EWF: <input name="excludedWeightFormula_Co" placeholder="900" type="text">{{debuffSkillCoCondition}}</div>',
@@ -2593,17 +2597,18 @@
         '</div>',
         '</div>',
 
-        '<div class="hvAAButtonBox hvAACenter">',
-        '  <button class="hvAAReset"><l0>重置设置</l0><l1>重置設置</l1><l2>Reset</l2></button><button class="hvAAApply"><l0>应用</l0><l1>應用</l1><l2>Apply</l2></button><button class="hvAACancel"><l01>取消</l01><l2>Cancel</l2></button>',
+        '<div class="hvAAButtonBox hvAACenter" style="display:grid; grid-template-columns: repeat(8, 1fr)">',
+        '  <div></div><div></div><button class="hvAAApply"><l0>应用</l0><l1>應用</l1><l2>Apply</l2></button><button class="hvAACancel"><l0>关闭</l0><l1>關閉</l1><l2>Close</l2></button><button class="hvAAReset"><l0>撤销</l0><l1>撤銷</l1><l2>Revert</l2></button><button class="hvAADefault"><l0>默认</l0><l1>默認</l1><l2>Default</l2></button><div></div><div></div>',
         '</div>',
       ].join('').replace(/{{(.*?)}}/g, '<div class="customize" name="$1"></div>');
 
       gE('#hvAATab-Main').style.zIndex = 1;
       optionBox.style.display = 'none';
       gE('select[name="lang"]').value = g().lang;
+      bindEvents();
+      loadOptionUIData();
 
-      // 绑定事件
-      (function bindEvents() {
+      function bindEvents() {
         gE('select[name="lang"]', optionBox).onchange = function () { // 选择语言
           gE('.hvAA-LangStyle').textContent = `l${this.value}{display:inline!important;}`;
           if (/^[01]$/.test(this.value)) {
@@ -2752,13 +2757,13 @@
           const select = gE('select[name="groupChoose"]', customizeBox);
           select.textContent = '';
           for (let i = 0; i <= group.length; i++) {
-            const option = select.appendChild(cE('option'));
+            const optionUI = select.appendChild(cE('option'));
             if (i === group.length) {
-              option.value = 'new';
-              option.textContent = 'new';
+              optionUI.value = 'new';
+              optionUI.textContent = 'new';
             } else {
-              option.value = i + 1;
-              option.textContent = i + 1;
+              optionUI.value = i + 1;
+              optionUI.textContent = i + 1;
             }
           }
         }
@@ -2969,24 +2974,30 @@
           gE('.hvAAConfig').value = typeof t === 'string' ? t : JSON.stringify(t);
         };
         gE('.hvAAImport', optionBox).onclick = function () {
-          const option = JSON.parse(gE('.hvAAConfig').value);
-          if (!option) {
+          const optionImport = JSON.parse(gE('.hvAAConfig').value);
+          if (!optionImport) {
             return;
           }
           if (_alert(1, '是否重置', '是否重置', 'Whether to reset')) {
-            setValue('option', option);
+            setValue('option', optionImport);
             goto();
           }
         };
-        gE('.hvAAReset', optionBox).onclick = function () {
-          if (_alert(1, '是否重置', '是否重置', 'Whether to reset')) {
-            const option = getValue('option');
-            const newOption = {};
-            setValue('option', Object.fromEntries(excludeStandalone.option.map(ex => [ex, option[ex]])));
-            if (_alert(1, '已重置，是否刷新', '已重置，是否刷新', 'Reseted. Page reload?')) {
-              goto();
-            }
+        function alertDiffs(...lang) {
+          const diffs = getOptionDiff(option);
+          return diffs ? _alert(1, ...lang.map(str=>str + diffs)) : true;
+        }
+        gE('.hvAADefault', optionBox).onclick = function () {
+          if (getOptionDiff() && !alertDiffs('有未保存的选项，是否仍要设置为默认值', '有未保存的選項，是否仍要設置為默認值', 'Unsaved changes detected, continue to set options as default')) {
+             return;
           }
+          loadOptionUIData({});
+        };
+        gE('.hvAAReset', optionBox).onclick = function () {
+          if (!alertDiffs('是否撤销未保存的更改', '是否撤銷未保存的更改', 'Whether to revert unsaved changes')) {
+             return;
+          }
+          loadOptionUIData(option);
         };
         gE('.hvAAApply', optionBox).onclick = function () {
           if (gE('select[name="attackStatus"] option[value="-1"]:checked', optionBox) ||
@@ -3000,56 +3011,7 @@
 
           const arenaPrev = g().option?.idleArenaValue;
 
-          const _option = { version: scriptVersion.ver };
-          let name, array, value, type;
-          for (const input of gE('input,select', 'all', optionBox)) {
-            [name, type, value] = [input.name, input.type, input.value];
-            switch(input.className) {
-              case 'hvAADebug': continue;
-              case 'hvAANumber': type = 'number';
-            }
-            switch (type) {
-              case 'number':
-                value = (value || (value === 0)) ? value * 1 : '';
-                if (isNaN(value)) continue;
-                break;
-              case 'text': case 'hidden':
-                value = value || '';
-                if (['', 'undefined'].includes(value)) continue;
-                break;
-              case 'checkbox':
-                [name, value] = [input.id, input.checked];
-                if (value === false) {
-                  if (!input.placeholder) continue;
-                  value = 0;
-                }
-                break;
-              case 'select-one':
-                break;
-            }
-            if (['', 'undefined', input.placeholder, input.placeholder*1, !!input.placeholder].includes(value))
-            {
-              continue;
-            }
-
-            if ((array = name.split('_')).length === 1) {
-              _option[name] = value;
-              continue;
-            }
-            if (input.className === 'customizeInput') {
-              ((_option[array[0]] ??= {})[array[1]]??=[]).push(value);
-            } else {
-              (_option[array[0]] ??= {})[array[1]] = value;
-            }
-          }
-
-          const inputs = gE('.hvAAQuickSite input[type="text"], .hvAAQuickSite input[type="number"]', 'all', optionBox);
-          if (inputs.length) _option.quickSite = [];
-          for (let i = 0; i < inputs.length; i += 3) {
-            const [fav, name, url] = Array.from(inputs).slice(i,i+3).map(input => input.value);
-            if (name === '') continue;
-            _option.quickSite.push({ fav, name, url });
-          }
+          const _option = getCurrentUIOption();
           setValue('option', _option);
 
           optionBox.style.display = 'none';
@@ -3074,11 +3036,102 @@
         gE('.hvAACancel', optionBox).onclick = function () {
           optionBox.style.display = 'none';
         };
-      })();
+      };
 
-      // 加载UI数据
-      if (option) {
+      function getOptionDiff(...options) {
+        options[0] ??= formatOption({}, true); // default
+        options[1] ??= formatOption(loadOption(getCurrentUIOption()), true); // from UI
+        diffData.prototype.excludes = 'version';
+        const diffs = diffData(options);
+        const lang = g().lang;
+        return diffs ? '\n'+Object.entries(diffData(options)).map(([key,data])=> {
+          let defaultStr = ['默认','默認','Default'][lang];
+          switch (gE(`[name="${key}"],[id="${key}"]`, optionBox)?.type) {
+            case 'hidden': return;
+            case 'checkbox':
+              defaultStr = 'false';
+              break;
+          }
+          return `${Array.from(gE(`label[for="${key}"], label[for*="${key},"]`, 'all', optionBox)).map(x=>x?.innerText).reduce((acc,cur)=>(acc??'')+(cur??''), '') || key}: ${data.map(d=>d?String(d):defaultStr)?.join(' -> ')}`
+        }).filter(d=>d!==undefined).join('\n') : undefined;
 
+        function diffData(datas, parents) {
+          let json = datas.map(JSON.stringify);
+          if (unique(json).length === 1) return undefined;
+          if (datas.some(d=> !['object', 'undefined'].includes(typeof d))) {
+            const diff = {};
+            diff[parents] = datas;
+            return diff;
+          }
+          const keys = datas.map(data=>data?Object.keys(data):undefined);
+          let differents;
+          unique(keys.reduce((acc,cur) => (acc??[]).concat(cur??[]),[])).forEach(key=>{
+            if ([diffData.prototype.excludes, ...diffData.prototype.excludes].includes(key)) return;
+            let datasSub = datas.map(data => data?.[key]);
+            key = parents?`${parents}_${key}`:key;
+            const diff = diffData(datasSub, key);
+            if (!diff) return;
+            differents = {...(differents??={}), ...diff};
+          });
+          return differents;
+        }
+      }
+
+      function getCurrentUIOption() {
+        const _option = { version: scriptVersion.ver };
+        let name, array, value, type;
+        for (const input of gE('input,select', 'all', optionBox)) {
+          [name, type, value] = [input.name, input.type, input.value];
+          switch(input.className) {
+            case 'hvAADebug': continue;
+            case 'hvAANumber': type = 'number';
+          }
+          switch (type) {
+            case 'number':
+              value = (value || (value === 0)) ? value * 1 : '';
+              if (isNaN(value)) continue;
+              break;
+            case 'text': case 'hidden':
+              value = value || '';
+              if (['', 'undefined'].includes(value)) continue;
+              break;
+            case 'checkbox':
+              [name, value] = [input.id, input.checked];
+              if (value === false) {
+                if (!input.placeholder) continue;
+                value = 0;
+              }
+              break;
+            case 'select-one':
+              break;
+          }
+          if (['', 'undefined', input.placeholder, input.placeholder*1, !!input.placeholder].includes(value))
+          {
+            continue;
+          }
+
+          if ((array = name.split('_')).length === 1) {
+            _option[name] = value;
+            continue;
+          }
+          if (input.className === 'customizeInput') {
+            ((_option[array[0]] ??= {})[array[1]]??=[]).push(value);
+          } else {
+            (_option[array[0]] ??= {})[array[1]] = value;
+          }
+        }
+
+        const inputs = gE('.hvAAQuickSite input[type="text"], .hvAAQuickSite input[type="number"]', 'all', optionBox);
+        if (inputs.length) _option.quickSite = [];
+        for (let i = 0; i < inputs.length; i += 3) {
+          const [fav, name, url] = Array.from(inputs).slice(i,i+3).map(input => input.value);
+          if (name === '') continue;
+          _option.quickSite.push({ fav, name, url });
+        }
+        return _option;
+      }
+
+      function formatOption(option, skipUI) {
         for (const obj in option) {
           if (gE(`[name="${obj}"],[id="${obj}"]`, optionBox)) continue;
           if (option[obj] instanceof Object) {
@@ -3094,7 +3147,6 @@
           delete option[obj];
         }
 
-        let i, j, k;
         const inputs = gE('input,select', 'all', optionBox);
         const displayCheckBoxNotDefault = function (input) {
           if (!gE(`label[for="${input.id}"]`) || input.placeholder === undefined) {
@@ -3142,6 +3194,7 @@
           if (type !== 'checkbox' && ![placeholder * 1, placeholder].includes(value)) {
             value = value === undefined ? '' : value;
           }
+          if (skipUI) continue;
           switch (type) {
             case 'select-one' :
             case 'text':
@@ -3156,27 +3209,38 @@
               input.addEventListener('change', () => displayCheckBoxNotDefault(input));
           }
         }
-        g('option', option);
 
-        const customize = gE('.customize', 'all', optionBox);
-        for (i = 0; i < customize.length; i++) {
-          name = customize[i].getAttribute('name');
-          if (!(name in option)) continue;
-          for (j in option[name]) {
-            const group = customize[i].appendChild(cE('div'));
+        return option;
+      }
+
+      function loadOptionUIData(uiOption) {
+        let isCache = !uiOption;
+        uiOption ??= option;
+        if (!uiOption) return;
+        uiOption = formatOption(uiOption);
+
+        const customizes = gE('.customize', 'all', optionBox);
+        customizes.forEach(n=> { while(n.firstChild) { n.removeChild(n.firstChild); }});
+        for (let customize of customizes) {
+          const name = customize.getAttribute('name');
+          if (!(name in uiOption)) continue;
+          for (const j in uiOption[name]) {
+            const group = customize.appendChild(cE('div'));
             group.className = 'customizeGroup';
             group.innerHTML = `${j * 1 + 1}. `;
-            for (k = 0; k < option[name][j].length; k++) {
+            for (let k = 0; k < uiOption[name][j].length; k++) {
               const input = group.appendChild(cE('input'));
               input.type = 'text';
               input.className = 'customizeInput';
               input.name = `${name}_${j}`;
-              input.value = option[name][j][k];
+              input.value = uiOption[name][j][k];
               customizeInputAutoFit(input);
             }
           }
         }
 
+        if (!isCache) return;
+        g('option', uiOption);
         let _html;
         if (option.quickSite) {
           _html = '<tr class="hvAATh"><td><l0>图标</l0><l1>圖標</l1><l2>ICON</l2></td><td><l0>名称</l0><l1>名稱</l1><l2>Name</l2></td><td><l0>链接</l0><l1>鏈接</l1><l2>Link</l2></td></tr>';
@@ -3185,15 +3249,16 @@
           });
           gE('.hvAAQuickSite>table>tbody', optionBox).innerHTML = _html;
         }
+
         if (getValue('backup')) {
           const backups = getValue('backup', true);
           _html = '';
-          for (i in backups) {
+          for (const i in backups) {
             _html = `${_html}<li>${i}</li>`;
           }
           gE('.hvAABackupList', optionBox).innerHTML = _html;
         }
-      }
+      };
     }
 
     function customizeInputAutoFit(input) {
@@ -3206,9 +3271,9 @@
 
     function customizerInpuFit(input) {
       if (input.value === input.placeholder) {
-        input.classList.add('optionOrigin');
+        input.classList.add('optionDefault');
       } else {
-        input.classList.remove('optionOrigin');
+        input.classList.remove('optionDefault');
       }
       let length = input.value.length || input.placeholder?.length;
       input.style.cssText += `width:${length+1}ch;`
