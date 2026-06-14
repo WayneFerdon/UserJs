@@ -834,7 +834,7 @@
             let blocked = body.innerText?.match(blockTip)?.[1]*1;
             let remain = isNaN(blocked) ? _1h/_1s : blocked;
             await until(() => {
-              document.title = `[M]${pad(Math.floor(remain/_1m*_1s))}:${pad(Math.floor(remain%(_1m/_1s)))}`;
+              document.title = `[M]${pad(Math.floor(remain/(_1m/_1s)))}:${pad(Math.floor(remain%(_1m/_1s)))}`;
               try { if (!isNaN(blocked)) {
                 body.innerText = body.innerText.replace(blockTip, (...args) => args[0].replace(args[1], remain));
               } } catch (err) { console.log(err) };
@@ -1000,7 +1000,7 @@
         return false;
       }
 
-      if (gE('#riddlecounter') || gE('#battle_main')) {
+      if (gE('#riddlecounter,#battle_main')) {
         if (!window.top.location.href.endsWith(`?s=Battle`)) {
           setValue('lastUrl', window.top.location.href);
         }
