@@ -831,14 +831,14 @@
           (async function onwait() { try {
             const body = document.body;
             const blockTip = /Blocking requests for (\d+) seconds due to excessive request rate/;
-            let blocked = body.innerText?.match(blockTip)?.[1] * _1s;
-            let remain = isNaN(blocked) ? _1h : blocked;
+            let blocked = body.innerText?.match(blockTip)?.[1]*1;
+            let remain = isNaN(blocked) ? _1h/_1s : blocked;
             await until(() => {
-              document.title = `[M]${pad(Math.floor(remain/_1m))}:${pad(Math.floor((remain%_1m)/_1s))}`;
+              document.title = `[M]${pad(Math.floor(remain/_1m*_1s))}:${pad(Math.floor(remain%(_1m/_1s)))}`;
               try { if (!isNaN(blocked)) {
                 body.innerText = body.innerText.replace(blockTip, (...args) => args[0].replace(args[1], remain));
               } } catch (err) { console.log(err) };
-              remain-=_1s;
+              remain-=1;
               return remain <= 0;
             }, _1s);
             goto();
