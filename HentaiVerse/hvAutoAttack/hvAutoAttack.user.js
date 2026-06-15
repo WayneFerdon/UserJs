@@ -1412,7 +1412,7 @@
 
       if (!version.upto(scriptVersion)) { // 脚本升级时备份
         const backups = getValue('backup', true) || {};
-        const autos = Object.values(backups).filter(b => b.auto);
+        const autos = Object.values(backups).filter(b => b.auto && b.server === current);
         autos.sort((a, b) => -Version.compare(a.version, b.version));
         if (!Version(autos[0]?.version).upto(version)) {
           backup();
@@ -1817,7 +1817,7 @@
         '#hvAABox input[type=\'checkbox\']{top: 3px;}',
         '.hvAATab ul,.hvAATab ol{margin:0;}',
         '.hvAATab label{cursor:pointer;}',
-        '.hvAATab table{border:2px solid #000;border-collapse:collapse;margin:0 auto;}',
+        '.hvAATab table{border:2px solid #000;border-collapse:collapse;}',
         '.hvAATh>*{font-weight:bold;font-size:larger;}',
         '.hvAATab table>tbody>tr>*{border:1px solid #000;}',
         '#hvAATab-Drop tr>td:nth-child(1),#hvAATab-Usage tr>td:nth-child(1){text-align:left;}',
@@ -1896,8 +1896,8 @@
     }
 
     function backup(code, alert) {
-      const current = getValue('option');
-      const auto = code ? undefined : `[auto backup for ${current.version}] ${time(3)}`;
+      const currentOption = getValue('option');
+      const auto = code ? undefined : `[auto backup for ${current}@${currentOption.version}] ${time(3)}`;
       const backups = getValue('backup', true) || {};
       code ??= auto;
       if (code in backups) { // 覆写同名配置
@@ -1908,12 +1908,14 @@
       }
       backups[code] = getValue('option');
       backups[code].auto = auto ? time(0) : undefined;
+      backups[code].server = current;
       const autos = Object.keys(backups).filter(c => backups[c].auto);
       autos.sort(a => -backups[a].auto);
-      let i=0;
+      let i = 0, max = 5;
       for (const a of autos) {
+        if (backups[a].server !== current) continue;
         i++;
-        if (i <= 5) continue;
+        if (i <= max) continue;
         delete backups[a];
       }
       setValue('backup', backups);
@@ -2575,7 +2577,7 @@
         '  <table></table>',
         '</div>',
 
-        '<div class="hvAATab hvAACenter" id="hvAATab-Tools">',
+        '<div class="hvAATab" id="hvAATab-Tools">',
         '  <div><span class="hvAATitle"><l0>当前状况</l0><l1>當前狀況</l1><l2>Current status</l2></span>: ',
         '    <l0>如果脚本长期暂停且网络无问题，请点击</l0><l1>如果腳本長期暫停且網絡無問題，請點擊</l1><l2>If the script does not work and you are sure that it\'s not because of your internet, click</l2><button class="hvAAFix"><l0>尝试修复</l0><l1>嘗試修復</l1><l2>Try to fix</l2></button><br>',
         '    <l0>战役模式</l0><l1>戰役模式</l1><l2>Battle type</l2>: <select class="hvAADebug" name="roundType"><option></option><option value="ar">The Arena</option><option value="rb">Ring of Blood</option><option value="gr">GrindFest</option><option value="iw">Item World</option><option value="ba">Encounter</option><option value="tw">The Tower</option></select> <l0>当前回合</l0><l1>當前回合</l1><l2>Current round</l2>: <input name="roundNow" class="hvAADebug hvAANumber" type="number"> <l0>总回合</l0><l1>總回合</l1><l2>Total rounds</l2>: <input name="roundAll" class="hvAADebug hvAANumber" type="number"></div>',
