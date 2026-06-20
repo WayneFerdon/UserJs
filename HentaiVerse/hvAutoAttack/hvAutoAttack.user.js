@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.16
+// @version      2.91.17
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1077,7 +1077,7 @@
       const option = g().option??{};
       if (!option.portable) return;
       for (const key of portable) {
-        if (!(Object.keys(option.portable).includes)) continue;
+        if (!(Object.keys(option.portable).includes(key))) continue;
         setValue(key, getValue(key), true);
       }
     }
@@ -1980,7 +1980,7 @@
         '      <input id="notification" type="checkbox"><label for="notification"><l0>桌面通知</l0><l1>桌面通知</l1><l2>Notifications</l2></label> ',
         '      <button class="testNotification"><l0>预处理</l0><l1>預處理</l1><l2>Pretreat</l2></button>',
         '      <input id="focusNotification" placeholder="true" type="checkbox"><label for="focusNotification"><l0>桌面通知时聚焦页面（需要GM_notification）</l0><l1>桌面通知時聚焦頁面（需要GM_notification）</l1><l2>Focus while Notifications (Requires GM_notification)</l2></label></div>',
-        '    <div><l0>掉落及数据记录</l0><l1>掉落及數據記錄</l1><l2>Drops and Usage Tracking</l2>: <input id="recordEach" type="checkbox"><label for="recordEach"><l0>单独记录每场战役</l0><l1>單獨記錄每場戰役</l1><l2>Record each battle separately</l2></label></div>',
+        '    <div><l0>掉落及数据记录</l0><l1>掉落及數據記錄</l1><l2>Drops and Usage Tracking</l2>: <input id="recordEach" type="checkbox"><label for="recordEach"><l0>单独记录每场战役（建议使用便携数据模式以避免超出浏览器的localStorage配额限制，但请注意便携数据模式可能会显著增加硬盘读写量）</l0><l1>單獨記錄每場戰役（建議使用便攜數據模式以避免超出瀏覽器localStorage配額限制，但請注意便攜數據模式可能會顯著增加硬盤讀寫）</l1><l2>Record each battle separately (It is recommended to use portable mode to prevent exceeding the localStorage quota, but note that this may significantly increase disk read/write activity.)</l2></label></div>',
         '    <div><l0>延迟</l0><l1>延遲</l1><l2>Delay</l2>: 1. <l0>Buff/Debuff/其他技能</l0><l1>Buff/Debuff/其他技能</l1><l2>Skills&BUFF/DEBUFF Spells</l2>: <input class="hvAANumber" name="delay" placeholder="200" type="number">ms 2. <l01>其他</l01><l2>Other</l2>: <input class="hvAANumber" name="delay2" placeholder="30" type="number">ms (',
         '      <l0>说明: 单位毫秒，且在设定值基础上取其的50%-150%进行延迟，0表示不延迟</l0><l1>說明: 單位毫秒，且在設定值基礎上取其的50%-150%進行延遲，0表示不延遲</l1><l2>Note: unit milliseconds, and based on the set value multiply 50% -150% to delay, 0 means no delay</l2>)</div>',
         '    <div><l0>频率指示符号</l0><l1>頻率指示符號</l1><l2>Frequency Signal</l2>: <input name="frequencySign1" type="text"> & <input name="frequencySign2" type="text"></div>',
@@ -2460,7 +2460,7 @@
         '    <l0>初始权重系数(>0:低血量优先;<0:高血量优先)</l0><l1>初始權重係數(>0:低血量優先;<0:高血量優先)</l1><l2>BaseHpRatio(>0:low hp first;<0:high hp first)</l2><input class="hvAANumber" name="baseHpRatio" placeholder="1" type="number"><br>',
         '    <l0>不可命中目标的权重公式</l0><l1>不可名中目標的權重公式</l1><l2>Unreachable Target Weight Formula</l2>: <input name="unreachableWeight" placeholder="1000" type="text"><br>',
         '    <l0>BOSS:Yggdrasil额外权重</l0><l1>BOSS:Yggdrasil額外權重</l1><l2>BOSS:Yggdrasil Extra Weight</l2></b><input class="hvAANumber" name="YggdrasilExtraWeight" placeholder="-1000" type="number"><br>',
-        '    <input id="cacheMonsterHP" type="checkbox"><label for="cacheMonsterHP"><l0>启用HP缓存</l0><l1>啟用HP緩存</l1><l2>Use HP Cache</l2></label><button class="clearMonsterHPCache"><l0>清空缓存</l0><l1>清空緩存</l1><l2>Clear HP Cache</l2></button><input id="portable_monsterDB" type="checkbox"><label for="portable_monsterDB"><l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2></label><input id="portable_monsterMID" type="checkbox" style="display:none"></div>',
+        '    <input id="cacheMonsterHP" type="checkbox"><label for="cacheMonsterHP"><l0>启用HP缓存</l0><l1>啟用HP緩存</l1><l2>Use HP Cache</l2></label><button class="clearMonsterHPCache"><l0>清空缓存</l0><l1>清空緩存</l1><l2>Clear HP Cache</l2></button><input id="portable_monsterDB" type="checkbox"><label for="portable_monsterDB"><l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2><l0>注意：便携数据模式可能会显著增加硬盘读写</l0><l1>注意：便攜數據模式可能會顯著增加硬盤讀寫</l1><l2>Notice：portable mode may significantly increase hard disk I/O</l2></label><input id="portable_monsterMID" type="checkbox" style="display:none"></div>',
         '  <div><b>2. <l0>初始权重与下述各Buff权重相加</l0><l1>初始權重與下述各Buff權重相加</l1><l2>PW(X) = BaseHpWeight + Accumulated_Weight_of_Deprecating_Spells_In_Effect(X)</l2></b><br>',
         '    <div class="hvAATable" style="grid-template-columns:repeat(6, 1fr);">',
         '      <div><input class="hvAANumber" name="weight_We" placeholder="12" type="number"> <l0>虚弱(We)</l0><l1>虛弱(We)</l1><l2>Weaken</l2></div>',
@@ -2532,12 +2532,12 @@
         '</div>',
 
         '<div class="hvAATab" id="hvAATab-Drop">',
-        '  <div><button class="reDropMonitor"><l0>重置掉落监测</l0><l1>重置掉落監測</l1><l2>Reset Drops Tracking</l2></button><input id="portable_drop" type="checkbox"><label for="portable_drop"><l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2></label><input id="portable_dropOld" type="checkbox" style="display:none"></div>',
+        '  <div><button class="reDropMonitor"><l0>重置掉落监测</l0><l1>重置掉落監測</l1><l2>Reset Drops Tracking</l2></button><input id="portable_drop" type="checkbox"><label for="portable_drop"><l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2><l0>注意：便携数据模式可能会显著增加硬盘读写</l0><l1>注意：便攜數據模式可能會顯著增加硬盤讀寫</l1><l2>Notice：portable mode may significantly increase hard disk I/O</l2></label><input id="portable_dropOld" type="checkbox" style="display:none"></div>',
         '  <div class="hvAACenter"><l0>记录装备的最低品质</l0><l1>記錄裝備的最低品質</l1><l2>Minimum drop quality</l2>: <select name="dropQuality"><option value="0">Crude</option><option value="1">Fair</option><option value="2">Average</option><option value="3">Superior</option><option value="4">Exquisite</option><option value="5">Magnificent</option><option value="6">Legendary</option><option value="7">Peerless</option></select></div>',
         '  <table class="hvAACenter"></table></div>',
 
         '<div class="hvAATab" id="hvAATab-Usage">',
-        '  <div><button class="reRecordUsage"><l0>重置数据记录</l0><l1>重置數據記錄</l1><l2>Reset Usage Tracking</l2></button><input id="portable_stats" type="checkbox"><label for="portable_stats"><l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2></label><input id="portable_statsOld" type="checkbox" style="display:none"></div>',
+        '  <div><button class="reRecordUsage"><l0>重置数据记录</l0><l1>重置數據記錄</l1><l2>Reset Usage Tracking</l2></button><input id="portable_stats" type="checkbox"><label for="portable_stats"><l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2><l0>注意：便携数据模式可能会显著增加硬盘读写</l0><l1>注意：便攜數據模式可能會顯著增加硬盤讀寫</l1><l2>Notice：portable mode may significantly increase hard disk I/O</l2></label><input id="portable_statsOld" type="checkbox" style="display:none"></div>',
         '  <div><b><l0>自身</l0><l1>自身</l1><l2>Self</l2></b>',
         '  <div class="hvAATable" style="grid-template-columns: repeat(10, 1fr);">' ,
         '    <div><input id="record_turn" type="checkbox"><label for="record_turn"><l0></l0><l1></l1><l2></l2>Turns</label></div>',
@@ -4618,7 +4618,7 @@
       const option = g().option??{};
       let now = time(0);
       let hours = Math.floor(now / _1h);
-      let [current, punish] = await getCurrentStamina();
+      let [current, punish] = await until(getCurrentStamina, _1m);
       const stmNR = current + 24 - (hours % 24);
       cost ??= 0;
       if (punish && option.staminaRatio) {
@@ -5905,28 +5905,29 @@
         const monsterDB = getValue('monsterDB', true) ?? {};
         const monsterMID = getValue('monsterMID', true) ?? {};
         for (let i = battleLog.length - 2; i > battleLog.length - 2 - g().monsterAll; i--) {
-          let mid = battleLog[i].textContent.match(/MID=(\d+)/)[1] * 1;
-          let name = battleLog[i].textContent.match(/MID=(\d+) \((.*)\) LV/)[2];
-          let lv = battleLog[i].textContent.match(/LV=(\d+)/)[1] * 1;
           let hp = battleLog[i].textContent.match(/HP=(\d+)$/)[1] * 1;
           if (isNaN(hp)) {
             hp = getHPFromMonsterDB(monsterDB, monsterNames[order], monsterLvs[order]) ?? monsterStatus[monsterStatus.length - 1].hp;
           }
-          if (name && lv && mid) {
-            monsterDB[name] ??= {};
-            if (monsterDB[name].mid && monsterDB[name].mid !== mid) { // 名称被其他mid被占用
-              monsterMID[monsterDB[name].mid] = JSON.parse(JSON.stringify(monsterDB[name])); // 将之前mid的数据进行另外备份
-              monsterDB[name] = {}; // 重置该名称的数据
-            }
-            if (monsterMID[mid]) {
-              monsterDB[name] = JSON.parse(JSON.stringify(monsterMID[mid])); // 将之前备份的mid的数据进行恢复
-              delete monsterMID[mid];
-            }
-            monsterDB[name].mid = mid;
-            monsterDB[name][lv] = hp;
-          }
           monsterStatus[order] = { order, hp };
           order++;
+
+          if (!option.cacheMonsterHP) continue;
+          let lv = battleLog[i].textContent.match(/LV=(\d+)/)[1] * 1;
+          let [_, mid, name] = battleLog[i].textContent.match(/MID=(\d+) \((.*)\) LV/);
+          mid*=1;
+          if (!name || isNaN(lv) || isNaN(mid)) continue;
+          monsterDB[name] ??= {};
+          if (monsterDB[name].mid && monsterDB[name].mid !== mid) { // 名称被其他mid被占用
+            monsterMID[monsterDB[name].mid] = JSON.parse(JSON.stringify(monsterDB[name])); // 将之前mid的数据进行另外备份
+            monsterDB[name] = {}; // 重置该名称的数据
+          }
+          if (monsterMID[mid]) {
+            monsterDB[name] = JSON.parse(JSON.stringify(monsterMID[mid])); // 将之前备份的mid的数据进行恢复
+            delete monsterMID[mid];
+          }
+          monsterDB[name].mid = mid;
+          monsterDB[name][lv] = hp;
         }
         if (option.cacheMonsterHP) {
           setValue('monsterDB', monsterDB);
@@ -5979,6 +5980,7 @@
       const monsterStatus = battle.monsterStatus;
       const hpArray = [];
       for (i = 0; i < monsterHp.length; i++) {
+        monsterStatus[i] ??= {};
         if (gE('img[src*="nbardead.png"]', monsterHp[i])) {
           monsterStatus[i].isDead = true;
           monsterStatus[i].hpNow = Infinity;
@@ -6708,10 +6710,9 @@
       return setValue('skillOTOS', skillOTOS);
     }
 
+    // TODO TBD 根据lv模糊推测（一般数据都是等级逐渐提升的，可能可以直接用缓存而不需要推测，异世界新赛季时可以自动刷新缓存?）
     function getHPFromMonsterDB(mdb, name, lv) {
-      let hp = (mdb && mdb[name]) ? mdb[name][lv] : undefined;
-      // TODO TBD 根据lv模糊推测（一般数据都是等级逐渐提升的，可能可以直接用缓存而不需要推测，异世界新赛季时可以自动刷新缓存?）
-      return hp;
+      return mdb?.[name]?.[lv]
     }
 
     function fixMonsterStatus() { // 修复monsterStatus
