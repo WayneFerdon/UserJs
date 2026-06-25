@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.17
+// @version      2.91.18
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -138,7 +138,7 @@
       MN: {
         proficiency: ['Deprecating', 100, 700], // ???
         buff: 'Immobilized',
-        name: 'MagNet',
+        name: 'Immobilize',
         img: 'magnet',
         id: '233',
         range: { 4212: [1, 1, 1, 2, 2, 3] },
@@ -2009,6 +2009,7 @@
         '    </div></div></div>',
 
         '  <div><b><label for="attackStatusOrderName,attackStatusOrder_0,attackStatusOrder_1,attackStatusOrder_2,attackStatusOrder_3,attackStatusOrder_4,attackStatusOrder_5,attackStatusOrder_6,"><l0>次要攻击模式顺序</l0><l1>次要攻擊模式順序</l1><l2>Attack Mode Order</l2></label><l0>(未配置的按照下面的顺序)</l0><l1>(未配置的按照下面的順序)</l1><l2>(Using order below as default if not configed)</l2></b>:',
+        '    <input id="attackStatusSwitchByTier" type="checkbox"><label for="attackStatusSwitchByTier"><l0>先尝试完所有模式的高阶魔法技能再继续中阶和低阶</l0><l1>先嘗試完所有模式的高階魔法技能再繼續中階和低階</l1><l2>Try all 3rd Tier Magic for all Attack Mode then 2nd Tier and 1st Tier</l2></b></label>',
         '    <div class="attackStatusOrder"><input name="attackStatusOrderName" style="width:80%;" type="text" disabled="true"><input name="attackStatusOrderValue" style="width:80%;" type="hidden" disabled="true"><br>',
         '      <div class="hvAATable" style="display:grid; grid-template-columns:repeat(7, 1fr);">',
         '        <div><input id="attackStatusOrder_0" value="Phys,0" type="checkbox"><label for="attackStatusOrder_0"><l0>物理</l0><l1>物理</l1><l2>Physical</l2></label></div>',
@@ -2030,7 +2031,7 @@
         '    <div><label for="lowSkillCondition"><b><l0>低阶魔法技能使用条件</l0><l1>低階魔法技能使用條件</l1><l2>Conditions for 1st Tier Offensive Magic</l2></b>: {{lowSkillCondition}}</label></div>',
         '    <div><label for="middleSkillCondition"><b><l0>中阶魔法技能使用条件</l0><l1>中階魔法技能使用條件</l1><l2>Conditions for 2nd Tier Offensive Magic</l2></b>: {{middleSkillCondition}}</label></div>',
         '    <div><label for="highSkillCondition"><b><l0>高阶魔法技能使用条件</l0><l1>高階魔法技能使用條件</l1><l2>Conditions for 3rd Tier Offensive Magic</l2></b>: {{highSkillCondition}}</label></div>',
-        '    <div><input id="etherTap" type="checkbox"><label for="etherTap"><b><l0>以太水龙头</l0><l1>以太水龍頭</l1><l2>Ether Tap</l2></b></label>: {{etherTapCondition}}</div>',
+        '    <div><input id="etherTap" type="checkbox"><label for="etherTap"><b><l0>以太之触</l0><l1>以太之觸</l1><l2>Ether Tap</l2></b></label>: {{etherTapCondition}}</div>',
         '    <div><input id="turnOnSS" type="checkbox"><label for="turnOnSS"><b><l0>开启灵动架式</l0><l1>開啟靈動架勢</l1><l2>Turn on Spirit Stance</l2></b></label>: {{turnOnSSCondition}}</div>',
         '    <div><input id="turnOffSS" type="checkbox"><label for="turnOffSS"><b><l0>关闭灵动架式</l0><l1>關閉靈動架勢</l1><l2>Turn off Spirit Stance</l2></b></label>: {{turnOffSSCondition}}</div>',
         '    <div><input id="defend" type="checkbox"><label for="defend"><b>Defend</b></label>: {{defendCondition}}</div>',
@@ -2310,7 +2311,7 @@
         '    <div><l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2><input class="hvAANumber" placeholder="0" name="debuffSkillTurn_Im" type="number"></div>',
         '    <div><l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2><input class="hvAANumber" placeholder="0" name="debuffSkillTurn_Co" type="number"></div>',
         '    <div><l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2><input class="hvAANumber" placeholder="0" name="debuffSkillTurn_Dr" type="number"></div>',
-        '    <div><l0>魔磁网(MN)</l0><l1>魔磁網(MN)</l1><l2>MagNet</l2><input class="hvAANumber" placeholder="0" name="debuffSkillTurn_MN" type="number"></div>',
+        '    <div><l0>固定(MN)</l0><l1>固定(MN)</l1><l2>Immobilize(MagNet)</l2><input class="hvAANumber" placeholder="0" name="debuffSkillTurn_MN" type="number"></div>',
         '</div>',
         '  </div>',
 
@@ -2325,7 +2326,7 @@
         '    <div><input id="debuffSkillOrderAll_Slo" type="checkbox"><label for="debuffSkillOrderAll_Slo"><l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2></label></div>',
         '    <div><input id="debuffSkillOrderAll_Dr" type="checkbox"><label for="debuffSkillOrderAll_Dr"><l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2></label></div>',
         '    <div><input id="debuffSkillOrderAll_Im" type="checkbox"><label for="debuffSkillOrderAll_Im"><l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2></label></div>',
-        '    <div><input id="debuffSkillOrderAll_MN" type="checkbox"><label for="debuffSkillOrderAll_MN"><l0>魔磁网/固定(MN)</l0><l1>魔磁網/固定(MN)</l1><l2>MagNet/Immobilize</l2></label></div>',
+        '    <div><input id="debuffSkillOrderAll_MN" type="checkbox"><label for="debuffSkillOrderAll_MN"><l0>固定(MN)</l0><l1>固定(MN)</l1><l2>Immobilize(MagNet)</l2></label></div>',
         '    <div><input id="debuffSkillOrderAll_Co" type="checkbox"><label for="debuffSkillOrderAll_Co"><l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2></label></div>',
         '  </div>',
         '  </div>',
@@ -2339,7 +2340,7 @@
         '    <div><input id="debuffAllExclusive_Slo" type="checkbox"><label for="debuffAllExclusive_Slo"><l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2></label></div>',
         '    <div><input id="debuffAllExclusive_Dr" type="checkbox"><label for="debuffAllExclusive_Dr"><l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2></label></div>',
         '    <div><input id="debuffAllExclusive_Im" type="checkbox"><label for="debuffAllExclusive_Im"><l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2></label></div>',
-        '    <div><input id="debuffAllExclusive_MN" type="checkbox"><label for="debuffAllExclusive_MN"><l0>魔磁网/固定(MN)</l0><l1>魔磁網/固定(MN)</l1><l2>MagNet/Immobilize</l2></label></div>',
+        '    <div><input id="debuffAllExclusive_MN" type="checkbox"><label for="debuffAllExclusive_MN"><l0>固定(MN)</l0><l1>固定(MN)</l1><l2>Immobilize(MagNet)</l2></label></div>',
         '    <div><input id="debuffAllExclusive_Co" type="checkbox"><label for="debuffAllExclusive_Co"><l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2></label></div>',
         '  </div>',
         '  </div>',
@@ -2354,7 +2355,7 @@
         '    <div><input id="debuffSkillOrder_Slo" type="checkbox"><label for="debuffSkillOrder_Slo"><l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2></label></div>',
         '    <div><input id="debuffSkillOrder_Dr" type="checkbox"><label for="debuffSkillOrder_Dr"><l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2></label></div>',
         '    <div><input id="debuffSkillOrder_Im" type="checkbox"><label for="debuffSkillOrder_Im"><l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2></label></div>',
-        '    <div><input id="debuffSkillOrder_MN" type="checkbox"><label for="debuffSkillOrder_MN"><l0>魔磁网/固定(MN)</l0><l1>魔磁網/固定(MN)</l1><l2>MagNet/Immobilize</l2></label></div>',
+        '    <div><input id="debuffSkillOrder_MN" type="checkbox"><label for="debuffSkillOrder_MN"><l0>固定(MN)</l0><l1>固定(MN)</l1><l2>Immobilize(MagNet)</l2></label></div>',
         '    <div><input id="debuffSkillOrder_Co" type="checkbox"><label for="debuffSkillOrder_Co"><l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2></label></div>',
         '  </div>',
         '  </div>',
@@ -2387,8 +2388,8 @@
         '  <div><input id="debuffSkill_Im" type="checkbox"><label for="debuffSkill_Im"><l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2>Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Im" type="number">; EWF: <input name="excludedWeightFormula_Im" placeholder="900" type="text">{{debuffSkillImCondition}}</div>',
         '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillImAll" type="checkbox"><label for="debuffSkillImAll"><l0>先给全体上陷危(Im)</l0><l1>先給全體上陷危(Im)</l1><l2>Imperil all enemies first.</l2></label><input id="debuffSkillImAllByIndex" type="checkbox"><label for="debuffSkillImAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label>{{debuffSkillImAllCondition}}</div>',
 
-        '  <div><input id="debuffSkill_MN" type="checkbox"><label for="debuffSkill_MN"><l0>魔磁网/固定(MN)</l0><l1>魔磁網/固定(MN)</l1><l2>MagNet/Immobilize</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2>Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_MN" type="number">; EWF: <input name="excludedWeightFormula_MN" placeholder="900" type="text">{{debuffSkillMNCondition}}</div>',
-        '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillMNAll" type="checkbox"><label for="debuffSkillMNAll"><l0>先给全体上魔磁网/固定(MN)</l0><l1>先給全體上魔磁網/固定(MN)</l1><l2>MagNet/Immobilize all enemies first.</l2></label><input id="debuffSkillMNAllByIndex" type="checkbox"><label for="debuffSkillMNAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label>{{debuffSkillMNAllCondition}}</div>',
+        '  <div><input id="debuffSkill_MN" type="checkbox"><label for="debuffSkill_MN"><l0>固定(MN)</l0><l1>固定(MN)</l1><l2>Immobilize(MagNet)</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2>Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_MN" type="number">; EWF: <input name="excludedWeightFormula_MN" placeholder="900" type="text">{{debuffSkillMNCondition}}</div>',
+        '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillMNAll" type="checkbox"><label for="debuffSkillMNAll"><l0>先给全体上固定(MN)</l0><l1>先給全體上固定(MN)</l1><l2>Immobilize(MagNet) all enemies first.</l2></label><input id="debuffSkillMNAllByIndex" type="checkbox"><label for="debuffSkillMNAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label>{{debuffSkillMNAllCondition}}</div>',
 
         '  <div><input id="debuffSkill_Co" type="checkbox"><label for="debuffSkill_Co"><l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2>Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Co" type="number">; EWF: <input name="excludedWeightFormula_Co" placeholder="900" type="text">{{debuffSkillCoCondition}}</div>',
         '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillCoAll" type="checkbox"><label for="debuffSkillCoAll"><l0>先给全体上混乱(Co)</l0><l1>先給全體上混亂(Co)</l1><l2>Confuse all enemies first.</l2></label><input id="debuffSkillCoAllByIndex" type="checkbox"><label for="debuffSkillCoAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label>{{debuffSkillCoAllCondition}}</div>',
@@ -2475,7 +2476,7 @@
         '      <div><input class="hvAANumber" name="weight_Dr" placeholder="2" type="number"> <l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2></div>',
         '      <div><input class="hvAANumber" name="weight_ET" placeholder="2" type="number"> <l0>以太窃取(ET)</l0><l1>以太竊取(ET)</l1><l2>Ether Theft</l2></div>',
         '      <div><input class="hvAANumber" name="weight_ST" placeholder="2" type="number"> <l0>灵力窃取(ST)</l0><l1>靈力竊取(ST)</l1><l2>Spirit Theft</l2></div>',
-        '      <div><input class="hvAANumber" name="weight_MN" placeholder="7" type="number"> <l0>魔磁网/固定(MN)</l0><l1>魔磁網/固定(MN)</l1><l2>MagNet/Immobilize</l2></div>',
+        '      <div><input class="hvAANumber" name="weight_MN" placeholder="7" type="number"> <l0>固定(MN)</l0><l1>固定(MN)</l1><l2>Immobilize(MagNet)</l2></div>',
         '      <div><input class="hvAANumber" name="weight_Po" placeholder="-10" type="number"> <l0>流动毒性(Po)</l0><l1>流动毒性(Po)</l1><l2>Spreading Poison</l2></div>',
         '      <div><input class="hvAANumber" name="weight_Stun" placeholder="290" type="number"> <l0>眩晕(St)</l0><l1>眩暈(St)</l1><l2>Stunned</l2></div>',
         '      <div><input class="hvAANumber" name="weight_CM" placeholder="-20" type="number"> <l0>魔力合流()</l0><l1>魔力合流(CM)</l1><l2>Coalesced Mana</l2></div>',
@@ -3691,7 +3692,7 @@
           return gE('#ckey_spirit[src*="spirit_a"]') ? 1 : 0;
         },
         buffTurn(...img) {
-          return getBuffTurnFromImg(getBuff(imgArray2img(img)));
+          return getBuffTurnFromImg(getBuff(imgArray2img(...img)));
         },
         hpDecimal() {
           return g().hp / 100;
@@ -6586,25 +6587,25 @@
     }
 
     function attack(selectStatusOnly=false) { // 自动打怪
-      let range = g().fightingStyle === '1' ? 3 : 1;
       const option = g().option??{};
       const monsters = g().battle.monsterStatus;
       if (option.attackStatusSwitch) {
-        for (const status of splitOrders(option.attackStatusOrderValue, [0,6,5,1,2,4,3])) {
-          if (!option.attackStatusSwitch[status]) continue;
-          const current = g().attackStatusCurrent;
-          g('attackStatusCurrent', status);
-          if (checkCondition(option[`attackStatusSwitchCondition${status}`], monsters) && onAttack(range, status, selectStatusOnly)) {
-            return true;
+        const byTier = option.attackStatusSwitchByTier;
+        let tier = byTier ? 3 : undefined;
+        const order = splitOrders(option.attackStatusOrderValue, [0,6,5,1,2,4,3]);
+        while (tier-- !== 0) {
+          for (const status of order) {
+            if (!option.attackStatusSwitch[status]) continue;
+            if (!checkCondition(option[`attackStatusSwitchCondition${status}`], monsters)) continue;
+            if (onAttack(status, selectStatusOnly, tier)) return true;
           }
-          g('attackStatusCurrent', current);
+          if (!byTier) break;
         }
       }
-      g('attackStatusCurrent', 0);
-      return onAttack(range, g().attackStatus, selectStatusOnly);
+      return onAttack(g().attackStatus, selectStatusOnly);
     }
 
-    function onAttack(range, attackStatus, selectStatusOnly=false) {
+    function onAttack(attackStatus, selectStatusOnly=false, tier=undefined) {
       const updateAbility = onAttack.prototype.updateAbility ??= {
         4301: { //火
           111: [3, 4, 4, 5, 5, 5, 5, 5],
@@ -6636,18 +6637,53 @@
         4503: { 153: [7, 8, 9, 10] },
       }
 
-      // 如果
-      // 1. 开启了自动以太水龙头
-      // 2. 目标怪在魔力合流状态中
-      // 3. 未获得以太水龙头*2 或 *1
-      // 4. 满足条件
-      // 使用物理普通攻击，跳过Offensive Magic
-      // 否则按照属性攻击模式释放Spell > Offensive Magic
-
+      g('attackStatusCurrent', attackStatus);
       const option = g().option??{};
       const monsters = g().battle.monsterStatus;
       let target = monsters[0];
-      const tryAttack = (skill) => {
+
+      // 如果
+      // 1. 开启了自动以太之触
+      // 2. 目标怪在魔力合流状态中
+      // 3. 满足条件
+      // 使用物理普通攻击，跳过Offensive Magic
+      // 否则按照属性攻击模式释放Spell > Offensive Magic
+      let physical = attackStatus === 0 || (option.etherTap && getBuff('coalescemana', getMonsterID(target)) && checkCondition(option.etherTapCondition, monsters));
+
+      // return gE(`#pane_effects>img[src*="/${buff}"]`) ?? gE(`#pane_effects>img[src*="_${buff}"]`);
+      let range;
+      // 1. physical or etherTap
+      if (attackStatus === 0) {
+        range = g().fightingStyle === '1' ? 3 : 1;
+        return tryAttack();
+      }
+
+      // 2. try check skill condition
+      const skill = 1 * (() => {
+        const conditions = [option.lowSkillCondition, option.middleSkillCondition, option.highSkillCondition];
+        for (let lv = tier ?? 2; lv >= 0; lv--) {
+          let id = `1${attackStatus}${lv+1}`*1;
+          if (isOn(id) && (target = checkCondition(conditions[lv], monsters))) return id;
+          if (tier) return 0;
+        }
+      })();
+
+      // 3. no skill available
+      if (!skill) {
+        if (tier) return false;
+        return tryAttack();
+      }
+      // 4. cast skill
+      for (let ab in updateAbility) {
+        const ranges = updateAbility[ab][skill];
+        if (!ranges) continue;
+        const ability = getValue('ability', true);
+        range = ranges[ability ? ability[ab] ?? 0 : 0];
+        break;
+      }
+      return tryAttack(skill);
+
+      function tryAttack (skill) {
         if (!target || target.isDead) {
           return false;
         }
@@ -6658,49 +6694,9 @@
           updateSkillOTOS(skill);
           gE(skill).click();
         }
-        clickMonster(getRangeCenter(target, range, !attackStatus).id);
+        clickMonster(getRangeCenter(target, range ?? 1, !attackStatus).id);
         return true;
       };
-      // 1. physical
-      if (attackStatus === 0) {
-        return tryAttack();
-      }
-
-      // 2. etherTap
-      if (option.etherTap && getBuff('coalescemana', getMonsterID(target))
-          && (!gE('#pane_effects>img[onmouseover*="Ether Tap (x2)"]') || getBuff(`wpn_et"][id*="effect_expire`))
-          && checkCondition(option.etherTapCondition)) {
-        return tryAttack();
-      }
-      // 2.5 try check skill condition
-      const skill = 1 * (() => {
-        let lv = 3;
-        for (let condition of [option.highSkillCondition, option.middleSkillCondition, option.lowSkillCondition]) {
-          let id = `1${attackStatus}${lv--}`;
-          target = checkCondition(condition, monsters);
-          if (target && isOn(id)) {
-            return id;
-          }
-        }
-      })();
-      // 3. no skill available
-      if (!skill) {
-        return tryAttack();
-      }
-      // 4. cast skill
-      for (let ab in updateAbility) {
-        const ranges = updateAbility[ab][skill];
-        if (!ranges) {
-          continue;
-        }
-        const ability = getValue('ability', true);
-        range = ranges[ability ? ability[ab] ?? 0 : 0];
-        break;
-      }
-      if (!tryAttack(skill)) {
-        return false;
-      }
-      return true;
     }
 
     function updateSkillOTOS(id, skillOTOS) {
