@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.19
+// @version      2.91.20
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2093,7 +2093,7 @@
         '  </div>',
         '  <div>',
         '    <input id="repair" type="checkbox"><label for="repair"><b>[R!]<l0>修复装备</l0><l1>修復裝備</l1><l2>Repair Equipment</l2></b></label>: ',
-        '    <l0>耐久度</l0><l1>耐久度</l1><l2>Durability</l2> ≤ <input class="hvAANumber" name="repairValue" type="number">% <l0>或 压榨届耐久度</l0><l1>或 壓榨屆耐久度</l1><l2>OR Grind Fest Durability</l2> ≤ <input class="hvAANumber" name="repairValueGF" type="number">%</br><input id="encounterRepair" type="checkbox"><label for="encounterRepair"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label>',
+        '    <l0>耐久度</l0><l1>耐久度</l1><l2>Durability</l2> ≤ <input class="hvAANumber" name="repairValue" type="number">% <l0>或 压榨届耐久度</l0><l1>或 壓榨屆耐久度</l1><l2>OR Grind Fest Durability</l2> ≤ <input class="hvAANumber" name="repairValueGF" type="number">%</br><input id="encounterRepair" type="checkbox"><label for="encounterRepair"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2>;<input id="repairCharm" type="checkbox"><label for="repairCharm"><l0>修复护石 (含压榨界)</l0><l1>修復護石 (含壓榨界)</l1><l2>Repair charm (including Grind Fest)</l2>;<input id="repairCharmGF" type="checkbox"><label for="repairCharmGF"><l0>压榨界修复护石</l0><l1>壓榨屆修復護石</l1><l2>Repair charm before Grind Fest</l2></label>',
         '  </div>',
         '  <div>',
         '    <input id="equStorage" type="checkbox"><label for="equStorage"><b>[E!]<l0>装备库存</l0><l1>裝備庫存</l1><l2>Equipment Storage</l2></b></label> ≤ <input class="hvAANumber" style="width: 32px;" name="equStorageValue" placeholder="150" type="number">; <input id="encounterEquStorage" type="checkbox"><label for="encounterEquStorage"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label>',
@@ -4570,28 +4570,30 @@
       $async.logSwitch(arguments);
       let eqps;
       const threshold = isGrindFestStandalone ? option.repairValueGF : option.repairValue;
+      const repairCharm = isGrindFestStandalone ? option.repairCharmGF || option.repairCharm : option.repairCharm;
       if (threshold === undefined || threshold < 0) { // skip because default repair has been checked before idleArena>GF
         $async.logSwitch(arguments);
         return true;
       }
 
       const url = `?s=Bazaar&ss=am&screen=repair&filter=equipped`;
-      const doc = $doc(await $ajax.insert(url));
+      let [doc, equiped] = Array.from(await Promise.all([$ajax.insert(url), $ajax.insert(`?s=Character&ss=eq`)])).map($doc);
       if (gE('#riddlecounter', doc) || gE('#battle_main', doc)) {
         $async.logSwitch(arguments);
         return undefined;
       }
       const token = gE('#equipform>input[name="postoken"]', doc).value;
+      const [material, materialNames] = doc.body.innerHTML.match(/const eqitems=(\{.*\});/)[1].split(/; const itemdata=/).map(JSON.parse);
+      equiped = Array.from(gE('[onmouseover*="equips.set("]', 'all', equiped)).map(eq=>eq.getAttribute('onmouseover').match(/equips.set\((\d+),/)[1]);
       eqps = await Promise.all(Array.from(gE('#equiplist>table>tbody>tr:not(.eqselall):not(.eqtplabel)', 'all', doc)).map(async eqp => { try {
         const id = gE('input', eqp).value;
+        if (!equiped.includes(id)) return;
         const condition = 1 * gE('td:last-child', eqp).textContent.replace('%', '');
-        if (condition > threshold) {
-          return;
-        }
+        const needRepairCharm = repairCharm && Object.keys(material[id].m).some(m => materialNames[m].n.includes('Charm'));
+        if (condition > threshold && !needRepairCharm) return;
         const after = $doc(await $ajax.insert(url, `&eqids[]=${id}&postoken=${token}&replace_charms=on`));
         return gE(`#e${id}`, after) ? gE('.lc', eqp).childNodes[2].textContent : undefined;
       } catch (err) { console.error(err); }}));
-
       eqps = eqps.filter(e => e);
       if (eqps.length) {
         console.log('equips need repair:\n', eqps.join('\n '));
