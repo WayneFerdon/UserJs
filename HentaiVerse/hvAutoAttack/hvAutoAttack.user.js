@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.18
+// @version      2.91.19
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1829,6 +1829,7 @@
         '.hvAAGoto{cursor:pointer;text-decoration:underline;}',
         'input[type="text"], input[type="number"]{min-width:2ch;max-width:calc( 100% - 10px);text-overflow:ellipsis; width: 2ch;}',
         '.customizeInput{min-width:6ch;}',
+        '.customizeInput:not(.optionDefault){border: 2px solid!important}',
         '.optionUnsaved{color:red;}',
         '.optionEdited{color:#5C0D11;}',
         '.optionDefault{color:unset!important;}',
@@ -3227,7 +3228,17 @@
         customizes.forEach(n=> { while(n.firstChild) { n.removeChild(n.firstChild); }});
         for (let customize of customizes) {
           const name = customize.getAttribute('name');
-          if (!(name in uiOption)) continue;
+          if (!(name in uiOption)) {
+            const group = customize.appendChild(cE('div'));
+            group.className = 'customizeGroup';
+            group.innerHTML = `1. `;
+            const input = group.appendChild(cE('input'));
+            input.type = 'text';
+            input.className = 'customizeInput';
+            input.name = `${name}_0`;
+            customizeInputAutoFit(input, true);
+            continue;
+          }
           for (const j in uiOption[name]) {
             const group = customize.appendChild(cE('div'));
             group.className = 'customizeGroup';
@@ -3238,7 +3249,7 @@
               input.className = 'customizeInput';
               input.name = `${name}_${j}`;
               input.value = uiOption[name][j][k];
-              customizeInputAutoFit(input);
+              customizeInputAutoFit(input, k === uiOption[name][j].length-1);
             }
           }
         }
@@ -3265,22 +3276,80 @@
       };
     }
 
-    function customizeInputAutoFit(input) {
+    function customizeInputAutoFit(input, isLastCustomizeInput) {
       if (input.type === 'select-one' || input.disabled && input.name !== 'version') return;
-      customizerInpuFit(input);
-      input.addEventListener('input', function(event) {
-        customizerInpuFit(input);
+      customizerInpuFit(input, isLastCustomizeInput);
+      input.addEventListener('input', event => customizerInpuFit(input, true));
+      input.addEventListener('keydown', function(event) {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        const currentGroup = input.parentNode;
+        let nextGroup = event.shiftKey ? currentGroup.previousElementSibling : currentGroup.nextElementSibling;
+        if (!nextGroup && !event.shiftKey) {
+          const nextGroupIndex = input.name.match(/_(\d+)$/)[1]*1+1;
+          nextGroup = input.parentNode.parentNode.appendChild(cE('div'));
+          nextGroup.className = 'customizeGroup';
+          nextGroup.innerHTML = `${nextGroupIndex+1}. `
+
+          const newInput = nextGroup.appendChild(cE('input'));
+          newInput.type = 'text';
+          newInput.className = 'customizeInput';
+          newInput.name = input.name.replace(/_(\d+)$/, (...f)=>`_${nextGroupIndex}`);
+          customizeInputAutoFit(newInput, true);
+
+          const select = gE('.customizeBox select[name="groupChoose"]');
+          if (select) {
+            const selectOptions = gE('option', 'all', select);
+            const prevSelected = select.value;
+            const optionUI = select.appendChild(cE('option'));
+            selectOptions[selectOptions.length-1].value = nextGroupIndex+1;
+            selectOptions[selectOptions.length-1].textContent = nextGroupIndex+1;
+            optionUI.value = 'new';
+            optionUI.textContent = 'new';
+            select.value = prevSelected;
+          }
+        }
+        ((nextGroup?gE(event.shiftKey ? '.customizeInput:last-child' : '.customizeInput:first-child', nextGroup):undefined)??gE('.customizeInput:first-child', currentGroup)).focus()
       });
     }
 
-    function customizerInpuFit(input) {
+    function customizerInpuFit(input, dynamic=false) {
       if (input.value === input.placeholder) {
         input.classList.add('optionDefault');
       } else {
         input.classList.remove('optionDefault');
       }
-      let length = input.value.length || input.placeholder?.length;
-      input.style.cssText += `width:${length+1}ch;`
+      autoResizeInput(input);
+      if (!input.classList.contains('customizeInput') || !dynamic) return;
+      if (input.nextElementSibling || !input.value) return;
+      const newInput = input.parentNode.appendChild(cE('input'));
+      newInput.type = 'text';
+      newInput.className = 'customizeInput';
+      newInput.name = input.getAttribute('name');
+      customizeInputAutoFit(newInput);
+    }
+
+    function autoResizeInput(input) {
+      const measure = cE('span');
+      const styles = window.getComputedStyle(input);
+      measure.style.cssText = `
+        visibility: hidden;
+        white-space: pre;
+        font-family: ${styles.fontFamily};
+        font-size: ${styles.fontSize};
+        font-weight: ${styles.fontWeight};
+        letter-spacing: ${styles.letterSpacing};
+        padding: ${styles.padding};
+        border: ${styles.border};
+        box-sizing: ${styles.boxSizing};
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    `;
+      measure.textContent = input.value;
+      document.body.appendChild(measure);
+      input.style.width = measure.offsetWidth + 'px';
+      document.body.removeChild(measure);
     }
 
     function creatCustomizeBox() { // 自定义条件界面
@@ -3405,20 +3474,35 @@
         let groupChoose = selects[0].value;
         let group;
         if (groupChoose === 'new') {
-          groupChoose = gE('option', 'all', selects[0]).length;
+          const select = gE('select[name="groupChoose"]', customizeBox);
+          const selectOptions = gE('option', 'all', select);
+          groupChoose = selectOptions.length;
           group = target.appendChild(cE('div'));
           group.className = 'customizeGroup';
           group.innerHTML = `${groupChoose}. `;
           selects[0].click();
+          const prevSelected = select.value;
+          const optionUI = select.appendChild(cE('option'));
+          selectOptions[selectOptions.length-1].value = groupChoose;
+          selectOptions[selectOptions.length-1].textContent = groupChoose;
+          optionUI.value = 'new';
+          optionUI.textContent = 'new';
+          select.value = prevSelected;
         } else {
           group = gE('.customizeGroup', 'all', target)[groupChoose - 1];
         }
-        const input = group.appendChild(cE('input'));
+        const items = gE('*', 'all', group);
+        let input;
+        for (let i = items.length-1; i >= 0; i--) {
+          if (items[i].value) break;
+          input = items[i];
+        }
+        input ??= group.appendChild(cE('input'));
         input.type = 'text';
         input.className = 'customizeInput';
         input.name = `${target.getAttribute('name')}_${groupChoose - 1}`;
         input.value = `${selects[1].value} ${selects[2].value} ${selects[3].value}`;
-        customizeInputAutoFit(input);
+        customizeInputAutoFit(input, true);
       };
 
       function attr(target) {
@@ -6667,7 +6751,6 @@
           if (tier) return 0;
         }
       })();
-
       // 3. no skill available
       if (!skill) {
         if (tier) return false;
