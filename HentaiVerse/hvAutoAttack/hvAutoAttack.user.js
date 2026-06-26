@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.21
+// @version      2.91.22
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -3410,7 +3410,9 @@
         '<option value="_isCd_">isCd</option>',
         '<option value="_spirit">spirit</option>',
         '<option value="_buffTurn_">buffTurn</option>',
+        '<option value="_buffStack_">buffStack</option>',
         '<option value="">- - - -</option>',
+        '<option value="_targetBuffStack_">targetBuffStack</option>',
         '<option value="_targetBuffTurn_">targetBuffTurn</option>',
         '<option value="_targetIsAlive">targetIsAlive</option>',
         '<option value="_targetHp">targetHp</option>',
@@ -3778,6 +3780,9 @@
         buffTurn(...img) {
           return getBuffTurnFromImg(getBuff(imgArray2img(...img)));
         },
+        buffStack(...img) {
+          return getBuffStackFromImg(getBuff(imgArray2img(...img)));
+        },
         hpDecimal() {
           return g().hp / 100;
         },
@@ -3794,10 +3799,15 @@
       let currentGroup=null;
       const func = {
         ...returnValueGetter.prototype.func,
-        targetBuffTurn(...img) {
-          const getBuffTurn = (t, i) => getBuffTurnFromImg(getBuff(imgArray2img(i), getMonsterID(t)));
+        targetBuffStack(...img) {
+          const getter = (t, i) => getBuffStackFromImg(getBuff(imgArray2img(i), getMonsterID(t)));
           let param = minmaxModes.includes(img[0]) ? img.shift() : undefined;
-          return switchMaxMin(param, t => getBuffTurn(t, img));
+          return switchMaxMin(param, t => getter(t, img));
+        },
+        targetBuffTurn(...img) {
+          const getter = (t, i) => getBuffTurnFromImg(getBuff(imgArray2img(i), getMonsterID(t)));
+          let param = minmaxModes.includes(img[0]) ? img.shift() : undefined;
+          return switchMaxMin(param, t => getter(t, img));
         },
         targetOrder(param) {
           return switchMaxMin(param, t => t.order);
@@ -5196,16 +5206,24 @@
       }
     }
 
+    function matchBuffImg(buff) {
+      return buff?.getAttribute('onmouseover').match(/\(\s*'(?:[^']*?\(x(\d+)\)[^']*?|[^']*?)'\s*,\s*'.*'\s*,\s*(\d+)\s*\)/);
+    }
+
+    function getBuffStackFromImg(buff) {
+      return (matchBuffImg(buff)?.[1] ?? 1)*1;
+    }
+
     function getBuffTurnFromImg(buff) {
-      let duration = buff?.getAttribute('onmouseover').match(/\(.*,.*,(\s*)(.*?)\)$/)[2];
-      if (!duration) {
-        duration = 0;
-      } else if (['permanent', '-', "'-'"].includes(duration)) {
-        duration = Infinity;
-      } else {
-        duration *= 1;
+      let duration = matchBuffImg(buff)?.[2];
+      switch (true) {
+        case !duration:
+          return 0;
+        case ['permanent', '-', "'-'"].includes(duration):
+          return Infinity;
+        default:
+          return duration * 1;
       }
-      return duration;
     }
 
     function getMonsterID(s) {
@@ -6736,17 +6754,20 @@
       // 3. 满足条件
       // 使用物理普通攻击，跳过Offensive Magic
       // 否则按照属性攻击模式释放Spell > Offensive Magic
-      let physical = attackStatus === 0 || (option.etherTap && getBuff('coalescemana', getMonsterID(target)) && checkCondition(option.etherTapCondition, monsters));
-
-      // return gE(`#pane_effects>img[src*="/${buff}"]`) ?? gE(`#pane_effects>img[src*="_${buff}"]`);
-      let range;
-      // 1. physical or etherTap
+      let range = 1;
+      // 1. physical
       if (attackStatus === 0) {
         range = g().fightingStyle === '1' ? 3 : 1;
         return tryAttack();
       }
-
-      // 2. try check skill condition
+      // 2. etherTap
+      if (option.etherTap && getBuff('coalescemana', getMonsterID(target))) {
+        const expiring = [getBuffStackFromImg, getBuffTurnFromImg].map(getter => getter(getBuff('wpn_et')) <= 1).reduce((acc, cur) => acc || cur);
+        if (expiring && checkCondition(option.etherTapCondition)) {
+          return tryAttack();
+        }
+      }
+      // 3.0 try check skill condition
       const skill = 1 * (() => {
         const conditions = [option.lowSkillCondition, option.middleSkillCondition, option.highSkillCondition];
         for (let lv = tier ?? 2; lv >= 0; lv--) {
@@ -6755,12 +6776,12 @@
           if (tier) return 0;
         }
       })();
-      // 3. no skill available
+      // 3.a no skill available
       if (!skill) {
         if (tier) return false;
         return tryAttack();
       }
-      // 4. cast skill
+      // 3.b cast skill
       for (let ab in updateAbility) {
         const ranges = updateAbility[ab][skill];
         if (!ranges) continue;
