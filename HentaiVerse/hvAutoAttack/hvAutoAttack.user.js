@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.22
+// @version      2.91.23
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -5475,7 +5475,10 @@
           }
           ['#battle_right', '#battle_left'].forEach(selector => { gE('#battle_main').replaceChild(gE(selector, doc), gE(selector)); });
           unsafeWindow.battle = undefined;
-          await loadUnsafeWindowBattle();
+          if (!await loadUnsafeWindowBattle()) {
+            setExitBattleTimeout('Defeat');
+            return;
+          }
           newRound(true);
           onStepInDone();
           onBattleRound();
@@ -5930,8 +5933,13 @@
     }
 
     async function loadUnsafeWindowBattle() { try {
-      unsafeWindow.battle = await until(() => new unsafeWindow.Battle(), 300);
+      unsafeWindow.battle = await until(() => gE('#vbd') ? true : new unsafeWindow.Battle(), 300);
+      if (!unsafeWindow.battle && gE('#vbd')) {
+        console.log('Initialization of unsafeWindow.battle stoped due to defeated.');
+        return false;
+      }
       unsafeWindow.battle.clear_infopane();
+      return true;
     } catch (err) { console.error(err); }}
 
     function newRound(isNew) { // New Round
@@ -6486,7 +6494,9 @@
     async function clickMonster(id) {
       if (!unsafeWindow.battle) {
         console.log('loadUnsafeWindowBattle before click monster');
-        await loadUnsafeWindowBattle();
+        if (!await loadUnsafeWindowBattle()) {
+          return;
+        }
       }
       getMonster(id).click();
     }
