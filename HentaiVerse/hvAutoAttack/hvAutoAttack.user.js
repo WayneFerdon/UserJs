@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.23
+// @version      2.91.24
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -6705,17 +6705,17 @@
       const option = g().option??{};
       const monsters = g().battle.monsterStatus;
       if (option.attackStatusSwitch) {
-        const byTier = option.attackStatusSwitchByTier;
-        let tier = byTier ? 3 : undefined;
+
+        let tier = option.attackStatusSwitchByTier ? 3 : undefined;
         const order = splitOrders(option.attackStatusOrderValue, [0,6,5,1,2,4,3]);
-        while (tier-- !== 0) {
+        while (tier === undefined || tier-- !== 0) {
           for (const status of order) {
             if (!option.attackStatusSwitch[status]) continue;
             g('attackStatusCurrent', status);
             if (!checkCondition(option[`attackStatusSwitchCondition${status}`], monsters)) continue;
             if (onAttack(status, selectStatusOnly, tier)) return true;
           }
-          if (!byTier) break;
+          if (tier === undefined) break;
         }
       }
       g('attackStatusCurrent', g().attackStatus);
