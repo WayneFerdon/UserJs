@@ -94,12 +94,12 @@
 
   **示例2**: ManaElixir的id为11295，则`!_isCd_11295`表示不可使用，`_isCd_11295`表示可以使用
 
-10. `buffTurn`: 人物Buff剩余时间，格式`_buffTurn_img`。可使用`_scroll`限定为卷轴buff`_buffTurn_sparklife_scroll`、使用`_png`限定为非卷轴buff`_buffTurn_sparklife_png`. 可用 `{buffA,buffB,...}` 表示获取 buffA **或** buffB （**或** 括号 `{ }` 中的任意其他buff，将返回匹配成功的第一个buff），注意内部不要包含空格，例如`_buffTurn_{stun,sleep}`.
+10. `buffStack`、`buffTurn`: 人物Buff层数/剩余时间，格式`_buffTurn_img`。可使用`_scroll`限定为卷轴buff`_buffTurn_sparklife_scroll`、使用`_png`限定为非卷轴buff`_buffTurn_sparklife_png`. 可用 `{buffA,buffB,...}` 表示获取 buffA **或** buffB （**或** 括号 `{ }` 中的任意其他buff，将返回匹配成功的第一个buff），注意内部不要包含空格，例如`_buffTurn_{stun,sleep}`.
 
   **示例**: Protection的img为protection，则`_buffTurn_protection == 0`表示不存在Protection的buff，`_buffTurn_protection >= 10`表示Protection的buff至少剩余10回合
 
-11. `_targetHp`、`_targetMp`、`_targetSp`、`_targetHpDecimal`、`_targetMpDecimal`、`_targetSpDecimal`、`_targetBuffTurn`、`_targetRank`、`_targetOrder`、`_targetWeight`、`_targetIsAlive`: 目标怪物的HP%、SP%、MP%、HP%（小数形式）、SP%（小数形式）、MP%（小数形式）、buff剩余时间、优先级、位置、当前权重、是否存活
-    1. `_targetBuffTurn_`后缀参照8.`buffTurn`（如：`_targetBuffTurn_bleed != 0`表示目标bleed的buff剩余回合不等于0）。target的目标怪物遵循以下规则
+11. `_targetHp`、`_targetMp`、`_targetSp`、`_targetHpDecimal`、`_targetMpDecimal`、`_targetSpDecimal`、`_targetBuffStack`、`_targetBuffTurn`、`_targetRank`、`_targetOrder`、`_targetWeight`、`_targetIsAlive`: 目标怪物的HP%、SP%、MP%、HP%（小数形式）、SP%（小数形式）、MP%（小数形式）、buff剩余时间、优先级、位置、当前权重、是否存活
+    1. `_targetBuffTurn_`后缀参照10.`buffTurn`（如：`_targetBuffTurn_bleed != 0`表示目标bleed的buff剩余回合不等于0）。target的目标怪物遵循以下规则
        1. 默认情况的target均为权重优先级最高的目标
        2. 武器技能（马炮、T1~T3等）、法术技能（中阶、高阶）：按照 逐条条件判断>按权重逐个目标>满足任意一条条件内的所有子条目，则对该目标释放。例如下图最后的慈悲的条件：仅释放hp小于25%、拥有流血buff
         ![示例](https://github.com/user-attachments/assets/b4d0c57d-fdb1-464b-88d6-107643809339)
@@ -216,6 +216,7 @@ PS: 对于需要带下划线`_`开头的func式变量，可以省略`_`开头（
 | Lamentations of the Future / trio_skuld | Screams of the Past / trio_urd | Wailings of the Present / trio_verdandi | Searing Skin / firedot | Freezing Limbs / coldslow |
 | Turbulent Air / windmiss | Deep Burns / elecweak | Breached Defense / holybreach |
 | Blunted Attack / darknerf | Burning Soul / soulfire | Ripened Soul / ripesoul |
+| Ether Tap / wpn_et | - | - |
 
 ***
 
