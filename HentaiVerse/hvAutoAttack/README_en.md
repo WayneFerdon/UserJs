@@ -91,12 +91,12 @@ Four drop down lists and one button are visible in the box
 
   **example 2**: the id of ManaElixir is 11295, `!_isCd_11295` means ManaElixir can't be used or `_isCd_11295` means ManaElixir can be used
 
-10. `buffTurn`: time the buff last in person, format`_buffTurn_img`. Use suffix `_scroll` for scroll buff only `_buffTurn_sparklife_scroll`, `_png` for not scroll buff only `_buffTurn_sparklife_png`. `{buffA,buffB,...}` means to get buffA **or** buffB (**or** any else in `{ }`, matching the first available one), be aware that no space ` ` should be included in between, such as `_buffTurn_{stun,sleep}`.
+10. `buffStack`/`buffTurn`: buff stack / time the buff last in person, format`_buffTurn_img`. Use suffix `_scroll` for scroll buff only `_buffTurn_sparklife_scroll`, `_png` for not scroll buff only `_buffTurn_sparklife_png`. `{buffA,buffB,...}` means to get buffA **or** buffB (**or** any else in `{ }`, matching the first available one), be aware that no space ` ` should be included in between, such as `_buffTurn_{stun,sleep}`.
 
   **example 1**: the image of Protection is protection, `_buffTurn_protection == 0` means you don't have the buff of Protection or `_buffTurn_protection >= 10` means the buff of Protection on you last at least 10 turns
 
-11. `_targetHp`/`_targetMp`/`_targetSp`/`_targetHpDecimal`/`_targetMpDecimal`/`_targetSpDecimal`/`_targetBuffTurn`/`_targetRank`: `HP%`/`SP%`/`MP%`/`HP% in decimal`/`SP%  in decimal`/`MP%  in decimal`/`buffRemainTime`/`attackRank`/`_targetRank`/`_targetOrder`/`_targetWeight`/`_targetIsAlive` of target monster
-    1. ,  suffix of `_targetBuffTurn_` is same as 10.`buffTurn`（such as：`_targetBuffTurn_bleed != 0` means remain turns of bleed buff on target monster is not equal to 0. Target that is calculating is chosen by following rules:
+11. `_targetHp`/`_targetMp`/`_targetSp`/`_targetHpDecimal`/`_targetMpDecimal`/`_targetSpDecimal`/`_targetBuffStack`/`_targetBuffTurn`/`_targetRank`: `HP%`/`SP%`/`MP%`/`HP% in decimal`/`SP%  in decimal`/`MP%  in decimal`/`buffRemainTime`/`attackRank`/`_targetRank`/`_targetOrder`/`_targetWeight`/`_targetIsAlive` of target monster
+    1. ,  suffix of `_targetBuffStack`/`_targetBuffTurn_` is same as 10.`buffStack`/`buffTurn`（such as：`_targetBuffTurn_bleed != 0` means remain turns of bleed buff on target monster is not equal to 0. Target that is calculating is chosen by following rules:
         1. The highest priority monster by rank in default situations.
         2. Weapon skills (OFC, T1~T3, etc.), Offensive Spell skills (Tire2, Tire3): by each condition > for each ranked target > find the target fit all sub-condition in the condition and cast to it. Such as the pic below: condition for Merciful Blow: only cast to targets which with hp below 25% and a bleed buff.
     
@@ -212,6 +212,7 @@ The following is a schematic diagram of the circuit diagram
 | Lamentations of the Future / trio_skuld | Screams of the Past / trio_urd | Wailings of the Present / trio_verdandi | Searing Skin / firedot | Freezing Limbs / coldslow |
 | Turbulent Air / windmiss | Deep Burns / elecweak | Breached Defense / holybreach |
 | Blunted Attack / darknerf | Burning Soul / soulfire | Ripened Soul / ripesoul |
+| Ether Tap / wpn_et | - | - |
 
 ***
 
