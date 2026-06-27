@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.24
+// @version      2.91.25
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1656,6 +1656,7 @@
     }
 
     function getLocal(key, isLocalStorage, toJSON) {
+
       let value;
       if (isLocalStorage || typeof GM_getValue === 'undefined' || !GM_getValue(key, null)) {
         key = `hvAA-${key}`;
@@ -4265,16 +4266,45 @@
       } catch (err) { console.error(err); }}
     } catch (err) { console.error(err); }}
 
+    function getTodayEncounter(encounter) { return encounter.filter(e => time(2, e.time) === time(2)); }
+
+    function getLocalEncounter(encounter = []) {
+      encounter = [ ... getValue('encounter', true) ?? [], ... getLocal('encounter', true, true) ?? [], ...encounter ];
+      const uniqued = [];
+      while (encounter.length) {
+        const item = encounter.pop();
+        const existed = uniqued.find(x=> x.time === item.time);
+        if (existed) {
+          if (existed.encountered !== item.encountered) {
+            existed.encountered ||= item.encountered;
+          }
+          continue;
+        }
+        uniqued.unshift(item);
+      }
+      return getTodayEncounter(uniqued);
+    }
+
     function setEncounter(encounter) {
+      encounter = getLocalEncounter(encounter);
+      setLocal('encounter', encounter, true);
       return g('encounter', setValue('encounter', encounter));
     }
 
     function getEncounter() {
-      const getToday = (encounter) => encounter.filter(e => time(2, e.time) === time(2));
       const current = g().encounter ?? [];
-      let encounter = getValue('encounter', true) ?? [];
+      let last = 0;
+      current.forEach(e=> {
+        if (e.encountered > last) last = e.encountered;
+        if (e.time > last) last = e.time;
+      });
+      let encounter = ((time(0) - last) >= (_1h * 0.5)) ? getLocal('encounter', true, true) : current;
+      if (!encounter || !last) {
+        encounter = getValue('encounter', true) ?? [];
+        setEncounter(encounter);
+      }
       if (JSON.stringify(current) === JSON.stringify(encounter)) {
-        return getToday(encounter);
+        return getTodayEncounter(encounter);
       }
       let dict = {};
       for (let e of current) {
@@ -4296,7 +4326,7 @@
         dict[key].time = Math.max(dict[key].time, e.time);
         dict[key].encountered = (e.encountered || dict[key].encountered) ? Math.max(dict[key].encountered ?? 0, e.encountered ?? 0) : undefined;
       }
-      return getToday(Object.values(dict)).sort((x, y) => x.time < y.time ? 1 : x.time > y.time ? -1 : 0);
+      return getTodayEncounter(Object.values(dict)).sort((x, y) => x.time < y.time ? 1 : x.time > y.time ? -1 : 0);
     }
 
     async function asyncSetProficiency() { try {
