@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.25
+// @version      2.91.26
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -4783,7 +4783,7 @@
       const encounter = getEncounter();
       const count = encounter.filter(e => e.url).length;
       const now = time(0);
-      const last = encounter[0]?.time ?? getValue('lastEH', true) ?? 0; // 上次遭遇 或 上次打开EH 或 0
+      const last = Math.max(encounter[0]?.time, getValue('lastEH', true) ?? 0); // 上次遭遇 或 上次打开EH 或 0
       let cd;
       if (encounter.filter(e => e.url && (e.encountered || (time(0) - e.time >= 30 * _1m))).length >= 24) {
         cd = Math.floor(encounter[0].time / _1d + 1) * _1d - now;
