@@ -4273,7 +4273,7 @@
       const uniqued = [];
       while (encounter.length) {
         const item = encounter.pop();
-        const existed = uniqued.find(x=> x.time === item.time);
+        const existed = uniqued.find(x => x.time === item.time || x.url === item.url);
         if (existed) {
           if (existed.encountered !== item.encountered) {
             existed.encountered ||= item.encountered;
@@ -4783,7 +4783,7 @@
       const encounter = getEncounter();
       const count = encounter.filter(e => e.url).length;
       const now = time(0);
-      const last = Math.max(encounter[0]?.time, getValue('lastEH', true) ?? 0); // 上次遭遇 或 上次打开EH 或 0
+      const last = encounter[0]?.time ?? getValue('lastEH', true) ?? 0; // 上次遭遇 或 上次打开EH 或 0
       let cd;
       if (encounter.filter(e => e.url && (e.encountered || (time(0) - e.time >= 30 * _1m))).length >= 24) {
         cd = Math.floor(encounter[0].time / _1d + 1) * _1d - now;
