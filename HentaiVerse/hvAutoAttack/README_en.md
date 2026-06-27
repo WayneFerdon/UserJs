@@ -210,8 +210,9 @@ The following is a schematic diagram of the circuit diagram
 | Coalesced Mana / coalescemana | Stunned / stun / wpn_stun | Penetrated Armor / ap / wpn_ap |
 | Bleeding Wound / bleed / wpn_bleed | Absorbing Ward / absorb | Fury of the Sisters / trio_furyofthesisters |
 | Lamentations of the Future / trio_skuld | Screams of the Past / trio_urd | Wailings of the Present / trio_verdandi | Searing Skin / firedot | Freezing Limbs / coldslow |
-| Turbulent Air / windmiss | Deep Burns / elecweak | Breached Defense / holybreach |
-| Blunted Attack / darknerf | Burning Soul / soulfire | Ripened Soul / ripesoul |
+| Freezing Limbs / coldslow | Turbulent Air / windmiss | Deep Burns / elecweak |
+| Searing Skin / firedot | - | Breached Defense / holybreach |
+Blunted Attack / darknerf | Burning Soul / soulfire | Ripened Soul / ripesoul |
 | Ether Tap / wpn_et | - | - |
 
 ***
