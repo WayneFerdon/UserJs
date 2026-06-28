@@ -1926,6 +1926,56 @@
       li.textContent = code;
     }
 
+    function getCheckSupplyOptionTable(suffix='') {
+      const itemMap = {
+        11191: '<l0>体力长效药</l0><l1>體力長效藥</l1><l2>Health Draught</l2>',
+        11195: '<l0>体力药水</l0><l1>體力藥水</l1><l2>Health Potion<l0>',
+        11199: '<l0>体力秘药</l0><l1>體力秘藥</l1><l2>Health Elixir<l0>',
+        11291: '<l0>魔力长效药</l0><l1>魔力長效藥</l1><l2>Mana Draught<l0>',
+        11295: '<l0>魔力药水</l0><l1>魔力藥水</l1><l2>Mana Potion<l0>',
+        11299: '<l0>魔力秘药</l0><l1>魔力秘藥</l1><l2>Mana Elixir<l0>',
+        11391: '<l0>灵力长效药</l0><l1>靈力長效藥</l1><l2>Spirit Draught<l0>',
+        11395: '<l0>灵力药水</l0><l1>靈力藥水</l1><l2>Spirit Potion<l0>',
+        11399: '<l0>灵力秘药</l0><l1>靈力秘藥</l1><l2>Spirit Elixir<l0>',
+        12101: '<l0>火焰魔药</l0><l1>火焰魔藥</l1><l2>Infusion of Flames<l0>',
+        12201: '<l0>冰冷魔药</l0><l1>冰冷魔藥</l1><l2>Infusion of Frost<l0>',
+        12301: '<l0>闪电魔药</l0><l1>閃電魔藥</l1><l2>Infusion of Lightning<l0>',
+        12401: '<l0>风暴魔药</l0><l1>風暴魔藥</l1><l2>Infusion of Storms<l0>',
+        12501: '<l0>神圣魔药</l0><l1>神聖魔藥</l1><l2>Infusion of Divinity<l0>',
+        12601: '<l0>黑暗魔药</l0><l1>黑暗魔藥</l1><l2>Infusion of Darkness<l0>',
+        13299: '<l0>众神卷轴</l0><l1>眾神捲軸</l1><l2>Scroll of the Gods<l0>',
+        13221: '<l0>生命卷轴</l0><l1>生命捲軸</l1><l2>Scroll of Life<l0>',
+        13211: '<l0>幻影卷轴</l0><l1>幻影捲軸</l1><l2>Scroll of Shadows<l0>',
+        13201: '<l0>吸收卷轴</l0><l1>吸收捲軸</l1><l2>Scroll of Absorption<l0>',
+        13199: '<l0>化身卷轴</l0><l1>化身捲軸</l1><l2>Scroll of the Avatar<l0>',
+        13111: '<l0>守护卷轴</l0><l1>守護捲軸</l1><l2>Scroll of Protection<l0>',
+        13101: '<l0>加速卷轴</l0><l1>加速捲軸</l1><l2>Scroll of Swiftness<l0>',
+        19111: '<l0>花瓶</l0><l1>花瓶</l1><l2>Flower Vase<l0>',
+        19131: '<l0>泡泡糖</l0><l1>泡泡糖</l1><l2>Bubble-Gum<l0>',
+        11501: '<l0>终极秘药</l0><l1>終極秘藥</l1><l2>Last Elixir<l0>',
+        11401: '<l0>能量饮料</l0><l1>能量飲料</l1><l2>Energy Drink<l0>',
+        11402: '<l0>咖啡因糖果</l0><l1>咖啡因糖果</l1><l2>Caffeinated Candy<l0>',
+      };
+      const items = [
+        11191, 11291, 11391, 12101, 12201,
+        11195, 11295, 11395, 12301, 12401,
+        11199, 11299, 11399, 12501, 12601,
+        13299, 13221, 13211, 13201,        0,
+        13199, 13111, 13101,        0, 11401,
+        19111, 19131, 11501,        0, 11402];
+      const UIString = [];
+      UIString.push('    <div class="hvAAcheckItems hvAATable">');
+      for (const item of items) {
+        if (!item) {
+          UIString.push('<div></div>');
+          continue;
+        }
+        UIString.push(`<div><input id="isCheck${suffix}_${item}" type="checkbox"><label for="isCheck${suffix}_${item}"><input class="hvAANumber" name="checkItem${suffix}_${item}" placeholder="0" type="number">${itemMap[item]}</label></div>`);
+      }
+      UIString.push('</div>');
+      return UIString;
+    }
+
     function optionBox() { // 配置界面
       let option = g().option??{};
       const optionBox = gE('body').appendChild(cE('div'));
@@ -2103,83 +2153,11 @@
         '    <input id="checkSupply" type="checkbox"><label for="checkSupply"><b>[C!]<l0>检查物品库存</l0><l1>檢查物品庫存</l1><l2>Check is item needs supply</l2></b>;</label>',
         '    <l0>库存</l0><l1>庫存</l1><l2>Warn if supply</l2>&lt;max(100%,<input id="checkSupplyWarn" class="hvAANumber" name="checkSupplyWarn" placeholder="100" type="number">%)<l0>时提示</l0><l1>時提示</l1>;</br>',
         '    <input id="encounterSupply" type="checkbox"><label for="encounterSupply"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label>',
-        '    <div class="hvAAcheckItems hvAATable">',
-        '      <div><input id="isCheck_11191" type="checkbox"><label for="isCheck_11191"><input class="hvAANumber" name="checkItem_11191" placeholder="0" type="number"><l0>体力长效药</l0><l1>體力長效藥</l1><l2>Health Draught</l2></label></div>',
-        '      <div><input id="isCheck_11291" type="checkbox"><label for="isCheck_11291"><input class="hvAANumber" name="checkItem_11291" placeholder="0" type="number"><l0>魔力长效药</l0><l1>魔力長效藥</l1><l2>Mana Draught</l2></label></div>',
-        '      <div><input id="isCheck_11391" type="checkbox"><label for="isCheck_11391"><input class="hvAANumber" name="checkItem_11391" placeholder="0" type="number"><l0>灵力长效药</l0><l1>靈力長效藥</l1><l2>Spirit Draught</l2></label></div>',
-        '      <div><input id="isCheck_12101" type="checkbox"><label for="isCheck_12101"><input class="hvAANumber" name="checkItem_12101" placeholder="0" type="number"><l0>火焰魔药</l0><l1>火焰魔藥</l1><l2>Infusion of Flames</l2></label></div>',
-        '      <div><input id="isCheck_12201" type="checkbox"><label for="isCheck_12201"><input class="hvAANumber" name="checkItem_12201" placeholder="0" type="number"><l0>冰冷魔药</l0><l1>冰冷魔藥</l1><l2>Infusion of Frost</l2></label></div>',
-
-        '      <div><input id="isCheck_11195" type="checkbox"><label for="isCheck_11195"><input class="hvAANumber" name="checkItem_11195" placeholder="0" type="number"><l0>体力药水</l0><l1>體力藥水</l1><l2>Health Potion</l2></label></div>',
-        '      <div><input id="isCheck_11295" type="checkbox"><label for="isCheck_11295"><input class="hvAANumber" name="checkItem_11295" placeholder="0" type="number"><l0>魔力药水</l0><l1>魔力藥水</l1><l2>Mana Potion</l2></label></div>',
-        '      <div><input id="isCheck_11395" type="checkbox"><label for="isCheck_11395"><input class="hvAANumber" name="checkItem_11395" placeholder="0" type="number"><l0>灵力药水</l0><l1>靈力藥水</l1><l2>Spirit Potion</l2></label></div>',
-        '      <div><input id="isCheck_12301" type="checkbox"><label for="isCheck_12301"><input class="hvAANumber" name="checkItem_12301" placeholder="0" type="number"><l0>闪电魔药</l0><l1>閃電魔藥</l1><l2>Infusion of Lightning</l2></label></div>',
-        '      <div><input id="isCheck_12401" type="checkbox"><label for="isCheck_12401"><input class="hvAANumber" name="checkItem_12401" placeholder="0" type="number"><l0>风暴魔药</l0><l1>風暴魔藥</l1><l2>Infusion of Storms</l2></label></div>',
-
-        '      <div><input id="isCheck_11199" type="checkbox"><label for="isCheck_11199"><input class="hvAANumber" name="checkItem_11199" placeholder="0" type="number"><l0>体力秘药</l0><l1>體力秘藥</l1><l2>Health Elixir</l2></label></div>',
-        '      <div><input id="isCheck_11299" type="checkbox"><label for="isCheck_11299"><input class="hvAANumber" name="checkItem_11299" placeholder="0" type="number"><l0>魔力秘药</l0><l1>魔力秘藥</l1><l2>Mana Elixir</l2></label></div>',
-        '      <div><input id="isCheck_11399" type="checkbox"><label for="isCheck_11399"><input class="hvAANumber" name="checkItem_11399" placeholder="0" type="number"><l0>灵力秘药</l0><l1>靈力秘藥</l1><l2>Spirit Elixir</l2></label></div>',
-        '      <div><input id="isCheck_12501" type="checkbox"><label for="isCheck_12501"><input class="hvAANumber" name="checkItem_12501" placeholder="0" type="number"><l0>神圣魔药</l0><l1>神聖魔藥</l1><l2>Infusion of Divinity</l2></label></div>',
-        '      <div><input id="isCheck_12601" type="checkbox"><label for="isCheck_12601"><input class="hvAANumber" name="checkItem_12601" placeholder="0" type="number"><l0>黑暗魔药</l0><l1>黑暗魔藥</l1><l2>Infusion of Darkness</l2></label></div>',
-
-        '      <div><input id="isCheck_19111" type="checkbox"><label for="isCheck_19111"><input class="hvAANumber" name="checkItem_19111" placeholder="0" type="number"><l0>花瓶</l0><l1>花瓶</l1><l2>Flower Vase</l2></label></div>',
-        '      <div><input id="isCheck_19131" type="checkbox"><label for="isCheck_19131"><input class="hvAANumber" name="checkItem_19131" placeholder="0" type="number"><l0>泡泡糖</l0><l1>泡泡糖</l1><l2>Bubble-Gum</l2></label></div>',
-        '      <div><input id="isCheck_11501" type="checkbox"><label for="isCheck_11501"><input class="hvAANumber" name="checkItem_11501" placeholder="0" type="number"><l0>终极秘药</l0><l1>終極秘藥</l1><l2>Last Elixir</l2></label></div>',
-        '      <div><input id="isCheck_13201" type="checkbox"><label for="isCheck_13201"><input class="hvAANumber" name="checkItem_13201" placeholder="0" type="number"><l0>吸收卷轴</l0><l1>吸收捲軸</l1><l2>Scroll of Absorption</l2></label></div>',
-        '      <div><input id="isCheck_61001" type="checkbox"><label for="isCheck_61001"><input class="hvAANumber" name="checkItem_61001" placeholder="0" type="number"><l0>虚空碎片</l0><l1>虛空碎片</l1><l2>Voidseeker Shard</l2></label></div>',
-
-        '      <div><input id="isCheck_11401" type="checkbox"><label for="isCheck_11401"><input class="hvAANumber" name="checkItem_11401" placeholder="0" type="number"><l0>能量饮料</l0><l1>能量飲料</l1><l2>Energy Drink</l2></label></div>',
-        '      <div><input id="isCheck_13211" type="checkbox"><label for="isCheck_13211"><input class="hvAANumber" name="checkItem_13211" placeholder="0" type="number"><l0>幻影卷轴</l0><l1>幻影捲軸</l1><l2>Scroll of Shadows</l2></label></div>',
-        '      <div><input id="isCheck_13221" type="checkbox"><label for="isCheck_13221"><input class="hvAANumber" name="checkItem_13221" placeholder="0" type="number"><l0>生命卷轴</l0><l1>生命捲軸</l1><l2>Scroll of Life</l2></label></div>',
-        '      <div><input id="isCheck_13299" type="checkbox"><label for="isCheck_13299"><input class="hvAANumber" name="checkItem_13299" placeholder="0" type="number"><l0>众神卷轴</l0><l1>眾神捲軸</l1><l2>Scroll of the Gods</l2></label></div>',
-        '      <div><input id="isCheck_61101" type="checkbox"><label for="isCheck_61101"><input class="hvAANumber" name="checkItem_61101" placeholder="0" type="number"><l0>以太碎片</l0><l1>以太碎片</l1><l2>Aether Shard</l2></label></div>',
-
-        '      <div><input id="isCheck_11402" type="checkbox"><label for="isCheck_11402"><input class="hvAANumber" name="checkItem_11402" placeholder="0" type="number"><l0>咖啡因糖果</l0><l1>咖啡因糖果</l1><l2>Caffeinated Candy</l2></label></div>',
-        '      <div><input id="isCheck_13101" type="checkbox"><label for="isCheck_13101"><input class="hvAANumber" name="checkItem_13101" placeholder="0" type="number"><l0>加速卷轴</l0><l1>加速捲軸</l1><l2>Scroll of Swiftness</l2></label></div>',
-        '      <div><input id="isCheck_13111" type="checkbox"><label for="isCheck_13111"><input class="hvAANumber" name="checkItem_13111" placeholder="0" type="number"><l0>守护卷轴</l0><l1>守護捲軸</l1><l2>Scroll of Protection</l2></label></div>',
-        '      <div><input id="isCheck_13199" type="checkbox"><label for="isCheck_13199"><input class="hvAANumber" name="checkItem_13199" placeholder="0" type="number"><l0>化身卷轴</l0><l1>化身捲軸</l1><l2>Scroll of the Avatar</l2></label></div>',
-        '      <div><input id="isCheck_61501" type="checkbox"><label for="isCheck_61501"><input class="hvAANumber" name="checkItem_61501" placeholder="0" type="number"><l0>羽毛碎片</l0><l1>羽毛碎片</l1><l2>Featherweight Shard</l2></label></div>',
-        '    </div>',
+        ...getCheckSupplyOptionTable(),
         '  </div>',
         '  <div><input id="checkSupplyGF" type="checkbox"><label for="checkSupplyGF"><b>[C!!]<l0>压榨届使用额外的库存检查</l0><l1>壓榨屆使用額外的庫存檢查</l1><l2>Extra supply check for Grind Fest</l2></b>;</label>',
         '    <l0>库存</l0><l1>庫存</l1><l2>Warn if supply</l2>&lt;max(100%,<input id="checkSupplyWarnGF" class="hvAANumber" name="checkSupplyWarnGF" placeholder="100" type="number">%)<l0>时提示</l0><l1>時提示</l1>;',
-        '    <div class="hvAAcheckItems hvAATable">',
-        '      <div><input id="isCheckGF_11191" type="checkbox"><label for="isCheckGF_11191"><input class="hvAANumber" name="checkItemGF_11191" placeholder="0" type="number"><l0>体力长效药</l0><l1>體力長效藥</l1><l2>Health Draught</l2></label></div>',
-        '      <div><input id="isCheckGF_11291" type="checkbox"><label for="isCheckGF_11291"><input class="hvAANumber" name="checkItemGF_11291" placeholder="0" type="number"><l0>魔力长效药</l0><l1>魔力長效藥</l1><l2>Mana Draught</l2></label></div>',
-        '      <div><input id="isCheckGF_11391" type="checkbox"><label for="isCheckGF_11391"><input class="hvAANumber" name="checkItemGF_11391" placeholder="0" type="number"><l0>灵力长效药</l0><l1>靈力長效藥</l1><l2>Spirit Draught</l2></label></div>',
-        '      <div><input id="isCheckGF_12101" type="checkbox"><label for="isCheckGF_12101"><input class="hvAANumber" name="checkItemGF_12101" placeholder="0" type="number"><l0>火焰魔药</l0><l1>火焰魔藥</l1><l2>Infusion of Flames</l2></label></div>',
-        '      <div><input id="isCheckGF_12201" type="checkbox"><label for="isCheckGF_12201"><input class="hvAANumber" name="checkItemGF_12201" placeholder="0" type="number"><l0>冰冷魔药</l0><l1>冰冷魔藥</l1><l2>Infusion of Frost</l2></label></div>',
-
-        '      <div><input id="isCheckGF_11195" type="checkbox"><label for="isCheckGF_11195"><input class="hvAANumber" name="checkItemGF_11195" placeholder="0" type="number"><l0>体力药水</l0><l1>體力藥水</l1><l2>Health Potion</l2></label></div>',
-        '      <div><input id="isCheckGF_11295" type="checkbox"><label for="isCheckGF_11295"><input class="hvAANumber" name="checkItemGF_11295" placeholder="0" type="number"><l0>魔力药水</l0><l1>魔力藥水</l1><l2>Mana Potion</l2></label></div>',
-        '      <div><input id="isCheckGF_11395" type="checkbox"><label for="isCheckGF_11395"><input class="hvAANumber" name="checkItemGF_11395" placeholder="0" type="number"><l0>灵力药水</l0><l1>靈力藥水</l1><l2>Spirit Potion</l2></label></div>',
-        '      <div><input id="isCheckGF_12301" type="checkbox"><label for="isCheckGF_12301"><input class="hvAANumber" name="checkItemGF_12301" placeholder="0" type="number"><l0>闪电魔药</l0><l1>閃電魔藥</l1><l2>Infusion of Lightning</l2></label></div>',
-        '      <div><input id="isCheckGF_12401" type="checkbox"><label for="isCheckGF_12401"><input class="hvAANumber" name="checkItemGF_12401" placeholder="0" type="number"><l0>风暴魔药</l0><l1>風暴魔藥</l1><l2>Infusion of Storms</l2></label></div>',
-
-        '      <div><input id="isCheckGF_11199" type="checkbox"><label for="isCheckGF_11199"><input class="hvAANumber" name="checkItemGF_11199" placeholder="0" type="number"><l0>体力秘药</l0><l1>體力秘藥</l1><l2>Health Elixir</l2></label></div>',
-        '      <div><input id="isCheckGF_11299" type="checkbox"><label for="isCheckGF_11299"><input class="hvAANumber" name="checkItemGF_11299" placeholder="0" type="number"><l0>魔力秘药</l0><l1>魔力秘藥</l1><l2>Mana Elixir</l2></label></div>',
-        '      <div><input id="isCheckGF_11399" type="checkbox"><label for="isCheckGF_11399"><input class="hvAANumber" name="checkItemGF_11399" placeholder="0" type="number"><l0>灵力秘药</l0><l1>靈力秘藥</l1><l2>Spirit Elixir</l2></label></div>',
-        '      <div><input id="isCheckGF_12501" type="checkbox"><label for="isCheckGF_12501"><input class="hvAANumber" name="checkItemGF_12501" placeholder="0" type="number"><l0>神圣魔药</l0><l1>神聖魔藥</l1><l2>Infusion of Divinity</l2></label></div>',
-        '      <div><input id="isCheckGF_12601" type="checkbox"><label for="isCheckGF_12601"><input class="hvAANumber" name="checkItemGF_12601" placeholder="0" type="number"><l0>黑暗魔药</l0><l1>黑暗魔藥</l1><l2>Infusion of Darkness</l2></label></div>',
-
-        '      <div><input id="isCheckGF_19111" type="checkbox"><label for="isCheckGF_19111"><input class="hvAANumber" name="checkItemGF_19111" placeholder="0" type="number"><l0>花瓶</l0><l1>花瓶</l1><l2>Flower Vase</l2></label></div>',
-        '      <div><input id="isCheckGF_19131" type="checkbox"><label for="isCheckGF_19131"><input class="hvAANumber" name="checkItemGF_19131" placeholder="0" type="number"><l0>泡泡糖</l0><l1>泡泡糖</l1><l2>Bubble-Gum</l2></label></div>',
-        '      <div><input id="isCheckGF_11501" type="checkbox"><label for="isCheckGF_11501"><input class="hvAANumber" name="checkItemGF_11501" placeholder="0" type="number"><l0>终极秘药</l0><l1>終極秘藥</l1><l2>Last Elixir</l2></label></div>',
-        '      <div><input id="isCheckGF_13201" type="checkbox"><label for="isCheckGF_13201"><input class="hvAANumber" name="checkItemGF_13201" placeholder="0" type="number"><l0>吸收卷轴</l0><l1>吸收捲軸</l1><l2>Scroll of Absorption</l2></label></div>',
-        '      <div><input id="isCheckGF_61001" type="checkbox"><label for="isCheckGF_61001"><input class="hvAANumber" name="checkItemGF_61001" placeholder="0" type="number"><l0>虚空碎片</l0><l1>虛空碎片</l1><l2>Voidseeker Shard</l2></label></div>',
-
-        '      <div><input id="isCheckGF_11401" type="checkbox"><label for="isCheckGF_11401"><input class="hvAANumber" name="checkItemGF_11401" placeholder="0" type="number"><l0>能量饮料</l0><l1>能量飲料</l1><l2>Energy Drink</l2></label></div>',
-        '      <div><input id="isCheckGF_13211" type="checkbox"><label for="isCheckGF_13211"><input class="hvAANumber" name="checkItemGF_13211" placeholder="0" type="number"><l0>幻影卷轴</l0><l1>幻影捲軸</l1><l2>Scroll of Shadows</l2></label></div>',
-        '      <div><input id="isCheckGF_13221" type="checkbox"><label for="isCheckGF_13221"><input class="hvAANumber" name="checkItemGF_13221" placeholder="0" type="number"><l0>生命卷轴</l0><l1>生命捲軸</l1><l2>Scroll of Life</l2></label></div>',
-        '      <div><input id="isCheckGF_13299" type="checkbox"><label for="isCheckGF_13299"><input class="hvAANumber" name="checkItemGF_13299" placeholder="0" type="number"><l0>众神卷轴</l0><l1>眾神捲軸</l1><l2>Scroll of the Gods</l2></label></div>',
-        '      <div><input id="isCheckGF_61101" type="checkbox"><label for="isCheckGF_61101"><input class="hvAANumber" name="checkItemGF_61101" placeholder="0" type="number"><l0>以太碎片</l0><l1>以太碎片</l1><l2>Aether Shard</l2></label></div>',
-
-        '      <div><input id="isCheckGF_11402" type="checkbox"><label for="isCheckGF_11402"><input class="hvAANumber" name="checkItemGF_11402" placeholder="0" type="number"><l0>咖啡因糖果</l0><l1>咖啡因糖果</l1><l2>Caffeinated Candy</l2></label></div>',
-        '      <div><input id="isCheckGF_13101" type="checkbox"><label for="isCheckGF_13101"><input class="hvAANumber" name="checkItemGF_13101" placeholder="0" type="number"><l0>加速卷轴</l0><l1>加速捲軸</l1><l2>Scroll of Swiftness</l2></label></div>',
-        '      <div><input id="isCheckGF_13111" type="checkbox"><label for="isCheckGF_13111"><input class="hvAANumber" name="checkItemGF_13111" placeholder="0" type="number"><l0>守护卷轴</l0><l1>守護捲軸</l1><l2>Scroll of Protection</l2></label></div>',
-        '      <div><input id="isCheckGF_13199" type="checkbox"><label for="isCheckGF_13199"><input class="hvAANumber" name="checkItemGF_13199" placeholder="0" type="number"><l0>化身卷轴</l0><l1>化身捲軸</l1><l2>Scroll of the Avatar</l2></label></div>',
-        '      <div><input id="isCheckGF_61501" type="checkbox"><label for="isCheckGF_61501"><input class="hvAANumber" name="checkItemGF_61501" placeholder="0" type="number"><l0>羽毛碎片</l0><l1>羽毛碎片</l1><l2>Featherweight Shard</l2></label></div>',
-        '    </div>',
+        ...getCheckSupplyOptionTable('GF'),
         '  </div>',
         '</div>',
 
