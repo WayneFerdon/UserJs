@@ -4195,50 +4195,48 @@
         isChecked: () => ready.supply && ready.repair && ready.encounter,
       };
       const idleStart = time(0);
-      if (option.encounter || (option.idleArena && option.idleArenaValue)) {
-        await Promise.all([
-          // proficiency
-          (async () => { try {
-            ready.proficiency = await asyncSetProficiency() || true;
-            await tryEncounter();
-          } catch (err) { console.error(err); }})(),
-          // ability
-          (async () => { try {
-            ready.ability = await asyncSetAbilityData() || true;
-            await tryEncounter();
-          } catch (err) { console.error(err); }})(),
-          // stamina & hathperk
-          (async () => { try {
-            ready.stamina = await asyncSetStamina() || true;
-            await tryEncounter();
-          } catch (err) { console.error(err); }})(),
-          // item & supply
-          (async () => { try {
-            ready.item = await asyncGetItems() || true;
-            await tryEncounter();
-            ready.supply = checkSupply();
-            await tryEncounter();
-          } catch (err) { console.error(err); }})(),
-          // repair
-          (async () => { try {
-            ready.repair = await asyncCheckRepair();
-            await tryEncounter();
-          } catch (err) { console.error(err); }})(),
-          // equipment storage
-          (async () => { try {
-            ready.storage = await asyncCheckEquStorage();
-            await tryEncounter();
-          } catch (err) { console.error(err); }})(),
-          // arena data
-          updateArena(),
-        ]);
-        if (!ready.isChecked()) {
-          $async.logSwitch(arguments);
-          return;
-        }
-        if (option.idleArena && option.idleArenaValue) {
-          startUpdateArena(idleStart);
-        }
+      await Promise.all([
+        // proficiency
+        (async () => { try {
+          ready.proficiency = await asyncSetProficiency() || true;
+          await tryEncounter();
+        } catch (err) { console.error(err); }})(),
+        // ability
+        (async () => { try {
+          ready.ability = await asyncSetAbilityData() || true;
+          await tryEncounter();
+        } catch (err) { console.error(err); }})(),
+        // stamina & hathperk
+        (async () => { try {
+          ready.stamina = await asyncSetStamina() || true;
+          await tryEncounter();
+        } catch (err) { console.error(err); }})(),
+        // item & supply
+        (async () => { try {
+          ready.item = await asyncGetItems() || true;
+          await tryEncounter();
+          ready.supply = checkSupply();
+          await tryEncounter();
+        } catch (err) { console.error(err); }})(),
+        // repair
+        (async () => { try {
+          ready.repair = await asyncCheckRepair();
+          await tryEncounter();
+        } catch (err) { console.error(err); }})(),
+        // equipment storage
+        (async () => { try {
+          ready.storage = await asyncCheckEquStorage();
+          await tryEncounter();
+        } catch (err) { console.error(err); }})(),
+        // arena data
+        updateArena(),
+      ]);
+      if (!ready.isChecked()) {
+        $async.logSwitch(arguments);
+        return;
+      }
+      if (option.idleArena && option.idleArenaValue) {
+        startUpdateArena(idleStart);
       }
       setTimeout(autoSwitchIsekai, (option.isekaiTime * (Math.random() * 20 + 90) / 100) * _1s - (time(0) - idleStart));
       $async.logSwitch(arguments);
