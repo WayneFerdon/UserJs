@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.29
+// @version      2.91.30
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2149,6 +2149,16 @@
         '  <div>',
         '    <input id="repair" type="checkbox"><label for="repair"><b>[R!]<l0>修复装备</l0><l1>修復裝備</l1><l2>Repair Equipment</l2></b></label>: ',
         '    <l0>耐久度</l0><l1>耐久度</l1><l2>Durability</l2> ≤ <input class="hvAANumber" name="repairValue" type="number">% <l0>或 压榨届耐久度</l0><l1>或 壓榨屆耐久度</l1><l2>OR Grind Fest Durability</l2> ≤ <input class="hvAANumber" name="repairValueGF" type="number">%<br><input id="repairCharm" type="checkbox"><label for="repairCharm"><l0>修复护石 (含压榨界)</l0><l1>修復護石 (含壓榨界)</l1><l2>Repair charm (including Grind Fest)</l2>;<input id="repairCharmGF" type="checkbox"><label for="repairCharmGF"><l0>压榨界修复护石</l0><l1>壓榨屆修復護石</l1><l2>Repair charm before Grind Fest</l2></label></label><br><input id="encounterRepair" type="checkbox"><label for="encounterRepair"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label>',
+        '    <div><l0>检查非空装备槽位时忽略</l0><l1>檢查非空裝備槽位時忽略</l1><l2>Skip when checking unslotted equipments</l2>: </div>',
+        '    <div class="hvAAcheckItems hvAATable" style="grid-template-columns: repeat(7, 1fr)">',
+        '      <div><input id="equipCheckSkip_1" type="checkbox"><label for="equipCheckSkip_1"><l0>主手</l0><l1>主手</l1><l2>Main Hand</l2></label></div>',
+        '      <div><input id="equipCheckSkip_2" type="checkbox"><label for="equipCheckSkip_2"><l0>副手</l0><l1>副手</l1><l2>Off Hand</l2></label></div>',
+        '      <div><input id="equipCheckSkip_13" type="checkbox"><label for="equipCheckSkip_13"><l0>头盔</l0><l1>頭盔</l1><l2>Helmet</l2></label></div>',
+        '      <div><input id="equipCheckSkip_11" type="checkbox"><label for="equipCheckSkip_11"><l0>身体</l0><l1>身體</l1><l2>Body</l2></label></div>',
+        '      <div><input id="equipCheckSkip_14" type="checkbox"><label for="equipCheckSkip_14"><l0>手部</l0><l1>手部</l1><l2>Hands</l2></label></div>',
+        '      <div><input id="equipCheckSkip_12" type="checkbox"><label for="equipCheckSkip_12"><l0>腿部</l0><l1>腿部</l1><l2>Legs</l2></label></div>',
+        '      <div><input id="equipCheckSkip_15" type="checkbox"><label for="equipCheckSkip_15"><l0>脚部</l0><l1>腳部</l1><l2>Feet</l2></label></div>',
+        '  </div>',
         '  </div>',
         '  <div>',
         '    <input id="equStorage" type="checkbox"><label for="equStorage"><b>[E!]<l0>装备库存</l0><l1>裝備庫存</l1><l2>Equipment Storage</l2></b></label> ≤ <input class="hvAANumber" style="width: 32px;" name="equStorageValue" placeholder="150" type="number">; <input id="encounterEquStorage" type="checkbox"><label for="encounterEquStorage"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label>',
@@ -4621,6 +4631,18 @@
         $async.logSwitch(arguments);
         return undefined;
       }
+      const lang = option.lang;
+      const slotMap = {
+        1: ['主手', '主手', 'Main Hand'],
+        2: ['副手', '副手', 'Off Hand'],
+        13: ['头盔', '頭盔', 'Helmet'],
+        11: ['身体', '身體', 'Body'],
+        14: ['手部', '手部', 'Hands'],
+        12: ['腿部', '腿部', 'Legs'],
+        15: ['脚部', '腳部', 'Feet']
+      }
+      let emptySlot = Array.from(gE('.eqb:not(.eqdisabled)', 'all', equiped)).map(slot => { return { id: slot.getAttribute('onclick').match(/equip_slot=(\d+)/)[1], empty: gE('.eqempty', slot) }; });
+      emptySlot = emptySlot.filter(slot => slot.empty && !option.equipCheckSkip?.[slot.id]).map(slot => slotMap[slot.id*1][lang]);
       const token = gE('#equipform>input[name="postoken"]', doc).value;
       const [material, materialNames] = doc.body.innerHTML.match(/const eqitems=(\{.*\});/)[1].split(/; const itemdata=/).map(JSON.parse);
       equiped = Array.from(gE('[onmouseover*="equips.set("]', 'all', equiped)).map(eq=>eq.getAttribute('onmouseover').match(/equips.set\((\d+),/)[1]);
@@ -4634,6 +4656,22 @@
         return gE(`#e${id}`, after) ? gE('.lc', eqp).childNodes[2].textContent : undefined;
       } catch (err) { console.error(err); }}));
       eqps = eqps.filter(e => e);
+      if (emptySlot.length) {
+        console.log('Empty equip slots:\n', emptySlot.join('\n '));
+        switch(option.lang * 1) {
+          case 0:
+            popup(`缺少装备:\n${emptySlot.join('\n ')}`);
+            break
+          case 1:
+            popup(`缺少裝備:\n${emptySlot.join('\n ')}`);
+            break
+          case 2:
+          default:
+            popup(`Empty equip slots:\n${emptySlot.join('\n ')}`);
+            break
+        }
+        document.title = `[R!]` + document.title;
+      }
       if (eqps.length) {
         console.log('equips need repair:\n', eqps.join('\n '));
         switch(option.lang * 1) {
