@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.26
+// @version      2.91.28
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -4195,50 +4195,50 @@
         isChecked: () => ready.supply && ready.repair && ready.encounter,
       };
       const idleStart = time(0);
-      await Promise.all([
-        // proficiency
-        (async () => { try {
-          ready.proficiency = await asyncSetProficiency() || true;
-          await tryEncounter();
-        } catch (err) { console.error(err); }})(),
-        // ability
-        (async () => { try {
-          ready.ability = await asyncSetAbilityData() || true;
-          await tryEncounter();
-        } catch (err) { console.error(err); }})(),
-        // stamina & hathperk
-        (async () => { try {
-          ready.stamina = await asyncSetStamina() || true;
-          await tryEncounter();
-        } catch (err) { console.error(err); }})(),
-        // item & supply
-        (async () => { try {
-          ready.item = await asyncGetItems() || true;
-          await tryEncounter();
-          ready.supply = checkSupply();
-          await tryEncounter();
-        } catch (err) { console.error(err); }})(),
-        // repair
-        (async () => { try {
-          ready.repair = await asyncCheckRepair();
-          await tryEncounter();
-        } catch (err) { console.error(err); }})(),
-        // equipment storage
-        (async () => { try {
-          ready.storage = await asyncCheckEquStorage();
-          await tryEncounter();
-        } catch (err) { console.error(err); }})(),
-        // arena data
-        updateArena(),
-      ]);
-      if (!ready.isChecked()) {
-        $async.logSwitch(arguments);
-        return;
-      }
-      if (option.idleArena && option.idleArenaValue) {
-        startUpdateArena(idleStart);
-      } else {
-        console.log("skip arena check");
+      if (option.encounter || (option.idleArena && option.idleArenaValue)) {
+        await Promise.all([
+          // proficiency
+          (async () => { try {
+            ready.proficiency = await asyncSetProficiency() || true;
+            await tryEncounter();
+          } catch (err) { console.error(err); }})(),
+          // ability
+          (async () => { try {
+            ready.ability = await asyncSetAbilityData() || true;
+            await tryEncounter();
+          } catch (err) { console.error(err); }})(),
+          // stamina & hathperk
+          (async () => { try {
+            ready.stamina = await asyncSetStamina() || true;
+            await tryEncounter();
+          } catch (err) { console.error(err); }})(),
+          // item & supply
+          (async () => { try {
+            ready.item = await asyncGetItems() || true;
+            await tryEncounter();
+            ready.supply = checkSupply();
+            await tryEncounter();
+          } catch (err) { console.error(err); }})(),
+          // repair
+          (async () => { try {
+            ready.repair = await asyncCheckRepair();
+            await tryEncounter();
+          } catch (err) { console.error(err); }})(),
+          // equipment storage
+          (async () => { try {
+            ready.storage = await asyncCheckEquStorage();
+            await tryEncounter();
+          } catch (err) { console.error(err); }})(),
+          // arena data
+          updateArena(),
+        ]);
+        if (!ready.isChecked()) {
+          $async.logSwitch(arguments);
+          return;
+        }
+        if (option.idleArena && option.idleArenaValue) {
+          startUpdateArena(idleStart);
+        }
       }
       setTimeout(autoSwitchIsekai, (option.isekaiTime * (Math.random() * 20 + 90) / 100) * _1s - (time(0) - idleStart));
       $async.logSwitch(arguments);
@@ -6740,6 +6740,7 @@
         const order = splitOrders(option.attackStatusOrderValue, [0,6,5,1,2,4,3]);
         while (tier === undefined || tier-- !== 0) {
           for (const status of order) {
+            if (!status && tier) continue;
             if (!option.attackStatusSwitch[status]) continue;
             g('attackStatusCurrent', status);
             if (!checkCondition(option[`attackStatusSwitchCondition${status}`], monsters)) continue;
