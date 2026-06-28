@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.28
+// @version      2.91.29
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -370,6 +370,37 @@
         id: 422,
         img: 'fallenshield',
       }
+    };
+    const itemMap = {
+      ...{ // Consumables
+        11191: ['体力长效药', '體力長效藥', 'Health Draught'],
+        11195: ['体力药水', '體力藥水', 'Health Potion'],
+        11199: ['体力秘药', '體力秘藥', 'Health Elixir'],
+        11291: ['魔力长效药', '魔力長效藥', 'Mana Draught'],
+        11295: ['魔力药水', '魔力藥水', 'Mana Potion'],
+        11299: ['魔力秘药', '魔力秘藥', 'Mana Elixir'],
+        11391: ['灵力长效药', '靈力長效藥', 'Spirit Draught'],
+        11395: ['灵力药水', '靈力藥水', 'Spirit Potion'],
+        11399: ['灵力秘药', '靈力秘藥', 'Spirit Elixir'],
+        12101: ['火焰魔药', '火焰魔藥', 'Infusion of Flames'],
+        12201: ['冰冷魔药', '冰冷魔藥', 'Infusion of Frost'],
+        12301: ['闪电魔药', '閃電魔藥', 'Infusion of Lightning'],
+        12401: ['风暴魔药', '風暴魔藥', 'Infusion of Storms'],
+        12501: ['神圣魔药', '神聖魔藥', 'Infusion of Divinity'],
+        12601: ['黑暗魔药', '黑暗魔藥', 'Infusion of Darkness'],
+        13299: ['众神卷轴', '眾神捲軸', 'Scroll of the Gods'],
+        13221: ['生命卷轴', '生命捲軸', 'Scroll of Life'],
+        13211: ['幻影卷轴', '幻影捲軸', 'Scroll of Shadows'],
+        13201: ['吸收卷轴', '吸收捲軸', 'Scroll of Absorption'],
+        13199: ['化身卷轴', '化身捲軸', 'Scroll of the Avatar'],
+        13111: ['守护卷轴', '守護捲軸', 'Scroll of Protection'],
+        13101: ['加速卷轴', '加速捲軸', 'Scroll of Swiftness'],
+        19111: ['花瓶', '花瓶', 'Flower Vase'],
+        19131: ['泡泡糖', '泡泡糖', 'Bubble-Gum'],
+        11501: ['终极秘药', '終極秘藥', 'Last Elixir'],
+        11401: ['能量饮料', '能量飲料', 'Energy Drink'],
+        11402: ['咖啡因糖果', '咖啡因糖果', 'Caffeinated Candy'],
+      } // Consumables
     };
 
     const [$RPN, $async, $debug, $ajax] = [initRPN(), initAsync(), initDebug(), window.top.$ajax ??= unsafeWindow.$ajax ??= initAjax()];
@@ -1926,36 +1957,7 @@
       li.textContent = code;
     }
 
-    function getCheckSupplyOptionTable(suffix='') {
-      const itemMap = {
-        11191: '<l0>体力长效药</l0><l1>體力長效藥</l1><l2>Health Draught</l2>',
-        11195: '<l0>体力药水</l0><l1>體力藥水</l1><l2>Health Potion<l0>',
-        11199: '<l0>体力秘药</l0><l1>體力秘藥</l1><l2>Health Elixir<l0>',
-        11291: '<l0>魔力长效药</l0><l1>魔力長效藥</l1><l2>Mana Draught<l0>',
-        11295: '<l0>魔力药水</l0><l1>魔力藥水</l1><l2>Mana Potion<l0>',
-        11299: '<l0>魔力秘药</l0><l1>魔力秘藥</l1><l2>Mana Elixir<l0>',
-        11391: '<l0>灵力长效药</l0><l1>靈力長效藥</l1><l2>Spirit Draught<l0>',
-        11395: '<l0>灵力药水</l0><l1>靈力藥水</l1><l2>Spirit Potion<l0>',
-        11399: '<l0>灵力秘药</l0><l1>靈力秘藥</l1><l2>Spirit Elixir<l0>',
-        12101: '<l0>火焰魔药</l0><l1>火焰魔藥</l1><l2>Infusion of Flames<l0>',
-        12201: '<l0>冰冷魔药</l0><l1>冰冷魔藥</l1><l2>Infusion of Frost<l0>',
-        12301: '<l0>闪电魔药</l0><l1>閃電魔藥</l1><l2>Infusion of Lightning<l0>',
-        12401: '<l0>风暴魔药</l0><l1>風暴魔藥</l1><l2>Infusion of Storms<l0>',
-        12501: '<l0>神圣魔药</l0><l1>神聖魔藥</l1><l2>Infusion of Divinity<l0>',
-        12601: '<l0>黑暗魔药</l0><l1>黑暗魔藥</l1><l2>Infusion of Darkness<l0>',
-        13299: '<l0>众神卷轴</l0><l1>眾神捲軸</l1><l2>Scroll of the Gods<l0>',
-        13221: '<l0>生命卷轴</l0><l1>生命捲軸</l1><l2>Scroll of Life<l0>',
-        13211: '<l0>幻影卷轴</l0><l1>幻影捲軸</l1><l2>Scroll of Shadows<l0>',
-        13201: '<l0>吸收卷轴</l0><l1>吸收捲軸</l1><l2>Scroll of Absorption<l0>',
-        13199: '<l0>化身卷轴</l0><l1>化身捲軸</l1><l2>Scroll of the Avatar<l0>',
-        13111: '<l0>守护卷轴</l0><l1>守護捲軸</l1><l2>Scroll of Protection<l0>',
-        13101: '<l0>加速卷轴</l0><l1>加速捲軸</l1><l2>Scroll of Swiftness<l0>',
-        19111: '<l0>花瓶</l0><l1>花瓶</l1><l2>Flower Vase<l0>',
-        19131: '<l0>泡泡糖</l0><l1>泡泡糖</l1><l2>Bubble-Gum<l0>',
-        11501: '<l0>终极秘药</l0><l1>終極秘藥</l1><l2>Last Elixir<l0>',
-        11401: '<l0>能量饮料</l0><l1>能量飲料</l1><l2>Energy Drink<l0>',
-        11402: '<l0>咖啡因糖果</l0><l1>咖啡因糖果</l1><l2>Caffeinated Candy<l0>',
-      };
+    function getCheckSupplyOptionTable(suffix='', checkBoxOnly) {
       const items = [
         11191, 11291, 11391, 12101, 12201,
         11195, 11295, 11395, 12301, 12401,
@@ -1970,7 +1972,9 @@
           UIString.push('<div></div>');
           continue;
         }
-        UIString.push(`<div><input id="isCheck${suffix}_${item}" type="checkbox"><label for="isCheck${suffix}_${item}"><input class="hvAANumber" name="checkItem${suffix}_${item}" placeholder="0" type="number">${itemMap[item]}</label></div>`);
+        UIString.push(`<div><input id="isCheck${suffix}_${item}" type="checkbox"><label for="isCheck${suffix}_${item}">`)
+        if (!checkBoxOnly) UIString.push(`<input class="hvAANumber" name="checkItem${suffix}_${item}" placeholder="0" type="number">`);
+        UIString.push(`${itemMap[item].map((...args) => `<l${args[1]}>${args[0]}</l${args[1]}>`).join('')}</label></div>`);
       }
       UIString.push('</div>');
       return UIString;
@@ -2150,6 +2154,8 @@
         '    <input id="equStorage" type="checkbox"><label for="equStorage"><b>[E!]<l0>装备库存</l0><l1>裝備庫存</l1><l2>Equipment Storage</l2></b></label> ≤ <input class="hvAANumber" style="width: 32px;" name="equStorageValue" placeholder="150" type="number">; <input id="encounterEquStorage" type="checkbox"><label for="encounterEquStorage"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label>',
         '  </div>',
         '  <div>',
+        '    <input id="checkSupplySlotted" type="checkbox"><label for="checkSupplySlotted"><b>[C!]<l0>检查物品是否装备</l0><l1>檢查物品是否裝備</l1><l2>Check is item slotted</l2></b>;</label>',
+        ...getCheckSupplyOptionTable('Slotted', true),
         '    <input id="checkSupply" type="checkbox"><label for="checkSupply"><b>[C!]<l0>检查物品库存</l0><l1>檢查物品庫存</l1><l2>Check is item needs supply</l2></b>;</label>',
         '    <l0>库存</l0><l1>庫存</l1><l2>Warn if supply</l2>&lt;max(100%,<input id="checkSupplyWarn" class="hvAANumber" name="checkSupplyWarn" placeholder="100" type="number">%)<l0>时提示</l0><l1>時提示</l1>;</br>',
         '    <input id="encounterSupply" type="checkbox"><label for="encounterSupply"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label>',
@@ -4511,52 +4517,69 @@
         items[id] = [name, count];
       }
       g('items', items);
+      g('slotItems', Array.from(gE('[id*="item_"]', 'all', gE('#item_slots', doc))).map(slot=>slot.id.match(/item_(\d+)/)[1]));
       $async.logSwitch(arguments);
     } catch (err) { console.error(err); }}
 
     function checkSupply(isGFStandalone) {
       const option = g().option??{};
-      if (!option.checkSupply) {
-        return true;
-      }
+      if (!option.checkSupply) return true;
       const items = g().items;
-      if (!items) {
-        return false;
-      }
+      if (!items) return false;
+      const slotItems = g().slotItems;
+      const slotedCheckList = option.checkSupplySlotted ? option.isCheckSlotted : undefined;
       const thresholdList = isGFStandalone ? option.checkItemGF : option.checkItem;
       const checkList = isGFStandalone ? option.isCheckGF : option.isCheck;
       const percentage = isGFStandalone ? option.checkSupplyWarnGF : option.checkSupplyWarn;
-      const needs = [];
-      const warns = [];
+      const unslotted = [], needs = [], warns = [];
+      const lang = option.lang;
+      for (let id in slotedCheckList) {
+        let [name, count] = items[id] ?? [];
+        if (!slotItems.includes(id)) unslotted.push(`\n${itemMap[id][lang] ?? name}`);
+      }
       for (let id in checkList) {
-        const item = items[id];
-        if (!item) continue;
-        let [name, count] = item;
-        const threshold = thresholdList[id] ?? 0;
-        const warnThreshold = threshold * percentage / 100;
+        let [name, count] = items[id] ?? [];
+        name = itemMap[id][lang] ?? name;
         count ??= 0;
+        const threshold = thresholdList[id] ?? 0;
+        if (count < threshold) {
+          needs.push(`\n${name}(${count}<${threshold})`);
+          continue;
+        }
+        const warnThreshold = threshold * percentage / 100;
         if (count < warnThreshold) {
           warns.push(`\n${name}(${count}<${warnThreshold}(${threshold}*${percentage}%))`);
         }
-        if (count >= threshold) {
-          continue;
-        }
-        needs.push(`\n${name}(${count}<${threshold})`);
       }
-      if (needs.length) {
+      if (unslotted.length) {
+        console.log(`Unslotted items:${unslotted}`);
+        document.title = `[C!]` + document.title;
+        switch(option.lang * 1) {
+          case 0:
+            popup(`消耗品未装备:\n${unslotted}`);
+            break;
+          case 1:
+            popup(`消耗品未裝備:\n${unslotted}`);
+            break;
+          case 2:
+          default:
+            popup(`Consumables not slotted:\n${unslotted}`);
+            break;
+        }
+      } else if (needs.length) {
         console.log(`Needs supply:${needs}`);
         document.title = `[C!${isGFStandalone ? '!' : ''}]` + document.title;
         switch(option.lang * 1) {
           case 0:
             popup(`消耗品${isGFStandalone ? '(压榨届独立配置)' : ''}不足:\n${needs}`);
-            break
+            break;
           case 1:
             popup(`消耗品${isGFStandalone ? '(壓榨屆獨立配置)' : ''}不足:\n${needs}`);
-            break
+            break;
           case 2:
           default:
             popup(`Failed supply check${isGFStandalone ? ' for Grindfest standalone' : ''}:\n${needs}`);
-            break
+            break;
         }
       } else if (warns.length) {
         console.log(`Warn supply:${warns}`);
@@ -4564,17 +4587,17 @@
         switch(option.lang * 1) {
           case 0:
             popup(`消耗品${isGFStandalone ? '(压榨届独立配置)' : ''} < ${percentage}%:\n${warns}`);
-            break
+            break;
           case 1:
             popup(`消耗品${isGFStandalone ? '(壓榨屆獨立配置)' : ''} < ${percentage}%:\n${warns}`);
-            break
+            break;
           case 2:
           default:
             popup(`Supplys ${isGFStandalone ? ' for Grindfest standalone' : ''} < ${percentage}%:\n${warns}`);
-            break
+            break;
         }
       }
-      return !needs.length;
+      return !needs.length && !unslotted.length;
     }
 
     async function asyncCheckRepair(isGrindFestStandalone) { try {
