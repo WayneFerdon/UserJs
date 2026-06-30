@@ -1343,8 +1343,8 @@
       if (window.location.href.indexOf(`?s=Battle&ss=ar`) === -1 && window.location.href.indexOf(`?s=Battle&ss=rb`) === -1) {
         return;
       }
-      const ar = isNaN(option.idleArenaValue) ? option.idleArenaValue?.split(',') : [option.idleArenaValue];
-      if (!ar || ar.length === 0) {
+      const ar = splitOrders(option.idleArenaValue);
+      if (ar.length === 0) {
         return;
       }
       getStartBattleButtons().forEach(btn => {
@@ -4936,7 +4936,7 @@
         arena.arrayDone = [];
       }
       if (!isToday || !arena.isOptionUpdated) {
-        arena.array = isNaN(option.idleArenaValue) ? option.idleArenaValue?.split(',') ?? [] : [option.idleArenaValue];
+        arena.array = splitOrders(option.idleArenaValue);
         arena.array.reverse();
       }
       arena.arrayDone = arena.arrayDone.filter(id => id === 'gr' || !arena.enabled?.includes(id.toString()));
