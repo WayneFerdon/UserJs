@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.30
+// @version      2.91.31
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1343,7 +1343,7 @@
       if (window.location.href.indexOf(`?s=Battle&ss=ar`) === -1 && window.location.href.indexOf(`?s=Battle&ss=rb`) === -1) {
         return;
       }
-      const ar = option.idleArenaValue?.split(',');
+      const ar = isNaN(option.idleArenaValue) ? option.idleArenaValue?.split(',') : [option.idleArenaValue];
       if (!ar || ar.length === 0) {
         return;
       }
@@ -4936,7 +4936,7 @@
         arena.arrayDone = [];
       }
       if (!isToday || !arena.isOptionUpdated) {
-        arena.array = option.idleArenaValue?.split(',') ?? [];
+        arena.array = isNaN(option.idleArenaValue) ? option.idleArenaValue?.split(',') ?? [] : [option.idleArenaValue];
         arena.array.reverse();
       }
       arena.arrayDone = arena.arrayDone.filter(id => id === 'gr' || !arena.enabled?.includes(id.toString()));
