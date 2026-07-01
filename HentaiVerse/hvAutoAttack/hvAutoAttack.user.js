@@ -1343,7 +1343,7 @@
       if (window.location.href.indexOf(`?s=Battle&ss=ar`) === -1 && window.location.href.indexOf(`?s=Battle&ss=rb`) === -1) {
         return;
       }
-      const ar = splitOrders(option.idleArenaValue);
+      const ar = splitOrders(option.idleArenaValue).map(String);
       if (ar.length === 0) {
         return;
       }
@@ -4936,7 +4936,7 @@
         arena.arrayDone = [];
       }
       if (!isToday || !arena.isOptionUpdated) {
-        arena.array = splitOrders(option.idleArenaValue);
+        arena.array = splitOrders(option.idleArenaValue).map(String);
         arena.array.reverse();
       }
       arena.arrayDone = arena.arrayDone.filter(id => id === 'gr' || !arena.enabled?.includes(id.toString()));
