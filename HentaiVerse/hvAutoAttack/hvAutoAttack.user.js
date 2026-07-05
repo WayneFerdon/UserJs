@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.33
+// @version      2.91.34
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -403,7 +403,7 @@
       } // Consumables
     };
 
-    const [$RPN, $async, $debug, $ajax] = [initRPN(), initAsync(), initDebug(), window.top.$ajax ??= unsafeWindow.$ajax ??= initAjax()];
+    const [$RPN, $async, $debug, $ajax] = [initRPN(), initAsync(), initDebug(), window.top.$ajax ??= unsafeWindow.window.top.$ajax ??= initAjax()];
 
     // 初始化结束，开始实际流程
     for (let check of [checkIsHV, checkIsWindowTop, checkOption]) {
@@ -662,7 +662,7 @@
         },
         realtime: false,
         logList: [],
-        maxLogCache: 100,
+        maxLogCache: 50,
         switchRealtimeLog: function () {
           $debug.enableRealtimeLog($debug.realtime);
         },
@@ -717,7 +717,10 @@
           $ajax.fetch(url, data, method, context, headers).then(goto).catch( err => { console.error(err); });
         },
         openNoFetch: function (url, newTab) {
-          window.open(url, newTab ? '_blank' : '_self');
+          const newWindow = window.open(url, newTab ? '_blank' : '_self');
+          if (!newTab && (!newWindow || newWindow.closed)) {
+            goto(url);
+          }
         },
         repeat: function (count, func, ...args) {
           const list = [];
@@ -1237,8 +1240,8 @@
       return unique(object2Order(orderValue, ...args).concat(defaultOrder ?? []).map(v=>isNaN(v*1)?v:v*1));
     }
 
-    function goto() { // 前进
-      window.location.href = window.location.search ? window.location.pathname + window.location.search : window.location.href;
+    function goto(url) { // 前进
+      window.location.href = url ?? (window.location.search ? window.location.pathname + window.location.search : window.location.href);
       setTimeout(goto, 5000);
       setTimeout(() => { window.location.href = window.location.href }, 10000);
       return true;
