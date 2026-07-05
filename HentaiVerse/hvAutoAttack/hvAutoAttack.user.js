@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.34
+// @version      2.91.35
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -4711,9 +4711,10 @@
         return false;
       }
       count = gE('#equipblurb>table>tbody>tr>td:nth-child(2)', doc).innerText;
-
+      const checked = count * 1 <= option.equStorageValue;
+      if (!checked) document.title = `[E!]` + document.title;
       $async.logSwitch(arguments);
-      return count * 1 <= option.equStorageValue;
+      return checked;
     } catch (err) { console.error(err); }; return false; }
 
     async function checkBattleReady(method, condition = {}) {
