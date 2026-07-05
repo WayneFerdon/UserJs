@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.35
+// @version      2.91.36
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -4702,16 +4702,15 @@
       }
       await waitPause();
       $async.logSwitch(arguments);
-      let count;
-
       const url = `?s=Bazaar&ss=am`;
       const doc = $doc(await $ajax.insert(url));
       if (gE('#riddlecounter', doc) || gE('#battle_main', doc)) {
         $async.logSwitch(arguments);
         return false;
       }
-      count = gE('#equipblurb>table>tbody>tr>td:nth-child(2)', doc).innerText;
-      const checked = count * 1 <= option.equStorageValue;
+      const exec = /<td>Inventory Capacity:<\/td><td>(\d+)(?: \+ (\d+))?<\/td><td>\/<\/td><td>(\d+)<\/td>/.exec(doc.body.innerHTML);
+      const count = parseInt(exec[1]); + parseInt(exec[2] || 0);
+      const checked = count <= option.equStorageValue;
       if (!checked) document.title = `[E!]` + document.title;
       $async.logSwitch(arguments);
       return checked;
