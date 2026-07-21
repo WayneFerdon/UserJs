@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.40
+// @version      2.91.41
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -37,12 +37,21 @@
     const portable = ['drop', 'stats', 'dropOld', 'statsOld', 'monsterDB', 'monsterMID']
     const sharable = ['option'];
     const excludeStandalone = { 'option': ['optionStandalone', 'version', 'lang'] };
-    const location = window.location.href;
     const isFrame = window.self !== window.top;
 
-    const isIsekai = location.indexOf('isekai') !== -1;
-    const current = isIsekai ? 'isekai' : 'persistent';
-    const other = isIsekai ? 'persistent' : 'isekai';
+    function $id(id,d) {return (d||document).getElementById(id);}
+    const _servername = location.pathname.includes('/isekai/') ? 'isekai' : 'persistent';
+    const addition = {
+      other: _servername === 'isekai' ? 'persistent' : 'isekai',
+      utils: _servername === 'isekai' ? 'hvuti' : 'hvut',
+    };
+    const _server = {
+      name: _servername,
+      season: $id('world_text')?.textContent.match(/\d+ Season \d+/)?.[0] || '1',
+      [_servername]: true, // _server.persistent || _server.isekai
+      ...addition,
+    };
+
     const isEquipDetail = window.location.href.includes('/equip/');
     const isMaintaining = !gE('#csp') && !isEquipDetail;
 
@@ -771,11 +780,11 @@
           }
         },
         getLast: function () {
-          const v = window.localStorage.getItem((isIsekai ? 'hvuti' : 'hvut') + '_last_post');
+          const v = window.localStorage.getItem(_server.utils + '_last_post');
           return v === null ? undefined : JSON.parse(v);
         },
         setLast: function (last) {
-          window.localStorage.setItem((isIsekai ? 'hvuti' : 'hvut') + '_last_post', JSON.stringify(last));
+          window.localStorage.setItem(_server.utils + '_last_post', JSON.stringify(last));
         },
         timer: function () {
           function ontimer() {
@@ -909,35 +918,28 @@
       }
 
       setValue('lastEH', time(0));
-      const isEngage = window.location.href === 'https://e-hentai.org/news.php?encounter';
       let encounter = getEncounter();
-      let location = getValue('url') ?? (document.referrer.match('hentaiverse.org') ? new URL(document.referrer).origin : 'https://hentaiverse.org');
       const eventpane = gE('#eventpane');
       const now = time(0);
       let url;
       if (eventpane) { // 新一天或遭遇战
         url = gE('#eventpane>div>a')?.href.split('/')[3];
-        if (url === undefined) { // 新一天
-          encounter = [];
-        }
+        if (url === undefined) encounter = []; // 新一天
         encounter.unshift({ url: url, time: now });
         setEncounter(encounter);
-      } else {
-        if (encounter.length) {
-          if (now - encounter[0]?.time > 0.5 * _1h) { // 延长最新一次的time, 避免因漏记录导致连续来回跳转
-            encounter[0].time = now;
-            setEncounter(encounter);
-          }
-          for (let e of encounter) {
-            if (e.encountered || time(0) - e.time >= 30 * _1m) {
-              continue;
-            }
-            url = e.url;
-            break;
-          }
+      } else if (encounter.length) {
+        if (now - encounter[0]?.time > 0.5 * _1h) { // 延长最新一次的time, 避免因漏记录导致连续来回跳转
+          encounter[0].time = now;
+          setEncounter(encounter);
+        }
+        for (let e of encounter) {
+          if (e.encountered || time(0) - e.time >= 30 * _1m) continue;
+          url = e.url;
+          break;
         }
       }
 
+      const isEngage = window.location.href === 'https://e-hentai.org/news.php?encounter';
       if (!url) {
         if (isEngage && !getValue('battle')) {
           // 自动跳转，同时先刷新遭遇时间，延长下一次遭遇
@@ -959,6 +961,7 @@
         }
       } else { // 战斗外，自动跳转
         checkOption();
+        let location = getValue('url') ?? (document.referrer.match('hentaiverse.org') ? new URL(document.referrer).origin : 'https://hentaiverse.org');
         $ajax.openNoFetch(`${g().option?.altBattleFirst ? location.replace('hentaiverse.org', 'alt.hentaiverse.org').replace('alt.alt', 'alt') : location}/${url}`);
       }
       return false;
@@ -1455,7 +1458,7 @@
 
       if (!version.upto(scriptVersion)) { // 脚本升级时备份
         const backups = getValue('backup', true) || {};
-        const autos = Object.values(backups).filter(b => b.auto && b.server === current);
+        const autos = Object.values(backups).filter(b => b.auto && b.server === _server.name);
         autos.sort((a, b) => -Version.compare(a.version, b.version));
         if (!Version(autos[0]?.version).upto(version)) {
           backup();
@@ -1691,9 +1694,9 @@
         setLocal(key, value, isLocalStorage);
         return value;
       }
-      setLocal(`${current}_${key}`, value, isLocalStorage);
+      setLocal(`${_server.name}_${key}`, value, isLocalStorage);
       if (sharable.includes(key) && !getValue('option').optionStandalone) {
-        setLocal(`${other}_${key}`, value, isLocalStorage);
+        setLocal(`${_server.other}_${key}`, value, isLocalStorage);
       }
       return value;
     }
@@ -1731,10 +1734,10 @@
       if (!standalone.includes(key)) {
         return getLocal(key, isLocalStorage, toJSON);
       }
-      let otherWorldItem = getLocal(`${other}_${key}`, isLocalStorage);
+      let otherWorldItem = getLocal(`${_server.other}_${key}`, isLocalStorage);
       // 将旧的数据迁移到新的数据
 
-      if (!getLocal(`${current}_${key}`, isLocalStorage)) {
+      if (!getLocal(`${_server.name}_${key}`, isLocalStorage)) {
         let itemExisted = getLocal(key, isLocalStorage);
         if (!itemExisted && sharable.includes(key)) {
           itemExisted = otherWorldItem;
@@ -1743,17 +1746,17 @@
           return null; // 若都没有该数据
         }
         itemExisted = JSON.parse(JSON.stringify(itemExisted));
-        setLocal(`${current}_${key}`, itemExisted);
+        setLocal(`${_server.name}_${key}`, itemExisted);
         delLocal(key, isLocalStorage);
       }
       if (Object.keys(excludeStandalone).includes(key)) {
-        otherWorldItem ??= getLocal(`${current}_${key}`, isLocalStorage) ?? {};
+        otherWorldItem ??= getLocal(`${_server.name}_${key}`, isLocalStorage) ?? {};
         for (let i of excludeStandalone[key]) {
-          otherWorldItem[i] = getLocal(`${current}_${key}`, isLocalStorage)[i];
+          otherWorldItem[i] = getLocal(`${_server.name}_${key}`, isLocalStorage)[i];
         }
       }
-      setLocal(`${other}_${key}`, otherWorldItem);
-      return getLocal(`${current}_${key}`, isLocalStorage, toJSON);
+      setLocal(`${_server.other}_${key}`, otherWorldItem);
+      return getLocal(`${_server.name}_${key}`, isLocalStorage, toJSON);
     }
 
     function delLocal(key, isLocalStorage) {
@@ -1770,7 +1773,7 @@
     function delValue(key, portable=false) { // 删除数据
       const isLocalStorage = portable ? false : local.includes(key);
       if (standalone.includes(key)) {
-        key = `${current}_${key}`;
+        key = `${_server.name}_${key}`;
       }
       if (typeof key === 'string') {
         delLocal(key, isLocalStorage);
@@ -1942,7 +1945,7 @@
 
     function backup(code, alert) {
       const currentOption = getValue('option');
-      const auto = code ? undefined : `[auto backup for ${current}@${currentOption.version}] ${time(3)}`;
+      const auto = code ? undefined : `[auto backup for ${_server.name}@${currentOption.version}] ${time(3)}`;
       const backups = getValue('backup', true) || {};
       code ??= auto;
       if (code in backups) { // 覆写同名配置
@@ -1953,12 +1956,12 @@
       }
       backups[code] = getValue('option');
       backups[code].auto = auto ? time(0) : undefined;
-      backups[code].server = current;
+      backups[code].server = _server.name;
       const autos = Object.keys(backups).filter(c => backups[c].auto);
       autos.sort(a => -backups[a].auto);
       let i = 0, max = 5;
       for (const a of autos) {
-        if (backups[a].server !== current) continue;
+        if (backups[a].server !== _server.name) continue;
         i++;
         if (i <= max) continue;
         delete backups[a];
@@ -2003,7 +2006,7 @@
         '  <l012><span style="font-size:small;"><a target="_blank" href="https://greasyfork.org/forum/profile/18194/Koko191" style="color:#E3E0D1;background-color:#E3E0D1;" title="Thanks to Koko191 who give help in the translation">by Koko191</a></span></l012>',
         '  <h1 style="display:inline;">hvAutoAttack</h1>',
         '  <select name="lang"><option value="0">简体中文</option><option value="1">繁體中文</option><option value="2">English</option></select>',
-        (option.optionStandalone ? isIsekai ? '<l0>当前为异世界单独配置</l0><l1>當前為異世界單獨配置</l1><l2>Using Isekai standalone option</l2>' : '<l0>当前为恒定世界单独配置</l0><l1>當前為恆定世界單獨配置</l1><l2>Using Persistent standalone option</l2>' : ''),
+        (option.optionStandalone ? _server.isekai ? '<l0>当前为异世界单独配置</l0><l1>當前為異世界單獨配置</l1><l2>Using Isekai standalone option</l2>' : '<l0>当前为恒定世界单独配置</l0><l1>當前為恆定世界單獨配置</l1><l2>Using Persistent standalone option</l2>' : ''),
         ' <l0>配置版本</l0><l1>配置版本</l1><l2>Option Version</l2><input name="version" type="text" disabled="true">',
         '</div>',
         '<div class="hvAATablist">',
@@ -2128,7 +2131,7 @@
         '<div class="hvAATab" id="hvAATab-BattleStarter">',
         ' <div><input id="popup" type="checkbox"><label for="popup"><l0>进入失败时窗口内弹窗提示</l0><l1>進入失敗時窗口內彈窗提示</l1><l2>In-window popup while failed start</l2></label>; </div>',
         ' <div><input id="altBattleFirst" type="checkbox"><label for="altBattleFirst"><b><l0>优先使用alt进入</l0><l1>優先使用alt進入</l1><l2>Use alt.hentaiverse as default while auto start.</l2></b></label></div>',
-        ' <div><input id="encounter" type="checkbox"><label for="encounter"><b><l0>自动遭遇战</l0><l1>自動遭遇戰</l1><l2>Auto Encounter</l2></b></label><br>',
+        ' <div><input id="encounter" type="checkbox"><label for="encounter"><b><l0>自动遭遇战（将同时检查当前服务器及恒定世界的条件）</l0><l1>自動遭遇戰（將同時檢查當前世界及恆定世界的的條件）</l1><l2>Auto Encounter (Checkes both conditions in current server and persistent)</l2></b></label><br>',
         '  <input id="encounterQuickCheck" type="checkbox"><label for="encounterQuickCheck"><l0>精准倒计时(影响性能)</l0><l1>精準(影響性能)</l1><l2>Precise encounter cd(might reduced performsance)</l2></label><br>',
         '  <input id="encounterDisplay" type="checkbox"><label for="encounterDisplay"><l0>不自动遭遇时显示倒计时</l0><l1>不自動遭遇時顯示倒計時</l1><l2>Display CountDown While Not Auto Encounter</l2><br>',
         '  <l0>遭遇战倒计时</l0><l1>遭遇戰倒計時</l1><l2>Wait for encounter first while count down</l2> ≤ <input class="hvAANumber" name="encounterWaitCD" placeholder="0" type="number">s<l0>时优先等待</l0><l1>時優先等待</l1><l2>.</l2>',
@@ -4189,13 +4192,26 @@
         // 若不启用自动跳转
         return;
       }
-      $ajax.openNoFetch(`${location.slice(0, location.indexOf('.org') + 4)}/${isIsekai ? '' : 'isekai/'}`);
+      $ajax.openNoFetch(`${window.location.href.slice(0, window.location.href.indexOf('.org') + 4)}/${_server.isekai ? '' : 'isekai/'}`);
+    }
+
+    function switchCurrent() {
+      [_server.name, _server.other] = [_server.other, _server.name];
+      [_server.isekai, _server.persistent] = [!_server.isekai, !_server.persistent];
+      _server.utils = _server.utils === 'hvut' ? 'hvuti' : 'hvut';
+      checkOption();
     }
 
     async function asyncOnIdle() { try {
       await updateEncounter(false);
       await waitPause();
       $async.logSwitch(arguments);
+      let switchedForEncounter;
+      if (g().onBeforeEncounter) {
+        if (_server.persistent) return;
+        switchCurrent();
+        switchedForEncounter = true;
+      }
       const option = g().option??{};
       const ready = {
         isChecked: () => ready.supply && ready.repair && ready.encounter,
@@ -4241,6 +4257,7 @@
         $async.logSwitch(arguments);
         return;
       }
+      if (switchedForEncounter) return switchCurrent();
       if (option.idleArena && option.idleArenaValue) {
         startUpdateArena(idleStart);
       }
@@ -4265,7 +4282,7 @@
         }
         ready.encounterUpdated = true;
         $async.logSwitch(arguments);
-        ready.encounter ||= !(await updateEncounter(option.encounter));
+        ready.encounter ||= !(await updateEncounter(option.encounter || g().onBeforeEncounter));
         $async.logSwitch(arguments);
       } catch (err) { console.error(err); }}
     } catch (err) { console.error(err); }}
@@ -4333,23 +4350,27 @@
       return getTodayEncounter(Object.values(dict)).sort((x, y) => x.time < y.time ? 1 : x.time > y.time ? -1 : 0);
     }
 
+    function queryToPersistent(query, isSwitch) {
+      return g().onBeforeEncounter ? query : `${window.location.href.includes('https') ? 'https://' : 'http://'}${window.location.href.includes('alt') ? 'alt.' : ''}hentaiverse.org/${query}`;
+    }
+
     async function asyncSetProficiency() { try {
       await waitPause();
       $async.logSwitch(arguments);
-      const doc = $doc(await $ajax.insert('?s=Character'));
+      const doc = $doc(await $ajax.insert(queryToPersistent('?s=Character')));
       const proficiency = {};
       gE('#stats_scrollable table:last-child tr', 'all', doc).forEach((tr) => {
         const exec = tr.innerHTML.match(/<td>(.*)<\/td>.*<td>(.*)<\/td>/);
         proficiency[exec[2]] = exec[1]*1;
       });
-      localStorage.setItem(`hvAA-${current}_proficiency`, JSON.stringify(proficiency));
+      localStorage.setItem(`hvAA-${_server.name}_proficiency`, JSON.stringify(proficiency));
       $async.logSwitch(arguments);
     } catch (err) { console.error(err); }}
 
     async function asyncSetAbilityData() { try {
       await waitPause();
       $async.logSwitch(arguments);
-      const html = await $ajax.insert('?s=Character&ss=ab');
+      const html = await $ajax.insert(queryToPersistent('?s=Character&ss=ab'));
       const doc = $doc(html);
       const abd = {
         // 'HP Tank': { id: 1101, unlock: [0, 25, 50, 75, 100, 120, 150, 200, 250, 300], level: 0 },
@@ -4457,7 +4478,7 @@
           if (!perk?.length) {
             perk = undefined;
           }
-          if (isIsekai || !g().option?.restoreStamina) {
+          if (_server.isekai || !g().option?.restoreStamina) {
             return perk;
           }
           let currentID, html;
@@ -4519,12 +4540,12 @@
 
     async function asyncGetItems() { try {
       const option = g().option??{};
-      if (!option.checkSupply && (isIsekai || !option.restoreStamina)) {
+      if (!option.checkSupply && (_server.isekai || !option.restoreStamina)) {
         return;
       }
       await waitPause();
       $async.logSwitch(arguments);
-      const html = await $ajax.insert('?s=Character&ss=it');
+      const html = await $ajax.insert(queryToPersistent('?s=Character&ss=it'));
       const items = {};
       const doc = $doc(html);
       if (gE('#riddlecounter', doc) || gE('#battle_main', doc)) {
@@ -4636,9 +4657,8 @@
         $async.logSwitch(arguments);
         return true;
       }
-
-      const url = `?s=Bazaar&ss=am&screen=repair&filter=equipped`;
-      let [doc, equiped] = Array.from(await Promise.all([$ajax.insert(url), $ajax.insert(`?s=Character&ss=eq`)])).map($doc);
+      const url = queryToPersistent(`?s=Bazaar&ss=am&screen=repair&filter=equipped`);
+      let [doc, equiped] = Array.from(await Promise.all([$ajax.insert(url), $ajax.insert(queryToPersistent(`?s=Character&ss=eq`))])).map($doc);
       if (gE('#riddlecounter', doc) || gE('#battle_main', doc)) {
         $async.logSwitch(arguments);
         return undefined;
@@ -4711,7 +4731,7 @@
       }
       await waitPause();
       $async.logSwitch(arguments);
-      const url = `?s=Bazaar&ss=am`;
+      const url = queryToPersistent(`?s=Bazaar&ss=am`);
       const doc = $doc(await $ajax.insert(url));
       if (gE('#riddlecounter', doc) || gE('#battle_main', doc)) {
         $async.logSwitch(arguments);
@@ -4776,7 +4796,7 @@
     async function getCurrentStamina() { try {
       // await waitPause();
       $async.logSwitch(arguments);
-      const doc = $doc(await $ajax.insert(window.location.href));
+      const doc = $doc(await $ajax.insert(g().onBeforeEncounter ? window.location.href.replace(/\/isekai/,'') : window.location.href));
       if (gE('#riddlecounter', doc) || gE('#battle_main', doc)) {
         $async.logSwitch(arguments);
         return [ undefined, undefined ];
@@ -4803,7 +4823,7 @@
       const stmNRChecked = !cost || stmNR - cost >= option.staminaLowWithReNat;
       const result = { checked: stmNRChecked ? (current - cost >= (low ?? option.staminaLow)) ? 1 : 0 : -1, stmNR: stmNR };
       $async.logSwitch(arguments);
-      if (result.checked === 1 || isIsekai || !option.restoreStamina) return result;
+      if (result.checked === 1 || _server.isekai || !option.restoreStamina) return result;
       const items = g().items;
       $async.logSwitch(arguments);
       if (!items) return result;
@@ -4885,11 +4905,23 @@
     async function onEncounter() { try {
       const option = g().option??{};
       await until( // perhaps network connect not available
-        async () => await $ajax.insert(location) && (!option.checkURLBeforeNewRound || await $ajax.insert(option.checkURLBeforeNewRound)),
+        async () => await $ajax.insert(window.location.href) && (!option.checkURLBeforeNewRound || await $ajax.insert(option.checkURLBeforeNewRound)),
         option.checkURLBeforeNewRoundRetry
       );
       $async.logSwitchStrict('updateEncounter', true);
-      if (getValue('disabled') || getValue('battle') || getLocal('persistent_battle') || !await checkBattleReady(onEncounter, { staminaLow: option.staminaEncounter })) {
+      if (getValue('disabled') || (_server.persistent && getValue('battle'))) {
+        $async.logSwitchStrict('updateEncounter', false);
+        return;
+      }
+
+      if (_server.isekai) {
+        g('onBeforeEncounter', true);
+        await asyncOnIdle();
+        g('onBeforeEncounter', false);
+        return;
+      }
+
+      if (!await checkBattleReady(onEncounter, { staminaLow: option.staminaEncounter })) {
         $async.logSwitchStrict('updateEncounter', false);
         return;
       }
@@ -4897,7 +4929,6 @@
       if (!window.top.location.href.endsWith(`?s=Battle`)) {
         setValue('beforeEncounter', setValue('lastUrl', window.top.location.href));
       }
-      // if (option.enchantEncounter) await asyncCheckEnchant();
       $ajax.openNoFetch('https://e-hentai.org/news.php?encounter');
       $async.logSwitchStrict('updateEncounter', false);
     } catch (err) { console.error(err); }}
@@ -5016,7 +5047,7 @@
       [stamina.current, stamina.punish] = await getCurrentStamina();
       stamina.time = time(0);
       for (let idx in staminaCost) {
-        staminaCost[idx] *= (isIsekai ? 2 : 1) * (stamina.current >= 60 ? 0.03 : 0.02);
+        staminaCost[idx] *= (_server.isekai ? 2 : 1) * (stamina.current >= 60 ? 0.03 : 0.02);
       }
 
       let query;
@@ -5048,11 +5079,10 @@
       await waitPause();
       writeArenaStart();
       await until(async () => !option.checkURLBeforeNewRound || await $ajax.insert(option.checkURLBeforeNewRound), option.checkURLBeforeNewRoundRetry);
-      // await asyncCheckEnchant(id === 'gr');
       await until(async () => await $ajax.insert(query, `initid=${id === 'gr' ? 1 : id}${token}`), option.checkURLBeforeNewRoundRetry);
       stamina.lastCost = id === 'gr' ? undefined : cost;
       setValue('stamina', stamina);
-      if (option.altBattleFirst && await $ajax.insert(location.replace('hentaiverse.org', 'alt.hentaiverse.org').replace('alt.alt', 'alt'))) {
+      if (option.altBattleFirst && await $ajax.insert(window.location.href.replace('hentaiverse.org', 'alt.hentaiverse.org').replace('alt.alt', 'alt'))) {
         console.log('Arena Fetch Done.', 'altBattleFirst:', option.altBattleFirst, 'Arena goto alt', arena);
         gotoAlt(true);
       } else {
@@ -5213,7 +5243,7 @@
 
       gE('.hvAALog').innerHTML = [
         `<l0>攻击模式</l0><l1>攻擊模式</l1><l2>Attack Mode</l2>: ${attackStatusType[g().attackStatus]}`,
-        `${isIsekai ? '<l0>异世界</l0><l1>異世界</l1><l2>Isekai</l2>' : '<l0>恒定世界</l0><l1>恆定世界</l1><l2>Persistent</l2>'}`, // 战役模式显示
+        `${_server.isekai ? '<l0>异世界</l0><l1>異世界</l1><l2>Isekai</l2>' : '<l0>恒定世界</l0><l1>恆定世界</l1><l2>Persistent</l2>'}`, // 战役模式显示
         `${getBattleTypeDisplay()}`, // 战役模式显示
         `R${battle.roundNow}/${battle.roundAll}:T${currentTurn}`,
         `TPS: ${g().runSpeed}`,
@@ -5596,14 +5626,11 @@
         }
       }.toString()};
       // bool
-      const isIsekai = ${isIsekai};
       const isDisplay = ${option.isDisplayAllDebuff};
       const debuffAutoFill = ${option.debuffAutoFill?.toString() ?? 'undefined'};
       const debuffAutoFillRec = ${option.debuffAutoFillRec?.toString() ?? 'undefined'};
-      // string
-      const current = "${current}";
-      const other = "${other}";
       // object
+      const _server = ${JSON.stringify(_server)};
       const local = ${JSON.stringify(local)};
       const standalone = ${JSON.stringify(standalone)};
       const excludeStandalone = ${JSON.stringify(excludeStandalone)};
@@ -5905,7 +5932,7 @@
         // DEBUG ---------------------
         if (typeof GM_getValue === 'undefined' ? debuffAutoFillRec : option.debuffAutoFillRec) {
           // 统计持续时间及熟练度相关数据，以便进行核验和测试
-          const rec = JSON.parse(localStorage.getItem(`hvAA-${current}_rec`) ?? `{}`);
+          const rec = JSON.parse(localStorage.getItem(`hvAA-${_server.name}_rec`) ?? `{}`);
           for (const effect of effects) {
             const turns = effectObj[effect].turns*1;
             if (isNaN(turns)) continue;
@@ -5949,7 +5976,7 @@
             } else if (ratio <= 1 && ratio > rec[effect].r[0]) {
               rec[effect].r[0] = ratio.toFixed(4)*1;
             }
-            localStorage.setItem(`hvAA-${current}_rec`, JSON.stringify(rec));
+            localStorage.setItem(`hvAA-${_server.name}_rec`, JSON.stringify(rec));
           }
         }
         // DEBUG END ---------------------
@@ -5998,7 +6025,7 @@
           effectObj[effect] = { turns, stack };
           if (isNaN(+turns)) turns = `'${String(turns).replace(/'/g, "\\'")}'`;
           let img = jpxObj[effect] ?? document.createElement('img');
-          img.src = (`${isIsekai ? '/isekai' : ''}/y/e/${ getBuffSkill(effect)?.img || 'channeling'}.png`);
+          img.src = (`${_server.isekai ? '/isekai' : ''}/y/e/${ getBuffSkill(effect)?.img || 'channeling'}.png`);
           let description = getBuffSkill(effect)?.description;
           img.setAttribute('onmouseover', `battle.set_infopane_effect('${effect}', ${description}, ${Math.floor(turns)})`);
           img.setAttribute('onmouseout', 'battle.clear_infopane()');
