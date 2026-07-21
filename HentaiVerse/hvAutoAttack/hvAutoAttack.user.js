@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.41
+// @version      2.91.42
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -32,7 +32,7 @@
 (function () {
   try {
     'use strict';
-    const standalone = ['option', 'arena', 'lastUrl', 'ability', 'proficiency', 'stamina', 'drop', 'stats', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS', 'onriddle'];
+    const standalone = ['option', 'arena', 'lastUrl', 'ability', 'proficiency', 'stamina', 'drop', 'stats', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS', 'onriddle', 'lastSwitch'];
     const local = ['stamina', 'drop', 'stats', 'dropOld', 'statsOld', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS', 'onriddle'];
     const portable = ['drop', 'stats', 'dropOld', 'statsOld', 'monsterDB', 'monsterMID']
     const sharable = ['option'];
@@ -2032,7 +2032,8 @@
         '<div class="hvAATab" id="hvAATab-Main">',
         '  <div><b><l0>异世界相关</l0><l1>異世界相關</l1><l2>Isekai</l2></b>: ',
         '    <input id="optionStandalone" type="checkbox"><label for="optionStandalone"><l0>两个世界使用不同的配置</l0><l1>兩個世界使用不同的配置</l1><l2>Use standalone options.</l2></label>; ',
-        '    <br><input id="isekai" type="checkbox"><label for="isekai"><l0>在任意页面停留</l0><l1>在任意頁面停留</l1><l2>While idle in any page for </l2><input class="hvAANumber" name="isekaiTime" placeholder="0" type="number"><l0>秒后，自动切换恒定世界和异世界</l0><l1>秒後，自動切換恆定世界和異世界</l1><l2>s, auto switch between Isekai and Persistent</l2></label></div>',
+        '    <br><input id="isekai" type="checkbox"><label for="isekai"><l0>在任意页面停留</l0><l1>在任意頁面停留</l1><l2>While idle in any page for </l2><input class="hvAANumber" name="isekaiTime" placeholder="0" type="number"><l0>秒后，自动切换恒定世界和异世界</l0><l1>秒後，自動切換恆定世界和異世界</l1><l2>s, auto switch between Isekai and Persistent</l2></label>',
+        '    <br><l0>自动切换冷却时间</l0><l1>自動切換冷卻時間</l1><l2>Cool down for auto switch</l2></label>: <input class="hvAANumber" name="isekaiCD" placeholder="0" type="number"><l0>秒. 两个世界分别计算冷却</l0><l1>秒. 兩個世界分別計算冷卻</l1><l2> (s). Isekai and Persistent cooldown separately.</l2></label></div>',
         '  <div>',
         '    <b><l0>小马答题</l0><l1>小馬答題</l1><l2>RIDDLE</l2></b>: <input id="riddlePopup" type="checkbox"><label for="riddlePopup"><l0>弹窗答题</l0><l1>弹窗答题</l1><l2>POPUP a window to answer</l2></label><l0>(Firefox中可能导致报错)</l0><l1>(Firefox中可能導致報錯)</l1><l2>(Might cause in Firefox)</l2>; <button class="testPopup"><l0>预处理</l0><l1>預處理</l1><l2>Pretreat</l2></button>',
         '    <div><l0>时间</l0><l1>時間</l1><l2>If ETR</l2> ≤ <input class="hvAANumber" name="riddleAnswerTime" placeholder="3" type="number"><l0>秒，提交当前选中答案 或 为空时随机选中</l0><l1>秒，提交當前選中答案 或 為空時隨機選中</l1><l2>s submit chosen answers or random </l2> <input class="hvAANumber" name="riddleAnswerChoose" placeholder="0" type="number"><l0>个答案并提交<br><a style="color:red;" href="https://ehwiki.org/wiki/RiddleMaster/Chinese#.E6.AD.A3.E7.A2.BA.E6.88.96.E9.8C.AF.E8.AA.A4">注意：错选小马比漏选小马的错误计数更多 - 所以有疑问时，最好不要猜测，留空就好</a></l0><l1>个答案並提交<br><a style="color:red;" href="https://ehwiki.org/wiki/RiddleMaster/Chinese#.E6.AD.A3.E7.A2.BA.E6.88.96.E9.8C.AF.E8.AA.A4">注意：錯選小馬比漏選小馬的錯誤計數更多 - 所以有疑問時，最好不要猜測，留空就好</a></l1><l2>answers if none is chosen.<br><a style="color:red;" href="https://ehwiki.org/wiki/RiddleMaster#Correct_or_Incorrect">Notice: Selecting a pony that is not in the picture will count more severe towards a penalty than missing one pony - so when in doubt, best not to guess but leave one blank</a></l2></div>',
@@ -4187,12 +4188,17 @@
       };
     }
 
-    function autoSwitchIsekai() {
-      if (!g().option?.isekai) {
-        // 若不启用自动跳转
-        return;
-      }
+    async function autoSwitchIsekai() {
+      await waitPause();
+      $async.logSwitch(arguments);
+      if (!g().option?.isekai) return; // 若不启用自动跳转
+      const now = time(0);
+      const remain = (getValue('lastSwitch')??0)*1 + (g().option?.isekaiCD??0) * _1s - now;
+      await pauseAsync(remain);
+      await waitPause();
+      setValue('lastSwitch', now);
       $ajax.openNoFetch(`${window.location.href.slice(0, window.location.href.indexOf('.org') + 4)}/${_server.isekai ? '' : 'isekai/'}`);
+      $async.logSwitch(arguments);
     }
 
     function switchCurrent() {
