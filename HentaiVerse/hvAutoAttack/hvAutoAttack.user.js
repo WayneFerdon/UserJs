@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.39
+// @version      2.91.40
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -893,7 +893,7 @@
             filtered[0].encountered ??= time(0);
           }
           setEncounter(encounter);
-          $ajax.openNoFetch(getValue('lastUrl'));
+          backFromBattle();
           return;
         }
 
@@ -941,7 +941,7 @@
       if (!url) {
         if (isEngage && !getValue('battle')) {
           // 自动跳转，同时先刷新遭遇时间，延长下一次遭遇
-          $ajax.openNoFetch(getValue('lastUrl'));
+          backFromBattle();
         }
         return false;
       }
@@ -1116,6 +1116,15 @@
       }
     }
 
+    function backFromBattle() {
+      const beforeEncounter = getValue('beforeEncounter');
+      if (beforeEncounter) {
+        setValue('lastUrl', beforeEncounter);
+        delValue('beforeEncounter');
+      }
+      $ajax.openNoFetch(getValue('lastUrl'));
+    }
+
     function onRiddle() {
       if (!gE('#riddlecounter')) {
         return false;
@@ -1135,7 +1144,7 @@
       }
       // 战斗结束跳转回原链接
       if (window.top.location.href.endsWith(`?s=Battle`)) {
-        $ajax.openNoFetch(getValue('lastUrl'));
+        backFromBattle();
         return true;
       }
       if (window.location.href.indexOf(`?s=Battle&ss=ba`) === -1) { // 不缓存encounter
@@ -4880,13 +4889,13 @@
         option.checkURLBeforeNewRoundRetry
       );
       $async.logSwitchStrict('updateEncounter', true);
-      if (getValue('disabled') || getValue('battle') || !await checkBattleReady(onEncounter, { staminaLow: option.staminaEncounter })) {
+      if (getValue('disabled') || getValue('battle') || getLocal('persistent_battle') || !await checkBattleReady(onEncounter, { staminaLow: option.staminaEncounter })) {
         $async.logSwitchStrict('updateEncounter', false);
         return;
       }
       setEncounter(getEncounter()); // 离开页面前保存
       if (!window.top.location.href.endsWith(`?s=Battle`)) {
-        setValue('lastUrl', window.top.location.href);
+        setValue('beforeEncounter', setValue('lastUrl', window.top.location.href));
       }
       // if (option.enchantEncounter) await asyncCheckEnchant();
       $ajax.openNoFetch('https://e-hentai.org/news.php?encounter');
@@ -5411,7 +5420,7 @@
         return;
       }
       delValue(1);
-      setTimeoutOrExecute(() => $ajax.openNoFetch(getValue('lastUrl')), option.ExitBattleWaitTime * _1s);
+      setTimeoutOrExecute(() => backFromBattle(), option.ExitBattleWaitTime * _1s);
     }
 
     async function checkResponsive() {
