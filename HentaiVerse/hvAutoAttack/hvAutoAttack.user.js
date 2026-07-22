@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.43
+// @version      2.91.44
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1212,7 +1212,7 @@
           setValue('battleCode', code);
         }
       }
-      updateEncounter(false);
+      updateEncounter(option.encounter && _server.isekai);
       return true;
     }
 
@@ -4259,7 +4259,6 @@
         // arena data
         updateArena(),
       ]);
-      console.log(ready, ready.isChecked())
       if (!ready.isChecked()) {
         $async.logSwitch(arguments);
         return;
@@ -4916,7 +4915,7 @@
         option.checkURLBeforeNewRoundRetry
       );
       $async.logSwitchStrict('updateEncounter', true);
-      if (getValue('disabled') || (_server.persistent && getValue('battle'))) {
+      if (getValue('disabled') || getLocal('persistent_battle')) {
         $async.logSwitchStrict('updateEncounter', false);
         return;
       }
