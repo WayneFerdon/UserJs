@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.49
+// @version      2.91.50
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -32,41 +32,19 @@
 (function () {
   try {
     'use strict';
-    const standalone = ['option', 'arena', 'lastUrl', 'ability', 'proficiency', 'stamina', 'drop', 'stats', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS', 'onriddle', 'lastSwitch'];
-    const local = ['stamina', 'drop', 'stats', 'dropOld', 'statsOld', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS', 'onriddle'];
-    const portable = ['drop', 'stats', 'dropOld', 'statsOld', 'monsterDB', 'monsterMID'];
-    const sharable = ['option'];
-    const battleDatas = ['battle', 'battleCode', 'drop', 'stats', 'dropOld', 'statsOld', 'monsterBD', 'monsterMID', 'disabled', 'stepIn', 'skillOTOS', 'onriddle'];
-    const excludeStandalone = { 'option': ['optionStandalone', 'version', 'lang'] };
-    const isFrame = window.self !== window.top;
-    let onIsekaiEncounter;
-
-    function $id(id,d) {return (d||document).getElementById(id);}
-    const _servername = location.pathname.includes('/isekai/') ? 'isekai' : 'persistent';
-    const addition = {
-      other: _servername === 'isekai' ? 'persistent' : 'isekai',
-      utils: _servername === 'isekai' ? 'hvuti' : 'hvut',
-    };
-    const _server = {
-      name: _servername,
-      season: $id('world_text')?.textContent.match(/\d+ Season \d+/)?.[0] || '1',
-      [_servername]: true, // _server.persistent || _server.isekai
-      ...addition,
-    };
-
-    const isEquipDetail = window.location.href.includes('/equip/');
-    const isMaintaining = !gE('#csp') && !isEquipDetail;
-
-    let ability = getValue('ability', true)??{};
-    let lastResponsive = new Date().getTime();
-
-    const scriptVersion = Version(GM_info ? GM_info.script.version : '2.91');
-    let hvVersion = Version(gE('script[src*="hvc.js"]', document)?.src.match(/z\/(\d+)(.*)\/hvc.js/)?.slice(1,2));
+    // constant
+    const dataFlags = { sharable: ['option'] };
+    dataFlags.portable = ['drop', 'stats', 'dropOld', 'statsOld', 'monsterDB', 'monsterMID'];
+    dataFlags.battleDatas = [...dataFlags.portable, 'battle', 'battleCode', 'disabled', 'stepIn', 'skillOTOS', 'onriddle', 'rec'];
+    dataFlags.local = [...dataFlags.battleDatas, 'stamina'];
+    dataFlags.standalone = [...dataFlags.sharable, ...dataFlags.local, 'arena', 'lastUrl', 'ability', 'proficiency', 'lastSwitch'];
+    dataFlags.excludeStandalone = { 'option': ['optionStandalone', 'version', 'lang'] };
 
     const _1s = 1000;
     const _1m = 60 * _1s;
     const _1h = 60 * _1m;
     const _1d = 24 * _1h;
+
     const attackStatusType = [
       '<l0>物理</l0><l1>物理</l1><l2>Physical</l2>',
       '<l0>火</l0><l1>火</l1><l2>Fire</l2>',
@@ -77,7 +55,7 @@
       '<l0>暗</l0><l1>暗</l1><l2>Forbidden</l2>',
     ];
     const monsterStateKeys = { obj: `div.btm1`, lv: `div.btm2`, name: `div.btm3`, bars: `div.btm4>div.btm5`, buffs: `div.btm6` };
-    let monsterBuffSkillLib;
+
     const setMonsterBuffSkillLib = () => { return {
       // debuff skill ------------
       We: {
@@ -414,6 +392,32 @@
       } // Consumables
     };
 
+    // runtime
+    const isFrame = window.self !== window.top;
+    function $id(id,d) {return (d||document).getElementById(id);}
+    const _servername = location.pathname.includes('/isekai/') ? 'isekai' : 'persistent';
+    const addition = {
+      other: _servername === 'isekai' ? 'persistent' : 'isekai',
+      utils: _servername === 'isekai' ? 'hvuti' : 'hvut',
+    };
+    const _server = {
+      name: _servername,
+      season: $id('world_text')?.textContent.match(/\d+ Season \d+/)?.[0] || '1',
+      [_servername]: true, // _server.persistent || _server.isekai
+      ...addition,
+    };
+
+    const isEquipDetail = window.location.href.includes('/equip/');
+    const isMaintaining = !gE('#csp') && !isEquipDetail;
+    const scriptVersion = Version(GM_info ? GM_info.script.version : '2.91');
+    const hvVersion = Version(gE('script[src*="hvc.js"]', document)?.src.match(/z\/(\d+)(.*)\/hvc.js/)?.slice(1,2));
+
+    let onIsekaiEncounter;
+    let monsterBuffSkillLib;
+    let ability = getValue('ability', true)??{};
+    let lastResponsive = new Date().getTime();
+
+    // util methods
     const [$RPN, $async, $debug, $ajax] = [initRPN(), initAsync(), initDebug(), window.top.$ajax ??= unsafeWindow.window.top.$ajax ??= initAjax()];
 
     // 初始化结束，开始实际流程
@@ -1116,7 +1120,7 @@
     function writePortables() {
       const option = g().option??{};
       if (!option.portable) return;
-      for (const key of portable) {
+      for (const key of dataFlags.portable) {
         if (!(Object.keys(option.portable).includes(key))) continue;
         setValue(key, getValue(key), true);
       }
@@ -1681,7 +1685,7 @@
     }
 
     function onRestoredBattleServer(key, method, ...addition) {
-      const isSwitch = [...battleDatas, ...addition].includes(key) && onIsekaiEncounter;
+      const isSwitch = [...dataFlags.battleDatas, ...addition].includes(key) && onIsekaiEncounter;
       if (isSwitch) switchCurrent(true);
       const result = method();
       if (isSwitch) switchCurrent(true);
@@ -1700,14 +1704,14 @@
     }
 
     function setValue(key, value, portable=false) { // 储存数据
-      const isLocalStorage = local.includes(key) && !portable;
-      if (!standalone.includes(key)) {
+      const isLocalStorage = dataFlags.local.includes(key) && !portable;
+      if (!dataFlags.standalone.includes(key)) {
         setLocal(key, value, isLocalStorage);
         return value;
       }
       onRestoredBattleServer(key, () => {
         setLocal(`${_server.name}_${key}`, value, isLocalStorage);
-        if (!sharable.includes(key) || getValue('option').optionStandalone) return;
+        if (!dataFlags.sharable.includes(key) || getValue('option').optionStandalone) return;
         setLocal(`${_server.other}_${key}`, value, isLocalStorage);
       }, 'option');
       return value;
@@ -1741,8 +1745,8 @@
     }
 
     function getValue(key, toJSON) { // 读取数据
-      const isLocalStorage = local.includes(key);
-      if (!standalone.includes(key)) {
+      const isLocalStorage = dataFlags.local.includes(key);
+      if (!dataFlags.standalone.includes(key)) {
         return getLocal(key, isLocalStorage, toJSON);
       }
       return onRestoredBattleServer(key, () => {
@@ -1751,7 +1755,7 @@
 
         if (!getLocal(`${_server.name}_${key}`, isLocalStorage)) {
           let itemExisted = getLocal(key, isLocalStorage);
-          if (!itemExisted && sharable.includes(key)) {
+          if (!itemExisted && dataFlags.sharable.includes(key)) {
             itemExisted = otherWorldItem;
           }
           if (!itemExisted) return null; // 若都没有该数据
@@ -1759,9 +1763,9 @@
           setLocal(`${_server.name}_${key}`, itemExisted);
           delLocal(key, isLocalStorage);
         }
-        if (Object.keys(excludeStandalone).includes(key)) {
+        if (Object.keys(dataFlags.excludeStandalone).includes(key)) {
           otherWorldItem ??= getLocal(`${_server.name}_${key}`, isLocalStorage) ?? {};
-          for (let i of excludeStandalone[key]) {
+          for (let i of dataFlags.excludeStandalone[key]) {
             otherWorldItem[i] = getLocal(`${_server.name}_${key}`, isLocalStorage)[i];
           }
         }
@@ -1782,8 +1786,8 @@
     }
 
     function delValue(key, portable=false) { // 删除数据
-      const isLocalStorage = portable ? false : local.includes(key);
-      if (standalone.includes(key)) {
+      const isLocalStorage = portable ? false : dataFlags.local.includes(key);
+      if (dataFlags.standalone.includes(key)) {
         onRestoredBattleServer(key, () => {
           key = `${_server.name}_${key}`;
         }, 'option');
@@ -2147,7 +2151,7 @@
           '<div class="hvAATab" id="hvAATab-BattleStarter">',
           ' <div><input id="popup" type="checkbox"><label for="popup"><l0>进入失败时窗口内弹窗提示</l0><l1>進入失敗時窗口內彈窗提示</l1><l2>In-window popup while failed start</l2></label>; </div>',
           ' <div><input id="altBattleFirst" type="checkbox"><label for="altBattleFirst"><b><l0>优先使用alt进入</l0><l1>優先使用alt進入</l1><l2>Use alt.hentaiverse as default while auto start.</l2></b></label></div>',
-          ' <div><input id="encounter" type="checkbox"><label for="encounter"><b><l0>自动遭遇战（将同时检查当前服务器及恒定世界的条件）</l0><l1>自動遭遇戰（將同時檢查當前世界及恆定世界的的條件）</l1><l2>Auto Encounter (Checkes both conditions in current server and persistent)</l2></b></label><br>',
+          ' <div><input id="encounter" type="checkbox"><label for="encounter"><b><l0>自动遭遇战</l0><l1>自動遭遇戰</l1><l2>Auto Encounter</l2></b></label><br>',
           '  <input id="encounterQuickCheck" type="checkbox"><label for="encounterQuickCheck"><l0>精准倒计时(影响性能)</l0><l1>精準(影響性能)</l1><l2>Precise encounter cd(might reduced performsance)</l2></label><br>',
           '  <input id="encounterDisplay" type="checkbox"><label for="encounterDisplay"><l0>不自动遭遇时显示倒计时</l0><l1>不自動遭遇時顯示倒計時</l1><l2>Display CountDown While Not Auto Encounter</l2><br>',
           '  <l0>遭遇战倒计时</l0><l1>遭遇戰倒計時</l1><l2>Wait for encounter first while count down</l2> ≤ <input class="hvAANumber" name="encounterWaitCD" placeholder="0" type="number">s<l0>时优先等待</l0><l1>時優先等待</l1><l2>.</l2>',
@@ -3047,7 +3051,7 @@
 
           optionBox.style.display = 'none';
           // 清除不再需要的portable数据
-          for (const key of portable) {
+          for (const key of dataFlags.portable) {
             if (_option.portable && Object.keys(_option.portable).includes(key)) continue;
             delValue(key, true, true);
           }
@@ -5664,13 +5668,8 @@
       let debuffAutoFillRec = ${option.debuffAutoFillRec?.toString() ?? 'undefined'};
       let onIsekaiEncounter = ${onIsekaiEncounter ?? 'undefined'};
       // object
-      let battleDatas = ${JSON.stringify(battleDatas)};
+      let dataFlags = ${JSON.stringify(dataFlags)};
       let _server = ${JSON.stringify(_server)};
-      let local = ${JSON.stringify(local)};
-      let standalone = ${JSON.stringify(standalone)};
-      let excludeStandalone = ${JSON.stringify(excludeStandalone)};
-      let portable = ${JSON.stringify(portable)};
-      let sharable = ${JSON.stringify(sharable)};
       let monsterStateKeys = ${JSON.stringify(monsterStateKeys)};
       let ability = ${JSON.stringify(ability)};
       let monsterBuffSkillLib = ${JSON.stringify(monsterBuffSkillLib)};
@@ -5967,52 +5966,54 @@
         // DEBUG ---------------------
         if (typeof GM_getValue === 'undefined' ? debuffAutoFillRec : option.debuffAutoFillRec) {
           // 统计持续时间及熟练度相关数据，以便进行核验和测试
-          const rec = JSON.parse(localStorage.getItem(`hvAA-${_server.name}_rec`) ?? `{}`);
-          for (const effect of effects) {
-            const turns = effectObj[effect].turns*1;
-            if (isNaN(turns)) continue;
-            const skill = getBuffSkill(effect);
-            if (!skill) continue;
+          onRestoredBattleServer('rec', () => {
+            const rec = JSON.parse(localStorage.getItem(`hvAA-${_server.name}_rec`) ?? `{}`);
+            for (const effect of effects) {
+              const turns = effectObj[effect].turns*1;
+              if (isNaN(turns)) continue;
+              const skill = getBuffSkill(effect);
+              if (!skill) continue;
 
-            rec[effect] ??= { t:0 };
-            // 获取新增时间（忽略非新增的情况）
-            let [delta, added] = [turns - rec[effect].t, rec[effect].d];
-            if (delta > 0) {
-              added = rec[effect].t ? delta : added;
+              rec[effect] ??= { t:0 };
+              // 获取新增时间（忽略非新增的情况）
+              let [delta, added] = [turns - rec[effect].t, rec[effect].d];
+              if (delta > 0) {
+                added = rec[effect].t ? delta : added;
+              }
+              // 获取基础、熟练度计算倍率、熟练度，设置及初始化主要数据
+              let [duration, base, profRatio, prof, channelingRatio] = getDuration(skill, channeling);
+              if (profRatio === 4) rec[effect].f = prof; // 比例刚好是4时的熟练度（推测是公式中的熟练度上限）
+              rec[effect].b = base; // 基础持续时间
+              rec[effect].c = profRatio; // 公式理论计算值
+              rec[effect].ch = rec[effect].t && added > 0 ? channelingRatio : rec[effect].ch; // 引导倍率
+              rec[effect].t = turns; // 当前剩余持续时间
+              rec[effect].d = added; // 新增时间
+              rec[effect].m = Math.max(rec[effect].m??0, added); // 历史最大新增时间
+              rec[effect].a ??= [0,0]; // 推测熟练度倍率 [ 历史最大值, 按照‘缺失引导信息导致变成1.5倍’的修正值(除以1.5)  ]
+              rec[effect].r ??= [0,0,0]; // 实际倍率 [ 0-4 应该正常, 4-6推测缺失引导信息, 6+ 异常]
+              rec.error ??= []; // 实际倍率异常时的相关信息
+              // 计算推测倍率
+              if (base <= added) {
+                const a = Math.max(base, added)/base/channelingRatio
+                rec[effect].a[0] = Math.max(a, rec[effect].a[0]).toFixed(4)*1;
+                rec[effect].a[1] = Math.max(a/1.5, rec[effect].a[1]).toFixed(4)*1;
+              }
+              // 检查实际ratio
+              const ratio = Math.max(base, added)/duration;
+              if (ratio > 1.5) {
+                const e =`${effect}: ${Math.max(base, added).toFixed(4)}/(${base.toFixed(4)}*${channelingRatio.toFixed(4)}*${profRatio.toFixed(4)})=${ratio.toFixed(4)}`
+                if (!rec.error.includes(e)) rec.error.push(e);
+              }
+              if (ratio > 1.5 && ratio > rec[effect].r[2]) {
+                rec[effect].r[2] = ratio.toFixed(4)*1;
+              } else if (ratio <= 1.5 && ratio > 1 && ratio > rec[effect].r[1]) {
+                rec[effect].r[1] = ratio.toFixed(4)*1;
+              } else if (ratio <= 1 && ratio > rec[effect].r[0]) {
+                rec[effect].r[0] = ratio.toFixed(4)*1;
+              }
+              localStorage.setItem(`hvAA-${_server.name}_rec`, JSON.stringify(rec));
             }
-            // 获取基础、熟练度计算倍率、熟练度，设置及初始化主要数据
-            let [duration, base, profRatio, prof, channelingRatio] = getDuration(skill, channeling);
-            if (profRatio === 4) rec[effect].f = prof; // 比例刚好是4时的熟练度（推测是公式中的熟练度上限）
-            rec[effect].b = base; // 基础持续时间
-            rec[effect].c = profRatio; // 公式理论计算值
-            rec[effect].ch = rec[effect].t && added > 0 ? channelingRatio : rec[effect].ch; // 引导倍率
-            rec[effect].t = turns; // 当前剩余持续时间
-            rec[effect].d = added; // 新增时间
-            rec[effect].m = Math.max(rec[effect].m??0, added); // 历史最大新增时间
-            rec[effect].a ??= [0,0]; // 推测熟练度倍率 [ 历史最大值, 按照‘缺失引导信息导致变成1.5倍’的修正值(除以1.5)  ]
-            rec[effect].r ??= [0,0,0]; // 实际倍率 [ 0-4 应该正常, 4-6推测缺失引导信息, 6+ 异常]
-            rec.error ??= []; // 实际倍率异常时的相关信息
-            // 计算推测倍率
-            if (base <= added) {
-              const a = Math.max(base, added)/base/channelingRatio
-              rec[effect].a[0] = Math.max(a, rec[effect].a[0]).toFixed(4)*1;
-              rec[effect].a[1] = Math.max(a/1.5, rec[effect].a[1]).toFixed(4)*1;
-            }
-            // 检查实际ratio
-            const ratio = Math.max(base, added)/duration;
-            if (ratio > 1.5) {
-              const e =`${effect}: ${Math.max(base, added).toFixed(4)}/(${base.toFixed(4)}*${channelingRatio.toFixed(4)}*${profRatio.toFixed(4)})=${ratio.toFixed(4)}`
-              if (!rec.error.includes(e)) rec.error.push(e);
-            }
-            if (ratio > 1.5 && ratio > rec[effect].r[2]) {
-              rec[effect].r[2] = ratio.toFixed(4)*1;
-            } else if (ratio <= 1.5 && ratio > 1 && ratio > rec[effect].r[1]) {
-              rec[effect].r[1] = ratio.toFixed(4)*1;
-            } else if (ratio <= 1 && ratio > rec[effect].r[0]) {
-              rec[effect].r[0] = ratio.toFixed(4)*1;
-            }
-            localStorage.setItem(`hvAA-${_server.name}_rec`, JSON.stringify(rec));
-          }
+          });
         }
         // DEBUG END ---------------------
 
