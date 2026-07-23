@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.48
+// @version      2.91.49
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1562,7 +1562,7 @@
       const button = parent.appendChild(cE('button'));
       button.innerHTML = `<l0>暂停</l0><l1>暫停</l1><l2>Pause</l2>${(option.pauseHotkey && option.pauseHotkeyStr) ? `(${option.pauseHotkeyStr})` : '' }`;
       if (getValue('disabled')) { // 如果禁用
-        document.title = _alert(-1, 'hvAutoAttack暂停中', 'hvAutoAttack暫停中', 'hvAutoAttack Paused');
+        document.title = titlePause();
         button.innerHTML = `<l0 style="color:red;">继续</l0><l1 style="color:red;">繼續</l1><l2 style="color:red;">Continue</l2><l012 style="color:red;">${(option.pauseHotkey && option.pauseHotkeyStr) ? `(${option.pauseHotkeyStr})` : '' }</012>`;
       }
       button.className = 'pauseChange';
@@ -4158,7 +4158,7 @@
           gE('.pauseChange').innerHTML = `<l0 style="color:red;">继续</l0><l1 style="color:red;">繼續</l1><l2 style="color:red;">Continue</l2><l012 style="color:red;">${(option.pauseHotkey && option.pauseHotkeyStr) ? `(${option.pauseHotkeyStr})` : '' }</l012>`;
         }
         setValue('disabled', document.title);
-        document.title = _alert(-1, 'hvAutoAttack暂停中', 'hvAutoAttack暫停中', 'hvAutoAttack Paused');
+        document.title = titlePause();
       }
     }
 
@@ -4893,8 +4893,8 @@
         ui.style.cssText += 'color:unset!important;';
       }
       ui.innerHTML = `${formatTime(cd).slice(0, 2).map(cdi => pad(cdi)).join(`:`)}[${encounter.length ? (count >= MAX ? `☯` : count) : `✪`}${missed ? `-${missed}` : ``}]`;
-      if (count < MAX && document.title.includes(_alert(-1, 'hvAutoAttack暂停中', 'hvAutoAttack暫停中', 'hvAutoAttack Paused'))) {
-        document.title = ui.innerHTML + _alert(-1, 'hvAutoAttack暂停中', 'hvAutoAttack暫停中', 'hvAutoAttack Paused');
+      if (document.title.includes(titlePause())) {
+        document.title = ui.innerHTML + titlePause();
       }
       if (engage && !getValue('disabled')) {
         if (cd <= 0) {
@@ -5015,6 +5015,10 @@
       $async.logSwitch(arguments);
       return setValue('arena', arena);
     } catch (err) { console.error(err); }}
+
+    function titlePause() {
+      return _alert(-1, 'HVAA暂停中', 'HVAA', 'HVAA Paused');
+    }
 
     async function idleArena() { try { // 闲置竞技场
       let id;
@@ -5292,7 +5296,7 @@
       displayMonsterWeight();
       displayPlayStatePercentage();
       if (getValue('disabled')) { // 如果禁用
-        document.title = _alert(-1, 'hvAutoAttack暂停中', 'hvAutoAttack暫停中', 'hvAutoAttack Paused');
+        document.title = titlePause();
         const pauseChange = gE('#hvAABox2>button.pauseChange');
         if (!pauseChange) return;
         pauseChange.innerHTML = `<l0 style="color:red;">继续</l0><l1 style="color:red;">繼續</l1><l2 style="color:red;">Continue</l2><l012 style="color:red;">${(option.pauseHotkey && option.pauseHotkeyStr) ? `(${option.pauseHotkeyStr})` : '' }<l012>`;
