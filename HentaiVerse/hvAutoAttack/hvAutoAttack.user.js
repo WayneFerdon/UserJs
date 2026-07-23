@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.50
+// @version      2.91.51
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1467,9 +1467,7 @@
         const backups = getValue('backup', true) || {};
         const autos = Object.values(backups).filter(b => b.auto && b.server === _server.name);
         autos.sort((a, b) => -Version.compare(a.version, b.version));
-        if (!Version(autos[0]?.version).upto(version)) {
-          backup();
-        }
+        if (!Version(autos[0]?.version).upto(version)) backup();
       }
 
       // 迁移2.91.9及之前的权重背景配置
@@ -3047,6 +3045,7 @@
           const arenaPrev = g().option?.idleArenaValue;
 
           const _option = getCurrentUIOption();
+          _option.version = scriptVersion.ver;
           setValue('option', _option);
 
           optionBox.style.display = 'none';
@@ -3113,7 +3112,7 @@
       }
 
       function getCurrentUIOption() {
-        const _option = { version: scriptVersion.ver };
+        const _option = {};
         let name, array, value, type;
         for (const input of gE('input,select', 'all', optionBox)) {
           [name, type, value] = [input.name, input.type, input.value];
