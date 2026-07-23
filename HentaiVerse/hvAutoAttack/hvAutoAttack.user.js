@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.47
+// @version      2.91.48
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -34,10 +34,12 @@
     'use strict';
     const standalone = ['option', 'arena', 'lastUrl', 'ability', 'proficiency', 'stamina', 'drop', 'stats', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS', 'onriddle', 'lastSwitch'];
     const local = ['stamina', 'drop', 'stats', 'dropOld', 'statsOld', 'battleCode', 'disabled', 'stepIn', 'battle', 'monsterDB', 'monsterMID', 'skillOTOS', 'onriddle'];
-    const portable = ['drop', 'stats', 'dropOld', 'statsOld', 'monsterDB', 'monsterMID']
+    const portable = ['drop', 'stats', 'dropOld', 'statsOld', 'monsterDB', 'monsterMID'];
     const sharable = ['option'];
+    const battleDatas = ['battle', 'battleCode', 'drop', 'stats', 'dropOld', 'statsOld', 'monsterBD', 'monsterMID', 'disabled', 'stepIn', 'skillOTOS', 'onriddle'];
     const excludeStandalone = { 'option': ['optionStandalone', 'version', 'lang'] };
     const isFrame = window.self !== window.top;
+    let onIsekaiEncounter;
 
     function $id(id,d) {return (d||document).getElementById(id);}
     const _servername = location.pathname.includes('/isekai/') ? 'isekai' : 'persistent';
@@ -902,8 +904,10 @@
             filtered[0].encountered ??= time(0);
           }
           setEncounter(encounter);
-          if (!gE('#riddlecounter, #battle_main')) backFromBattle();
-          return;
+          if (!isInBattle()) {
+            backFromBattle();
+            return;
+          }
         }
 
         try {
@@ -1014,7 +1018,7 @@
           return true;
         }
         try {
-          if (!gE('#riddlecounter, #battle_main', window.opener.document)) { // opener不处于战斗或答题中
+          if (!isInBattle(window.opener.document)) { // opener不处于战斗或答题中
             return true;
           }
         } catch (err) {
@@ -1036,7 +1040,7 @@
         return false;
       }
 
-      if (gE('#riddlecounter, #battle_main')) {
+      if (isInBattle()) {
         if (!window.top.location.href.endsWith(`?s=Battle`)) {
           setValue('lastUrl', window.top.location.href);
         }
@@ -1211,7 +1215,7 @@
           setValue('battleCode', code);
         }
       }
-      asyncOnIdle();
+      updateEncounter(_server.isekai);
       return true;
     }
 
@@ -1676,6 +1680,14 @@
       }
     }
 
+    function onRestoredBattleServer(key, method, ...addition) {
+      const isSwitch = [...battleDatas, ...addition].includes(key) && onIsekaiEncounter;
+      if (isSwitch) switchCurrent(true);
+      const result = method();
+      if (isSwitch) switchCurrent(true);
+      return result;
+    }
+
     function setLocal(key, value, isLocalStroage) {
       if (JSON.stringify(getLocal(key, isLocalStroage)) === JSON.stringify(value)) {
         return;
@@ -1693,15 +1705,15 @@
         setLocal(key, value, isLocalStorage);
         return value;
       }
-      setLocal(`${_server.name}_${key}`, value, isLocalStorage);
-      if (sharable.includes(key) && !getValue('option').optionStandalone) {
+      onRestoredBattleServer(key, () => {
+        setLocal(`${_server.name}_${key}`, value, isLocalStorage);
+        if (!sharable.includes(key) || getValue('option').optionStandalone) return;
         setLocal(`${_server.other}_${key}`, value, isLocalStorage);
-      }
+      }, 'option');
       return value;
     }
 
     function getLocal(key, isLocalStorage, toJSON) {
-
       let value;
       if (isLocalStorage || typeof GM_getValue === 'undefined' || !GM_getValue(key, null)) {
         key = `hvAA-${key}`;
@@ -1733,29 +1745,29 @@
       if (!standalone.includes(key)) {
         return getLocal(key, isLocalStorage, toJSON);
       }
-      let otherWorldItem = getLocal(`${_server.other}_${key}`, isLocalStorage);
-      // 将旧的数据迁移到新的数据
+      return onRestoredBattleServer(key, () => {
+        let otherWorldItem = getLocal(`${_server.other}_${key}`, isLocalStorage);
+        // 将旧的数据迁移到新的数据
 
-      if (!getLocal(`${_server.name}_${key}`, isLocalStorage)) {
-        let itemExisted = getLocal(key, isLocalStorage);
-        if (!itemExisted && sharable.includes(key)) {
-          itemExisted = otherWorldItem;
+        if (!getLocal(`${_server.name}_${key}`, isLocalStorage)) {
+          let itemExisted = getLocal(key, isLocalStorage);
+          if (!itemExisted && sharable.includes(key)) {
+            itemExisted = otherWorldItem;
+          }
+          if (!itemExisted) return null; // 若都没有该数据
+          itemExisted = JSON.parse(JSON.stringify(itemExisted));
+          setLocal(`${_server.name}_${key}`, itemExisted);
+          delLocal(key, isLocalStorage);
         }
-        if (!itemExisted) {
-          return null; // 若都没有该数据
+        if (Object.keys(excludeStandalone).includes(key)) {
+          otherWorldItem ??= getLocal(`${_server.name}_${key}`, isLocalStorage) ?? {};
+          for (let i of excludeStandalone[key]) {
+            otherWorldItem[i] = getLocal(`${_server.name}_${key}`, isLocalStorage)[i];
+          }
         }
-        itemExisted = JSON.parse(JSON.stringify(itemExisted));
-        setLocal(`${_server.name}_${key}`, itemExisted);
-        delLocal(key, isLocalStorage);
-      }
-      if (Object.keys(excludeStandalone).includes(key)) {
-        otherWorldItem ??= getLocal(`${_server.name}_${key}`, isLocalStorage) ?? {};
-        for (let i of excludeStandalone[key]) {
-          otherWorldItem[i] = getLocal(`${_server.name}_${key}`, isLocalStorage)[i];
-        }
-      }
-      setLocal(`${_server.other}_${key}`, otherWorldItem);
-      return getLocal(`${_server.name}_${key}`, isLocalStorage, toJSON);
+        setLocal(`${_server.other}_${key}`, otherWorldItem);
+        return getLocal(`${_server.name}_${key}`, isLocalStorage, toJSON);
+      });
     }
 
     function delLocal(key, isLocalStorage) {
@@ -1772,7 +1784,9 @@
     function delValue(key, portable=false) { // 删除数据
       const isLocalStorage = portable ? false : local.includes(key);
       if (standalone.includes(key)) {
-        key = `${_server.name}_${key}`;
+        onRestoredBattleServer(key, () => {
+          key = `${_server.name}_${key}`;
+        }, 'option');
       }
       if (typeof key === 'string') {
         delLocal(key, isLocalStorage);
@@ -3212,8 +3226,8 @@
           if (type !== 'checkbox' && ![placeholder * 1, placeholder].includes(value)) {
             value = value === undefined ? '' : value;
           }
-          if (g().onBeforeEncounter) continue;
-          if (skipUI) continue;
+
+          if (skipUI || onIsekaiEncounter) continue;
           switch (type) {
             case 'select-one' :
             case 'text':
@@ -4204,32 +4218,24 @@
       $async.logSwitch(arguments);
     }
 
-    function switchCurrent() {
+    function switchCurrent(ignoreOption) {
       [_server.name, _server.other] = [_server.other, _server.name];
       [_server.isekai, _server.persistent] = [!_server.isekai, !_server.persistent];
       _server.utils = _server.utils === 'hvut' ? 'hvuti' : 'hvut';
-      checkOption();
+      if (!ignoreOption) checkOption();
+    }
+
+    function isInBattle(doc) {
+      return gE('#riddlecounter, #battle_main', doc ?? document);
     }
 
     async function asyncOnIdle() { try {
       await updateEncounter(false);
       await waitPause();
       $async.logSwitch(arguments);
-
-      if (g().onBeforeEncounter) {
-        switchCurrent();
-      } else if (_server.isekai) {
-        g('onBeforeEncounter', true);
-        const engaged = await asyncOnIdle();
-        g('onBeforeEncounter', false);
-        if (engaged) return 'Engaged from isekai';
-        if (g('#riddlecounter, #battle_main')) return;
-      }
-
+      if (onIsekaiEncounter) switchCurrent();
       const option = g().option??{};
-      const ready = {
-        isChecked: () => ready.supply && ready.repair && ready.storage && ready.encounter,
-      };
+      const ready = { isChecked: () => ready.supply && ready.repair && ready.storage && ready.encounter };
       const idleStart = time(0);
       await Promise.all([
         // proficiency
@@ -4265,16 +4271,12 @@
           await tryEncounter();
         } catch (err) { console.error(err); }})(),
         // arena data
-        g().onBeforeEncounter ? undefined : updateArena(),
+        onIsekaiEncounter ? undefined : updateArena(),
       ]);
-      if (!ready.isChecked()) {
+      if (onIsekaiEncounter) switchCurrent();
+      if (!ready.isChecked() || onIsekaiEncounter) {
         $async.logSwitch(arguments);
-        if (g().onBeforeEncounter) switchCurrent();
         return ready.encounter;
-      }
-      if (g().onBeforeEncounter) {
-        switchCurrent();
-        return;
       }
       if (option.idleArena && option.idleArenaValue) {
         startUpdateArena(idleStart);
@@ -4284,19 +4286,23 @@
 
       async function tryEncounter() { try {
         if (ready.encounterUpdated) return;
-        if (option.encounter) { switch (true) {
-          case !ready.proficiency:
-          case !ready.ability:
-          case !ready.stamina:
-          case option.restoreStamina && !ready.item:
-          case option.encounterSupply && !ready.supply:
-          case option.encounterRepair && !ready.repair:
-          case option.encounterEquStorage && !ready.storage:
-            return;
-        }}
-        ready.encounterUpdated = true;
+        const onEncounter = option.encounter || onIsekaiEncounter;
+        if (_server.persistent) {
+          if (onEncounter) { switch (true) {
+            case !ready.proficiency:
+            case !ready.ability:
+            case !ready.stamina:
+            case option.restoreStamina && !ready.item:
+            case option.encounterSupply && !ready.supply:
+            case option.encounterRepair && !ready.repair:
+            case option.encounterEquStorage && !ready.storage:
+              return;
+          }}
+          ready.encounterUpdated = true;
+        }
         $async.logSwitch(arguments);
-        ready.encounter ||= !(await updateEncounter(option.encounter || g().onBeforeEncounter));
+        ready.encounter ||= !(await updateEncounter(onEncounter));
+        ready.encounterUpdated ||= ready.encounter;
         $async.logSwitch(arguments);
       } catch (err) { console.error(err); }}
     } catch (err) { console.error(err); }}
@@ -4365,7 +4371,7 @@
     }
 
     function queryToPersistent(query) {
-      return g().onBeforeEncounter ? `${window.location.href.includes('https') ? 'https://' : 'http://'}${window.location.href.includes('alt') ? 'alt.' : ''}hentaiverse.org/${query}` : query;
+      return onIsekaiEncounter ? `${window.location.href.includes('https') ? 'https://' : 'http://'}${window.location.href.includes('alt') ? 'alt.' : ''}hentaiverse.org/${query}` : query;
     }
 
     async function asyncSetProficiency() { try {
@@ -4562,7 +4568,7 @@
       const html = await $ajax.insert(queryToPersistent('?s=Character&ss=it'));
       const items = {};
       const doc = $doc(html);
-      if (gE('#riddlecounter, #battle_main', doc)) {
+      if (isInBattle(doc)) {
         $async.logSwitch(arguments);
         g('items', null);
         return;
@@ -4673,7 +4679,7 @@
       }
       const url = queryToPersistent(`?s=Bazaar&ss=am&screen=repair&filter=equipped`);
       let [doc, equiped] = Array.from(await Promise.all([$ajax.insert(url), $ajax.insert(queryToPersistent(`?s=Character&ss=eq`))])).map($doc);
-      if (gE('#riddlecounter, #battle_main', doc)) {
+      if (isInBattle(doc)) {
         $async.logSwitch(arguments);
         return undefined;
       }
@@ -4747,7 +4753,7 @@
       $async.logSwitch(arguments);
       const url = queryToPersistent(`?s=Bazaar&ss=am`);
       const doc = $doc(await $ajax.insert(url));
-      if (gE('#riddlecounter, #battle_main', doc)) {
+      if (isInBattle(doc)) {
         $async.logSwitch(arguments);
         return false;
       }
@@ -4810,8 +4816,8 @@
     async function getCurrentStamina() { try {
       // await waitPause();
       $async.logSwitch(arguments);
-      const doc = $doc(await $ajax.insert(g().onBeforeEncounter ? window.location.href.replace(/\/isekai/,'') : window.location.href));
-      if (gE('#riddlecounter, #battle_main', doc)) {
+      const doc = $doc(await $ajax.insert(onIsekaiEncounter ? window.location.href.replace(/\/isekai/,'') : window.location.href));
+      if (isInBattle(doc)) {
         $async.logSwitch(arguments);
         return [ undefined, undefined ];
       }
@@ -4856,26 +4862,18 @@
     }
 
     async function updateEncounter(engage) { try {
+      const MAX = 24;
       const option = g().option??{};
       if (!option.encounter && !option.encounterDisplay) {
         console.log("skip encounter check");
         return false;
       }
-      // await waitPause();
       $async.logSwitch(arguments);
       const encounter = getEncounter();
       const count = encounter.filter(e => e.url).length;
-      const now = time(0);
       const last = encounter[0]?.time ?? getValue('lastEH', true) ?? 0; // 上次遭遇 或 上次打开EH 或 0
-      let cd;
-      if (encounter.filter(e => e.url && (e.encountered || (time(0) - e.time >= 30 * _1m))).length >= 24) {
-        cd = Math.floor(encounter[0].time / _1d + 1) * _1d - now;
-      } else if (!last) {
-        cd = 0;
-      } else {
-        cd = _1h / 2 + last - now;
-      }
-      cd = Math.max(0, cd);
+      let now = time(0);
+      let cd = getCD();
       const ui = gE('.encounterUI') ?? (() => {
         const ui = (gE('.hvAAPauseUI') ?? gE('body')).appendChild(cE('a'));
         ui.className = 'encounterUI';
@@ -4887,19 +4885,21 @@
       })();
       const waitCD = option.encounterWaitCD * _1s;
       const missed = count - encounter.filter(e => e.encountered && e.url).length;
-      if (count === 24) {
+      if (count === MAX) {
         ui.style.cssText += 'color:orange!important;';
       } else if (cd <= waitCD) {
         ui.style.cssText += 'color:red!important;';
       } else {
         ui.style.cssText += 'color:unset!important;';
       }
-      ui.innerHTML = `${formatTime(cd).slice(0, 2).map(cdi => pad(cdi)).join(`:`)}[${encounter.length ? (count >= 24 ? `☯` : count) : `✪`}${missed ? `-${missed}` : ``}]`;
-      if (engage) {
-        await waitPause();
-        if (!cd) {
+      ui.innerHTML = `${formatTime(cd).slice(0, 2).map(cdi => pad(cdi)).join(`:`)}[${encounter.length ? (count >= MAX ? `☯` : count) : `✪`}${missed ? `-${missed}` : ``}]`;
+      if (count < MAX && document.title.includes(_alert(-1, 'hvAutoAttack暂停中', 'hvAutoAttack暫停中', 'hvAutoAttack Paused'))) {
+        document.title = ui.innerHTML + _alert(-1, 'hvAutoAttack暂停中', 'hvAutoAttack暫停中', 'hvAutoAttack Paused');
+      }
+      if (engage && !getValue('disabled')) {
+        if (cd <= 0) {
           $async.logSwitch(arguments);
-          return onEncounter();
+          return await onEncounter();
         }
         if (cd < 30 * _1m && encounter[0]?.url && !encounter[0].encountered) {
           $ajax.openNoFetch(encounter[0].url);
@@ -4912,14 +4912,34 @@
       setTimeout(() => updateEncounter(engage), interval);
       $async.logSwitch(arguments);
       return engage && cd <= waitCD;
+
+      function getCD() {
+        now = time(0);
+        let cd;
+        if (encounter.filter(e => e.url && (e.encountered || (time(0) - e.time >= 30 * _1m))).length >= MAX) {
+          cd = Math.floor(encounter[0].time / _1d + 1) * _1d - now;
+        } else if (!last) {
+          cd = 0;
+        } else {
+          cd = _1h / 2 + last - now;
+        }
+        return Math.max(0, cd);
+      }
     } catch (err) { console.error(err); }}
 
     async function onEncounter() { try {
       const option = g().option??{};
       if (getValue('disabled')) return;
+      if (_server.isekai) {
+        onIsekaiEncounter = true;
+        const engaged = await asyncOnIdle();
+        onIsekaiEncounter = false;
+        return engaged ? 'Engaged from isekai' : undefined;
+      }
+
       $async.logSwitchStrict('updateEncounter', true);
-      // in battle
-      if (gE('#riddlecounter, #battle_main', await $ajax.insert(window.location.href.replace(/\/isekai/, '')))) {
+      // persistent in battle
+      if (isInBattle(await $ajax.insert(window.location.href.replace(/\/isekai/, '')))) {
         $async.logSwitchStrict('updateEncounter', false);
         return;
       }
@@ -5252,7 +5272,7 @@
 
       gE('.hvAALog').innerHTML = [
         `<l0>攻击模式</l0><l1>攻擊模式</l1><l2>Attack Mode</l2>: ${attackStatusType[g().attackStatus]}`,
-        `${_server.isekai ? '<l0>异世界</l0><l1>異世界</l1><l2>Isekai</l2>' : '<l0>恒定世界</l0><l1>恆定世界</l1><l2>Persistent</l2>'}`, // 战役模式显示
+        `${(_server.isekai || onIsekaiEncounter) ? '<l0>异世界</l0><l1>異世界</l1><l2>Isekai</l2>' : '<l0>恒定世界</l0><l1>恆定世界</l1><l2>Persistent</l2>'}`, // 战役模式显示
         `${getBattleTypeDisplay()}`, // 战役模式显示
         `R${battle.roundNow}/${battle.roundAll}:T${currentTurn}`,
         `TPS: ${g().runSpeed}`,
@@ -5635,24 +5655,26 @@
         }
       }.toString()};
       // bool
-      const isDisplay = ${option.isDisplayAllDebuff};
-      const debuffAutoFill = ${option.debuffAutoFill?.toString() ?? 'undefined'};
-      const debuffAutoFillRec = ${option.debuffAutoFillRec?.toString() ?? 'undefined'};
+      let isDisplay = ${option.isDisplayAllDebuff};
+      let debuffAutoFill = ${option.debuffAutoFill?.toString() ?? 'undefined'};
+      let debuffAutoFillRec = ${option.debuffAutoFillRec?.toString() ?? 'undefined'};
+      let onIsekaiEncounter = ${onIsekaiEncounter ?? 'undefined'};
       // object
-      const _server = ${JSON.stringify(_server)};
-      const local = ${JSON.stringify(local)};
-      const standalone = ${JSON.stringify(standalone)};
-      const excludeStandalone = ${JSON.stringify(excludeStandalone)};
-      const portable = ${JSON.stringify(portable)};
-      const sharable = ${JSON.stringify(sharable)};
-      const monsterStateKeys = ${JSON.stringify(monsterStateKeys)};
-      const ability = ${JSON.stringify(ability)};
-      const monsterBuffSkillLib = ${JSON.stringify(monsterBuffSkillLib)};
-      const hvVersion = Version(${hvVersion.ver});
+      let battleDatas = ${JSON.stringify(battleDatas)};
+      let _server = ${JSON.stringify(_server)};
+      let local = ${JSON.stringify(local)};
+      let standalone = ${JSON.stringify(standalone)};
+      let excludeStandalone = ${JSON.stringify(excludeStandalone)};
+      let portable = ${JSON.stringify(portable)};
+      let sharable = ${JSON.stringify(sharable)};
+      let monsterStateKeys = ${JSON.stringify(monsterStateKeys)};
+      let ability = ${JSON.stringify(ability)};
+      let monsterBuffSkillLib = ${JSON.stringify(monsterBuffSkillLib)};
+      let hvVersion = Version(${hvVersion.ver});
       // funciton
       ${[updateMonsterEffects, fixMonsterStatus,
          getMonsterID, getMonster, getMonster, getBuff,
-         getValue, setValue, delValue,
+         onRestoredBattleServer, getValue, setValue, delValue,
          getLocal, setLocal, delLocal,
          gE, cE, Version].map(f => f.toString()).join(';')};
       `;
@@ -6105,12 +6127,8 @@
         battle.roundType = undefined;
         for (let name in types) {
           const type = types[name];
-          if (!temp.match(type.reg)) {
-            continue;
-          }
-          if (type.extra && !type.extra(id)) {
-            continue;
-          }
+          if (!temp.match(type.reg)) continue;
+          if (type.extra && !type.extra(id)) continue;
           battle.roundType = name;
           break;
         }
