@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.46
+// @version      2.91.47
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -902,7 +902,7 @@
             filtered[0].encountered ??= time(0);
           }
           setEncounter(encounter);
-          backFromBattle();
+          if (!gE('#riddlecounter, #battle_main')) backFromBattle();
           return;
         }
 
@@ -941,7 +941,7 @@
 
       const isEngage = window.location.href === 'https://e-hentai.org/news.php?encounter';
       if (!url) {
-        if (isEngage && !getValue('battle')) {
+        if (isEngage && !getLocal('persistent_battle')) {
           // 自动跳转，同时先刷新遭遇时间，延长下一次遭遇
           backFromBattle();
         }
@@ -955,13 +955,12 @@
         if (eventpane) {
           eventpane.style.cssText += 'color:red;'; // 链接标红提醒
         }
-      } else if (getValue('battle')) { //战斗中
+      } else if (getLocal('persistent_battle')) { //战斗中
         if (eventpane) {
           eventpane.style.cssText += 'color:gray;'; // 链接置灰提醒
         }
       } else { // 战斗外，自动跳转
-        checkOption();
-        let location = getValue('url') ?? (document.referrer.match('hentaiverse.org') ? new URL(document.referrer).origin : 'https://hentaiverse.org');
+        let location = getLocal('url') ?? (document.referrer.match('hentaiverse.org') ? new URL(document.referrer).origin : 'https://hentaiverse.org');
         $ajax.openNoFetch(`${location.includes('https') ? 'https://' : 'http://'}${(location.includes('alt') || g().option?.altBattleFirst) ? 'alt.' : ''}hentaiverse.org/${url}`);
       }
       return false;
