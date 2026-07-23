@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.45
+// @version      2.91.46
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -962,7 +962,7 @@
       } else { // 战斗外，自动跳转
         checkOption();
         let location = getValue('url') ?? (document.referrer.match('hentaiverse.org') ? new URL(document.referrer).origin : 'https://hentaiverse.org');
-        $ajax.openNoFetch(`${g().option?.altBattleFirst ? location.replace('hentaiverse.org', 'alt.hentaiverse.org').replace('alt.alt', 'alt') : location}/${url}`);
+        $ajax.openNoFetch(`${location.includes('https') ? 'https://' : 'http://'}${(location.includes('alt') || g().option?.altBattleFirst) ? 'alt.' : ''}hentaiverse.org/${url}`);
       }
       return false;
     }
@@ -5092,7 +5092,7 @@
       await until(async () => await $ajax.insert(query, `initid=${id === 'gr' ? 1 : id}${token}`), option.checkURLBeforeNewRoundRetry);
       stamina.lastCost = id === 'gr' ? undefined : cost;
       setValue('stamina', stamina);
-      if (option.altBattleFirst && await $ajax.insert(window.location.href.replace('hentaiverse.org', 'alt.hentaiverse.org').replace('alt.alt', 'alt'))) {
+      if (option.altBattleFirst && await $ajax.insert(window.location.href.replace('://hentaiverse.org', '://alt.hentaiverse.org'))) {
         console.log('Arena Fetch Done.', 'altBattleFirst:', option.altBattleFirst, 'Arena goto alt', arena);
         gotoAlt(true);
       } else {
