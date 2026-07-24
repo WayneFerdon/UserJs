@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.51
+// @version      2.91.52
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -3216,13 +3216,13 @@
           [name, type, placeholder] = [input.name || input.id, input.type, input.placeholder];
           switch(input.className) {
             case 'hvAADebug': continue;
-            case 'hvAANumber': type = type === 'text' ? 'number' : type;
+            case 'hvAANumber': type = 'number';
           }
           [array, value] = [name.split('_'), undefined];
           if (array.length === 1) {
             value = formatValue(option[name], placeholder);
             if (value || value === 0) option[name] = value;
-          } else if (input.className !== 'hvAACustomize') {
+          } else if (!input.classList.contains('customizeInput')) {
             value = formatValue(option[array[0]]?.[array[1]], placeholder);
             if (value || value === 0) (option[array[0]] ??= {})[array[1]] = value;
           }
@@ -3245,7 +3245,6 @@
               input.addEventListener('change', () => displayCheckBoxNotDefault(input));
           }
         }
-
         return option;
       }
 
@@ -3256,7 +3255,7 @@
         uiOption = formatOption(uiOption);
 
         const customizes = gE('.customize', 'all', optionBox);
-        customizes.forEach(n=> { while(n.firstChild) { n.removeChild(n.firstChild); }});
+        customizes.forEach(n => { while(n.firstChild) { n.removeChild(n.firstChild); }});
         for (let customize of customizes) {
           const name = customize.getAttribute('name');
           if (!(name in uiOption)) {
