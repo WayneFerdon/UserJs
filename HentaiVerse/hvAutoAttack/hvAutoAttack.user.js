@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.53
+// @version      2.91.54
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2396,31 +2396,31 @@
 
           '<div class="hvAATable" style="grid-template-columns: repeat(2, 1fr); width: 100%">',
 
-          '  <div><input id="debuffSkill_Sle" type="checkbox"><label for="debuffSkill_Sle"><l0>沉眠(Sl)</l0><l1>沉眠(Sl)</l1><l2>Sleep</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2>Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Sle" type="number">; EWF: <input name="excludedWeightFormula_Sle" placeholder="900" type="text">{{debuffSkillSleCondition}}</div>',
+          '  <div><input id="debuffSkill_Sle" type="checkbox"><label for="debuffSkill_Sle"><l0>沉眠(Sl)</l0><l1>沉眠(Sl)</l1><l2>Sleep</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2> Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Sle" type="number">; EWF: <input name="excludedWeightFormula_Sle" placeholder="900" type="text">{{debuffSkillSleCondition}}</div>',
           '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillSleAll" type="checkbox"><label for="debuffSkillSleAll"><l0>先给全体上沉眠(Sl)</l0><l1>先給全體上沉眠(Sl)</l1><l2>Sleep all enemies first.</l2></label><input id="debuffSkillSleAllByIndex" type="checkbox"><label for="debuffSkillSleAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label>{{debuffSkillSleAllCondition}}</div>',
 
-          '  <div><input id="debuffSkill_Bl" type="checkbox"><label for="debuffSkill_Bl"><l0>致盲(Bl)</l0><l1>致盲(Bl)</l1><l2>Blind</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2>Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Bl" type="number">; EWF: <input name="excludedWeightFormula_Bl" placeholder="900" type="text">{{debuffSkillBlCondition}}</div>',
+          '  <div><input id="debuffSkill_Bl" type="checkbox"><label for="debuffSkill_Bl"><l0>致盲(Bl)</l0><l1>致盲(Bl)</l1><l2>Blind</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2> Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Bl" type="number">; EWF: <input name="excludedWeightFormula_Bl" placeholder="900" type="text">{{debuffSkillBlCondition}}</div>',
           '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillBlAll" type="checkbox"><label for="debuffSkillBlAll"><l0>先给全体上致盲(Bl)</l0><l1>先給全體上致盲(Bl)</l1><l2>Blind all enemies first.</l2></label><input id="debuffSkillBlAllByIndex" type="checkbox"><label for="debuffSkillBlAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label>{{debuffSkillBlAllCondition}}</div>',
 
-          '  <div><input id="debuffSkill_We" type="checkbox"><label for="debuffSkill_We"><l0>虚弱(We)</l0><l1>虛弱(We)</l1><l2>Weaken</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2>Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_We" type="number">; EWF: <input name="excludedWeightFormula_We" placeholder="900" type="text">{{debuffSkillWeCondition}}</div>',
+          '  <div><input id="debuffSkill_We" type="checkbox"><label for="debuffSkill_We"><l0>虚弱(We)</l0><l1>虛弱(We)</l1><l2>Weaken</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2> Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_We" type="number">; EWF: <input name="excludedWeightFormula_We" placeholder="900" type="text">{{debuffSkillWeCondition}}</div>',
           '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillWeAll" type="checkbox"><label for="debuffSkillWeAll"><l0>先给全体上虚弱(We)</l0><l1>先給全體上虛弱(We)</l1><l2>Weaken all enemies first.</l2></label><input id="debuffSkillWeAllByIndex" type="checkbox"><label for="debuffSkillWeAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label>{{debuffSkillWeAllCondition}}</div>',
 
-          '  <div><input id="debuffSkill_Si" type="checkbox"><label for="debuffSkill_Si"><l0>沉默(Si)</l0><l1>沉默(Si)</l1><l2>Silence</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2>Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Si" type="number">; EWF: <input name="excludedWeightFormula_Si" placeholder="900" type="text">{{debuffSkillSiCondition}}</div>',
+          '  <div><input id="debuffSkill_Si" type="checkbox"><label for="debuffSkill_Si"><l0>沉默(Si)</l0><l1>沉默(Si)</l1><l2>Silence</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2> Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Si" type="number">; EWF: <input name="excludedWeightFormula_Si" placeholder="900" type="text">{{debuffSkillSiCondition}}</div>',
           '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillSiAll" type="checkbox"><label for="debuffSkillSiAll"><l0>先给全体上沉默(Si)</l0><l1>先給全體上沉默(Si)</l1><l2>Silence all enemies first.</l2></label><input id="debuffSkillSiAllByIndex" type="checkbox"><label for="debuffSkillSiAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label>{{debuffSkillSiAllCondition}}</div>',
 
-          '  <div><input id="debuffSkill_Slo" type="checkbox"><label for="debuffSkill_Slo"><l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2>Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Slo" type="number">; EWF: <input name="excludedWeightFormula_Slo" placeholder="900" type="text">{{debuffSkillSloCondition}}</div>',
+          '  <div><input id="debuffSkill_Slo" type="checkbox"><label for="debuffSkill_Slo"><l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2> Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Slo" type="number">; EWF: <input name="excludedWeightFormula_Slo" placeholder="900" type="text">{{debuffSkillSloCondition}}</div>',
           '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillSloAll" type="checkbox"><label for="debuffSkillSloAll"><l0>先给全体上缓慢(Slo)</l0><l1>先給全體上緩慢(Slo)</l1><l2>Slow all enemies first.</l2></label><input id="debuffSkillSloAllByIndex" type="checkbox"><label for="debuffSkillSloAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label>{{debuffSkillSloAllCondition}}</div>',
 
-          '  <div><input id="debuffSkill_Dr" type="checkbox"><label for="debuffSkill_Dr"><l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2>Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Dr" type="number">; EWF: <input name="excludedWeightFormula_Dr" placeholder="900" type="text">{{debuffSkillDrCondition}}</div>',
+          '  <div><input id="debuffSkill_Dr" type="checkbox"><label for="debuffSkill_Dr"><l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2> Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Dr" type="number">; EWF: <input name="excludedWeightFormula_Dr" placeholder="900" type="text">{{debuffSkillDrCondition}}</div>',
           '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillDrAll" type="checkbox"><label for="debuffSkillDrAll"><l0>先给全体上枯竭(Dr)</l0><l1>先給全體上枯竭(Dr)</l1><l2>Drain all enemies first.</l2></label><input id="debuffSkillDrAllByIndex" type="checkbox"><label for="debuffSkillDrAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label>{{debuffSkillDrAllCondition}}</div>',
 
-          '  <div><input id="debuffSkill_Im" type="checkbox"><label for="debuffSkill_Im"><l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2>Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Im" type="number">; EWF: <input name="excludedWeightFormula_Im" placeholder="900" type="text">{{debuffSkillImCondition}}</div>',
+          '  <div><input id="debuffSkill_Im" type="checkbox"><label for="debuffSkill_Im"><l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2> Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Im" type="number">; EWF: <input name="excludedWeightFormula_Im" placeholder="900" type="text">{{debuffSkillImCondition}}</div>',
           '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillImAll" type="checkbox"><label for="debuffSkillImAll"><l0>先给全体上陷危(Im)</l0><l1>先給全體上陷危(Im)</l1><l2>Imperil all enemies first.</l2></label><input id="debuffSkillImAllByIndex" type="checkbox"><label for="debuffSkillImAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label>{{debuffSkillImAllCondition}}</div>',
 
-          '  <div><input id="debuffSkill_MN" type="checkbox"><label for="debuffSkill_MN"><l0>固定(MN)</l0><l1>固定(MN)</l1><l2>Immobilize(MagNet)</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2>Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_MN" type="number">; EWF: <input name="excludedWeightFormula_MN" placeholder="900" type="text">{{debuffSkillMNCondition}}</div>',
+          '  <div><input id="debuffSkill_MN" type="checkbox"><label for="debuffSkill_MN"><l0>固定(MN)</l0><l1>固定(MN)</l1><l2>Immobilize(MagNet)</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2> Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_MN" type="number">; EWF: <input name="excludedWeightFormula_MN" placeholder="900" type="text">{{debuffSkillMNCondition}}</div>',
           '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillMNAll" type="checkbox"><label for="debuffSkillMNAll"><l0>先给全体上固定(MN)</l0><l1>先給全體上固定(MN)</l1><l2>Immobilize(MagNet) all enemies first.</l2></label><input id="debuffSkillMNAllByIndex" type="checkbox"><label for="debuffSkillMNAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label>{{debuffSkillMNAllCondition}}</div>',
 
-          '  <div><input id="debuffSkill_Co" type="checkbox"><label for="debuffSkill_Co"><l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2>Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Co" type="number">; EWF: <input name="excludedWeightFormula_Co" placeholder="900" type="text">{{debuffSkillCoCondition}}</div>',
+          '  <div><input id="debuffSkill_Co" type="checkbox"><label for="debuffSkill_Co"><l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2> Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Co" type="number">; EWF: <input name="excludedWeightFormula_Co" placeholder="900" type="text">{{debuffSkillCoCondition}}</div>',
           '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillCoAll" type="checkbox"><label for="debuffSkillCoAll"><l0>先给全体上混乱(Co)</l0><l1>先給全體上混亂(Co)</l1><l2>Confuse all enemies first.</l2></label><input id="debuffSkillCoAllByIndex" type="checkbox"><label for="debuffSkillCoAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label>{{debuffSkillCoAllCondition}}</div>',
 
           '</div>',
@@ -5366,7 +5366,9 @@
         case ['autocast', 'permanent', '-'].includes(duration.replaceAll(/'/g,'')):
           return Infinity;
         default:
-          return duration * 1;
+          duration = duration * 1;
+          if (isNaN(duration)) console.warn('NaN duration:', buff, duration);
+          return duration;
       }
     }
 
@@ -6412,6 +6414,21 @@
       return false;
     }
 
+    function checkBuffThreshold(buff, option) {
+      option ??= g().option;
+      const id = playerBuffSkillLib[buff].id;
+      const buffObj = getBuff(playerBuffSkillLib[buff].img);
+      const threshold = option.channelThreshold ? option.channelThreshold[buff] : 0;
+      const current = getBuffTurnFromImg(buffObj);
+      const checked = isOn(id) && (current === Infinity || threshold >= 0 && current > threshold);
+      return { id, buffObj, threshold, current, checked };
+    }
+
+    function onClickBuff(id) {
+      updateSkillOTOS(id);
+      gE(id).click();
+    }
+
     function useChannelSkill() { // 自动施法Channel技能
       const option = g().option??{};
       if (!option.channelSkillSwitch) {
@@ -6425,55 +6442,40 @@
       if (option.channelSkill) {
         const skillPack = splitOrders(option.buffSkillOrderValue, ['SS', 'SL', 'Pr', 'Ab', 'SV', 'Re', 'Ha', 'He', 'AF']);
         for (const buff of skillPack) {
-          const buffObj = getBuff(playerBuffSkillLib[buff].img);
-          const current = getBuffTurnFromImg(buffObj);
-          const threshold = option.channelThreshold ? option.channelThreshold[buff] : 0;
-          if (threshold > 0 && current >= threshold) continue;
-          if (!option.channelSkill[buff] || buffObj) continue;
-          const id = playerBuffSkillLib[buff].id;
-          if (!isOn(id)) continue;
-          updateSkillOTOS(id);
-          gE(id).click();
+          if (!option.channelSkill[buff]) continue;
+
+          const { id, buffObj, current, threshold, checked } = checkBuffThreshold(buff, option);
+          if (checked) continue;
+
+          if (buffObj) continue;
+          onClickBuff(id);
           return true;
         }
       }
       if (option.channelSkill2) {
         const order = splitOrders(option.channelSkill2OrderValue);
-        for (const id of order) {
-          const buffs = Object.keys(playerBuffSkillLib).filter(s => playerBuffSkillLib[s].id * 1 === 1 * id);
-          for (const buff of buffs) {
-            const current = getBuffTurnFromImg(getBuff(playerBuffSkillLib[buff].img));
-            const threshold = option.channelThreshold ? option.channelThreshold[buff] : 0;
-            if (threshold > 0 && current > threshold) continue;
-          }
-          if (!isOn(id)) continue;
-          updateSkillOTOS(id);
-          gE(id).click();
+        const buffs = order.map(id => Object.keys(playerBuffSkillLib).find(s => playerBuffSkillLib[s].id * 1 === 1 * id)).filter(buff => buff);
+        for (const buff of buffs) {
+          const { id, buffObj, current, threshold, checked } = checkBuffThreshold(buff, option);
+          if (checked) continue;
+          onClickBuff(id);
           return true;
         }
       }
       if (option.channelRebuff) {
         let minBuff, minTime;
         for (const buff in playerBuffSkillLib) {
-          const buffObj = getBuff(playerBuffSkillLib[buff].img);
-          let current = getBuffTurnFromImg(buffObj);
-          const threshold = option.channelThreshold ? option.channelThreshold[buff] : 0;
-          if (threshold > 0 && current > threshold) continue;
+          const { id, buffObj, current, threshold, checked } = checkBuffThreshold(buff, option);
+          if (checked) continue;
 
-          current = isNaN(current) ? 0 : current;
-          if (buffObj?.src.match(/_scroll.png$/) || (minTime && current >= minTime)) {
-            continue;
-          }
+          if (buffObj?.src.match(/_scroll.png$/) || (minTime && current >= minTime)) continue;
           if (!current && (!option.buffSkillSwitch || !option.buffSkill[buff])) continue;
 
-          const id = playerBuffSkillLib[buff].id;
-          if (!isOn(id)) continue;
           minBuff = id;
           minTime = current;
         }
         if (minBuff && gE(minBuff)) {
-          updateSkillOTOS(minBuff);
-          gE(minBuff).click();
+          onClickBuff(minBuff);
           return true;
         }
       }
@@ -6496,14 +6498,11 @@
       for (i = 0; i < skillPack.length; i++) {
         let buff = skillPack[i];
         if (!option.buffSkill[buff]) continue;
-        const id = playerBuffSkillLib[buff].id;
-        if (!isOn(id)) continue;
         if (!checkCondition(option[`buffSkill${buff}Condition`])) continue;
-        const current = getBuffTurnFromImg(getBuff(playerBuffSkillLib[buff].img));
-        const threshold = option.buffSkillThreshold ? option.buffSkillThreshold[buff] : 0;
-        if (threshold >= 0 && current > threshold) continue;
-        updateSkillOTOS(id);
-        gE(id).click();
+
+        const { id, buffObj, current, threshold, checked } = checkBuffThreshold(buff, option);
+        if (checked) continue;
+        onClickBuff(id);
         return true;
       }
 
