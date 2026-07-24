@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.55
+// @version      2.91.56
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -252,6 +252,7 @@
       BW: {
         name: 'Bleeding Wound',
         img: 'wpn_bleed',
+        stack: 80,
         duration: 7,
         description: "'Gashing wounds are making this target take damage over time.'"
       },
@@ -5365,6 +5366,16 @@
           return 0;
         case ['autocast', 'permanent', '-'].includes(duration.replaceAll(/'/g,'')):
           return Infinity;
+        case duration.replaceAll(/'/g,'') === 'decaying':
+          {
+            duration = 0;
+            const decay = 1 - unsafeWindow.battle.set_infopane_effect.toString().match(/Decays by (\d+)% per turn/)[1]/100;
+            let stacks = getBuffStackFromImg(buff);
+            while((stacks = Math.floor(stacks * decay)) > 0) {
+              duration++;
+            }
+            return duration;
+          }
         default:
           duration = duration * 1;
           if (isNaN(duration)) console.warn('NaN duration:', buff, duration);
@@ -6063,7 +6074,7 @@
           let img = jpxObj[effect] ?? document.createElement('img');
           img.src = (`${_server.isekai ? '/isekai' : ''}/y/e/${ getBuffSkill(effect)?.img || 'channeling'}.png`);
           let description = getBuffSkill(effect)?.description;
-          img.setAttribute('onmouseover', `battle.set_infopane_effect('${effect}', ${description}, ${Math.floor(turns)})`);
+          img.setAttribute('onmouseover', `battle.set_infopane_effect('${effect} (x${stack})', ${description}, ${isNaN(+turns) ? turns : Math.floor(turns)})`);
           img.setAttribute('onmouseout', 'battle.clear_infopane()');
 
           monster_btm6.appendChild(img);
