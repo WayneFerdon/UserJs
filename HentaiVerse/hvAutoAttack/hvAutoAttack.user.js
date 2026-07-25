@@ -6515,8 +6515,7 @@
         const { id, buffObj, current, threshold, checked } = checkBuffThreshold(buff, option.buffSkillThreshold);
         if (checked) continue;
 
-        if (checkCondition(option[`buffSkill${buff}Condition`]))
-        { 
+        if (checkCondition(option[`buffSkill${buff}Condition`])) { 
           onClickBuff(id);
           return true;
         }
