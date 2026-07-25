@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.60
+// @version      2.91.61
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -6428,11 +6428,10 @@
       return false;
     }
 
-    function checkBuffThreshold(buff, option) {
-      option ??= getOption();
+    function checkBuffThreshold(buff, threshold) {
       const id = playerBuffSkillLib[buff].id;
       const buffObj = getBuff(playerBuffSkillLib[buff].img);
-      const threshold = option.channelThreshold ? option.channelThreshold[buff] : 0;
+      threshold = threshold?.[buff] ?? 0;
       const current = getBuffTurnFromImg(buffObj);
       const checked = !isOn(id) || (current === Infinity || threshold >= 0 && current > threshold);
       return { id, buffObj, threshold, current, checked };
@@ -6458,7 +6457,7 @@
         for (const buff of skillPack) {
           if (!option.channelSkill[buff]) continue;
 
-          const { id, buffObj, current, threshold, checked } = checkBuffThreshold(buff, option);
+          const { id, buffObj, current, threshold, checked } = checkBuffThreshold(buff, option.channelThreshold);
           if (checked) continue;
 
           if (buffObj) continue;
@@ -6470,7 +6469,7 @@
         const order = splitOrders(option.channelSkill2OrderValue);
         const buffs = order.map(id => Object.keys(playerBuffSkillLib).find(s => playerBuffSkillLib[s].id * 1 === 1 * id)).filter(buff => buff);
         for (const buff of buffs) {
-          const { id, buffObj, current, threshold, checked } = checkBuffThreshold(buff, option);
+          const { id, buffObj, current, threshold, checked } = checkBuffThreshold(buff, option.channelThreshold);
           if (checked) continue;
           onClickBuff(id);
           return true;
@@ -6479,7 +6478,7 @@
       if (option.channelRebuff) {
         let minBuff, minTime;
         for (const buff in playerBuffSkillLib) {
-          const { id, buffObj, current, threshold, checked } = checkBuffThreshold(buff, option);
+          const { id, buffObj, current, threshold, checked } = checkBuffThreshold(buff, option.channelThreshold);
           if (checked) continue;
 
           if (buffObj?.src.match(/_scroll.png$/) || (minTime && current >= minTime)) continue;
@@ -6514,7 +6513,7 @@
         if (!option.buffSkill[buff]) continue;
         if (!checkCondition(option[`buffSkill${buff}Condition`])) continue;
 
-        const { id, buffObj, current, threshold, checked } = checkBuffThreshold(buff, option);
+        const { id, buffObj, current, threshold, checked } = checkBuffThreshold(buff, option.buffSkillThreshold);
         if (checked) continue;
         onClickBuff(id);
         return true;
