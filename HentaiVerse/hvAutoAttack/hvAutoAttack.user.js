@@ -1999,8 +1999,10 @@
         13299, 13221, 13211, 13201,        0,
         13199, 13111, 13101,        0, 11401,
         19111, 19131, 11501,        0, 11402];
-      const UIString = [];
-      UIString.push('    <div class="hvAAcheckItems hvAATable">');
+      const UIString = [
+        checkBoxOnly ? '' : `    <l0>库存</l0><l1>庫存</l1><l2>Warn if supply</l2>&lt;max(100%,<input id="checkSupplyWarn${suffix}" class="hvAANumber" name="checkSupplyWarn${suffix}" placeholder="100" type="number">%)<l0>时提示</l0><l1>時提示</l1>;</br>`,
+        '    <div class="hvAAcheckItems hvAATable">',
+      ];
       for (const item of items) {
         if (!item) {
           UIString.push('<div></div>');
@@ -2158,6 +2160,8 @@
           '  <input id="encounterDisplay" type="checkbox"><label for="encounterDisplay"><l0>不自动遭遇时显示倒计时</l0><l1>不自動遭遇時顯示倒計時</l1><l2>Display CountDown While Not Auto Encounter</l2><br>',
           '  <l0>遭遇战倒计时</l0><l1>遭遇戰倒計時</l1><l2>Wait for encounter first while count down</l2> ≤ <input class="hvAANumber" name="encounterWaitCD" placeholder="0" type="number">s<l0>时优先等待</l0><l1>時優先等待</l1><l2>.</l2>',
           '  </div>',
+          // '  <div><input id="idleItemWorld" type="checkbox"><label for="idleItemWorld"><b><l0>闲置道具界</l0><l1>閒置道具界</l1><l2>Idle Item World</l2>: </b><button class="updateItemWorld"><l0>更新列表</l0><l1>更新列表</l1><l2>Update List</l2></button>',
+          // '  </div>',
           '  <div><input id="idleArena" type="checkbox"><label for="idleArena"><b><l0>闲置竞技场</l0><l1>閒置競技場</l1><l2>Idle Arena</l2>: </b>',
           '    <l0>在任意页面停留</l0><l1>在任意頁面停留</l1><l2>Idle in any page for </l2><input class="hvAANumber" name="idleArenaTime" placeholder="0" type="number"><l0>秒后，开始竞技场</l0><l1>秒後，開始競技場</l1><l2> (s), start Arena</l2></label> <button class="idleArenaReset"><l01>重置</l01><l2>Reset</l2></button>;<br>',
           '    <l0>进行的竞技场相对应等级</l0><l1>進行的競技場相對應等級</l1><l2>The levels of the Arena you want to complete</l2>:  ',
@@ -2178,14 +2182,24 @@
           '    <b>[S!]<l0>精力</l0><l1>精力</l1><l2>Stamina</l2>: </b>',
           '    <l0>进入遭遇战的最低精力</l0><l1>進入遭遇戰的最低精力</l1><l2><b></b>Minimum stamina to engage encounter</l2>: <input class="hvAANumber" name="staminaEncounter" placeholder="60" type="number"></br>',
           '    <l0>竞技场/浴血擂台阈值</l0><l1>競技場/浴血擂台閾值</l1><l2><b></b>Minimum stamina to auto start The Arena or Ring Of Blood</l2>: Min(85, <input class="hvAANumber" name="staminaLow" placeholder="60" type="number">)<br>',
-          '    <l0>进入压榨届的最低精力</l0><l1>進入壓榨屆的最低精力</l1><l2><b></b>Minimum stamina to auto start GrindFest</l2>: <input class="hvAANumber" name="staminaGrindFest" placeholder="100" type="number"></br>',
-          '    <b>[S!!]</b><l0>进入竞技场/浴血擂台/压榨届时，含本日自然恢复的阈值</l0><l1>进入競技場/浴血擂台/壓榨屆时，含本日自然恢復的閾值</l1><l2><b></b>Stamina threshold with naturally recovers today for The Arena, Ring Of Bloog, GrindFest</l2>: <input class="hvAANumber" name="staminaLowWithReNat" placeholder="0" type="number"></br>',
+          // '    <l0>道具界阈值</l0><l1>道具界閾值</l1><l2><b></b>Minimum stamina to auto start Item World</l2><input class="hvAANumber" name="staminaLow" placeholder="60" type="number"><br>',
+          '    <l0>进入压榨界的最低精力</l0><l1>進入壓榨界的最低精力</l1><l2><b></b>Minimum stamina to auto start GrindFest</l2>: <input class="hvAANumber" name="staminaGrindFest" placeholder="100" type="number"></br>',
+          // '    <b>[S!!]</b><l0>进入竞技场/浴血擂台/压榨界/道具界时，含本日自然恢复的阈值</l0><l1>进入競技場/浴血擂台/壓榨界/道具界时，含本日自然恢復的閾值</l1><l2><b></b>Stamina threshold with naturally recovers today for The Arena, Ring Of Bloog, GrindFest and Item World</l2>: <input class="hvAANumber" name="staminaLowWithReNat" placeholder="0" type="number"></br>',
+          '    <b>[S!!]</b><l0>进入竞技场/浴血擂台/压榨界时，含本日自然恢复的阈值</l0><l1>进入競技場/浴血擂台/壓榨界时，含本日自然恢復的閾值</l1><l2><b></b>Stamina threshold with naturally recovers today for The Arena, Ring Of Bloog, GrindFest</l2>: <input class="hvAANumber" name="staminaLowWithReNat" placeholder="0" type="number"></br>',
           '    <input id="restoreStamina" type="checkbox"><label for="restoreStamina"><l0>战前恢复</l0><l1>戰前恢復</l1><l2>Restore stamina</l2></label>',
           '    <input id="staminaRatio" type="checkbox"><label for="staminaRatio"><l0>检查惩罚倍率</l0><l1>檢查懲罰倍率</l1><l2>Check Punishment Ratio</l2></label>',
           '  </div>',
           '  <div>',
           '    <input id="repair" type="checkbox"><label for="repair"><b>[R!]<l0>修复装备</l0><l1>修復裝備</l1><l2>Repair Equipment</l2></b></label>: ',
-          '    <l0>耐久度</l0><l1>耐久度</l1><l2>Durability</l2> ≤ <input class="hvAANumber" name="repairValue" type="number">% <l0>或 压榨届耐久度</l0><l1>或 壓榨屆耐久度</l1><l2>OR Grind Fest Durability</l2> ≤ <input class="hvAANumber" name="repairValueGF" type="number">%<br><input id="repairCharm" type="checkbox"><label for="repairCharm"><l0>修复护石 (含压榨界)</l0><l1>修復護石 (含壓榨界)</l1><l2>Repair charm (including Grind Fest)</l2>;<input id="repairCharmGF" type="checkbox"><label for="repairCharmGF"><l0>压榨界修复护石</l0><l1>壓榨屆修復護石</l1><l2>Repair charm before Grind Fest</l2></label></label><br><input id="encounterRepair" type="checkbox"><label for="encounterRepair"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label>',
+          '    <l0>耐久度</l0><l1>耐久度</l1><l2>Durability</l2> ≤ <input class="hvAANumber" name="repairValue" type="number">% ',
+          '    <l0>或 压榨界耐久度</l0><l1>或 壓榨界耐久度</l1><l2>OR Grind Fest Durability</l2> ≤ <input class="hvAANumber" name="repairValueGF" type="number">% ',
+          // '    <l0>或 道具界压榨界耐久度</l0><l1>或 道具界耐久度</l1><l2>OR Item World Durability</l2> ≤ <input class="hvAANumber" name="repairValueIW" type="number">%',
+          '    <br>',
+          // '    <input id="repairCharm" type="checkbox"><label for="repairCharm"><l0>修复护石 (含压榨界/道具界)</l0><l1>修復護石 (含壓榨界/道具界)</l1><l2>Repair charm (including Grind Fest & Item World)</l2>;',
+          '    <input id="repairCharm" type="checkbox"><label for="repairCharm"><l0>修复护石 (含压榨界)</l0><l1>修復護石 (含壓榨界)</l1><l2>Repair charm (including Grind Fest)</l2>;',
+          '    <input id="repairCharmGF" type="checkbox"><label for="repairCharmGF"><l0>压榨界修复护石</l0><l1>壓榨界修復護石</l1><l2>Repair charm before Grind Fest</l2></label>;',
+          // '    <input id="repairCharmIW" type="checkbox"><label for="repairCharmIW"><l0>道具界修复护石</l0><l1>道具界修復護石</l1><l2>Repair charm before Item World</l2></label>',
+          '    </label><br><input id="encounterRepair" type="checkbox"><label for="encounterRepair"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label>',
           '    <div><l0>检查非空装备槽位时忽略</l0><l1>檢查非空裝備槽位時忽略</l1><l2>Skip when checking unslotted equipments</l2>: </div>',
           '    <div class="hvAAcheckItems hvAATable" style="grid-template-columns: repeat(7, 1fr)">',
           '      <div><input id="equipCheckSkip_1" type="checkbox"><label for="equipCheckSkip_1"><l0>主手</l0><l1>主手</l1><l2>Main Hand</l2></label></div>',
@@ -2204,12 +2218,13 @@
           '    <input id="checkSupplySlotted" type="checkbox"><label for="checkSupplySlotted"><b>[C!]<l0>检查物品是否装备</l0><l1>檢查物品是否裝備</l1><l2>Check is item slotted</l2></b>;</label>',
           ...getCheckSupplyOptionTable('Slotted', true),
           '    <input id="checkSupply" type="checkbox"><label for="checkSupply"><b>[C!]<l0>检查物品库存</l0><l1>檢查物品庫存</l1><l2>Check is item needs supply</l2></b>;</label>',
-          '    <l0>库存</l0><l1>庫存</l1><l2>Warn if supply</l2>&lt;max(100%,<input id="checkSupplyWarn" class="hvAANumber" name="checkSupplyWarn" placeholder="100" type="number">%)<l0>时提示</l0><l1>時提示</l1>;</br>',
-          '    <input id="encounterSupply" type="checkbox"><label for="encounterSupply"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label>',
+          '    <input id="encounterSupply" type="checkbox"><label for="encounterSupply"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label><br>',
           ...getCheckSupplyOptionTable(),
           '  </div>',
-          '  <div><input id="checkSupplyGF" type="checkbox"><label for="checkSupplyGF"><b>[C!!]<l0>压榨届使用额外的库存检查</l0><l1>壓榨屆使用額外的庫存檢查</l1><l2>Extra supply check for Grind Fest</l2></b>;</label>',
-          '    <l0>库存</l0><l1>庫存</l1><l2>Warn if supply</l2>&lt;max(100%,<input id="checkSupplyWarnGF" class="hvAANumber" name="checkSupplyWarnGF" placeholder="100" type="number">%)<l0>时提示</l0><l1>時提示</l1>;',
+          // '  <div><input id="checkSupplyIW" type="checkbox"><label for="checkSupplyIW"><b>[C!!]<l0>道具界使用额外的库存检查</l0><l1>道具界使用額外的庫存檢查</l1><l2>Extra supply check for Item World</l2></b>;</label>',
+          // ...getCheckSupplyOptionTable('IW'),
+          // '  </div>',
+          '  <div><input id="checkSupplyGF" type="checkbox"><label for="checkSupplyGF"><b>[C!!]<l0>压榨界使用额外的库存检查</l0><l1>壓榨界使用額外的庫存檢查</l1><l2>Extra supply check for Grind Fest</l2></b>;</label>',
           ...getCheckSupplyOptionTable('GF'),
           '  </div>',
           '</div>',
@@ -2444,7 +2459,7 @@
 
           '<div class="hvAATab" id="hvAATab-Infusion">',
           '  <l0>战役模式</l0><l1>戰役模式</l1><l2>Battle type</l2>: ',
-          '  <input id="infusionRoundType_ar" type="checkbox" placeholder="true"><label for="infusionRoundType_ar"><l0>竞技场(AR)</l0><l1>競技場(AR)</l1><l2>The Arena</l2></label><input id="infusionRoundType_rb" type="checkbox" placeholder="true"><label for="infusionRoundType_rb"><l0>浴血擂台(RB)</l0><l1>浴血擂台(RB)</l1><l2>Ring of Blood</l2></label><input id="infusionRoundType_gr" type="checkbox" placeholder="true"><label for="infusionRoundType_gr"><l0>压榨届(GF)</l0><l1>壓榨界(GF)</l1><l2>GrindFest</l2></label><input id="infusionRoundType_iw" type="checkbox" placeholder="true"><label for="infusionRoundType_iw"><l0>道具届(IW)</l0><l1>道具界(IW)</l1><l2>Item World</l2></label><input id="infusionRoundType_ba" type="checkbox" placeholder="true"><label for="infusionRoundType_ba"><l0>随机遭遇(ba)</l0><l1>隨機遭遇(ba)</l1><l2>Encounter</l2></label><input id="infusionRoundType_tw" type="checkbox" placeholder="true"><label for="infusionRoundType_tw"><l0>塔楼(Tw)</l0><l1>塔樓(Tw)</l1><l2>The Tower</l2></label>',
+          '  <input id="infusionRoundType_ar" type="checkbox" placeholder="true"><label for="infusionRoundType_ar"><l0>竞技场(AR)</l0><l1>競技場(AR)</l1><l2>The Arena</l2></label><input id="infusionRoundType_rb" type="checkbox" placeholder="true"><label for="infusionRoundType_rb"><l0>浴血擂台(RB)</l0><l1>浴血擂台(RB)</l1><l2>Ring of Blood</l2></label><input id="infusionRoundType_gr" type="checkbox" placeholder="true"><label for="infusionRoundType_gr"><l0>压榨界(GF)</l0><l1>壓榨界(GF)</l1><l2>GrindFest</l2></label><input id="infusionRoundType_iw" type="checkbox" placeholder="true"><label for="infusionRoundType_iw"><l0>道具届(IW)</l0><l1>道具界(IW)</l1><l2>Item World</l2></label><input id="infusionRoundType_ba" type="checkbox" placeholder="true"><label for="infusionRoundType_ba"><l0>随机遭遇(ba)</l0><l1>隨機遭遇(ba)</l1><l2>Encounter</l2></label><input id="infusionRoundType_tw" type="checkbox" placeholder="true"><label for="infusionRoundType_tw"><l0>塔楼(Tw)</l0><l1>塔樓(Tw)</l1><l2>The Tower</l2></label>',
           '  <div><l0>魔药使用条件</l0><l1>魔藥使用條件</l1><l2>Infusion Use Condition</l2>{{infusionCondition}}</div>',
           '  <div><input id="infusionDefaultOnly" type="checkbox" placeholder="true"><label for="infusionDefaultOnly"><b><l0>只使用与默认攻击模式相同的魔药</l0><l1>只使用與默認攻擊模式相同的魔藥</l1><l2>Use Infusion as same as default attack mode only.</l2></b></label></div>',
           '  <div class="infusionOrder"><b><l0>施放顺序(未配置的按照下面的顺序)</l0><l1>施放順序(未配置的按照下面的順序)</l1><l2>Cast Order(Using order below as default if not configed)</l2></b>: <input name="infusionOrderName" style="width:80%;" type="text" disabled="true"><br>',
@@ -2467,7 +2482,7 @@
 
           '<div class="hvAATab" id="hvAATab-Scroll">',
           '  <l0>战役模式</l0><l1>戰役模式</l1><l2>Battle type</l2>: ',
-          '  <input id="scrollRoundType_ar" type="checkbox"><label for="scrollRoundType_ar"><l0>竞技场(AR)</l0><l1>競技場(AR)</l1><l2>The Arena</l2></label><input id="scrollRoundType_rb" type="checkbox"><label for="scrollRoundType_rb"><l0>浴血擂台(RB)</l0><l1>浴血擂台(RB)</l1><l2>Ring of Blood</l2></label><input id="scrollRoundType_gr" type="checkbox"><label for="scrollRoundType_gr"><l0>压榨届(GF)</l0><l1>壓榨界(GF)</l1><l2>GrindFest</l2></label><input id="scrollRoundType_iw" type="checkbox"><label for="scrollRoundType_iw"><l0>道具届(IW)</l0><l1>道具界(IW)</l1><l2>Item World</l2></label><input id="scrollRoundType_ba" type="checkbox"><label for="scrollRoundType_ba"><l0>随机遭遇(ba)</l0><l1>隨機遭遇(ba)</l1><l2>Encounter</l2></label><input id="scrollRoundType_tw" type="checkbox"><label for="scrollRoundType_tw"><l0>塔楼(Tw)</l0><l1>塔樓(Tw)</l1><l2>The Tower</l2></label>{{scrollCondition}}',
+          '  <input id="scrollRoundType_ar" type="checkbox"><label for="scrollRoundType_ar"><l0>竞技场(AR)</l0><l1>競技場(AR)</l1><l2>The Arena</l2></label><input id="scrollRoundType_rb" type="checkbox"><label for="scrollRoundType_rb"><l0>浴血擂台(RB)</l0><l1>浴血擂台(RB)</l1><l2>Ring of Blood</l2></label><input id="scrollRoundType_gr" type="checkbox"><label for="scrollRoundType_gr"><l0>压榨界(GF)</l0><l1>壓榨界(GF)</l1><l2>GrindFest</l2></label><input id="scrollRoundType_iw" type="checkbox"><label for="scrollRoundType_iw"><l0>道具届(IW)</l0><l1>道具界(IW)</l1><l2>Item World</l2></label><input id="scrollRoundType_ba" type="checkbox"><label for="scrollRoundType_ba"><l0>随机遭遇(ba)</l0><l1>隨機遭遇(ba)</l1><l2>Encounter</l2></label><input id="scrollRoundType_tw" type="checkbox"><label for="scrollRoundType_tw"><l0>塔楼(Tw)</l0><l1>塔樓(Tw)</l1><l2>The Tower</l2></label>{{scrollCondition}}',
           '  <input id="scrollFirst" type="checkbox"><label for="scrollFirst"><l0>存在技能生成的Buff时，仍然使用卷轴</l0><l1>存在技能生成的Buff時，仍然使用捲軸</l1><l2>Use Scrolls even when there are effects from spells</l2>.</label>',
           '  <div><input id="scroll_Sw" type="checkbox"><label for="scroll_Sw"><l0>加速卷轴(Sw)</l0><l1>加速捲軸(Sw)</l1><l2>Scroll of Swiftness</l2></label>{{scrollSwCondition}}</div>',
           '  <div><input id="scroll_Pr" type="checkbox"><label for="scroll_Pr"><l0>守护卷轴(Pr)</l0><l1>守護捲軸(Pr)</l1><l2>Scroll of Protection</l2></label>{{scrollPrCondition}}</div>',
@@ -2926,7 +2941,15 @@
         const isGetOrderFromId = ['.buffSkillOrder', '.debuffSkillOrder', '.debuffSkillOrderAll', '.skillOrder', '.infusionOrder'];
         for (let ui in orderValues) {
           gE(ui, optionBox).onclick = optionBox2Order(orderValues[ui], isGetOrderFromId.includes(ui) ? getOrderFromId : undefined);
-        }
+        };
+
+        // // 标签页-战斗
+        // gE('.updateItemWorld', optionBox).onclick = async function() {
+        //   this.innerHTML = `<l0>更新中...</l0><l1>更新中...</l1><l2>Updating...</l2>`;
+        //   const list = await asyncUpdateEquipModifyList();
+        //   this.innerHTML = `<l0>更新列表</l0><l1>更新列表</l1><l2>Update List</l2>`;
+        //   if (!list) return;
+        // };
 
         // 标签页-警报
         gE('input[name="audio_Text"]', optionBox).onchange = function () {
@@ -4629,16 +4652,31 @@
       if (log?.length) console.log(`${onIsekaiEncounter?'[Persistent]':''}`, ...log);
     }
 
-    function checkSupply(isGFStandalone) {
+    function checkSupply(standalone) {
       const option = getOption(true);
+      standalone = {
+        GF: {
+          name: { 0: '压榨界', 1: '壓榨界', 2: 'Grindfest' },
+          thresholdList: option.checkItemGF,
+          checkList: option.isCheckGF,
+          percentage: option.checkSupplyWarnGF
+        },
+        IW:{
+          name: { 0: '道具界', 1: '道具界', 2: 'Itemworld' },
+          thresholdList: option.checkItemIW,
+          checkList: option.isCheckIW,
+          percentage: option.checkSupplyWarnIW
+        },
+      }[standalone]
       if (!option.checkSupply) return true;
       const items = g().items;
       if (!items) return false;
       const slotItems = g().slotItems;
       const slotedCheckList = option.checkSupplySlotted ? option.isCheckSlotted : undefined;
-      const thresholdList = isGFStandalone ? option.checkItemGF : option.checkItem;
-      const checkList = isGFStandalone ? option.isCheckGF : option.isCheck;
-      const percentage = isGFStandalone ? option.checkSupplyWarnGF : option.checkSupplyWarn;
+      const name = standalone?.name ?? '';
+      const thresholdList = standalone?.checkItem ?? option.checkItem;
+      const checkList = standalone?.isCheck ?? option.isCheck;
+      const percentage = standalone?.checkSupplyWarn ?? option.checkSupplyWarn;
       const unslotted = [], needs = [], warns = [];
       const lang = option.lang;
       for (let id in slotedCheckList) {
@@ -4667,22 +4705,22 @@
           2: `Consumables not slotted:\n${unslotted}`,
         }, `Unslotted items:${unslotted}`);
       } else if (needs.length) {
-        popupFailedCheck(`C${isGFStandalone ? '!' : ''}`, {
-          0: `消耗品${isGFStandalone ? '(压榨届独立配置)' : ''}不足:\n${needs}`,
-          1: `消耗品${isGFStandalone ? '(壓榨屆獨立配置)' : ''}不足:\n${needs}`,
-          2: `Failed supply check${isGFStandalone ? ' for Grindfest standalone' : ''}:\n${needs}`,
-        }, `Needs supply:${needs}`);
+        popupFailedCheck(`C${standalone ? '!' : ''}`, {
+          0: `消耗品${standalone ? `(${standalone.name[option.lang]}独立配置)` : ''}不足:\n${needs}`,
+          1: `消耗品${standalone ? `(${standalone.name[option.lang]}獨立配置)` : ''}不足:\n${needs}`,
+          2: `Failed supply check${standalone ? ` for ${standalone.name[option.lang]} standalone` : ''}:\n${needs}`,
+        }, `${standalone ? `${standalone.name[2]} ` : ''}Needs supply:${needs}`);
       } else if (warns.length) {
-        popupFailedCheck(`C${isGFStandalone ? '!' : ''}`, {
-          0: `消耗品${isGFStandalone ? '(压榨届独立配置)' : ''} < ${percentage}%:\n${warns}`,
-          1: `消耗品${isGFStandalone ? '(壓榨屆獨立配置)' : ''} < ${percentage}%:\n${warns}`,
-          2: `Supplys ${isGFStandalone ? ' for Grindfest standalone' : ''} < ${percentage}%:\n${warns}`,
-        }, `Warn supply:${warns}`);
+        popupFailedCheck(`C${standalone ? '!' : ''}`, {
+          0: `消耗品${standalone ? `(${standalone.name[option.lang]}独立配置)` : ''} < ${percentage}%:\n${warns}`,
+          1: `消耗品${standalone ? `(${standalone.name[option.lang]}獨立配置)`: ''} < ${percentage}%:\n${warns}`,
+          2: `Supplys ${standalone ? ` for ${standalone.name[option.lang]} standalone` : ''} < ${percentage}%:\n${warns}`,
+        }, `${standalone ? `${standalone.name[2]} ` : ''}Warn supply:${warns}`);
       }
       return !needs.length && !unslotted.length;
     }
 
-    async function asyncCheckRepair(isGrindFestStandalone) { try {
+    async function asyncCheckRepair(standalone) { try {
       const option = getOption(true);
       if (!option.repair) {
         return true;
@@ -4690,8 +4728,21 @@
       await waitPause();
       $async.logSwitch(arguments);
       let eqps;
-      const threshold = isGrindFestStandalone ? option.repairValueGF : option.repairValue;
-      const repairCharm = isGrindFestStandalone ? option.repairCharmGF || option.repairCharm : option.repairCharm;
+      standalone = {
+        GF: {
+          name: { 0: '压榨界', 1: '壓榨界', 2: 'Grindfest' },
+          threshold: option.repairValueGF,
+          repairCharm: option.repairCharmGF,
+        },
+        IW:{
+          name: { 0: '道具界', 1: '道具界', 2: 'Itemworld' },
+          threshold: option.repairValueIW,
+          repairCharm: option.repairCharmIW,
+        },
+      }[standalone];
+
+      const threshold = standalone?.repairValue ?? option.repairValue;
+      const repairCharm = standalone?.repairCharm || option.repairCharm;
       if (threshold === undefined || threshold < 0) { // skip because default repair has been checked before idleArena>GF
         $async.logSwitch(arguments);
         return true;
@@ -4736,14 +4787,34 @@
       }
       if (eqps.length) {
         popupFailedCheck(`R`, {
-          0: `装备需要修理:\n${eqps.join('\n ')}`,
-          1: `裝備需要修理:\n${eqps.join('\n ')}`,
-          2: `Equips need repair:\n${eqps.join('\n ')}`,
-        }, `Equips need repair:\n`, eqps.join('\n '));
+          0: `${standalone?.name?.[option.lang]??''}装备需要修理:\n${eqps.join('\n ')}`,
+          1: `${standalone?.name?.[option.lang]??''}裝備需要修理:\n${eqps.join('\n ')}`,
+          2: `${standalone?.name?.[option.lang]??''}Equips need repair:\n${eqps.join('\n ')}`,
+        }, `${standalone?.name?.[option.lang]??''}Equips need repair:\n`, eqps.join('\n '));
       }
       $async.logSwitch(arguments);
       return !eqps.length;
     } catch (err) { console.error(err); }; return false; }
+
+    // async function asyncUpdateEquipModifyList() {
+    //   $async.logSwitch(arguments);
+    //   const option = getOption();
+    //   const filters = ['weapon_1handed', 'weapon_2handed', 'weapon_staff', 'shield', 'armor_cloth', 'armor_light', 'armor_heavy'];
+    //   for (const filter of filters) {
+    //     const url = queryToPersistent(`?s=Bazaar&ss=am&screen=modify&filter=${filter}`);
+    //     const doc = $doc(await $ajax.insert(url));
+    //     if (isInBattle(doc)) return;
+    //     const eqps = await Promise.all(Array.from(gE('#equiplist>table>tbody>tr:not(.eqselall):not(.eqtplabel)', 'all', doc)).map(async eqp => { try {
+    //       const id = gE('input', eqp).value;
+    //       const levels = gE('td:last-child', eqp).innerHTML;
+    //       if (!levels) return;
+    //       const [level, world, max] = levels.split(' / ');
+    //       const name = gE('td:first-child', eqp).innerText;
+    //       console.log(name, eqp, id, [level, world, max]);
+    //     } catch (err) { console.error(err); }}));
+    //   }
+    //   $async.logSwitch(arguments);
+    // }
 
     async function asyncCheckEquStorage() { try {
       const option = getOption(true);
@@ -5096,7 +5167,7 @@
         query = 'gr';
       }
       query = `?s=Battle&ss=${query}`;
-      if (id === 'gr' && ((option.checkSupplyGF && !checkSupply(true)) || (option.repairValueGF && !await asyncCheckRepair(true)))) {
+      if (id === 'gr' && ((option.checkSupplyGF && !checkSupply('GF')) || (option.repairValueGF && !await asyncCheckRepair('GF')))) {
         console.log('Check gr Battle Ready Failed in supply/repair', 'id:', id, arena);
         $async.logSwitch(arguments);
         return;
