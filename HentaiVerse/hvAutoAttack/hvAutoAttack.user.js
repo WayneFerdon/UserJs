@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.64
+// @version      2.91.65
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -16,7 +16,6 @@
 // @include      http*://e-hentai.org/*
 // @connect        hentaiverse.org
 // @connect        e-hentai.org
-// @connect        github.com
 // @compatible   Firefox + Greasemonkey
 // @compatible   Chrome/Chromium + Tampermonkey
 // @compatible   Android + Firefox + Usi/Tampermonkey
@@ -3581,20 +3580,17 @@
       return true;
     }
 
-    function setAudioAlarm(e, isTesting) { // 发出音频警报
-      const option = getOption();
-      let audio;
-      if (gE(`#hvAAAlert-${e}`)) {
-        audio = gE(`#hvAAAlert-${e}`);
-      } else {
-        audio = gE('body').appendChild(cE('audio'));
-        audio.id = `hvAAAlert-${e}`;
-        const fileType = '.ogg'; // var fileType = (/Chrome|Safari/.test(navigator.userAgent)) ? '.mp3' : '.wav';
-        audio.src = option.audio?.[e] ?? `https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/${e}${fileType}`;
-        audio.controls = true;
+    function playAudio(audio) {
+      console.log('playAudio')
+      audio.addEventListener('canplaythrough', () => {
+        console.log('playAudio by canplaythrough', audio);
+        audio.play();
+      });
+      // 如果音频已缓存，canplaythrough 可能不会再次触发，此时可直接播放
+      if (audio.readyState >= 3) { // HAVE_FUTURE_DATA 或更高
+        console.log('playAudio by audio.readyState', audio, audio.readyState);
+        audio.play();
       }
-      audio.loop = (e === 'Riddle') && !isTesting;
-      audio.play();
       if (audio.loop) {
         const battleNow = unsafeWindow.battle;
         (async ()=> {
@@ -3603,6 +3599,20 @@
           audio.pause();
         })();
       }
+    }
+
+    function setAudioAlarm(e, isTesting) { // 发出音频警报
+      const option = getOption();
+      let audio = gE(`#hvAAAlert-${e}`);
+      if (!audio) {
+        audio = gE('body').appendChild(cE('audio'));
+        audio.id = `hvAAAlert-${e}`;
+        const fileType = '.ogg'; // var fileType = (/Chrome|Safari/.test(navigator.userAgent)) ? '.mp3' : '.wav';
+        audio.src = option.audio?.[e] ?? `https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/${e}${fileType}`;
+        audio.controls = true;
+      }
+      audio.loop = (e === 'Riddle') && !isTesting;
+      playAudio(audio);
     }
 
     function setNotification(e) { // 发出桌面通知
