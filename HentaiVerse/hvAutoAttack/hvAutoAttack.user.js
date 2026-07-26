@@ -2842,7 +2842,7 @@
             const srcInput = gE('input[type="text"]', button.parentNode);
             const e = srcInput.name.split('_')[1];
             const src = srcInput.value ?? srcInput.placeholder;
-            console.log(e, src);
+            console.log('test alarm', e, src);
             setAlarm(e, src);
           }
         });
@@ -3720,8 +3720,7 @@
           highlight: getOption().focusNotification,
           timeout: notification.time * _1s,
         });
-      }
-      if (window.Notification && window.Notification.permission !== 'denied') {
+      } else if (window.Notification && window.Notification.permission !== 'denied') {
         window.Notification.requestPermission((status) => {
           if (status === 'granted') {
             const n = new window.Notification(notification.text, {
