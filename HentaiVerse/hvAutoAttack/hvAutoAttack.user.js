@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.62
+// @version      2.91.63
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -16,6 +16,7 @@
 // @include      http*://e-hentai.org/*
 // @connect        hentaiverse.org
 // @connect        e-hentai.org
+// @connect        github.com
 // @compatible   Firefox + Greasemonkey
 // @compatible   Chrome/Chromium + Tampermonkey
 // @compatible   Android + Firefox + Usi/Tampermonkey
@@ -1080,7 +1081,7 @@
       await tryClose(attempts, delay);
     } catch (err) { console.error('Opener reload or popup close failed:', err) } }
 
-    function getOption(unstable) { 
+    function getOption(unstable) {
       return typeof GM_getValue === 'undefine' ? {} : (unstable ? g().option : g().stableOption) ?? {};
     }
 
@@ -1143,6 +1144,7 @@
         return false;
       }
       setValue('onriddle', true);
+      (window.opener??window).console.log('onriddle', { riddlePopup: getOption().riddlePopup, opener: window.opener } );
       if (!getOption().riddlePopup || window.opener) {
         riddleAlert();
         return true;
@@ -1182,7 +1184,7 @@
       }
       checkResponsive();
 
-      if (getValue('onriddle', true)) {
+      if (getValue('onriddle')) {
         console.log('onBattle clean onriddle');
         window.history.replaceState(null, '', window.location.href);
         delValue('onriddle');
@@ -1264,8 +1266,8 @@
 
     function goto(url) { // 前进
       window.location.href = url ?? (window.location.search ? window.location.pathname + window.location.search : window.location.href);
-      setTimeout(goto, 5000);
-      setTimeout(() => { window.location.href = window.location.href }, 10000);
+      setTimeout(goto, 5 * _1s);
+      setTimeout(() => { window.location.href = window.location.href }, 10 * _1s);
       return true;
     }
 
@@ -2480,11 +2482,11 @@
           '  <span class="hvAATitle"><l0>自定义警报</l0><l1>自定義警報</l1><l2>Alarm</l2></span><br>',
           '  <l0>注意：留空则使用默认音频，建议每个用户使用自定义音频</l0><l1>注意：留空則使用默認音頻，建議每個用戶使用自定義音頻</l1><l2>Note: Leave the box blank to use default audio, it\'s recommended for all user to use custom audio.</l2>',
           '  <div>',
-          '    <input id="audioEnable_Common" type="checkbox"><label for="audioEnable_Common"><l01>通用</l01><l2>Common</l2>: <input name="audio_Common" placeholder="https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/Common.ogg" type="text"></label><br>',
-          '    <input id="audioEnable_Error" type="checkbox"><label for="audioEnable_Error"><l0>错误</l0><l1>錯誤</l1><l2>Error</l2>: <input name="audio_Error" placeholder="https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/Error.ogg" type="text"></label><br>',
-          '    <input id="audioEnable_Defeat" type="checkbox"><label for="audioEnable_Defeat"><l0>失败</l0><l1>失敗</l1><l2>Defeat</l2>: <input name="audio_Defeat" placeholder="https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/Defeat.ogg" type="text"></label><br>',
-          '    <input id="audioEnable_Riddle" type="checkbox"><label for="audioEnable_Riddle"><l0>答题</l0><l1>答題</l1><l2>Riddle</l2>: <input name="audio_Riddle"  placeholder="https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/Riddle.ogg" type="text"></label><br>',
-          '    <input id="audioEnable_Victory" type="checkbox"><label for="audioEnable_Victory"><l0>胜利</l0><l1>勝利</l1><l2>Victory</l2>: <input name="audio_Victory"  placeholder="https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/Victory.ogg" type="text"></label></div>',
+          '    <div><input id="audioEnable_Common" type="checkbox"><label for="audioEnable_Common"><l01>通用</l01><l2>Common</l2>: <input name="audio_Common" placeholder="https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/Common.ogg" type="text"></label><button class="testAlarm"><l0>测试</l0><l1>測試</l1><l2>Test</l2></button></div>',
+          '    <div><input id="audioEnable_Error" type="checkbox"><label for="audioEnable_Error"><l0>错误</l0><l1>錯誤</l1><l2>Error</l2>: <input name="audio_Error" placeholder="https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/Error.ogg" type="text"></label><button class="testAlarm"><l0>测试</l0><l1>測試</l1><l2>Test</l2></button></div>',
+          '    <div><input id="audioEnable_Defeat" type="checkbox"><label for="audioEnable_Defeat"><l0>失败</l0><l1>失敗</l1><l2>Defeat</l2>: <input name="audio_Defeat" placeholder="https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/Defeat.ogg" type="text"></label><button class="testAlarm"><l0>测试</l0><l1>測試</l1><l2>Test</l2></button></div>',
+          '    <div><input id="audioEnable_Riddle" type="checkbox"><label for="audioEnable_Riddle"><l0>答题</l0><l1>答題</l1><l2>Riddle</l2>: <input name="audio_Riddle"  placeholder="https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/Riddle.ogg" type="text"></label><button class="testAlarm"><l0>测试</l0><l1>測試</l1><l2>Test</l2></button></div>',
+          '    <div><input id="audioEnable_Victory" type="checkbox"><label for="audioEnable_Victory"><l0>胜利</l0><l1>勝利</l1><l2>Victory</l2>: <input name="audio_Victory"  placeholder="https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/Victory.ogg" type="text"></label><button class="testAlarm"><l0>测试</l0><l1>測試</l1><l2>Test</l2></button></div></div>',
           '  <div><l0>请将将要测试的音频文件的地址填入这里</l0><l1>請將將要測試的音頻文件的地址填入這裡</l1><l2>Plz put in the audio file address you want to test</l2>: <br><input class="hvAADebug" name="audio_Text" type="text"></div></div>',
 
           '<div class="hvAATab" id="hvAATab-Rule">',
@@ -2836,6 +2838,13 @@
           this.value = (/^[a-z]$/.test(e.key)) ? e.key.toUpperCase() : e.key;
           gE('input[name="altHotkeyCode"]', optionBox).value = e.keyCode;
         };
+        gE('.testAlarm', 'all', optionBox).forEach(button => {
+          button.onclick = function () {
+            const e = gE('input[type="checkbox"]', button.parentNode).id.split('_')[1];
+            console.log(e);
+            setAlarm(e, true);
+          }
+        });
         gE('.testNotification', optionBox).onclick = function () {
           _alert(0, '接下来开始预处理。\n如果询问是否允许，请选择允许', '接下來開始預處理。\n如果詢問是否允許，請選擇允許', 'Now, pretreat.\nPlease allow to receive notifications if you are asked for permission');
           setNotification('Test');
@@ -3555,19 +3564,24 @@
       }
     }
 
-    function setAlarm(e) { // 发出警报
+    function setAlarm(e, isTesting) { // 发出警报
       const option = getOption();
       e = e || 'Common';
+      console.log('on alarm:', {
+        notification: option.notification,
+        alert: option.alert,
+        audioEnable: option.audioEnable?.[e],
+      }, e);
       if (option.notification) {
         setNotification(e);
       }
-      if (option.alert && option.audioEnable && option.audioEnable[e]) {
-        setAudioAlarm(e);
+      if (option.alert && (isTesting || option.audioEnable?.[e])) {
+        setAudioAlarm(e, isTesting);
       }
       return true;
     }
 
-    function setAudioAlarm(e) { // 发出音频警报
+    function setAudioAlarm(e, isTesting) { // 发出音频警报
       const option = getOption();
       let audio;
       if (gE(`#hvAAAlert-${e}`)) {
@@ -3576,21 +3590,23 @@
         audio = gE('body').appendChild(cE('audio'));
         audio.id = `hvAAAlert-${e}`;
         const fileType = '.ogg'; // var fileType = (/Chrome|Safari/.test(navigator.userAgent)) ? '.mp3' : '.wav';
-        audio.src = (option.audio && option.audio[e]) ? option.audio[e] : `https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/${e}${fileType}`;
+        audio.src = option.audio?.[e] ?? `https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/${e}${fileType}`;
         audio.controls = true;
-        audio.loop = (e === 'Riddle');
       }
+      audio.loop = (e === 'Riddle') && !isTesting;
       audio.play();
-
-      function pauseAudio(e) {
-        audio.pause();
-        document.removeEventListener(e.type, pauseAudio, true);
+      if (e === 'Riddle') {
+        const battleNow = unsafeWindow.battle;
+        (async ()=> {
+          const start = time(0);
+          await until(()=> unsafeWindow.battle !== battleNow);
+          audio.pause();
+        })();
       }
-      document.addEventListener('mousemove', pauseAudio, true);
     }
 
     function setNotification(e) { // 发出桌面通知
-      const notification = setNotification.prototype.notification ??= [
+      const notification = (setNotification.prototype.notification ??= [
         {
           Common: {
             text: '未知',
@@ -3679,13 +3695,13 @@
             time: 3,
           },
         },
-      ][g().lang][e];
+      ][g().lang])[e];
       if (typeof GM_notification !== 'undefined') {
         GM_notification({
           text: notification.text,
           image: `${window.location.origin}${unsafeWindow.IMG_URL}hentaiverse.png`,
           highlight: getOption().focusNotification,
-          timeout: 1000 * notification.time,
+          timeout: notification.time * _1s,
         });
       }
       if (window.Notification && window.Notification.permission !== 'denied') {
@@ -3694,16 +3710,10 @@
             const n = new window.Notification(notification.text, {
               icon: `${unsafeWindow.IMG_URL}hentaiverse.png`,
             });
-            setTimeout(() => {
-              if (n) {
-                n.close();
-              }
-            }, 1000 * notification.time);
+            setTimeout(() => n?.close(), notification.time * _1s);
 
             const nClose = function (e) {
-              if (n) {
-                n.close();
-              }
+              n?.close();
               document.removeEventListener(e.type, nClose, true);
             };
             document.addEventListener('mousemove', nClose, true);
@@ -5563,7 +5573,7 @@
 
         const option = getOption();
         const timeNow = time(0);
-        g('runSpeed', (1000 / (timeNow - g().timeNow)).toFixed(2));
+        g('runSpeed', (_1s / (timeNow - g().timeNow)).toFixed(2));
         g('timeNow', timeNow);
         const monsterDead = gE('img[src*="nbardead"]', 'all').length;
         g('monsterAlive', g().monsterAll - monsterDead);
@@ -6515,7 +6525,7 @@
         const { id, buffObj, current, threshold, checked } = checkBuffThreshold(buff, option.buffSkillThreshold);
         if (checked) continue;
 
-        if (checkCondition(option[`buffSkill${buff}Condition`])) { 
+        if (checkCondition(option[`buffSkill${buff}Condition`])) {
           onClickBuff(id);
           return true;
         }
