@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.65
+// @version      2.91.66
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2839,9 +2839,11 @@
         };
         gE('.testAlarm', 'all', optionBox).forEach(button => {
           button.onclick = function () {
-            const e = gE('input[type="checkbox"]', button.parentNode).id.split('_')[1];
-            console.log(e);
-            setAlarm(e, true);
+            const srcInput = gE('input[type="text"]', button.parentNode);
+            const e = srcInput.name.split('_')[1];
+            const src = srcInput.value ?? srcInput.placeholder;
+            console.log(e, src);
+            setAlarm(e, src);
           }
         });
         gE('.testNotification', optionBox).onclick = function () {
@@ -2939,7 +2941,7 @@
           const audio = box.appendChild(cE('audio'));
           audio.controls = true;
           audio.src = this.value;
-          audio.play();
+          playAudio(audio);
         };
         // 标签页-攻击规则
         gE('.clearMonsterHPCache', optionBox).onclick = function () {
@@ -3563,7 +3565,7 @@
       }
     }
 
-    function setAlarm(e, isTesting) { // 发出警报
+    function setAlarm(e, testSrc) { // 发出警报
       const option = getOption();
       e = e || 'Common';
       console.log('on alarm:', {
@@ -3571,11 +3573,11 @@
         alert: option.alert,
         audioEnable: option.audioEnable?.[e],
       }, e);
-      if (option.notification || isTesting) {
+      if (option.notification || testSrc) {
         setNotification(e);
       }
-      if (option.alert && option.audioEnable?.[e] || isTesting) {
-        setAudioAlarm(e, isTesting);
+      if (option.alert && option.audioEnable?.[e] || testSrc) {
+        setAudioAlarm(e, testSrc);
       }
       return true;
     }
@@ -3601,17 +3603,19 @@
       }
     }
 
-    function setAudioAlarm(e, isTesting) { // 发出音频警报
+    function setAudioAlarm(e, testSrc) { // 发出音频警报
       const option = getOption();
       let audio = gE(`#hvAAAlert-${e}`);
+      const fileType = '.ogg'; // var fileType = (/Chrome|Safari/.test(navigator.userAgent)) ? '.mp3' : '.wav';
       if (!audio) {
         audio = gE('body').appendChild(cE('audio'));
         audio.id = `hvAAAlert-${e}`;
-        const fileType = '.ogg'; // var fileType = (/Chrome|Safari/.test(navigator.userAgent)) ? '.mp3' : '.wav';
-        audio.src = option.audio?.[e] ?? `https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/${e}${fileType}`;
         audio.controls = true;
       }
-      audio.loop = (e === 'Riddle') && !isTesting;
+      if (!audio.src || audio.readyState <= 2 || (testSrc && audio.src !== testSrc)) {
+        audio.src = testSrc ?? option.audio?.[e] ?? `https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/${e}${fileType}`;
+      }
+      audio.loop = (e === 'Riddle') && !testSrc;
       playAudio(audio);
     }
 
