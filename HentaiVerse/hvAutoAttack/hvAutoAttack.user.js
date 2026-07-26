@@ -828,7 +828,7 @@
           $ajax.conn--;
           const text = r.responseText;
           if (r.status !== 200) {
-            $ajax.error = `${r.status} ${r.statusText}: ${r.finalUrl}. ${JSON.stringify(r)}`;
+            $ajax.error = `${r.status} ${r.statusText}: ${r.finalUrl}`;
             r.context.onerror?.(new Error($ajax.error));
           } else if (text === 'state lock limiter in effect') {
             if ($ajax.error !== text) {
@@ -844,7 +844,7 @@
         },
         onerror: function (r) {
           $ajax.conn--;
-          $ajax.error = `${r.status} ${r.statusText}: ${r.finalUrl}. ${JSON.stringify(r)}`;
+          $ajax.error = `${r.status} ${r.statusText}: ${r.finalUrl}`;
           r.context.onerror?.(new Error($ajax.error));
           $ajax.next();
         },
@@ -4796,25 +4796,39 @@
       return !eqps.length;
     } catch (err) { console.error(err); }; return false; }
 
-    // async function asyncUpdateEquipModifyList() {
-    //   $async.logSwitch(arguments);
-    //   const option = getOption();
-    //   const filters = ['weapon_1handed', 'weapon_2handed', 'weapon_staff', 'shield', 'armor_cloth', 'armor_light', 'armor_heavy'];
-    //   for (const filter of filters) {
-    //     const url = queryToPersistent(`?s=Bazaar&ss=am&screen=modify&filter=${filter}`);
-    //     const doc = $doc(await $ajax.insert(url));
-    //     if (isInBattle(doc)) return;
-    //     const eqps = await Promise.all(Array.from(gE('#equiplist>table>tbody>tr:not(.eqselall):not(.eqtplabel)', 'all', doc)).map(async eqp => { try {
-    //       const id = gE('input', eqp).value;
-    //       const levels = gE('td:last-child', eqp).innerHTML;
-    //       if (!levels) return;
-    //       const [level, world, max] = levels.split(' / ');
-    //       const name = gE('td:first-child', eqp).innerText;
-    //       console.log(name, eqp, id, [level, world, max]);
-    //     } catch (err) { console.error(err); }}));
-    //   }
-    //   $async.logSwitch(arguments);
-    // }
+//     async function asyncUpdateEquipModifyList() {
+//       $async.logSwitch(arguments);
+//       const option = getOption();
+//       const filters = ['weapon_1handed', 'weapon_2handed', 'weapon_staff', 'shield', 'armor_cloth', 'armor_light', 'armor_heavy'];
+//       for (const filter of filters) {
+//         const url = queryToPersistent(`?s=Bazaar&ss=am&screen=modify&filter=${filter}`);
+//         const doc = $doc(await $ajax.insert(url));
+//         if (isInBattle(doc)) return;
+//         const eqps = await Promise.all(Array.from(gE('#equiplist>table>tbody>tr:not(.eqselall):not(.eqtplabel)', 'all', doc)).map(async eqp => { try {
+//           const id = gE('input', eqp).value;
+//           const levels = gE('td:last-child', eqp).innerHTML;
+//           if (!levels) return;
+//           const [level, world, max] = levels.split(' / ').map(x=>x*1);
+//           const name = gE('td:first-child', eqp).innerText;
+//           const quality = name.match(/Fair|Average|Superior|Exquisite|Magnificent|Legendary|Peerless/)[0];
+//           let rounds = (()=> { switch (quality) {
+//             case 'Fair': case 'Average': case 'Superior': case 'Exquisite':
+//               return [5,6,7,8,9,10,10,10,10,10];
+//             case 'Magnificent':
+//               return [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 20, 20, 20, 20];
+//             case 'Legendary':
+//               return [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 20, 20, 20, 20, 25, 25, 25, 25, 25];
+//             case 'Peerless':
+//               return [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 20, 20, 20, 20, 25, 25, 25, 25, 25, 30, 30, 30, 30, 30];
+//             default:
+//               return;
+//           }})();
+//           if (!rounds) return;
+//           console.log({name, eqp, id, world, max, round: rounds[world]});
+//         } catch (err) { console.error(err); }}));
+//       }
+//       $async.logSwitch(arguments);
+//     }
 
     async function asyncCheckEquStorage() { try {
       const option = getOption(true);
