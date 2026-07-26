@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.67
+// @version      2.91.68
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -828,7 +828,7 @@
           $ajax.conn--;
           const text = r.responseText;
           if (r.status !== 200) {
-            $ajax.error = `${r.status} ${r.statusText}: ${r.finalUrl}`;
+            $ajax.error = `${r.status} ${r.statusText}: ${r.finalUrl}. ${JSON.stringify(r)}`;
             r.context.onerror?.(new Error($ajax.error));
           } else if (text === 'state lock limiter in effect') {
             if ($ajax.error !== text) {
@@ -844,7 +844,7 @@
         },
         onerror: function (r) {
           $ajax.conn--;
-          $ajax.error = `${r.status} ${r.statusText}: ${r.finalUrl}`;
+          $ajax.error = `${r.status} ${r.statusText}: ${r.finalUrl}. ${JSON.stringify(r)}`;
           r.context.onerror?.(new Error($ajax.error));
           $ajax.next();
         },
@@ -4265,7 +4265,13 @@
       await updateEncounter(false);
       await waitPause();
       $async.logSwitch(arguments);
-      if (onIsekaiEncounter) switchCurrent();
+      if (onIsekaiEncounter) {
+        const persistent = await $ajax.fetch(window.location.href.replace('/isekai', ''));
+        if (!persistent || isInBattle($doc(persistent))) {
+          return;
+        }
+        switchCurrent();
+      }
       const option = getOption(true);
       const ready = { isChecked: () => ready.supply && ready.repair && ready.storage && ready.encounter };
       const idleStart = time(0);
@@ -4616,6 +4622,13 @@
       $async.logSwitch(arguments);
     } catch (err) { console.error(err); }}
 
+    function popupFailedCheck(title, popupText, ...log) {
+      const option = getOption();
+      if (title) document.title = `[${title}!${onIsekaiEncounter?'p':''}]` + document.title;
+      if (popupText) popup(`${onIsekaiEncounter?{0:'主世界',1:'主世界',2:'[Persistent]'}[option.lang]??'[Persistent]':''}${popupText[option.lang]??popupText[2]}`);
+      if (log?.length) console.log(`${onIsekaiEncounter?'[Persistent]':''}`, ...log);
+    }
+
     function checkSupply(isGFStandalone) {
       const option = getOption(true);
       if (!option.checkSupply) return true;
@@ -4646,51 +4659,25 @@
           warns.push(`\n${name}(${count}<${warnThreshold}(${threshold}*${percentage}%))`);
         }
       }
+
       if (unslotted.length) {
-        console.log(`Unslotted items:${unslotted}`);
-        document.title = `[C!]` + document.title;
-        switch(option.lang * 1) {
-          case 0:
-            popup(`消耗品未装备:\n${unslotted}`);
-            break;
-          case 1:
-            popup(`消耗品未裝備:\n${unslotted}`);
-            break;
-          case 2:
-          default:
-            popup(`Consumables not slotted:\n${unslotted}`);
-            break;
-        }
+        popupFailedCheck(`C`, {
+          0: `消耗品未装备:\n${unslotted}`,
+          1: `消耗品未裝備:\n${unslotted}`,
+          2: `Consumables not slotted:\n${unslotted}`,
+        }, `Unslotted items:${unslotted}`);
       } else if (needs.length) {
-        console.log(`Needs supply:${needs}`);
-        document.title = `[C!${isGFStandalone ? '!' : ''}]` + document.title;
-        switch(option.lang * 1) {
-          case 0:
-            popup(`消耗品${isGFStandalone ? '(压榨届独立配置)' : ''}不足:\n${needs}`);
-            break;
-          case 1:
-            popup(`消耗品${isGFStandalone ? '(壓榨屆獨立配置)' : ''}不足:\n${needs}`);
-            break;
-          case 2:
-          default:
-            popup(`Failed supply check${isGFStandalone ? ' for Grindfest standalone' : ''}:\n${needs}`);
-            break;
-        }
+        popupFailedCheck(`C${isGFStandalone ? '!' : ''}`, {
+          0: `消耗品${isGFStandalone ? '(压榨届独立配置)' : ''}不足:\n${needs}`,
+          1: `消耗品${isGFStandalone ? '(壓榨屆獨立配置)' : ''}不足:\n${needs}`,
+          2: `Failed supply check${isGFStandalone ? ' for Grindfest standalone' : ''}:\n${needs}`,
+        }, `Needs supply:${needs}`);
       } else if (warns.length) {
-        console.log(`Warn supply:${warns}`);
-        document.title = `[C!${isGFStandalone ? '!' : ''}]` + document.title;
-        switch(option.lang * 1) {
-          case 0:
-            popup(`消耗品${isGFStandalone ? '(压榨届独立配置)' : ''} < ${percentage}%:\n${warns}`);
-            break;
-          case 1:
-            popup(`消耗品${isGFStandalone ? '(壓榨屆獨立配置)' : ''} < ${percentage}%:\n${warns}`);
-            break;
-          case 2:
-          default:
-            popup(`Supplys ${isGFStandalone ? ' for Grindfest standalone' : ''} < ${percentage}%:\n${warns}`);
-            break;
-        }
+        popupFailedCheck(`C${isGFStandalone ? '!' : ''}`, {
+          0: `消耗品${isGFStandalone ? '(压榨届独立配置)' : ''} < ${percentage}%:\n${warns}`,
+          1: `消耗品${isGFStandalone ? '(壓榨屆獨立配置)' : ''} < ${percentage}%:\n${warns}`,
+          2: `Supplys ${isGFStandalone ? ' for Grindfest standalone' : ''} < ${percentage}%:\n${warns}`,
+        }, `Warn supply:${warns}`);
       }
       return !needs.length && !unslotted.length;
     }
@@ -4741,36 +4728,18 @@
       } catch (err) { console.error(err); }}));
       eqps = eqps.filter(e => e);
       if (emptySlot.length) {
-        console.log('Empty equip slots:\n', emptySlot.join('\n '));
-        switch(option.lang * 1) {
-          case 0:
-            popup(`缺少装备:\n${emptySlot.join('\n ')}`);
-            break
-          case 1:
-            popup(`缺少裝備:\n${emptySlot.join('\n ')}`);
-            break
-          case 2:
-          default:
-            popup(`Empty equip slots:\n${emptySlot.join('\n ')}`);
-            break
-        }
-        document.title = `[R!]` + document.title;
+        popupFailedCheck(`R`, {
+          0: `缺少装备:\n${emptySlot.join('\n ')}`,
+          1: `缺少裝備:\n${emptySlot.join('\n ')}`,
+          2: `Empty equip slots:\n${emptySlot.join('\n ')}`,
+        }, `Empty equip slots:\n`, emptySlot.join('\n '));
       }
       if (eqps.length) {
-        console.log('equips need repair:\n', eqps.join('\n '));
-        switch(option.lang * 1) {
-          case 0:
-            popup(`装备需要修理:\n${eqps.join('\n ')}`);
-            break
-          case 1:
-            popup(`裝備需要修理:\n${eqps.join('\n ')}`);
-            break
-          case 2:
-          default:
-            popup(`Equips need repair:\n${eqps.join('\n ')}`);
-            break
-        }
-        document.title = `[R!]` + document.title;
+        popupFailedCheck(`R`, {
+          0: `装备需要修理:\n${eqps.join('\n ')}`,
+          1: `裝備需要修理:\n${eqps.join('\n ')}`,
+          2: `Equips need repair:\n${eqps.join('\n ')}`,
+        }, `Equips need repair:\n`, eqps.join('\n '));
       }
       $async.logSwitch(arguments);
       return !eqps.length;
@@ -4792,7 +4761,13 @@
       const exec = /<td>Inventory Capacity:<\/td><td>(\d+)(?: \+ (\d+))?<\/td><td>\/<\/td><td>(\d+)<\/td>/.exec(doc.body.innerHTML);
       const count = parseInt(exec[1]); + parseInt(exec[2] || 0);
       const checked = count <= option.equStorageValue;
-      if (!checked) document.title = `[E!]` + document.title;
+      if (!checked) {
+        popupFailedCheck(`E`, {
+          0: `装备库存过多: ${count / option.equStorageValue}`,
+          1: `裝備庫存過多: ${count / option.equStorageValue}`,
+          2: `Equips storage upto threshold: ${count / option.equStorageValue}`,
+        }, `Equips storage upto threshold: ${count / option.equStorageValue}`);
+      }
       $async.logSwitch(arguments);
       return checked;
     } catch (err) { console.error(err); }; return false; }
@@ -4813,35 +4788,27 @@
       const [staminaChecked, stmNR] = [checked.checked, checked.stmNR];
       const [neat, neatNR] = [stamina.current-low, stmNR-lowNR];
       console.log(
-        'stamina check succeed:', staminaChecked === 1, ... staminaChecked === -1 ? ['with nature recover', lowNR, 'stmNR:', stmNR, '(', ... neatNR>=0 ? ['+', neatNR] : ['-', -neatNR], ')'] : [],
+        `${onIsekaiEncounter?'[Persistent]':''}stamina check succeed:`, staminaChecked === 1, ... staminaChecked === -1 ? ['with nature recover', lowNR, 'stmNR:', stmNR, '(', ... neatNR>=0 ? ['+', neatNR] : ['-', -neatNR], ')'] : [],
         '\nlow:', low, ... cost ? ['cost:', cost, ... stamina.punish ? ['*', ratio, '=', Math.round(cost*ratio*10000)/10000] : [], 'current:', stamina.current, '(', neat>=0?'+':'-', neat, ')'] : [],
         '\nstamina:', stamina,
       );
       if (staminaChecked === 1) { // succeed
-        document.title = document.title.replace(`[S!]`, '');
+        document.title = document.title.replace(`[S!${onIsekaiEncounter?'p':''}]`, '');
         return true;
       }
       if (staminaChecked === 0) { // failed currently
         const now = time(0);
         setTimeout(method, Math.floor(now / _1h + 1) * _1h - now);
         // popup('Failed stamina check for now.');
-        if (!document.title.includes(`[S!]`)) {
-          document.title = `[S!]` + document.title;
+        if (!document.title.includes(`[S!${onIsekaiEncounter?'p':''}]`)) {
+          document.title = `[S!${onIsekaiEncounter?'p':''}]` + document.title;
         }
       } else { // case -1: // failed with nature recover
-        switch(option.lang * 1) {
-          case 0:
-            popup('当日精力不足(含自然恢复)');
-            break
-          case 1:
-            popup('當日精力不足(含自然恢復)');
-            break
-          case 2:
-          default:
-            popup('Failed stamina check with nature recover.');
-            break
-        }
-        document.title = `[S!!]` + document.title;
+        popupFailedCheck(`S!`, {
+          0: `当日精力不足(含自然恢复)`,
+          1: `當日精力不足(含自然恢復)`,
+          2: `Failed stamina check with nature recover.`,
+        });
       }
     }
 
