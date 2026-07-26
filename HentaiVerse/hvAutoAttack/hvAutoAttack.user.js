@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.68
+// @version      2.91.69
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -4848,10 +4848,10 @@
       const checked = count <= option.equStorageValue;
       if (!checked) {
         popupFailedCheck(`E`, {
-          0: `装备库存过多: ${count / option.equStorageValue}`,
-          1: `裝備庫存過多: ${count / option.equStorageValue}`,
-          2: `Equips storage upto threshold: ${count / option.equStorageValue}`,
-        }, `Equips storage upto threshold: ${count / option.equStorageValue}`);
+          0: `装备库存过多: ${count} / ${option.equStorageValue}`,
+          1: `裝備庫存過多: ${count} / ${option.equStorageValue}`,
+          2: `Equips storage upto threshold: ${count} / ${option.equStorageValue}`,
+        }, `Equips storage upto threshold: ${count} / ${option.equStorageValue}`);
       }
       $async.logSwitch(arguments);
       return checked;
