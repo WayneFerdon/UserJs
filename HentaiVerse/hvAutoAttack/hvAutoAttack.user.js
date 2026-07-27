@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.76
+// @version      2.91.77
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -5255,16 +5255,11 @@
         if (id === 'iw') {
           id = undefined;
           const iw = await idleItemWorld(writeArenaStart, arena);
-          console.log(iw);
-          switch(iw) {
-            case 1:
-              return;
-            case -1:
-              restorePersonaAndEquipSet();
-              return;
-            default:
-              restorePersonaAndEquipSet();
-              continue;
+          if (iw) {
+            return;
+          } else {
+            restorePersonaAndEquipSet();
+            continue;
           }
         }
         if (arena.arrayDone?.includes(id)) {
@@ -5383,7 +5378,6 @@
         if (equipSet.target && equipSet.current*1 !== equipSet.target) {
           if (!getValue('lastEquipSet')) setValue('lastEquipSet', equipSet.current);
           doc = $doc(await $ajax.fetch(`?s=Character&ss=eq`, `equip_set=${equipSet.target}`));
-          console.log(eid, gE(`[onmouseover*="equips.set(${eid}"`, doc));
           changed = true;
         }
 
@@ -5395,7 +5389,6 @@
 
         if (title?.match(/You cannot enter the item world of a currently equipped item./)) {
           console.trace('Idle Item World: Skip currentlt equiped', eid);
-          $async.logSwitch(arguments);
           continue;
         }
 
@@ -5403,7 +5396,6 @@
         const id = 'iw';
         if (((option.checkSupplyIW && !checkSupply('IW')) || (option.repairValueIW && !await asyncCheckRepair('IW')))) {
           console.log('Check iw Battle Ready Failed in supply/repair', `id:e${id}`, arena);
-          $async.logSwitch(arguments);
           continue;
         }
 
@@ -5413,7 +5405,6 @@
         const cost = equip.round * (_server.isekai ? 2 : 1) * (stamina.current >= 60 ? 0.03 : 0.02);
         if (!await checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: option.encounter, staminaLow: option.staminaItemWorld })) {
           console.log('Check Battle Ready Failed', `id:e${id}`, arena);
-          $async.logSwitch(arguments);
           continue;
         }
 
@@ -5433,9 +5424,8 @@
           goto();
         }
         $async.logSwitch(arguments);
-        return 1;
+        return true;
       }
-      return -1;
       $async.logSwitch(arguments);
     } catch (err) { console.error(err); }}
 
