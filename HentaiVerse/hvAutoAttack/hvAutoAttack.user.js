@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.77
+// @version      2.91.78
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2027,7 +2027,10 @@
       ];
       const option = getOption();
       const { equips, personas, equipSets } = getValue('itemWorldDatas', true)??{};
-      if (!equips || !personas || !equipSets) return;
+      if (!equips || !personas || !equipSets) {
+        gE('.itemWorldCounts').innerHTML = `${equips?.filter(eqp=>option.enableItemWorld?.[eqp.id]).length??0}/${equips?.length??0}`;
+        return;
+      }
       const autoSwitchOptionText = ['不自动切换(默认)', '不自動切換(默認)', 'Disable auto switch(Default)'];
       const currentOptionText = ['(当前)', '(當前)', '(current)'];
       const lang = g().lang;
@@ -2979,7 +2982,9 @@
           gE('.autoItemWorldList', optionBox).style.display = (gE('.autoItemWorldList', optionBox).style.display === 'grid') ? 'none' : 'grid';
         };
         gE('.hvAAClearItemWorld', optionBox).onclick = function () {
+          delValue('itemWorldDatas');
           gE('.autoItemWorldList', optionBox).innerHTML = '';
+          updateItemWorldListUI();
         };
 
         const optionBox2Order = (ids, valueFrom=undefined, index=0) => function (e) {
@@ -5350,7 +5355,7 @@
         $async.logSwitch(arguments);
         return;
       }
-      const list = Object.keys(option.enableItemWorld).filter(id=>option.enableItemWorld[id]);
+      const list = option.enableItemWorld ? Object.keys(option.enableItemWorld).filter(id=>option.enableItemWorld[id]) : undefined;
       if (!list?.length) {
         $async.logSwitch(arguments);
         return;
