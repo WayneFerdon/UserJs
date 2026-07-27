@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.69
+// @version      2.91.70
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -37,7 +37,7 @@
     dataFlags.portable = ['drop', 'stats', 'dropOld', 'statsOld', 'monsterDB', 'monsterMID'];
     dataFlags.battleDatas = [...dataFlags.portable, 'battle', 'battleCode', 'disabled', 'stepIn', 'skillOTOS', 'onriddle', 'rec'];
     dataFlags.local = [...dataFlags.battleDatas, 'stamina'];
-    dataFlags.standalone = [...dataFlags.sharable, ...dataFlags.local, 'arena', 'lastUrl', 'ability', 'proficiency', 'lastSwitch'];
+    dataFlags.standalone = [...dataFlags.sharable, ...dataFlags.local, 'arena', 'lastUrl', 'ability', 'proficiency', 'lastSwitch', 'itemWorldDatas', 'lastPersona', 'lastEquipSet'];
     dataFlags.excludeStandalone = { 'option': ['optionStandalone', 'version', 'lang'] };
 
     const _1s = 1000;
@@ -275,7 +275,6 @@
         duration: 5,
         description: "'Mystical energies have converged on this target. Striking it with any magic spell will consume only half the normal mana.'"
       },
-      // from monster ------------ ?? permanent or 800?
       AW: {
         name: 'Absorbing Ward',
         img: 'absorb',
@@ -2016,6 +2015,90 @@
       return UIString;
     }
 
+    function updateItemWorldListUI() {
+      const container = gE('.autoItemWorldList');
+      if (!container) return;
+      let innerHTML = [
+        `<div><l0>挑战顺序</l0><l1>挑戰順序</l1><l2>Order</l2></div>`,
+        `<div><l0>装备</l0><l1>裝備</l1><l2>Equip</l2></div>`,
+        `<div><l0>停止等级</l0><l1>停止等級</l1><l2>Stop Level</l2></div>`,
+        `<div><l0>挑战人物</l0><l1>挑戰人物</l1><l2>Battle Persona</l2></div>`,
+        `<div><l0>挑战套装</l0><l1>挑戰套裝</l1><l2>Battle Equip Set</l2></div>`,
+      ];
+      const option = getOption();
+      const { equips, personas, equipSets } = getValue('itemWorldDatas', true)??{};
+      if (!equips || !personas || !equipSets) return;
+      const autoSwitchOptionText = ['不自动切换(默认)', '不自動切換(默認)', 'Disable auto switch(Default)'];
+      const currentOptionText = ['(当前)', '(當前)', '(current)'];
+      const lang = g().lang;
+      gE('.itemWorldCounts').innerHTML = `${equips.filter(eqp=>option.enableItemWorld?.[eqp.id]).length}/${equips.length}`;
+      container.innerHTML = innerHTML.join('');
+
+      for (const equip of equips) {
+        const eid = equip.id;
+        if (equip.world >= equip.max) continue;
+        appendInput(option.ItemWorldOrder?.[eid], `<input name="ItemWorldOrder_${eid}" type="number" placeholder="0">`);
+        appendInput(option.enableItemWorld?.[eid], `<input id="enableItemWorld_${equip.id}" type="checkbox"><label for="enableItemWorld_${equip.id}">[${eid}]${equip.name} (${equip.level}/${equip.world}/${equip.max})</label>`);
+        appendInput(option.levelItemWorld?.[eid], `<input name="levelItemWorld_${eid}" type="number" placeholder="0">`);
+        appendSelection(`itemWorldPersona_${eid}`, option.itemWorldPersona?.[eid], equipSets, (id, list) => `<option value="${id}">${list[id].name}${list[id].selected ? currentOptionText[lang] : ''}</option>`);
+        appendSelection(`itemWorldEquipSet_${eid}`, option.itemWorldEquipSet?.[eid], equipSets, (id, list) => `<option value="${id}">Set ${id}${list[id] ? currentOptionText[lang] : ''}</option>`);
+      }
+
+      function appendInput(value, innerHTML) {
+        const item = cE('div');
+        item.innerHTML = innerHTML;
+        container.appendChild(item);
+        const input = gE('input', item);
+        switch(input.type) {
+          case 'number':
+            input.value = value;
+            customizeInputAutoFit(input);
+            break;
+          case 'checkbox':
+            input.checked = value;
+            displayCheckBoxNotDefault(input);
+            input.addEventListener('change', () => displayCheckBoxNotDefault(input));
+            break;
+          default:
+            break;
+        }
+      }
+
+      function appendSelection(name, value, list, map) {
+        const selection = cE('div');
+        innerHTML = [];
+        innerHTML.push(`<div><select name="${name}">`);
+        innerHTML.push(`<option value="undefined">${autoSwitchOptionText[lang]}</option>`);
+        for (const id in list) {
+          innerHTML.push(map(id, list));
+        }
+        innerHTML.push(`</select></div>`);
+        selection.innerHTML = innerHTML;
+        gE('select', selection).value = value;
+        container.appendChild(selection);
+      }
+
+    }
+
+    function displayCheckBoxNotDefault(input) {
+      if (!gE(`label[for="${input.id}"]`) || input.placeholder === undefined) {
+        return;
+      }
+      if (!!input.checked !== !!input.placeholder) {
+        gE(`label[for="${input.id}"]`).classList.add('optionEdited');
+      } else {
+        gE(`label[for="${input.id}"]`).classList.remove('optionEdited');
+      }
+    }
+
+    async function updateItemWorldList() {
+      const equips = await asyncUpdateEquipModifyList();
+      const personas = await asyncUpdatePersona();
+      const equipSets = await asyncUpdateEquipSet();
+      if (!equips?.length || !personas || !equipSets) return;
+      setValue('itemWorldDatas', { equips, personas, equipSets });
+    }
+
     function optionBox() { // 配置界面
       let option = getOption(true);
       let optionBox = gE('#hvAABox');
@@ -2160,10 +2243,8 @@
           '  <input id="encounterDisplay" type="checkbox"><label for="encounterDisplay"><l0>不自动遭遇时显示倒计时</l0><l1>不自動遭遇時顯示倒計時</l1><l2>Display CountDown While Not Auto Encounter</l2><br>',
           '  <l0>遭遇战倒计时</l0><l1>遭遇戰倒計時</l1><l2>Wait for encounter first while count down</l2> ≤ <input class="hvAANumber" name="encounterWaitCD" placeholder="0" type="number">s<l0>时优先等待</l0><l1>時優先等待</l1><l2>.</l2>',
           '  </div>',
-          // '  <div><input id="idleItemWorld" type="checkbox"><label for="idleItemWorld"><b><l0>闲置道具界</l0><l1>閒置道具界</l1><l2>Idle Item World</l2>: </b><button class="updateItemWorld"><l0>更新列表</l0><l1>更新列表</l1><l2>Update List</l2></button>',
-          // '  </div>',
           '  <div><input id="idleArena" type="checkbox"><label for="idleArena"><b><l0>闲置竞技场</l0><l1>閒置競技場</l1><l2>Idle Arena</l2>: </b>',
-          '    <l0>在任意页面停留</l0><l1>在任意頁面停留</l1><l2>Idle in any page for </l2><input class="hvAANumber" name="idleArenaTime" placeholder="0" type="number"><l0>秒后，开始竞技场</l0><l1>秒後，開始競技場</l1><l2> (s), start Arena</l2></label> <button class="idleArenaReset"><l01>重置</l01><l2>Reset</l2></button>;<br>',
+          '    <l0>在任意页面停留</l0><l1>在任意頁面停留</l1><l2>Idle in any page for </l2><input class="hvAANumber" name="idleArenaTime" placeholder="0" type="number"><l0>秒后，开始竞技场</l0><l1>秒後，開始競技場</l1><l2> (s), start Arena</l2></label><button class="idleArenaReset"><l01>重置</l01><l2>Reset</l2></button>;<br>',
           '    <l0>进行的竞技场相对应等级</l0><l1>進行的競技場相對應等級</l1><l2>The levels of the Arena you want to complete</l2>:  ',
           '      <button class="hvAAShowLevels"><l0>显示更多</l0><l1>顯示更多</l1><l2>Show more</l2></button><button class="hvAALevelsClear"><l01>清空</l01><l2>Clear</l2></button><br>',
           '      <input name="idleArenaLevels" style="width:calc(100% - 20px);" type="text" disabled="true"><input name="idleArenaValue" style="width:98%;" type="hidden" disabled="true">',
@@ -2171,21 +2252,24 @@
           '        <input id="arLevel_1" value="1,1" type="checkbox"><label for="arLevel_1">1</label> <input id="arLevel_10" value="10,3" type="checkbox"><label for="arLevel_10">10</label> <input id="arLevel_20" value="20,5" type="checkbox"><label for="arLevel_20">20</label> <input id="arLevel_30" value="30,8" type="checkbox"><label for="arLevel_30">30</label> <input id="arLevel_40" value="40,9" type="checkbox"><label for="arLevel_40">40</label> <input id="arLevel_50" value="50,11" type="checkbox"><label for="arLevel_50">50</label> <input id="arLevel_60" value="60,12" type="checkbox"><label for="arLevel_60">60</label> <input id="arLevel_70" value="70,13" type="checkbox"><label for="arLevel_70">70</label> <input id="arLevel_80" value="80,15" type="checkbox"><label for="arLevel_80">80</label> <input id="arLevel_90" value="90,16" type="checkbox"><label for="arLevel_90">90</label> <input id="arLevel_100" value="100,17" type="checkbox"><label for="arLevel_100">100</label> <input id="arLevel_110" value="110,19" type="checkbox"><label for="arLevel_110">110</label>',
           '        <input id="arLevel_120" value="120,20" type="checkbox"><label for="arLevel_120">120</label> <input id="arLevel_130" value="130,21" type="checkbox"><label for="arLevel_130">130</label> <input id="arLevel_140" value="140,23" type="checkbox"><label for="arLevel_140">140</label> <input id="arLevel_150" value="150,24" type="checkbox"><label for="arLevel_150">150</label> <input id="arLevel_165" value="165,26" type="checkbox"><label for="arLevel_165">165</label> <input id="arLevel_180" value="180,27" type="checkbox"><label for="arLevel_180">180</label> <input id="arLevel_200" value="200,28" type="checkbox"><label for="arLevel_200">200</label> <input id="arLevel_225" value="225,29" type="checkbox"><label for="arLevel_225">225</label> <input id="arLevel_250" value="250,32" type="checkbox"><label for="arLevel_250">250</label> <input id="arLevel_300" value="300,33" type="checkbox"><label for="arLevel_300">300</label> <input id="arLevel_400" value="400,34" type="checkbox"><label for="arLevel_400">400</label> <input id="arLevel_500" value="500,35" type="checkbox"><label for="arLevel_500">500</label>',
           '        <input id="arLevel_RB50" value="RB50,105" type="checkbox"><label for="arLevel_RB50">RB50</label> <input id="arLevel_RB75A" value="RB75A,106" type="checkbox"><label for="arLevel_RB75A">RB75A</label> <input id="arLevel_RB75B" value="RB75B,107" type="checkbox"><label for="arLevel_RB75B">RB75B</label> <input id="arLevel_RB75C" value="RB75C,108" type="checkbox"><label for="arLevel_RB75C">RB75C</label>',
-          '        <input id="arLevel_RB100" value="RB100,109" type="checkbox"><label for="arLevel_RB100">RB100</label> <input id="arLevel_RB150" value="RB150,110" type="checkbox"><label for="arLevel_RB150">RB150</label> <input id="arLevel_RB200" value="RB200,111" type="checkbox"><label for="arLevel_RB200">RB200</label> <input id="arLevel_RB250" value="RB250,112" type="checkbox"><label for="arLevel_RB250">RB250</label> <input id="arLevel_GF" value="GF,gr" type="checkbox"><label for="arLevel_GF" >GrindFest </label><input class="hvAANumber" name="idleArenaGrTime" placeholder="1" type="number">',
+          '        <input id="arLevel_RB100" value="RB100,109" type="checkbox"><label for="arLevel_RB100">RB100</label> <input id="arLevel_RB150" value="RB150,110" type="checkbox"><label for="arLevel_RB150">RB150</label> <input id="arLevel_RB200" value="RB200,111" type="checkbox"><label for="arLevel_RB200">RB200</label> <input id="arLevel_RB250" value="RB250,112" type="checkbox"><label for="arLevel_RB250">RB250</label> <input id="arLevel_IW" value="IW,iw" type="checkbox"><label for="arLevel_IW" >Item World </label><input id="arLevel_GF" value="GF,gr" type="checkbox"><label for="arLevel_GF" >GrindFest </label><input class="hvAANumber" name="idleArenaGrTime" placeholder="1" type="number">',
           '      </div>',
           '      <div><input id="skipUnclearedArena" type="checkbox" placeholder="1"><label for="skipUnclearedArena"><l0>跳过未通关过的</l0><l1>跳過未通關過的</l1><l2>Skip not cleared Arena/RingOfBlood</l2>',
           '      </div>',
           '      <div><input id="obscureNotIdleArena" type="checkbox"><label for="obscureNotIdleArena"><l0>页面中置灰未设置且未完成的</l0><l1>頁面中置灰未設置且未完成的</l1><l2>obscure not setted and not battled in Battle&gt;Arena/RingOfBlood</l2>',
+          '      </div>',
+          '      <div><b><l0>道具界列表</l0><l1>道具界列表</l1><l2>Item World List</l2></b>[<l012 class="itemWorldCounts">0/0</l012>]: </b><button class="updateItemWorld"><l0>更新</l0><l1>更新</l1><l2>Update</l2></button>',
+          '        <button class="hvAAShowItemWorld"><l0>详情</l0><l1>詳情</l1><l2>Details</l2></button><button class="hvAAClearItemWorld"><l01>清空</l01><l2>Clear</l2></button><br>',
+          '        <div class="autoItemWorldList hvAATable" style="display:none;grid-template-columns:0.1fr 3fr 0.1fr 1fr 1fr;"></div>' ,
           '      </div>',
           '    </div>',
           '  <div>',
           '    <b>[S!]<l0>精力</l0><l1>精力</l1><l2>Stamina</l2>: </b>',
           '    <l0>进入遭遇战的最低精力</l0><l1>進入遭遇戰的最低精力</l1><l2><b></b>Minimum stamina to engage encounter</l2>: <input class="hvAANumber" name="staminaEncounter" placeholder="60" type="number"></br>',
           '    <l0>竞技场/浴血擂台阈值</l0><l1>競技場/浴血擂台閾值</l1><l2><b></b>Minimum stamina to auto start The Arena or Ring Of Blood</l2>: Min(85, <input class="hvAANumber" name="staminaLow" placeholder="60" type="number">)<br>',
-          // '    <l0>道具界阈值</l0><l1>道具界閾值</l1><l2><b></b>Minimum stamina to auto start Item World</l2><input class="hvAANumber" name="staminaLow" placeholder="60" type="number"><br>',
+          '    <l0>进入道具界的最低精力</l0><l1>進入道具界的最低精力</l1><l2><b></b>Minimum stamina to auto start Item World</l2><input class="hvAANumber" name="staminaItemWorld" placeholder="60" type="number"><br>',
           '    <l0>进入压榨界的最低精力</l0><l1>進入壓榨界的最低精力</l1><l2><b></b>Minimum stamina to auto start GrindFest</l2>: <input class="hvAANumber" name="staminaGrindFest" placeholder="100" type="number"></br>',
-          // '    <b>[S!!]</b><l0>进入竞技场/浴血擂台/压榨界/道具界时，含本日自然恢复的阈值</l0><l1>进入競技場/浴血擂台/壓榨界/道具界时，含本日自然恢復的閾值</l1><l2><b></b>Stamina threshold with naturally recovers today for The Arena, Ring Of Bloog, GrindFest and Item World</l2>: <input class="hvAANumber" name="staminaLowWithReNat" placeholder="0" type="number"></br>',
-          '    <b>[S!!]</b><l0>进入竞技场/浴血擂台/压榨界时，含本日自然恢复的阈值</l0><l1>进入競技場/浴血擂台/壓榨界时，含本日自然恢復的閾值</l1><l2><b></b>Stamina threshold with naturally recovers today for The Arena, Ring Of Bloog, GrindFest</l2>: <input class="hvAANumber" name="staminaLowWithReNat" placeholder="0" type="number"></br>',
+          '    <b>[S!!]</b><l0>进入竞技场/浴血擂台/压榨界/道具界时，含本日自然恢复的阈值</l0><l1>进入競技場/浴血擂台/壓榨界/道具界时，含本日自然恢復的閾值</l1><l2><b></b>Stamina threshold with naturally recovers today for The Arena, Ring Of Bloog, GrindFest and Item World</l2>: <input class="hvAANumber" name="staminaLowWithReNat" placeholder="0" type="number"></br>',
           '    <input id="restoreStamina" type="checkbox"><label for="restoreStamina"><l0>战前恢复</l0><l1>戰前恢復</l1><l2>Restore stamina</l2></label>',
           '    <input id="staminaRatio" type="checkbox"><label for="staminaRatio"><l0>检查惩罚倍率</l0><l1>檢查懲罰倍率</l1><l2>Check Punishment Ratio</l2></label>',
           '  </div>',
@@ -2193,12 +2277,11 @@
           '    <input id="repair" type="checkbox"><label for="repair"><b>[R!]<l0>修复装备</l0><l1>修復裝備</l1><l2>Repair Equipment</l2></b></label>: ',
           '    <l0>耐久度</l0><l1>耐久度</l1><l2>Durability</l2> ≤ <input class="hvAANumber" name="repairValue" type="number">% ',
           '    <l0>或 压榨界耐久度</l0><l1>或 壓榨界耐久度</l1><l2>OR Grind Fest Durability</l2> ≤ <input class="hvAANumber" name="repairValueGF" type="number">% ',
-          // '    <l0>或 道具界压榨界耐久度</l0><l1>或 道具界耐久度</l1><l2>OR Item World Durability</l2> ≤ <input class="hvAANumber" name="repairValueIW" type="number">%',
+          '    <l0>或 道具界压榨界耐久度</l0><l1>或 道具界耐久度</l1><l2>OR Item World Durability</l2> ≤ <input class="hvAANumber" name="repairValueIW" type="number">%',
           '    <br>',
-          // '    <input id="repairCharm" type="checkbox"><label for="repairCharm"><l0>修复护石 (含压榨界/道具界)</l0><l1>修復護石 (含壓榨界/道具界)</l1><l2>Repair charm (including Grind Fest & Item World)</l2>;',
-          '    <input id="repairCharm" type="checkbox"><label for="repairCharm"><l0>修复护石 (含压榨界)</l0><l1>修復護石 (含壓榨界)</l1><l2>Repair charm (including Grind Fest)</l2>;',
+          '    <input id="repairCharm" type="checkbox"><label for="repairCharm"><l0>修复护石 (含压榨界/道具界)</l0><l1>修復護石 (含壓榨界/道具界)</l1><l2>Repair charm (including Grind Fest & Item World)</l2>;',
           '    <input id="repairCharmGF" type="checkbox"><label for="repairCharmGF"><l0>压榨界修复护石</l0><l1>壓榨界修復護石</l1><l2>Repair charm before Grind Fest</l2></label>;',
-          // '    <input id="repairCharmIW" type="checkbox"><label for="repairCharmIW"><l0>道具界修复护石</l0><l1>道具界修復護石</l1><l2>Repair charm before Item World</l2></label>',
+          '    <input id="repairCharmIW" type="checkbox"><label for="repairCharmIW"><l0>道具界修复护石</l0><l1>道具界修復護石</l1><l2>Repair charm before Item World</l2></label>',
           '    </label><br><input id="encounterRepair" type="checkbox"><label for="encounterRepair"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label>',
           '    <div><l0>检查非空装备槽位时忽略</l0><l1>檢查非空裝備槽位時忽略</l1><l2>Skip when checking unslotted equipments</l2>: </div>',
           '    <div class="hvAAcheckItems hvAATable" style="grid-template-columns: repeat(7, 1fr)">',
@@ -2221,9 +2304,9 @@
           '    <input id="encounterSupply" type="checkbox"><label for="encounterSupply"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label><br>',
           ...getCheckSupplyOptionTable(),
           '  </div>',
-          // '  <div><input id="checkSupplyIW" type="checkbox"><label for="checkSupplyIW"><b>[C!!]<l0>道具界使用额外的库存检查</l0><l1>道具界使用額外的庫存檢查</l1><l2>Extra supply check for Item World</l2></b>;</label>',
-          // ...getCheckSupplyOptionTable('IW'),
-          // '  </div>',
+          '  <div><input id="checkSupplyIW" type="checkbox"><label for="checkSupplyIW"><b>[C!!]<l0>道具界使用额外的库存检查</l0><l1>道具界使用額外的庫存檢查</l1><l2>Extra supply check for Item World</l2></b>;</label>',
+          ...getCheckSupplyOptionTable('IW'),
+          '  </div>',
           '  <div><input id="checkSupplyGF" type="checkbox"><label for="checkSupplyGF"><b>[C!!]<l0>压榨界使用额外的库存检查</l0><l1>壓榨界使用額外的庫存檢查</l1><l2>Extra supply check for Grind Fest</l2></b>;</label>',
           ...getCheckSupplyOptionTable('GF'),
           '  </div>',
@@ -2658,6 +2741,7 @@
         gE('select[name="lang"]').value = g().lang;
         bindEvents();
       }
+      updateItemWorldListUI();
       loadOptionUIData();
 
       function bindEvents() {
@@ -2882,7 +2966,7 @@
           }
         };
         gE('.hvAAShowLevels', optionBox).onclick = function () {
-          gE('.hvAAArenaLevels').style.display = (gE('.hvAAArenaLevels').style.display === 'grid') ? 'none' : 'grid';
+          gE('.hvAAArenaLevels', optionBox).style.display = (gE('.hvAAArenaLevels', optionBox).style.display === 'grid') ? 'none' : 'grid';
         };
         gE('.hvAALevelsClear', optionBox).onclick = function () {
           gE('[name="idleArenaLevels"]', optionBox).value = '';
@@ -2890,6 +2974,12 @@
           gE('.hvAAArenaLevels>input', 'all', optionBox).forEach((input) => {
             input.checked = false;
           });
+        };
+        gE('.hvAAShowItemWorld', optionBox).onclick = function () {
+          gE('.autoItemWorldList', optionBox).style.display = (gE('.autoItemWorldList', optionBox).style.display === 'grid') ? 'none' : 'grid';
+        };
+        gE('.hvAAClearItemWorld', optionBox).onclick = function () {
+          gE('.autoItemWorldList', optionBox).innerHTML = '';
         };
 
         const optionBox2Order = (ids, valueFrom=undefined, index=0) => function (e) {
@@ -2943,13 +3033,13 @@
           gE(ui, optionBox).onclick = optionBox2Order(orderValues[ui], isGetOrderFromId.includes(ui) ? getOrderFromId : undefined);
         };
 
-        // // 标签页-战斗
-        // gE('.updateItemWorld', optionBox).onclick = async function() {
-        //   this.innerHTML = `<l0>更新中...</l0><l1>更新中...</l1><l2>Updating...</l2>`;
-        //   const list = await asyncUpdateEquipModifyList();
-        //   this.innerHTML = `<l0>更新列表</l0><l1>更新列表</l1><l2>Update List</l2>`;
-        //   if (!list) return;
-        // };
+        // 标签页-战斗
+        gE('.updateItemWorld', optionBox).onclick = async function() { try {
+          this.innerHTML = `<l0>更新中...</l0><l1>更新中...</l1><l2>Updating...</l2>`;
+          await updateItemWorldList();
+          updateItemWorldListUI();
+          this.innerHTML = `<l0>更新列表</l0><l1>更新列表</l1><l2>Update List</l2>`;
+        } catch (err) { console.error(err); }};
 
         // 标签页-警报
         gE('input[name="audio_Text"]', optionBox).onchange = function () {
@@ -3220,16 +3310,7 @@
         }
 
         const inputs = gE('input,select', 'all', optionBox);
-        const displayCheckBoxNotDefault = function (input) {
-          if (!gE(`label[for="${input.id}"]`) || input.placeholder === undefined) {
-            return;
-          }
-          if (!!input.checked !== !!input.placeholder) {
-            gE(`label[for="${input.id}"]`).classList.add('optionEdited');
-          } else {
-            gE(`label[for="${input.id}"]`).classList.remove('optionEdited');
-          }
-        }
+
         let name, array, value, type, placeholder, num;
         function formatValue(value, placeholder) {
           if (['', undefined].includes(value) && placeholder) {
@@ -4294,6 +4375,17 @@
           return;
         }
         switchCurrent();
+      } else {
+        const persona = getValue('lastPersona');
+        if (persona) {
+          await $ajax.fetch(`?s=character&ss=ch&persona_set=${persona}`);
+          delValue('lastPersona');
+        }
+        const equipSet = getValue('lastequipSet');
+        if (equipSet) {
+          await $ajax.fetch(`?s=character&ss=eq&equip_set=${equipSet}`);
+          delValue('lastEquipSet');
+        }
       }
       const option = getOption(true);
       const ready = { isChecked: () => ready.supply && ready.repair && ready.storage && ready.encounter };
@@ -4796,39 +4888,63 @@
       return !eqps.length;
     } catch (err) { console.error(err); }; return false; }
 
-//     async function asyncUpdateEquipModifyList() {
-//       $async.logSwitch(arguments);
-//       const option = getOption();
-//       const filters = ['weapon_1handed', 'weapon_2handed', 'weapon_staff', 'shield', 'armor_cloth', 'armor_light', 'armor_heavy'];
-//       for (const filter of filters) {
-//         const url = queryToPersistent(`?s=Bazaar&ss=am&screen=modify&filter=${filter}`);
-//         const doc = $doc(await $ajax.insert(url));
-//         if (isInBattle(doc)) return;
-//         const eqps = await Promise.all(Array.from(gE('#equiplist>table>tbody>tr:not(.eqselall):not(.eqtplabel)', 'all', doc)).map(async eqp => { try {
-//           const id = gE('input', eqp).value;
-//           const levels = gE('td:last-child', eqp).innerHTML;
-//           if (!levels) return;
-//           const [level, world, max] = levels.split(' / ').map(x=>x*1);
-//           const name = gE('td:first-child', eqp).innerText;
-//           const quality = name.match(/Fair|Average|Superior|Exquisite|Magnificent|Legendary|Peerless/)[0];
-//           let rounds = (()=> { switch (quality) {
-//             case 'Fair': case 'Average': case 'Superior': case 'Exquisite':
-//               return [5,6,7,8,9,10,10,10,10,10];
-//             case 'Magnificent':
-//               return [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 20, 20, 20, 20];
-//             case 'Legendary':
-//               return [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 20, 20, 20, 20, 25, 25, 25, 25, 25];
-//             case 'Peerless':
-//               return [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 20, 20, 20, 20, 25, 25, 25, 25, 25, 30, 30, 30, 30, 30];
-//             default:
-//               return;
-//           }})();
-//           if (!rounds) return;
-//           console.log({name, eqp, id, world, max, round: rounds[world]});
-//         } catch (err) { console.error(err); }}));
-//       }
-//       $async.logSwitch(arguments);
-//     }
+    async function asyncUpdateEquipModifyList() { try {
+      $async.logSwitch(arguments);
+      const option = getOption();
+      const filters = ['weapon_1handed', 'weapon_2handed', 'weapon_staff', 'shield', 'armor_cloth', 'armor_light', 'armor_heavy'];
+      const equips = [];
+      for (const filter of filters) {
+        const url = queryToPersistent(`?s=Bazaar&ss=am&screen=modify&filter=${filter}`);
+        const doc = $doc(await $ajax.insert(url));
+        if (isInBattle(doc)) return;
+        const eqps = await Promise.all(Array.from(gE('#equiplist>table>tbody>tr:not(.eqselall):not(.eqtplabel)', 'all', doc)).map(async eqp => { try {
+          const id = gE('input', eqp).value;
+          const levels = gE('td:last-child', eqp).innerHTML;
+          if (!levels) return;
+          const [level, world, max] = levels.split(' / ').map(x=>x*1);
+          const name = gE('td:first-child', eqp).innerText;
+          const quality = name.match(/Fair|Average|Superior|Exquisite|Magnificent|Legendary|Peerless/)[0];
+          let rounds = (()=> { switch (quality) {
+            case 'Fair': case 'Average': case 'Superior': case 'Exquisite':
+              return [5,6,7,8,9,10,10,10,10,10];
+            case 'Magnificent':
+              return [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 20, 20, 20, 20];
+            case 'Legendary':
+              return [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 20, 20, 20, 20, 25, 25, 25, 25, 25];
+            case 'Peerless':
+              return [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 20, 20, 20, 20, 25, 25, 25, 25, 25, 30, 30, 30, 30, 30];
+            default:
+              return;
+          }})();
+          if (!rounds) return;
+          equips.push({name, id, filter, level, world, max, round: rounds[world]});
+        } catch (err) { console.error(err); }}));
+      }
+      return equips;
+      $async.logSwitch(arguments);
+    } catch (err) { console.error(err); }}
+
+    async function asyncUpdatePersona() { try {
+      $async.logSwitch(arguments);
+      const doc = $doc(await $ajax.insert('?s=Character&ss=ch'));
+      if (isInBattle(doc)) return;
+      const personas = Object.fromEntries([...gE('[name="persona_set"]>option', 'all', doc)].map(option => [option.value, { name: option.innerHTML, selected: option.selected }]));
+      return personas;
+      $async.logSwitch(arguments);
+    } catch (err) { console.error(err); }}
+
+    async function asyncUpdateEquipSet() { try {
+      $async.logSwitch(arguments);
+      const doc = $doc(await $ajax.insert('?s=Character&ss=eq'));
+      if (isInBattle(doc)) return;
+
+      const equipSets = Object.fromEntries([...gE('#eqsl img', 'all', doc)].map(img => {
+        const [match, id, on] = img.src.match(/set(\d)_(on|off)/);
+        return [ id, on==='on' ];
+      }));
+      return equipSets;
+      $async.logSwitch(arguments);
+    } catch (err) { console.error(err); }}
 
     async function asyncCheckEquStorage() { try {
       const option = getOption(true);
@@ -5108,9 +5224,11 @@
       let id;
       let arena = getValue('arena', true);
       const option = getOption();
-      const writeArenaStart = function () {
-        console.log('Arena Start', id);
-        document.title = _alert(-1, '闲置竞技场开始', '閒置競技場開始', 'Idle Arena start');
+      const writeArenaStart = function (equip) {
+        console.log('Arena Start', equip ? `e${equip}` : id);
+        if (id === 'iw') {
+          // pass
+        }
         if (id !== 'gr') {
           arena.arrayDone.push(id);
         } else {
@@ -5130,6 +5248,15 @@
       }
       while (array.length > 0) {
         id = array.pop();
+        if (id === 'iw') {
+          switch(await idleItemWorld(writeArenaStart, arena)) {
+            case 1:
+            case -1:
+              return;
+            default:
+              continue;
+          }
+        }
         if (arena.arrayDone?.includes(id)) {
           id = undefined;
           continue;
@@ -5168,7 +5295,6 @@
       }
 
       let query;
-      id = isNaN(id) ? 'gr' : id;
       if (id !== 'gr') {
         query = id >= 105 ? 'rb' : 'ar';
       } else {
@@ -5205,6 +5331,85 @@
       } else {
         console.log('Arena Fetch Done.', 'altBattleFirst:', option.altBattleFirst, 'Arena goto', arena);
         goto();
+      }
+      $async.logSwitch(arguments);
+    } catch (err) { console.error(err); }}
+
+    async function idleItemWorld(writeArenaStart, arena) { try {
+      $async.logSwitch(arguments);
+      await updateItemWorldList();
+      const { equips, personas, equipSets } = getValue('itemWorldDatas', true)??{};
+      if (!equips || !personas || !equipSets) return;
+      const option = getOption();
+      const list = Object.keys(option.enableItemWorld).filter(id=>option.enableItemWorld[id]);
+      if (!list?.length) return;
+      list.sort((x,y) => {
+        [x, y] = [x,y].map(id=>option.ItemWorldOrder?.[id]??0);
+        return (y < x) ? 1 : (y > x) ? -1 : 0;
+      });
+
+      for (const eid of list) {
+        const equip = equips.find(eqp=>eqp.id === eid);
+        if (equip.world >= equip.max || equip.world >= option.levelItemWorld?.[eid]) continue;
+        let doc = $doc(await $ajax.insert(`?s=Bazaar&ss=am&screen=modify&eqids[]=${eid}`));
+        if (gE('.messagebox_error', doc)) continue;
+        const submit = gE('#equpgrade button', 'all', doc)[1];
+        const title = submit.getAttribute('title');
+        if (title?.match(/You need \d+ more World Seeds to spawn this Item World./)) continue;
+        let needReload;
+        const persona = { current:Object.keys(personas).find(p => personas[p].selected), target: option.itemWorldPersona?.[eid] };
+        if (persona.target && persona.current !== persona.target) {
+          setValue('lastPersona', persona.current);
+          await $ajax.fetch(`?s=character&ss=ch&persona_set=${persona.target}`);
+          needReload = true;
+        }
+        const equipSet = { current:Object.keys(equipSets).find(s => equipSets[s]), target: option.itemWorldEquipSet?.[eid] };
+        if (equipSet.target && equipSet.current !== equipSet.target) {
+          setValue('lastEquipSet', equipSet.current);
+          await $ajax.fetch(`?s=character&ss=eq&equip_set=${equipSet.target}`);
+          needReload = true;
+        }
+        if (needReload) {
+          goto();
+          return -1;
+        }
+
+        if (title?.match(/You cannot enter the item world of a currently equipped item./)) return;
+
+        let query = `?s=Battle&ss=iw&filter=${equip.filter}`;
+        const id = 'iw';
+        if (((option.checkSupplyIW && !checkSupply('IW')) || (option.repairValueIW && !await asyncCheckRepair('IW')))) {
+          console.log('Check gr Battle Ready Failed in supply/repair', 'id:', id, arena);
+          $async.logSwitch(arguments);
+          return;
+        }
+
+        let stamina = getValue('stamina', true);
+        [stamina.current, stamina.punish] = await getCurrentStamina();
+        stamina.time = time(0);
+        const cost = equip.round * (_server.isekai ? 2 : 1) * (stamina.current >= 60 ? 0.03 : 0.02);
+        if (!await checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: option.encounter, staminaLow: option.staminaItemWorld })) {
+          console.log('Check Battle Ready Failed', 'id:', id, arena);
+          $async.logSwitch(arguments);
+          return;
+        }
+
+        // switch to itemworld to get correct postoken
+        let token = `postoken=${gE('#equipform>input[name="postoken"]', $doc(await $ajax.insert(query))).value}&eqids%5B%5D=${eid}`;
+        await waitPause();
+        writeArenaStart(eid);
+        await until(async () => !option.checkURLBeforeNewRound || await $ajax.insert(option.checkURLBeforeNewRound), option.checkURLBeforeNewRoundRetry);
+        await until(async () => await $ajax.insert(query, token), option.checkURLBeforeNewRoundRetry);
+        stamina.lastCost = cost;
+        setValue('stamina', stamina);
+        if (option.altBattleFirst && await $ajax.insert(window.location.href.replace('://hentaiverse.org', '://alt.hentaiverse.org'))) {
+          console.log('Arena Fetch Done.', 'altBattleFirst:', option.altBattleFirst, 'Arena goto alt', arena);
+          gotoAlt(true);
+        } else {
+          console.log('Arena Fetch Done.', 'altBattleFirst:', option.altBattleFirst, 'Arena goto', arena);
+          goto();
+        }
+        return 1;
       }
       $async.logSwitch(arguments);
     } catch (err) { console.error(err); }}
