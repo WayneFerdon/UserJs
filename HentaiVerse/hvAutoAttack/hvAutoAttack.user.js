@@ -5216,7 +5216,7 @@
         arena.array = splitOrders(option.idleArenaValue).map(String);
         arena.array.reverse();
       }
-      arena.arrayDone = arena.arrayDone.filter(id => id === 'gr' || !arena.enabled?.includes(id.toString()));
+      arena.arrayDone = arena.arrayDone.filter(id => id && id === 'gr' || !arena.enabled?.includes(id.toString()));
       $async.logSwitch(arguments);
       return setValue('arena', arena);
     } catch (err) { console.error(err); }}
