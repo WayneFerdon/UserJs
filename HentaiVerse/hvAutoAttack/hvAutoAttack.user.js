@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.74
+// @version      2.91.75
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -4369,12 +4369,12 @@
     async function restorePersonaAndEquipSet() {
       const persona = getValue('lastPersona');
       if (persona) {
-        await $ajax.fetch(`?s=character&ss=ch&persona_set=${persona}`);
+        await $ajax.fetch(queryToPersistent(`?s=Character&ss=ch`),`persona_set=${persona}`);
         delValue('lastPersona');
       }
       const equipSet = getValue('lastequipSet');
       if (equipSet) {
-        await $ajax.fetch(`?s=character&ss=eq&equip_set=${equipSet}`);
+        await $ajax.fetch(queryToPersistent(`?s=Character&ss=eq`), `equip_set=${equipSet}`);
         delValue('lastEquipSet');
       }
     }
@@ -5141,7 +5141,7 @@
         onIsekaiEncounter = false;
         return engaged ? 'Engaged from isekai' : undefined;
       }
-
+      restorePersonaAndEquipSet();
       $async.logSwitchStrict('updateEncounter', true);
       // persistent in battle
       if (isInBattle(await $ajax.insert(window.location.href.replace(/\/isekai/, '')))) {
@@ -5262,6 +5262,7 @@
               restorePersonaAndEquipSet();
               return;
             default:
+              restorePersonaAndEquipSet();
               continue;
           }
         }
@@ -5349,9 +5350,15 @@
       $async.logSwitch(arguments);
       await updateItemWorldList();
       const { equips, personas, equipSets } = getValue('itemWorldDatas', true)??{};
-      if (!equips || !personas || !equipSets) return;
+      if (!equips || !personas || !equipSets) {
+        $async.logSwitch(arguments);
+        return;
+      }
       const list = Object.keys(option.enableItemWorld).filter(id=>option.enableItemWorld[id]);
-      if (!list?.length) return;
+      if (!list?.length) {
+        $async.logSwitch(arguments);
+        return;
+      }
       list.sort((x,y) => {
         [x, y] = [x,y].map(id=>option.ItemWorldOrder?.[id]??0);
         return (y < x) ? 1 : (y > x) ? -1 : 0;
@@ -5366,24 +5373,28 @@
         const title = submit.getAttribute('title');
         if (title?.match(/You need \d+ more World Seeds to spawn this Item World./)) continue;
         const persona = { current:Object.keys(personas).find(p => personas[p].selected), target: option.itemWorldPersona?.[eid] };
-        if (persona.target && persona.current !== persona.target) {
-          console.log(persona)
+        if (persona.target && persona.current*1 !== persona.target) {
           setValue('lastPersona', persona.current);
-          await $ajax.fetch(`?s=character&ss=ch`, `persona_set=${persona.target}`);
+          await $ajax.fetch(`?s=Character&ss=ch`, `persona_set=${persona.target}`);
         }
         const equipSet = { current:Object.keys(equipSets).find(s => equipSets[s]), target: option.itemWorldEquipSet?.[eid] };
-        if (equipSet.target && equipSet.current !== equipSet.target) {
-          console.log(equipSet)
+        if (equipSet.target && equipSet.current*1 !== equipSet.target) {
           setValue('lastEquipSet', equipSet.current);
-          await $ajax.fetch(`?s=character&ss=eq`, `equip_set=${equipSet.target}`);
+          doc = $doc(await $ajax.fetch(`?s=Character&ss=eq`, `equip_set=${equipSet.target}`));
+          if (gE(`[onmouseover*="equips.set(${eid}"`, doc)) {
+            console.log('current equiped', eid);
+          }
         }
 
-        if (title?.match(/You cannot enter the item world of a currently equipped item./)) return;
+        if (title?.match(/You cannot enter the item world of a currently equipped item./)) {
+          $async.logSwitch(arguments);
+          return;
+        }
 
         let query = `?s=Battle&ss=iw&filter=${equip.filter}`;
         const id = 'iw';
         if (((option.checkSupplyIW && !checkSupply('IW')) || (option.repairValueIW && !await asyncCheckRepair('IW')))) {
-          console.log('Check iw Battle Ready Failed in supply/repair', 'id:', id, arena);
+          console.log('Check iw Battle Ready Failed in supply/repair', `id:e${id}`, arena);
           $async.logSwitch(arguments);
           return -1;
         }
@@ -5393,7 +5404,7 @@
         stamina.time = time(0);
         const cost = equip.round * (_server.isekai ? 2 : 1) * (stamina.current >= 60 ? 0.03 : 0.02);
         if (!await checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: option.encounter, staminaLow: option.staminaItemWorld })) {
-          console.log('Check Battle Ready Failed', 'id:', id, arena);
+          console.log('Check Battle Ready Failed', `id:e${id}`, arena);
           $async.logSwitch(arguments);
           return -1;
         }
@@ -5413,6 +5424,7 @@
           console.log('Arena Fetch Done.', 'altBattleFirst:', option.altBattleFirst, 'Arena goto', arena);
           goto();
         }
+        $async.logSwitch(arguments);
         return 1;
       }
       $async.logSwitch(arguments);
