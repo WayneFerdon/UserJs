@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.71
+// @version      2.91.72
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2258,7 +2258,7 @@
           '      </div>',
           '      <div><input id="obscureNotIdleArena" type="checkbox"><label for="obscureNotIdleArena"><l0>页面中置灰未设置且未完成的</l0><l1>頁面中置灰未設置且未完成的</l1><l2>obscure not setted and not battled in Battle&gt;Arena/RingOfBlood</l2>',
           '      </div>',
-          '      <div><b><l0>道具界列表</l0><l1>道具界列表</l1><l2>Item World List</l2></b>[<l012 class="itemWorldCounts">0/0</l012>]: </b><button class="updateItemWorld"><l0>更新</l0><l1>更新</l1><l2>Update</l2></button>',
+          '      <div><input id="idleItemWorld" type="checkbox" placeholder = "true"><label for="idleItemWorld"><b><l0>道具界列表</l0><l1>道具界列表</l1><l2>Item World List</l2>[<l012 class="itemWorldCounts">0/0</l012>]</b></label><button class="updateItemWorld"><l0>更新</l0><l1>更新</l1><l2>Update</l2></button>',
           '        <button class="hvAAShowItemWorld"><l0>详情</l0><l1>詳情</l1><l2>Details</l2></button><button class="hvAAClearItemWorld"><l01>清空</l01><l2>Clear</l2></button><br>',
           '        <div class="autoItemWorldList hvAATable" style="display:none;grid-template-columns:0.1fr 3fr 0.1fr 1fr 1fr;"></div>' ,
           '      </div>',
@@ -5337,11 +5337,12 @@
     } catch (err) { console.error(err); }}
 
     async function idleItemWorld(writeArenaStart, arena) { try {
+      const option = getOption();
+      if (!option.idleItemWorld) return;
       $async.logSwitch(arguments);
       await updateItemWorldList();
       const { equips, personas, equipSets } = getValue('itemWorldDatas', true)??{};
       if (!equips || !personas || !equipSets) return;
-      const option = getOption();
       const list = Object.keys(option.enableItemWorld).filter(id=>option.enableItemWorld[id]);
       if (!list?.length) return;
       list.sort((x,y) => {
