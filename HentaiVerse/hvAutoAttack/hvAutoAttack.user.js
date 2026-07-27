@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.72
+// @version      2.91.73
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2040,7 +2040,7 @@
         appendInput(option.ItemWorldOrder?.[eid], `<input name="ItemWorldOrder_${eid}" type="number" placeholder="0">`);
         appendInput(option.enableItemWorld?.[eid], `<input id="enableItemWorld_${equip.id}" type="checkbox"><label for="enableItemWorld_${equip.id}">[${eid}]${equip.name} (${equip.level}/${equip.world}/${equip.max})</label>`);
         appendInput(option.levelItemWorld?.[eid], `<input name="levelItemWorld_${eid}" type="number" placeholder="0">`);
-        appendSelection(`itemWorldPersona_${eid}`, option.itemWorldPersona?.[eid], equipSets, (id, list) => `<option value="${id}">${list[id].name}${list[id].selected ? currentOptionText[lang] : ''}</option>`);
+        appendSelection(`itemWorldPersona_${eid}`, option.itemWorldPersona?.[eid], personas, (id, list) => `<option value="${id}">${list[id].name}${list[id].selected ? currentOptionText[lang] : ''}</option>`);
         appendSelection(`itemWorldEquipSet_${eid}`, option.itemWorldEquipSet?.[eid], equipSets, (id, list) => `<option value="${id}">Set ${id}${list[id] ? currentOptionText[lang] : ''}</option>`);
       }
 
@@ -4366,6 +4366,19 @@
       return gE('#riddlecounter, #battle_main', doc ?? document);
     }
 
+    async function restorePersonaAndEquipSet() {
+      const persona = getValue('lastPersona');
+      if (persona) {
+        await $ajax.fetch(`?s=character&ss=ch&persona_set=${persona}`);
+        delValue('lastPersona');
+      }
+      const equipSet = getValue('lastequipSet');
+      if (equipSet) {
+        await $ajax.fetch(`?s=character&ss=eq&equip_set=${equipSet}`);
+        delValue('lastEquipSet');
+      }
+    }
+
     async function asyncOnIdle() { try {
       await updateEncounter(false);
       await waitPause();
@@ -4377,16 +4390,7 @@
         }
         switchCurrent();
       } else {
-        const persona = getValue('lastPersona');
-        if (persona) {
-          await $ajax.fetch(`?s=character&ss=ch&persona_set=${persona}`);
-          delValue('lastPersona');
-        }
-        const equipSet = getValue('lastequipSet');
-        if (equipSet) {
-          await $ajax.fetch(`?s=character&ss=eq&equip_set=${equipSet}`);
-          delValue('lastEquipSet');
-        }
+        await restorePersonaAndEquipSet();
       }
       const option = getOption(true);
       const ready = { isChecked: () => ready.supply && ready.repair && ready.storage && ready.encounter };
@@ -5229,8 +5233,7 @@
         console.log('Arena Start', equip ? `e${equip}` : id);
         if (id === 'iw') {
           // pass
-        }
-        if (id !== 'gr') {
+        } else if (id !== 'gr') {
           arena.arrayDone.push(id);
         } else {
           arena.gr--;
@@ -5250,9 +5253,13 @@
       while (array.length > 0) {
         id = array.pop();
         if (id === 'iw') {
-          switch(await idleItemWorld(writeArenaStart, arena)) {
+          id = undefined;
+          const iw = await idleItemWorld(writeArenaStart, arena);
+          switch(iw) {
             case 1:
+              return;
             case -1:
+              restorePersonaAndEquipSet();
               return;
             default:
               continue;
@@ -5358,22 +5365,17 @@
         const submit = gE('#equpgrade button', 'all', doc)[1];
         const title = submit.getAttribute('title');
         if (title?.match(/You need \d+ more World Seeds to spawn this Item World./)) continue;
-        let needReload;
         const persona = { current:Object.keys(personas).find(p => personas[p].selected), target: option.itemWorldPersona?.[eid] };
         if (persona.target && persona.current !== persona.target) {
+          console.log(persona)
           setValue('lastPersona', persona.current);
-          await $ajax.fetch(`?s=character&ss=ch&persona_set=${persona.target}`);
-          needReload = true;
+          await $ajax.fetch(`?s=character&ss=ch`, `persona_set=${persona.target}`);
         }
         const equipSet = { current:Object.keys(equipSets).find(s => equipSets[s]), target: option.itemWorldEquipSet?.[eid] };
         if (equipSet.target && equipSet.current !== equipSet.target) {
+          console.log(equipSet)
           setValue('lastEquipSet', equipSet.current);
-          await $ajax.fetch(`?s=character&ss=eq&equip_set=${equipSet.target}`);
-          needReload = true;
-        }
-        if (needReload) {
-          goto();
-          return -1;
+          await $ajax.fetch(`?s=character&ss=eq`, `equip_set=${equipSet.target}`);
         }
 
         if (title?.match(/You cannot enter the item world of a currently equipped item./)) return;
@@ -5381,9 +5383,9 @@
         let query = `?s=Battle&ss=iw&filter=${equip.filter}`;
         const id = 'iw';
         if (((option.checkSupplyIW && !checkSupply('IW')) || (option.repairValueIW && !await asyncCheckRepair('IW')))) {
-          console.log('Check gr Battle Ready Failed in supply/repair', 'id:', id, arena);
+          console.log('Check iw Battle Ready Failed in supply/repair', 'id:', id, arena);
           $async.logSwitch(arguments);
-          return;
+          return -1;
         }
 
         let stamina = getValue('stamina', true);
@@ -5393,7 +5395,7 @@
         if (!await checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: option.encounter, staminaLow: option.staminaItemWorld })) {
           console.log('Check Battle Ready Failed', 'id:', id, arena);
           $async.logSwitch(arguments);
-          return;
+          return -1;
         }
 
         // switch to itemworld to get correct postoken
