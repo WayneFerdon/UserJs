@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.78
+// @version      2.91.79
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -6442,14 +6442,14 @@
         ba: { reg: /^Initializing random encounter/ },
       }
       const battleLog = gE('#textlog>tbody>tr>td', 'all');
-      if (!battle.roundType) {
-        const temp = battleLog[battleLog.length - 1].textContent;
-        battle.tower = (temp.match(/\(Floor (\d+)\)/) ?? [null])[1] * 1;
-        const id = (temp.match(/\d+/) ?? [null])[0] * 1;
+      const firstLog = battleLog[battleLog.length - 1].textContent;
+      if (!battle.roundType || firstLog.match(/^Initializing/)) {
+        battle.tower = (firstLog.match(/\(Floor (\d+)\)/) ?? [null])[1] * 1;
+        const id = (firstLog.match(/\d+/) ?? [null])[0] * 1;
         battle.roundType = undefined;
         for (let name in types) {
           const type = types[name];
-          if (!temp.match(type.reg)) continue;
+          if (!firstLog.match(type.reg)) continue;
           if (type.extra && !type.extra(id)) continue;
           battle.roundType = name;
           break;
