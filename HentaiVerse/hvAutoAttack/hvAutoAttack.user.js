@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.80
+// @version      2.91.81
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -406,7 +406,6 @@
       [_servername]: true, // _server.persistent || _server.isekai
       ...addition,
     };
-
     const isEquipDetail = window.location.href.includes('/equip/');
     const isMaintaining = !gE('#csp') && !isEquipDetail;
     const scriptVersion = Version(GM_info ? GM_info.script.version : '2.91');
@@ -2015,6 +2014,120 @@
       return UIString;
     }
 
+    function appendInput(container, value, innerHTML) {
+      const item = cE('div');
+      item.innerHTML = innerHTML;
+      container.appendChild(item);
+      const input = gE('input', item);
+      switch(input.type) {
+        case 'number':
+          input.value = value;
+          customizeInputAutoFit(input);
+          break;
+        case 'checkbox':
+          input.checked = value;
+          displayCheckBoxNotDefault(input);
+          input.addEventListener('change', () => displayCheckBoxNotDefault(input));
+          break;
+        default:
+          break;
+      }
+    }
+
+    function appendSelection(container, name, value, list, map, inheritBy) {
+      const autoSwitchOptionText = {
+        inherit: ['继承', '繼承', 'Inherit'],
+        keep: ['不自动切换', '不自動切換', 'Disable auto switch']
+      }
+      const defaultNote = ['(默认)', '(默認)', '(Default)'];
+      const currentOptionText = ['(当前)', '(當前)', '(current)'];
+      const selection = cE('div');
+      let innerHTML = [];
+
+      const lang = g().lang;
+      innerHTML.push(`<div><select name="${name}">`);
+      if (inheritBy !== undefined) {
+        innerHTML.push(`<option value="undefined">${autoSwitchOptionText.inherit[lang]} ${inheritBy}${defaultNote[lang]}</option>`);
+        innerHTML.push(`<option value="-1">${autoSwitchOptionText.keep[lang]}</option>`);
+      } else {
+        innerHTML.push(`<option value="undefined">${autoSwitchOptionText.keep[lang]}${defaultNote[lang]}</option>`);
+      }
+      for (const id in list) {
+        const mapped = map(id, list);
+        innerHTML.push(`<option value="${id}">${mapped.name}${mapped.selected ? currentOptionText[lang] : ''}</option>`);
+      }
+      innerHTML.push(`</select></div>`);
+      selection.innerHTML = innerHTML;
+      container.appendChild(selection);
+      const select = gE('select', selection);
+      select.value = value;
+      selectFit(select);
+    }
+
+    function updateEquipSetUI() {
+      const container = gE('.equipSetList');
+      if (!container) return;
+      let innerHTML = [
+        `<div><l0>战斗</l0><l1>戰鬥</l1><l2>Battle</l2></div>`,
+        `<div><l0>挑战人物</l0><l1>挑戰人物</l1><l2>Battle Persona</l2></div>`,
+        `<div><l0>挑战套装</l0><l1>挑戰套裝</l1><l2>Battle Equip Set</l2></div>`,
+      ];
+      const option = getOption();
+      const { equips, personas, equipSets } = getValue('itemWorldDatas', true)??{};
+      if (!personas || !equipSets) {
+        return;
+      }
+      container.innerHTML = innerHTML.join('');
+      const ordered = ['default', 'ba', 'gr', 'rb', '105', '106', '107', '108', '109', '110', '111', '112', 'ar', '1', '3', '5', '8', '9', '11', '12', '13', '15', '16', '17', '19', '20', '21', '23', '24', '26', '27', '28', '29', '32', '33', '34', '35'];
+      const battles = {
+        'default': 'Default',
+        'ba': 'BA',
+        'gr': 'GF',
+        'rb': 'RB',
+        'ar': 'AR',
+        '1': 'AR1',
+        '3': 'AR10',
+        '5': 'AR20',
+        '8': 'AR30',
+        '9': 'AR40',
+        '11': 'AR50',
+        '12': 'AR60',
+        '13': 'AR70',
+        '15': 'AR80',
+        '16': 'AR90',
+        '17': 'AR100',
+        '19': 'AR110',
+        '20': 'AR120',
+        '21': 'AR130',
+        '23': 'AR140',
+        '24': 'AR150',
+        '26': 'AR165',
+        '27': 'AR180',
+        '28': 'AR200',
+        '29': 'AR225',
+        '32': 'AR250',
+        '33': 'AR300',
+        '34': 'AR400',
+        '35': 'AR500',
+        '105': 'RB50',
+        '106': 'RB75A',
+        '107': 'RB75B',
+        '108': 'RB75C',
+        '109': 'RB100',
+        '110': 'RB150',
+        '111': 'RB200',
+        '112': 'RB250',
+      };
+      let current = Object.keys(personas).find(p => personas[p].selected)*1;
+      const names = JSON.parse(window.localStorage.getItem(_server.utils + '_persona')??'[]')[current];
+      for (const battle of ordered) {
+        const inherit = battle === 'default' ? undefined : isNaN(+battle) ? 'Default' : battle*1 >= 105 ? 'RB' : 'AR';
+        appendInput(container, option.enableEquipSet?.[battle], `<input id="enableEquipSet_${battle}" type="checkbox"><label for="enableEquipSet_${battle}">${battles[battle]}</label>`);
+        appendSelection(container, `switchPersona_${battle}`, option.switchPersona?.[battle], personas, (id, list) => list[id], inherit);
+        appendSelection(container, `switchEquipSet_${battle}`, option.switchEquipSet?.[battle], equipSets, (id, list) => { return { name: `Set ${id}${names[id].name ? ` (${names[id].name})` : ''}`, selected: list[id] }; }, inherit);
+      }
+    }
+
     function updateItemWorldListUI() {
       const container = gE('.autoItemWorldList');
       if (!container) return;
@@ -2031,56 +2144,21 @@
         gE('.itemWorldCounts').innerHTML = `${equips?.filter(eqp=>option.enableItemWorld?.[eqp.id]).length??0}/${equips?.length??0}`;
         return;
       }
-      const autoSwitchOptionText = ['不自动切换(默认)', '不自動切換(默認)', 'Disable auto switch(Default)'];
-      const currentOptionText = ['(当前)', '(當前)', '(current)'];
-      const lang = g().lang;
       gE('.itemWorldCounts').innerHTML = `${equips.filter(eqp=>option.enableItemWorld?.[eqp.id]).length}/${equips.length}`;
       container.innerHTML = innerHTML.join('');
+
+      let current = Object.keys(personas).find(p => personas[p].selected)*1;
+      const names = JSON.parse(window.localStorage.getItem(_server.utils + '_persona')??'[]')[current];
 
       for (const equip of equips) {
         const eid = equip.id;
         if (equip.world >= equip.max) continue;
-        appendInput(option.ItemWorldOrder?.[eid], `<input name="ItemWorldOrder_${eid}" type="number" placeholder="0">`);
-        appendInput(option.enableItemWorld?.[eid], `<input id="enableItemWorld_${equip.id}" type="checkbox"><label for="enableItemWorld_${equip.id}">[${eid}]${equip.name} (${equip.level}/${equip.world}/${equip.max})</label>`);
-        appendInput(option.levelItemWorld?.[eid], `<input name="levelItemWorld_${eid}" type="number" placeholder="0">`);
-        appendSelection(`itemWorldPersona_${eid}`, option.itemWorldPersona?.[eid], personas, (id, list) => `<option value="${id}">${list[id].name}${list[id].selected ? currentOptionText[lang] : ''}</option>`);
-        appendSelection(`itemWorldEquipSet_${eid}`, option.itemWorldEquipSet?.[eid], equipSets, (id, list) => `<option value="${id}">Set ${id}${list[id] ? currentOptionText[lang] : ''}</option>`);
+        appendInput(container, option.ItemWorldOrder?.[eid], `<input name="ItemWorldOrder_${eid}" type="number" placeholder="0">`);
+        appendInput(container, option.enableItemWorld?.[eid], `<input id="enableItemWorld_${equip.id}" type="checkbox"><label for="enableItemWorld_${equip.id}">[${eid}]${equip.name} (${equip.level}/${equip.world}/${equip.max})</label>`);
+        appendInput(container, option.levelItemWorld?.[eid], `<input name="levelItemWorld_${eid}" type="number" placeholder="0">`);
+        appendSelection(container, `itemWorldPersona_${eid}`, option.itemWorldPersona?.[eid], personas, (id, list) => list[id]);
+        appendSelection(container, `itemWorldEquipSet_${eid}`, option.itemWorldEquipSet?.[eid], equipSets, (id, list) => { return { name: `Set ${id}${names[id].name ? ` (${names[id].name})` : ''}`, selected: list[id] }; });
       }
-
-      function appendInput(value, innerHTML) {
-        const item = cE('div');
-        item.innerHTML = innerHTML;
-        container.appendChild(item);
-        const input = gE('input', item);
-        switch(input.type) {
-          case 'number':
-            input.value = value;
-            customizeInputAutoFit(input);
-            break;
-          case 'checkbox':
-            input.checked = value;
-            displayCheckBoxNotDefault(input);
-            input.addEventListener('change', () => displayCheckBoxNotDefault(input));
-            break;
-          default:
-            break;
-        }
-      }
-
-      function appendSelection(name, value, list, map) {
-        const selection = cE('div');
-        innerHTML = [];
-        innerHTML.push(`<div><select name="${name}">`);
-        innerHTML.push(`<option value="undefined">${autoSwitchOptionText[lang]}</option>`);
-        for (const id in list) {
-          innerHTML.push(map(id, list));
-        }
-        innerHTML.push(`</select></div>`);
-        selection.innerHTML = innerHTML;
-        gE('select', selection).value = value;
-        container.appendChild(selection);
-      }
-
     }
 
     function displayCheckBoxNotDefault(input) {
@@ -2094,11 +2172,11 @@
       }
     }
 
-    async function updateItemWorldList() {
-      const equips = await asyncUpdateEquipModifyList();
+    async function updateItemWorldList(skipEquips) {
+      const equips = skipEquips ? getValue('itemWorldDatas', true)?.equips : await asyncUpdateEquipModifyList();
       const personas = await asyncUpdatePersona();
       const equipSets = await asyncUpdateEquipSet();
-      if (!equips?.length || !personas || !equipSets) return;
+      if ((!skipEquips && !equips?.length) || !personas || !equipSets) return;
       setValue('itemWorldDatas', { equips, personas, equipSets });
     }
 
@@ -2257,11 +2335,17 @@
           '        <input id="arLevel_RB50" value="RB50,105" type="checkbox"><label for="arLevel_RB50">RB50</label> <input id="arLevel_RB75A" value="RB75A,106" type="checkbox"><label for="arLevel_RB75A">RB75A</label> <input id="arLevel_RB75B" value="RB75B,107" type="checkbox"><label for="arLevel_RB75B">RB75B</label> <input id="arLevel_RB75C" value="RB75C,108" type="checkbox"><label for="arLevel_RB75C">RB75C</label>',
           '        <input id="arLevel_RB100" value="RB100,109" type="checkbox"><label for="arLevel_RB100">RB100</label> <input id="arLevel_RB150" value="RB150,110" type="checkbox"><label for="arLevel_RB150">RB150</label> <input id="arLevel_RB200" value="RB200,111" type="checkbox"><label for="arLevel_RB200">RB200</label> <input id="arLevel_RB250" value="RB250,112" type="checkbox"><label for="arLevel_RB250">RB250</label> <input id="arLevel_IW" value="IW,iw" type="checkbox"><label for="arLevel_IW" >Item World </label><input id="arLevel_GF" value="GF,gr" type="checkbox"><label for="arLevel_GF" >GrindFest </label><input class="hvAANumber" name="idleArenaGrTime" placeholder="1" type="number">',
           '      </div>',
+
+          '      <div><input id="changeEquipSet" type="checkbox"><label for="changeEquipSet"><b><l0>[!!实验性]切换套装</l0><l1>[!!實驗性]切換套裝</l1><l2>[!!Experimental]Switch Equip Set</l2></b></label><button class="updateEquipSet"><l0>更新列表</l0><l1>更新列表</l1><l2>Update List</l2></button>',
+          '        <button class="hvAAShowEquipSet"><l0>详情</l0><l1>詳情</l1><l2>Details</l2></button><br>',
+          '        <div class="equipSetList hvAATable" style="display:none;grid-template-columns: repeat(3, 1fr);"></div>' ,
+          '      </div>',
+
           '      <div><input id="skipUnclearedArena" type="checkbox" placeholder="1"><label for="skipUnclearedArena"><l0>跳过未通关过的</l0><l1>跳過未通關過的</l1><l2>Skip not cleared Arena/RingOfBlood</l2>',
           '      </div>',
           '      <div><input id="obscureNotIdleArena" type="checkbox"><label for="obscureNotIdleArena"><l0>页面中置灰未设置且未完成的</l0><l1>頁面中置灰未設置且未完成的</l1><l2>obscure not setted and not battled in Battle&gt;Arena/RingOfBlood</l2>',
           '      </div>',
-          '      <div><input id="idleItemWorld" type="checkbox" placeholder = "true"><label for="idleItemWorld"><b><l0>道具界列表</l0><l1>道具界列表</l1><l2>Item World List</l2>[<l012 class="itemWorldCounts">0/0</l012>]</b></label><button class="updateItemWorld"><l0>更新</l0><l1>更新</l1><l2>Update</l2></button>',
+          '      <div><input id="idleItemWorld" type="checkbox" placeholder = "true"><label for="idleItemWorld"><b><l0>道具界列表</l0><l1>道具界列表</l1><l2>Item World List</l2>[<l012 class="itemWorldCounts">0/0</l012>]</b></label><button class="updateItemWorld"><l0>更新列表</l0><l1>更新列表</l1><l2>Update List</l2></button>',
           '        <button class="hvAAShowItemWorld"><l0>详情</l0><l1>詳情</l1><l2>Details</l2></button><button class="hvAAClearItemWorld"><l01>清空</l01><l2>Clear</l2></button><br>',
           '        <div class="autoItemWorldList hvAATable" style="display:none;grid-template-columns:0.1fr 3fr 0.1fr 1fr 1fr;"></div>' ,
           '      </div>',
@@ -2744,8 +2828,42 @@
         gE('select[name="lang"]').value = g().lang;
         bindEvents();
       }
+      updateEquipSetUI();
       updateItemWorldListUI();
+      changeSelectOptionText();
       loadOptionUIData();
+      [...gE('select:not([name="lang"])', 'all', optionBox)].forEach(s => { s.onchange ??= () => selectFit(s); });
+
+      function changeSelectOptionText() {
+        const lang = g().lang;
+        const attackStatus = {
+          0: ['物理', '物理', 'Physical'],
+          1: ['火', '火', 'Fire'],
+          2: ['冰', '冰', 'Cold'],
+          3: ['雷', '雷', 'Elec'],
+          4: ['风', '風', 'Wind'],
+          5: ['圣', '聖', 'Divine'],
+          6: ['暗', '暗', 'Forbidden'],
+        };
+        [...gE('select[name="attackStatus"] > option', 'all', optionBox)].forEach(option => {
+          option.innerText = attackStatus[option.value.toString()]?.[lang] ?? option.innerText;
+        });
+        const autoSwitchOptionText = [
+          ['继承', '繼承', 'Inherit'],
+          ['不自动切换', '不自動切換', 'Disable auto switch'],
+          ['(默认)', '(默認)', '(Default)'],
+          ['(当前)', '(當前)', '(current)']
+        ];
+        [...gE('.equipSetList option,.autoItemWorldList option', 'all', optionBox)].forEach(option => {
+          for (const texts of autoSwitchOptionText) {
+            for (const text of texts) {
+              if (!option.innerText.includes(text)) continue;
+              option.innerText = option.innerText.replace(text, texts[lang]);
+              break;
+            }
+          }
+        });
+      }
 
       function bindEvents() {
         gE('select[name="lang"]', optionBox).onchange = function () { // 选择语言
@@ -2754,6 +2872,7 @@
             gE('.hvAA-LangStyle').textContent += 'l01{display:inline!important;}';
           }
           g('lang', this.value);
+          changeSelectOptionText();
         };
         gE('.hvAATabmenu', optionBox).onclick = function (e) { // 标签页事件
           if (e.target.tagName.toUpperCase() === 'INPUT') {
@@ -2978,11 +3097,30 @@
             input.checked = false;
           });
         };
+
+        gE('.updateEquipSet', optionBox).onclick = async function() { try {
+          this.innerHTML = `<l0>更新中...</l0><l1>更新中...</l1><l2>Updating...</l2>`;
+          await updateItemWorldList(true);
+          updateEquipSetUI();
+          this.innerHTML = `<l0>更新列表</l0><l1>更新列表</l1><l2>Update List</l2>`;
+        } catch (err) { console.error(err); }};
+        gE('.hvAAShowEquipSet', optionBox).onclick = function () {
+          gE('.equipSetList', optionBox).style.display = (gE('.equipSetList', optionBox).style.display === 'grid') ? 'none' : 'grid';
+        };
+
+        gE('.updateItemWorld', optionBox).onclick = async function() { try {
+          this.innerHTML = `<l0>更新中...</l0><l1>更新中...</l1><l2>Updating...</l2>`;
+          await updateItemWorldList();
+          updateItemWorldListUI();
+          this.innerHTML = `<l0>更新列表</l0><l1>更新列表</l1><l2>Update List</l2>`;
+        } catch (err) { console.error(err); }};
         gE('.hvAAShowItemWorld', optionBox).onclick = function () {
           gE('.autoItemWorldList', optionBox).style.display = (gE('.autoItemWorldList', optionBox).style.display === 'grid') ? 'none' : 'grid';
         };
         gE('.hvAAClearItemWorld', optionBox).onclick = function () {
-          delValue('itemWorldDatas');
+          const current = getValue('itemWorldDatas');
+          delete current.equips;
+          setValue('itemWorldDatas', current);
           gE('.autoItemWorldList', optionBox).innerHTML = '';
           updateItemWorldListUI();
         };
@@ -3037,14 +3175,6 @@
         for (let ui in orderValues) {
           gE(ui, optionBox).onclick = optionBox2Order(orderValues[ui], isGetOrderFromId.includes(ui) ? getOrderFromId : undefined);
         };
-
-        // 标签页-战斗
-        gE('.updateItemWorld', optionBox).onclick = async function() { try {
-          this.innerHTML = `<l0>更新中...</l0><l1>更新中...</l1><l2>Updating...</l2>`;
-          await updateItemWorldList();
-          updateItemWorldListUI();
-          this.innerHTML = `<l0>更新列表</l0><l1>更新列表</l1><l2>Update List</l2>`;
-        } catch (err) { console.error(err); }};
 
         // 标签页-警报
         gE('input[name="audio_Text"]', optionBox).onchange = function () {
@@ -3149,16 +3279,19 @@
         };
         function alertDiffs(...lang) {
           const diffs = getOptionDiff(option);
-          return diffs ? _alert(1, ...lang.map(str=>str + diffs)) : true;
+          if (!diffs) return true;
+          const log = _alert(-1, ...lang.map(str=>str + diffs));
+          console.log(log);
+          return _alert(1, ...lang.map(str=>str + diffs));
         }
         gE('.hvAADefault', optionBox).onclick = function () {
-          if (getOptionDiff() && !alertDiffs('有未保存的选项，是否仍要设置为默认值', '有未保存的選項，是否仍要設置為默認值', 'Unsaved changes detected, continue to set options as default')) {
+          if (getOptionDiff() && !alertDiffs('有未保存的选项，是否仍要设置为默认值? 更改数：', '有未保存的選項，是否仍要設置為默認值?更改數：', 'Unsaved changes detected, continue to set options as default? Changes: ')) {
             return;
           }
           loadOptionUIData({});
         };
         gE('.hvAAReset', optionBox).onclick = function () {
-          if (!alertDiffs('是否撤销未保存的更改', '是否撤銷未保存的更改', 'Whether to revert unsaved changes')) {
+          if (!alertDiffs('是否撤销未保存的更改? 更改数：', '是否撤銷未保存的更改?更改數：', 'Confirm to revert unsaved changes? Changes: ')) {
             return;
           }
           loadOptionUIData(option);
@@ -3209,7 +3342,9 @@
         diffData.prototype.excludes = 'version';
         const diffs = diffData(options);
         const lang = g().lang;
-        return diffs ? '\n'+Object.entries(diffData(options)).map(([key,data])=> {
+        if (!diffs) return;
+        let i=1;
+        return Object.keys(diffs).length+'\n'+Object.entries(diffs).map(([key,data])=> {
           let defaultStr = ['默认','默認','Default'][lang];
           switch (gE(`[name="${key}"],[id="${key}"]`, optionBox)?.type) {
             case 'hidden': return;
@@ -3217,8 +3352,8 @@
               defaultStr = 'false';
               break;
           }
-          return `${Array.from(gE(`label[for="${key}"], label[for*="${key},"]`, 'all', optionBox)).map(x=>x?.innerText).reduce((acc,cur)=>(acc??'')+(cur??''), '') || key}: ${data.map(d=>d?String(d):defaultStr)?.join(' -> ')}`
-        }).filter(d=>d!==undefined).join('\n') : undefined;
+          return `[${i++}]${Array.from(gE(`label[for="${key}"], label[for*="${key},"]`, 'all', optionBox)).map(x=>x?.innerText).reduce((acc,cur)=>(acc??'')+(cur??''), '') || key}: ${data.map(d=>d?String(d):defaultStr)?.join(' -> ')}`;
+        }).filter(d=>d!==undefined).join('\n');
 
         function diffData(datas, parents) {
           let json = datas.map(JSON.stringify);
@@ -3464,6 +3599,14 @@
         }
         ((nextGroup?gE(event.shiftKey ? '.customizeInput:last-child' : '.customizeInput:first-child', nextGroup):undefined)??gE('.customizeInput:first-child', currentGroup)).focus()
       });
+    }
+
+    function selectFit(select) {
+      if (select.value === 'undefined') {
+        select.classList.add('optionDefault');
+      } else {
+        select.classList.remove('optionDefault');
+      }
     }
 
     function customizerInpuFit(input, dynamic=false) {
@@ -4373,15 +4516,19 @@
 
     async function restorePersonaAndEquipSet() {
       const persona = getValue('lastPersona');
+      let changed;
       if (persona) {
         await $ajax.fetch(queryToPersistent(`?s=Character&ss=ch`),`persona_set=${persona}`);
         delValue('lastPersona');
+        changed = true;
       }
       const equipSet = getValue('lastequipSet');
       if (equipSet) {
         await $ajax.fetch(queryToPersistent(`?s=Character&ss=eq`), `equip_set=${equipSet}`);
         delValue('lastEquipSet');
+        changed = true;
       }
+      return changed;
     }
 
     async function asyncOnIdle() { try {
@@ -5137,6 +5284,77 @@
       }
     } catch (err) { console.error(err); }}
 
+    async function onChangeEquipSet(lastKey, target, list, toFetchParam, reload) { try {
+      let changed = false;
+      let last = getValue(lastKey);
+      let current = Object.keys(list).find(p => list[p].selected)*1;
+      target ??= last;
+      if ([undefined, current].includes(target)) return;
+      if (!last) setValue(lastKey, current);
+      await $ajax.fetch(...toFetchParam(target));
+      if (reload) await updateItemWorldList(true);
+      return true;
+    } catch (err) { console.error(err); }}
+
+    async function switchEquipSet(persona, equipSet, personas, equipSets) { try {
+      $async.logSwitch(arguments);
+      if (personas !== undefined) switchEquipSet.prototype.personas = personas;
+      personas = switchEquipSet.prototype.personas;
+      if (equipSets !== undefined) switchEquipSet.prototype.equipSets = equipSets;
+      equipSets = switchEquipSet.prototype.equipSets;
+      if ([personas, equipSets].includes(undefined)) {
+        const { e, p, s } = getValue('itemWorldDatas', true)??{};
+        switchEquipSet.prototype.personas = personas = p;
+        switchEquipSet.prototype.equipSets = equipSets = s;
+      }
+
+      let changed = await onChangeEquipSet('lastPersona', persona, personas, id => [`?s=Character&ss=ch`, `persona_set=${id}`], true);
+      changed = await onChangeEquipSet('lastEquipSet', equipSet, equipSets, id => [`?s=Character&ss=eq`, `equip_set=${id}`], true) || changed;
+      $async.logSwitch(arguments);
+      return changed;
+    } catch (err) { console.error(err); }}
+
+    function getArenaEquipSet(id) {
+      const option = getOption();
+      if (!option.changeEquipSet) return;
+
+      const onGetArenaEquipSet = function (id) {
+        if (!option.enableEquipSet?.[id]) return;
+        const persona = option.switchPersona?.[id];
+        const equipSet = option.switchEquipSet?.[id];
+        return { persona, equipSet };
+      }
+
+      let target = onGetArenaEquipSet(id);
+      let parent = !isNaN(+id) ? onGetArenaEquipSet(id >= 105 ? 'rb' : 'ar') : undefined;
+      let defaultSet = onGetArenaEquipSet('default');
+      let persona = target?.persona !== undefined ? target?.persona : parent?.persona !== undefined ? parent?.persona : defaultSet?.persona !== undefined ? defaultSet?.persona : undefined;
+      let equipSet = target?.equipSet !== undefined ? target?.equipSet : parent?.equipSet !== undefined ? parent?.equipSet : defaultSet?.equipSet !== undefined ? defaultSet?.equipSet : undefined;
+      persona = persona === -1 ? undefined : persona;
+      equipSet = equipSet === -1 ? undefined : equipSet;
+      if (persona !== undefined || equipSet !== undefined) return { persona, equipSet };
+    }
+
+    function isSwitchEquipSet(target) {
+      const last = { persona: getValue('lastPersona'), equipSet: getValue('lastEquipSet') };
+      const { persona, equipSet } = target??{};
+      return {
+        persona: persona !== undefined && (last.persona !== persona) ? persona : undefined,
+        equipSet: equipSet !== undefined && (last.equipSet !== equipSet) ? equipSet : undefined
+      }
+    }
+
+    async function changeArenaEquipSet(id) { try {
+      const target = getArenaEquipSet(id);
+      const { persona, equipSet} = isSwitchEquipSet(target);
+      console.log('changeArenaEquipSet', id, target, '=>', { persona, equipSet});
+      if (persona !== undefined || equipSet !== undefined) {
+        return await switchEquipSet(persona, equipSet);
+      } else {
+        return await restorePersonaAndEquipSet();
+      }
+    } catch (err) { console.error(err); }}
+
     async function onEncounter() { try {
       const option = getOption(true);
       if (getValue('disabled')) return;
@@ -5146,7 +5364,7 @@
         onIsekaiEncounter = false;
         return engaged ? 'Engaged from isekai' : undefined;
       }
-      restorePersonaAndEquipSet();
+      await changeArenaEquipSet('ba');
       $async.logSwitchStrict('updateEncounter', true);
       // persistent in battle
       if (isInBattle(await $ajax.insert(window.location.href.replace(/\/isekai/, '')))) {
@@ -5263,7 +5481,6 @@
           if (iw) {
             return;
           } else {
-            restorePersonaAndEquipSet();
             continue;
           }
         }
@@ -5285,6 +5502,12 @@
       if (!id) {
         console.log('No Arena Id Available', arena);
         setValue('arena', arena);
+        await restorePersonaAndEquipSet();
+        $async.logSwitch(arguments);
+        return;
+      }
+      if (await changeArenaEquipSet(id) && await asyncCheckRepair()) {
+        await restorePersonaAndEquipSet();
         $async.logSwitch(arguments);
         return;
       }
@@ -5372,21 +5595,8 @@
         if (gE('.messagebox_error', doc)) continue;
         let title = gE('#equpgrade button', 'all', doc)[1].getAttribute('title');
         if (title?.match(/You need \d+ more World Seeds to spawn this Item World./)) continue;
-        let changed = false;
-        const persona = { current:Object.keys(personas).find(p => personas[p].selected), target: option.itemWorldPersona?.[eid] };
-        if (persona.target && persona.current*1 !== persona.target) {
-          if (!getValue('lastPersona')) setValue('lastPersona', persona.current);
-          await $ajax.fetch(`?s=Character&ss=ch`, `persona_set=${persona.target}`);
-          changed = true;
-        }
-        const equipSet = { current:Object.keys(equipSets).find(s => equipSets[s]), target: option.itemWorldEquipSet?.[eid] };
-        if (equipSet.target && equipSet.current*1 !== equipSet.target) {
-          if (!getValue('lastEquipSet')) setValue('lastEquipSet', equipSet.current);
-          doc = $doc(await $ajax.fetch(`?s=Character&ss=eq`, `equip_set=${equipSet.target}`));
-          changed = true;
-        }
 
-        if (changed) {
+        if (switchEquipSet(option.itemWorldPersona?.[eid], option.itemWorldEquipSet?.[eid], personas, equipSets)) {
           doc = $doc(await $ajax.insert(`?s=Bazaar&ss=am&screen=modify&eqids[]=${eid}`));
           if (gE('.messagebox_error', doc)) continue;
           title = gE('#equpgrade button', 'all', doc)[1].getAttribute('title');
