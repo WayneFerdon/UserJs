@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.79
+// @version      2.91.80
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -4930,8 +4930,8 @@
           equips.push({name, id, filter, level, world, max, round: rounds[world]});
         } catch (err) { console.error(err); }}));
       }
-      return equips;
       $async.logSwitch(arguments);
+      return equips;
     } catch (err) { console.error(err); }}
 
     async function asyncUpdatePersona() { try {
@@ -4939,8 +4939,8 @@
       const doc = $doc(await $ajax.insert('?s=Character&ss=ch'));
       if (isInBattle(doc)) return;
       const personas = Object.fromEntries([...gE('[name="persona_set"]>option', 'all', doc)].map(option => [option.value, { name: option.innerHTML, selected: option.selected }]));
-      return personas;
       $async.logSwitch(arguments);
+      return personas;
     } catch (err) { console.error(err); }}
 
     async function asyncUpdateEquipSet() { try {
@@ -4952,8 +4952,8 @@
         const [match, id, on] = img.src.match(/set(\d)_(on|off)/);
         return [ id, on==='on' ];
       }));
-      return equipSets;
       $async.logSwitch(arguments);
+      return equipSets;
     } catch (err) { console.error(err); }}
 
     async function asyncCheckEquStorage() { try {
