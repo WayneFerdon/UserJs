@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.82
+// @version      2.91.83
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -5298,14 +5298,14 @@
 
     async function switchEquipSet(persona, equipSet, personas, equipSets) { try {
       $async.logSwitch(arguments);
-      if (personas !== undefined) switchEquipSet.prototype.personas = personas;
-      personas = switchEquipSet.prototype.personas;
-      if (equipSets !== undefined) switchEquipSet.prototype.equipSets = equipSets;
-      equipSets = switchEquipSet.prototype.equipSets;
+      if (personas !== undefined) g('personas', personas);
+      personas = g().personas;
+      if (equipSets !== undefined) g('equipSets', equipSets);
+      equipSets = g().equipSets;
       if ([personas, equipSets].includes(undefined)) {
         const { e, p, s } = getValue('itemWorldDatas', true)??{};
-        switchEquipSet.prototype.personas = personas = p;
-        switchEquipSet.prototype.equipSets = equipSets = s;
+        g('personas', personas ??= p);
+        g('equipSets', equipSets ??= s);
       }
 
       let changed = await onChangeEquipSet('lastPersona', persona, personas, id => [`?s=Character&ss=ch`, `persona_set=${id}`], true);
