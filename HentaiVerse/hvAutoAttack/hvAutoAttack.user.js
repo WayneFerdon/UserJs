@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.87
+// @version      2.91.88
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -4580,12 +4580,7 @@
         await restorePersonaAndEquipSet();
       }
       const option = getOption(true);
-      const ready = { isChecked: () => ready.supply && ready.repair && ready.storage && ready.encounter };
-      if (_server.isekai) {
-        await setReady('encounter');
-        if (!ready.encounter) return;
-      }
-      const steps = [
+       const steps = [
         [{ step: 'proficiency', method: asyncSetProficiency, condition: true }],
         [{ step: 'ability', method: asyncSetAbilityData, condition: true }],
         [{ step: 'stamina', method: asyncSetStamina, condition: true }],
@@ -4594,6 +4589,13 @@
         [{ step: 'repair', method: asyncCheckRepair, condition: option.encounterRepair, check: true }],
         [{ step: 'storage', method: asyncCheckEquStorage, condition: option.encounterEquStorage, check: true }],
       ];
+
+      const ready = { isChecked: () => ready.encounter && !steps.find(group => group.find(step => step.check && !ready[step.step]))};
+      if (_server.isekai) {
+        await setReady('encounter');
+        if (!ready.encounter) return;
+      }
+
       await Promise.all([...steps.map(group => {
         return (async () => { try {
           for (const step of group) {
