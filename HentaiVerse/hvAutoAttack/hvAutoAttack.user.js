@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.84
+// @version      2.91.85
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2062,6 +2062,32 @@
       const select = gE('select', selection);
       select.value = value;
       selectFit(select);
+      return select;
+    }
+
+    function setEquipSetName(personaSelect, equipSetSelection, personas, equipSets) {
+      if ([personas, equipSets].includes(undefined)) {
+        const { e, p, s } = getValue('itemWorldDatas', true)??{};
+        personas ??= p;
+        equipSets ??= s;
+      }
+      let current = { persona: Object.keys(personas).find(p => personas[p].selected), equipSet: Object.keys(equipSets).find(s => equipSets[s]) };
+      let setNames = JSON.parse(window.localStorage.getItem(_server.utils + '_persona')??'[]');
+      const currentOptionText = ['(当前)', '(當前)', '(current)'][g().lang];
+      const names = setNames?.[current.persona];
+      [...gE('option', 'all', equipSetSelection)].forEach(option => {
+        const id = option.value;
+        option.innerText = ['-1', 'undefined'].includes(id) ? option.innerText : `Set ${id}${(personaSelect.value === current.persona && names?.[id]?.name) ? ` (${names?.[id]?.name})` : ''}${(personaSelect.value === current.persona && current.equipSet === id) ? currentOptionText : ''}`;
+      });
+    }
+
+    function bindPersonaEquipSetSelection(persona, equipSet, personas, equipSets) {
+      setEquipSetName(persona, equipSet, personas, equipSets);
+      equipSet.onChange = () => selectFit(equipSet);
+      persona.onchange = () => {
+        selectFit(persona);
+        setEquipSetName(persona, equipSet, personas, equipSets);
+      }
     }
 
     function updateEquipSetUI() {
@@ -2118,13 +2144,12 @@
         '111': 'RB200',
         '112': 'RB250',
       };
-      let current = Object.keys(personas).find(p => personas[p].selected)*1;
-      const names = JSON.parse(window.localStorage.getItem(_server.utils + '_persona')??'[]')[current];
       for (const battle of ordered) {
         const inherit = battle === 'default' ? undefined : isNaN(+battle) ? 'Default' : battle*1 >= 105 ? 'RB' : 'AR';
         appendInput(container, option.enableEquipSet?.[battle], `<input id="enableEquipSet_${battle}" type="checkbox"><label for="enableEquipSet_${battle}">${battles[battle]}</label>`);
-        appendSelection(container, `switchPersona_${battle}`, option.switchPersona?.[battle], personas, (id, list) => list[id], inherit);
-        appendSelection(container, `switchEquipSet_${battle}`, option.switchEquipSet?.[battle], equipSets, (id, list) => { return { name: `Set ${id}${names?.[id]?.name ? ` (${names?.[id]?.name})` : ''}`, selected: list[id] }; }, inherit);
+        const persona = appendSelection(container, `switchPersona_${battle}`, option.switchPersona?.[battle], personas, (id, list) => list[id], inherit);
+        const equipSet = appendSelection(container, `switchEquipSet_${battle}`, option.switchEquipSet?.[battle], equipSets, (id, list) => { return { name: `Set ${id}`, selected: list[id] }; }, inherit);
+        bindPersonaEquipSetSelection(persona, equipSet, personas, equipSets);
       }
     }
 
@@ -2147,17 +2172,15 @@
       gE('.itemWorldCounts').innerHTML = `${equips.filter(eqp=>option.enableItemWorld?.[eqp.id]).length}/${equips.length}`;
       container.innerHTML = innerHTML.join('');
 
-      let current = Object.keys(personas).find(p => personas[p].selected)*1;
-      const names = JSON.parse(window.localStorage.getItem(_server.utils + '_persona')??'[]')[current];
-
       for (const equip of equips) {
         const eid = equip.id;
         if (equip.world >= equip.max) continue;
         appendInput(container, option.ItemWorldOrder?.[eid], `<input name="ItemWorldOrder_${eid}" type="number" placeholder="0">`);
         appendInput(container, option.enableItemWorld?.[eid], `<input id="enableItemWorld_${equip.id}" type="checkbox"><label for="enableItemWorld_${equip.id}">[${eid}]${equip.name} (${equip.level}/${equip.world}/${equip.max})</label>`);
         appendInput(container, option.levelItemWorld?.[eid], `<input name="levelItemWorld_${eid}" type="number" placeholder="0">`);
-        appendSelection(container, `itemWorldPersona_${eid}`, option.itemWorldPersona?.[eid], personas, (id, list) => list[id]);
-        appendSelection(container, `itemWorldEquipSet_${eid}`, option.itemWorldEquipSet?.[eid], equipSets, (id, list) => { return { name: `Set ${id}${names[id].name ? ` (${names[id].name})` : ''}`, selected: list[id] }; });
+        const persona = appendSelection(container, `itemWorldPersona_${eid}`, option.itemWorldPersona?.[eid], personas, (id, list) => list[id]);
+        const equipSet = appendSelection(container, `itemWorldEquipSet_${eid}`, option.itemWorldEquipSet?.[eid], equipSets, (id, list) => { return { name: '', selected: list[id] }; });
+        bindPersonaEquipSetSelection(persona, equipSet, personas, equipSets);
       }
     }
 
@@ -2172,10 +2195,10 @@
       }
     }
 
-    async function updateItemWorldList(skipEquips) {
+    async function updateItemWorldList(skipEquips, doc) {
       const equips = skipEquips ? getValue('itemWorldDatas', true)?.equips : await asyncUpdateEquipModifyList();
-      const personas = await asyncUpdatePersona();
-      const equipSets = await asyncUpdateEquipSet();
+      const personas = await asyncUpdatePersona(doc);
+      const equipSets = await asyncUpdateEquipSet(doc);
       if ((!skipEquips && !equips?.length) || !personas || !equipSets) return;
       setValue('itemWorldDatas', { equips, personas, equipSets });
     }
@@ -2828,6 +2851,7 @@
         gE('select[name="lang"]').value = g().lang;
         bindEvents();
       }
+      updateItemWorldList(true, document);
       updateEquipSetUI();
       updateItemWorldListUI();
       changeSelectOptionText();
@@ -3852,7 +3876,7 @@
         const battleNow = unsafeWindow.battle;
         (async ()=> {
           const start = time(0);
-          await until(()=> unsafeWindow.battle !== battleNow);
+          await until(()=> document.hasFocus() || (unsafeWindow.battle !== battleNow));
           audio.pause();
         })();
       }
@@ -5081,21 +5105,24 @@
       return equips;
     } catch (err) { console.error(err); }}
 
-    async function asyncUpdatePersona() { try {
+    async function asyncUpdatePersona(doc) { try {
       $async.logSwitch(arguments);
-      const doc = $doc(await $ajax.insert('?s=Character&ss=ch'));
+      doc ??= $doc(await $ajax.insert('?s=Character&ss=ch'));
       if (isInBattle(doc)) return;
-      const personas = Object.fromEntries([...gE('[name="persona_set"]>option', 'all', doc)].map(option => [option.value, { name: option.innerHTML, selected: option.selected }]));
+      const raws = gE('[name="persona_set"]>option', 'all', doc);
+      if (!raws?.length) return;
+      const personas = Object.fromEntries([...raws].map(option => [option.value, { name: option.innerHTML, selected: option.selected }]));
       $async.logSwitch(arguments);
       return personas;
     } catch (err) { console.error(err); }}
 
-    async function asyncUpdateEquipSet() { try {
+    async function asyncUpdateEquipSet(doc) { try {
       $async.logSwitch(arguments);
-      const doc = $doc(await $ajax.insert('?s=Character&ss=eq'));
+      doc ??= $doc(await $ajax.insert('?s=Character&ss=eq'));
       if (isInBattle(doc)) return;
-
-      const equipSets = Object.fromEntries([...gE('#eqsl img', 'all', doc)].map(img => {
+      const raws = gE('#eqsl img', 'all', doc);
+      if (!raws?.length) return;
+      const equipSets = Object.fromEntries([...raws].map(img => {
         const [match, id, on] = img.src.match(/set(\d)_(on|off)/);
         return [ id, on==='on' ];
       }));
@@ -5364,7 +5391,10 @@
         onIsekaiEncounter = false;
         return engaged ? 'Engaged from isekai' : undefined;
       }
-      await changeArenaEquipSet('ba');
+      if (await changeArenaEquipSet('ba') && !(await asyncCheckRepair())) {
+        await restorePersonaAndEquipSet();
+        return;
+      }
       $async.logSwitchStrict('updateEncounter', true);
       // persistent in battle
       if (isInBattle(await $ajax.insert(window.location.href.replace(/\/isekai/, '')))) {
@@ -5506,7 +5536,7 @@
         $async.logSwitch(arguments);
         return;
       }
-      if (await changeArenaEquipSet(id) && await asyncCheckRepair()) {
+      if (await changeArenaEquipSet(id) && !(await asyncCheckRepair())) {
         await restorePersonaAndEquipSet();
         $async.logSwitch(arguments);
         return;
