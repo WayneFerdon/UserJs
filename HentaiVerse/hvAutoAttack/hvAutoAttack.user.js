@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.88
+// @version      2.91.89
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1175,6 +1175,15 @@
       return true;
     }
 
+    function onBattleBox() {
+      let box = gE('#hvAABox2');
+      if (box) return box;
+      box = gE('#battle_main').appendChild(cE('div'));
+      box.id = 'hvAABox2';
+      setPauseUI(box);
+      return box;
+    }
+
     function onBattle() {
       if (!gE('#textlog')) {
         return false;
@@ -1186,10 +1195,7 @@
         window.history.replaceState(null, '', window.location.href);
         delValue('onriddle');
       }
-
-      const box2 = gE('#battle_main').appendChild(cE('div'));
-      box2.id = 'hvAABox2';
-      setPauseUI(box2);
+      onBattleBox();
       reloader();
       const option = getOption();
       g('attackStatus', option.attackStatus);
@@ -2083,7 +2089,7 @@
 
     function bindPersonaEquipSetSelection(persona, equipSet, personas, equipSets) {
       setEquipSetName(persona, equipSet, personas, equipSets);
-      equipSet.onChange = () => selectFit(equipSet);
+      equipSet.onchange = () => selectFit(equipSet);
       persona.onchange = () => {
         selectFit(persona);
         setEquipSetName(persona, equipSet, personas, equipSets);
@@ -5693,7 +5699,7 @@
 
       // 战斗战况
       if (!gE('.hvAALog')) {
-        const div = gE('#hvAABox2').appendChild(cE('div'));
+        const div = onBattleBox().appendChild(cE('div'));
         div.className = 'hvAALog';
       }
 
