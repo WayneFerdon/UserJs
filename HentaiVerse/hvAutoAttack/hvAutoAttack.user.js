@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.90
+// @version      2.91.91
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1261,6 +1261,12 @@
           break;
       }
       throw new Error('Unsupported typeof orderValue:', orderValue, typeof orderValue);
+    }
+
+    function getDefaultOrder(idMatch, map) {
+      const defaultOrder = g().defaultOrder ??= {};
+      const key = idMatch + (map?.toString()??'');
+      return (defaultOrder[key] ??= [...gE(`[id^="${idMatch}_"]`, 'all')].map(map ?? (ord => ord.id.match(/_(.*)/)[1])));
     }
 
     function splitOrders(orderValue, defaultOrder, ...args) {
@@ -2568,9 +2574,9 @@
           // Dr, MN无法覆盖全体
           '    <div><input id="debuffSkillOrderAll_Sle" type="checkbox"><label for="debuffSkillOrderAll_Sle"><l0>沉眠(Sl)</l0><l1>沉眠(Sl)</l1><l2>Sleep</l2></label></div>',
           '    <div><input id="debuffSkillOrderAll_Bl" type="checkbox"><label for="debuffSkillOrderAll_Bl"><l0>致盲(Bl)</l0><l1>致盲(Bl)</l1><l2>Blind</l2></label></div>',
+          '    <div><input id="debuffSkillOrderAll_Slo" type="checkbox"><label for="debuffSkillOrderAll_Slo"><l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2></label></div>',
           '    <div><input id="debuffSkillOrderAll_We" type="checkbox"><label for="debuffSkillOrderAll_We"><l0>虚弱(We)</l0><l1>虛弱(We)</l1><l2>Weaken</l2></label></div>',
           '    <div><input id="debuffSkillOrderAll_Si" type="checkbox"><label for="debuffSkillOrderAll_Si"><l0>沉默(Si)</l0><l1>沉默(Si)</l1><l2>Silence</l2></label></div>',
-          '    <div><input id="debuffSkillOrderAll_Slo" type="checkbox"><label for="debuffSkillOrderAll_Slo"><l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2></label></div>',
           '    <div><input id="debuffSkillOrderAll_Dr" type="checkbox"><label for="debuffSkillOrderAll_Dr"><l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2></label></div>',
           '    <div><input id="debuffSkillOrderAll_Im" type="checkbox"><label for="debuffSkillOrderAll_Im"><l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2></label></div>',
           '    <div><input id="debuffSkillOrderAll_MN" type="checkbox"><label for="debuffSkillOrderAll_MN"><l0>固定(MN)</l0><l1>固定(MN)</l1><l2>Immobilize(MagNet)</l2></label></div>',
@@ -2582,9 +2588,9 @@
           '<div class="hvAATable" style="grid-template-columns: repeat(7, 1fr) 1.5fr 1fr;">',
           '    <div><input id="debuffAllExclusive_Sle" type="checkbox"><label for="debuffAllExclusive_Sle"><l0>沉眠(Sl)</l0><l1>沉眠(Sl)</l1><l2>Sleep</l2></label></div>',
           '    <div><input id="debuffAllExclusive_Bl" type="checkbox"><label for="debuffAllExclusive_Bl"><l0>致盲(Bl)</l0><l1>致盲(Bl)</l1><l2>Blind</l2></label></div>',
+          '    <div><input id="debuffAllExclusive_Slo" type="checkbox"><label for="debuffAllExclusive_Slo"><l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2></label></div>',
           '    <div><input id="debuffAllExclusive_We" type="checkbox"><label for="debuffAllExclusive_We"><l0>虚弱(We)</l0><l1>虛弱(We)</l1><l2>Weaken</l2></label></div>',
           '    <div><input id="debuffAllExclusive_Si" type="checkbox"><label for="debuffAllExclusive_Si"><l0>沉默(Si)</l0><l1>沉默(Si)</l1><l2>Silence</l2></label></div>',
-          '    <div><input id="debuffAllExclusive_Slo" type="checkbox"><label for="debuffAllExclusive_Slo"><l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2></label></div>',
           '    <div><input id="debuffAllExclusive_Dr" type="checkbox"><label for="debuffAllExclusive_Dr"><l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2></label></div>',
           '    <div><input id="debuffAllExclusive_Im" type="checkbox"><label for="debuffAllExclusive_Im"><l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2></label></div>',
           '    <div><input id="debuffAllExclusive_MN" type="checkbox"><label for="debuffAllExclusive_MN"><l0>固定(MN)</l0><l1>固定(MN)</l1><l2>Immobilize(MagNet)</l2></label></div>',
@@ -2597,9 +2603,9 @@
           '<div class="hvAATable" style="grid-template-columns: repeat(7, 1fr) 1.5fr 1fr;">',
           '    <div><input id="debuffSkillOrder_Sle" type="checkbox"><label for="debuffSkillOrder_Sle"><l0>沉眠(Sl)</l0><l1>沉眠(Sl)</l1><l2>Sleep</l2></label></div>',
           '    <div><input id="debuffSkillOrder_Bl" type="checkbox"><label for="debuffSkillOrder_Bl"><l0>致盲(Bl)</l0><l1>致盲(Bl)</l1><l2>Blind</l2></label></div>',
+          '    <div><input id="debuffSkillOrder_Slo" type="checkbox"><label for="debuffSkillOrder_Slo"><l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2></label></div>',
           '    <div><input id="debuffSkillOrder_We" type="checkbox"><label for="debuffSkillOrder_We"><l0>虚弱(We)</l0><l1>虛弱(We)</l1><l2>Weaken</l2></label></div>',
           '    <div><input id="debuffSkillOrder_Si" type="checkbox"><label for="debuffSkillOrder_Si"><l0>沉默(Si)</l0><l1>沉默(Si)</l1><l2>Silence</l2></label></div>',
-          '    <div><input id="debuffSkillOrder_Slo" type="checkbox"><label for="debuffSkillOrder_Slo"><l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2></label></div>',
           '    <div><input id="debuffSkillOrder_Dr" type="checkbox"><label for="debuffSkillOrder_Dr"><l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2></label></div>',
           '    <div><input id="debuffSkillOrder_Im" type="checkbox"><label for="debuffSkillOrder_Im"><l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2></label></div>',
           '    <div><input id="debuffSkillOrder_MN" type="checkbox"><label for="debuffSkillOrder_MN"><l0>固定(MN)</l0><l1>固定(MN)</l1><l2>Immobilize(MagNet)</l2></label></div>',
@@ -4590,7 +4596,7 @@
         await restorePersonaAndEquipSet();
       }
       const option = getOption(true);
-       const steps = [
+      const steps = [
         [{ step: 'proficiency', method: asyncSetProficiency, condition: true }],
         [{ step: 'ability', method: asyncSetAbilityData, condition: true }],
         [{ step: 'stamina', method: asyncSetStamina, condition: true }],
@@ -6866,8 +6872,8 @@
       if (!option.item) {
         return false;
       }
-      const name = splitOrders(option.itemOrderName, ['FC', 'HE', 'LE', 'HG', 'HP', 'Cure', 'MG', 'MP', 'ME', 'SG', 'SP', 'SE', 'Mystic', 'CC', 'ED']);
-      const order = splitOrders(option.itemOrderValue, [313, 11199, 11501, 10005, 11195, 311, 10006, 11295, 11299, 10007, 11395, 11399, 10008, 11402, 11401]);
+      const name = splitOrders(option.itemOrderName, getDefaultOrder('itemOrder'));
+      const order = splitOrders(option.itemOrderValue, getDefaultOrder('itemOrder', ord=>ord.value.match(/,(.*)/)[1]*1));
       const cures = [313, 11199, 11501, 10005, 11195, 311];
       for (let i = 0; i < name.length; i++) {
         let id = order[i];
@@ -6996,7 +7002,7 @@
 
       playerBuffSkillLib.CF.id = getBuff('sparklife') ? undefined : 422;
       if (option.channelSkill) {
-        const skillPack = splitOrders(option.buffSkillOrderValue, ['SS', 'SL', 'Pr', 'Ab', 'SV', 'Re', 'Ha', 'He', 'AF']);
+        const skillPack = splitOrders(option.buffSkillOrderValue, getDefaultOrder('buffSkillOrder'));
         for (const buff of skillPack) {
           if (!option.channelSkill[buff]) continue;
 
@@ -7050,7 +7056,7 @@
         return false;
       }
       let i;
-      const skillPack = splitOrders(option.buffSkillOrderValue, ['SS', 'SL', 'Pr', 'Ab', 'SV', 'Re', 'Ha', 'He', 'AF']);
+      const skillPack = splitOrders(option.buffSkillOrderValue, getDefaultOrder('buffSkillOrder'));
       for (i = 0; i < skillPack.length; i++) {
         let buff = skillPack[i];
         if (!option.buffSkill[buff]) continue;
@@ -7144,7 +7150,7 @@
         return onUse(attackStatus);
       }
       if (!option.infusion) return false;
-      const order = splitOrders(option.infusionOrderName, ['Divinity', 'Darkness', 'Flames', 'Frost', 'Lightning', 'Storms']);
+      const order = splitOrders(option.infusionOrderName, getDefaultOrder('infusionOrder'));
       for (const name of order) {
         const condition = option[`infusion${name}Condition`];
         if (!checkCondition(condition)) continue;
@@ -7206,7 +7212,7 @@
       if (option.skillSSOnly && !gE('#ckey_spirit[src*="spirit_a"]')) {
         return false;
       }
-      const skillOrder = splitOrders(option.skillOrderValue, ['OFC', 'FRD', 'T3', 'T2', 'T1']);
+      const skillOrder = splitOrders(option.skillOrderValue, getDefaultOrder('skillOrder'));
       const fightStyle = g().fightingStyle; // 1二天 2单手 3双手 4双持 5法杖
       const skillLib = {
         OFC: 1111,
@@ -7263,7 +7269,7 @@
       }
 
       // 先处理特殊的 “先给全体上buff”
-      let skillPack = splitOrders(option.debuffSkillOrderAllValue, ['Sle', 'Bl', 'We', 'Si', 'Slo', 'Dr', 'Im', 'MN', 'Co']);
+      let skillPack = splitOrders(option.debuffSkillOrderAllValue, getDefaultOrder('debuffSkillOrderAll'));
       for (let i = 0; i < skillPack.length; i++) {
         if (option[`debuffSkill${skillPack[i]}All`]) { // 是否启用
           if (checkCondition(option[`debuffSkill${skillPack[i]}AllCondition`], monsterStatus)) { // 检查条件
@@ -7276,7 +7282,7 @@
       const toAllCount = skillPack.length;
 
       if (option.debuffSkill) { // 是否有启用的buff(不算两个特殊的)
-        skillPack = skillPack.concat(splitOrders(option.debuffSkillOrderValue, ['Sle', 'Bl', 'We', 'Si', 'Slo', 'Dr', 'Im', 'MN', 'Co']));
+        skillPack = skillPack.concat(splitOrders(option.debuffSkillOrderValue, getDefaultOrder('debuffSkillOrder')));
       }
       for (let i in skillPack) {
         let buff = skillPack[i];
@@ -7398,9 +7404,8 @@
       const option = getOption();
       const monsters = g().battle.monsterStatus;
       if (option.attackStatusSwitch) {
-
         let tier = option.attackStatusSwitchByTier ? 3 : undefined;
-        const order = splitOrders(option.attackStatusOrderValue, [0,6,5,1,2,4,3]);
+        const order = splitOrders(option.attackStatusOrderValue, getDefaultOrder('attackStatusOrder'));
         while (tier === undefined || tier-- !== 0) {
           for (const status of order) {
             if (!status && tier) continue;
