@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.89
+// @version      2.91.90
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2970,10 +2970,12 @@
                 stats = statsOld[0];
               }
               for (i in stats) {
+                if (['itemsNames', 'magicNames'].includes(i)) continue;
                 _html = `${_html}<tr class="hvAATh"><td>${translation[i]}</td><td><l01>值</l01><l2>Value</l2></td></tr>`;
                 stats[i] = objSort(stats[i]);
+                let names = stats[`${i}Names`];
                 for (const j in stats[i]) {
-                  _html = `${_html}<tr><td>${j}</td><td>${stats[i][j]}</td></tr>`;
+                  _html = `${_html}<tr><td>${j} ${names?.[j]??''}</td><td>${stats[i][j]}</td></tr>`;
                 }
               }
             } else {
@@ -2988,12 +2990,14 @@
               });
               _html = `${_html}</tr>`;
               Object.keys(translation).forEach((i) => {
+                if (['itemsNames', 'magicNames'].includes(i)) return;
                 if (i === '__name') {
                   return;
                 }
                 _html = `${_html}<tr class="hvAATh"><td colspan="${statsOld.length + 1}">${translation[i]}</td></tr>`;
                 getKeys(statsOld, i).forEach((key) => {
-                  _html = `${_html}<tr><td>${key}</td>`;
+                  let names = stats[`${key}Names`];
+                  _html = `${_html}<tr><td>${key} ${names?.[key]??''}</td>`;
                   statsOld.forEach((_statsOld) => {
                     if (_statsOld[i] && (key in _statsOld[i])) {
                       _html = `${_html}<td>${_statsOld[i][key]}</td>`;
@@ -6083,9 +6087,11 @@
             mode: a.mode,
           };
           if (a.mode === 'items') {
-            obj.item = gE(`#pane_item div[id^="ikey"][onclick*="skill('${a.skill}')"]`).textContent;
+            obj.itemName = gE(`#pane_item div[id^="ikey"][onclick*="skill('${a.skill}')"]`).textContent;
+            obj.item = gE(`#pane_item div[id^="ikey"][onclick*="skill('${a.skill}')"]`).getAttribute('onmouseover').match(/(\d+)/)[1];
           } else if (a.mode === 'magic') {
-            obj.magic = gE(a.skill).textContent;
+            obj.magic = a.skill;
+            obj.magicName = gE(a.skill).textContent;
             cost = gE(a.skill).getAttribute('onmouseover').match(/\('.*', '.*', '.*', (\d+), (\d+), \d+\)/);
             obj.mp = cost[1] * 1;
             obj.oc = cost[2] * 1;
@@ -7730,7 +7736,7 @@
         stats.hurt._pcount = filter.hurtpcount ? stats.hurt._pcount ?? 0 : undefined;
         stats.hurt._ptotal = filter.hurtptotal ? stats.hurt._ptotal ?? 0 : undefined;
       }
-      let text, magic, point, reg;
+      let text, magic, magicName, item, itemName, point, reg;
       const battle = g().battle;
       if (g().monsterAlive === 0) {
         if (filter.turn) {
@@ -7746,9 +7752,15 @@
         }
       }
       if (parm.mode === 'magic') {
-        magic = parm.magic;
+        [magic, magicName] = [parm.magic, parm.magicName];
         if (filter.magic) {
-          stats.magic[magic] = (magic in stats.magic) ? stats.magic[magic] + 1 : 1;
+          let prev = stats.magic[magic] ?? 0;
+          if (magicName in stats.magic) {
+            prev += stats.magic[magicName];
+            delete stats.magic[magicName];
+          }
+          stats.magic[magic] = prev+1;
+          (stats.magicNames ??= {})[magic] = magicName;
         }
         if (filter.mp) {
           stats.self.mp += parm.mp;
@@ -7758,7 +7770,14 @@
         }
       } else if (parm.mode === 'items') {
         if (filter.items) {
-          stats.items[parm.item] = (parm.item in stats.items) ? stats.items[parm.item] + 1 : 1;
+          [item, itemName] = [parm.item, parm.itemName];
+          let prev = stats.items[item] ?? 0;
+          if (itemName in stats.items) {
+            prev += stats.items[itemName];
+            delete stats.items[itemName];
+          }
+          stats.items[item] = prev+1;
+          (stats.itemsNames ??= {})[item] = itemName;
         }
       } else {
         if (filter[parm.mode]) {
