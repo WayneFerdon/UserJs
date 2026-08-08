@@ -203,7 +203,7 @@ The following is a schematic diagram of the circuit diagram
 | Infusion of Flames / fireinfusion | Infusion of Frost / coldinfusion | Infusion of Lightning / elecinfusion |
 | Infusion of Storms / windinfusion | Infusion of Divinity / holyinfusion | Infusion of Darkness / darkinfusion |
 | Scroll of Swiftness / haste_scroll | - | - |
-| Flower Vase / flowers | Bubble-Gum / gum | - |
+| Flower Vase / flowers | Bubble-Gum / gum | Blessing of the RiddleMaster / riddlemaster |
 | Sleep / sleep | Blind / blind | Slow / slow |
 | Imperil / imperil | MagNet / magnet | Silence / silence |
 | Drain / drainhp | Weaken / weaken | Confuse / confuse |
