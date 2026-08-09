@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.91
+// @version      2.91.92
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -14,6 +14,7 @@
 // @include      http*://hentaiverse.org/*
 // @include      http*://alt.hentaiverse.org/*
 // @include      http*://e-hentai.org/*
+// @exclude     http*://*hentaiverse.org/*/y/*
 // @connect        hentaiverse.org
 // @connect        e-hentai.org
 // @compatible   Firefox + Greasemonkey
@@ -1849,6 +1850,13 @@
 
     function _alert(func, l0, l1, l2, answer) {
       const lang = [l0, l1, l2][g().lang];
+      if (func === -2) {
+        if (!l2) {
+          if (!l1) return l0;
+          [l1, l2] = [l0, l1];
+        }
+        return `<l0>${l0}</l0><l1>${l1}</l1><l2>${l2}</l2>`;
+      }
       if (func === -1) {
         return lang;
       } if (func === 0) {
@@ -2002,6 +2010,7 @@
     }
 
     function getCheckSupplyOptionTable(suffix='', checkBoxOnly) {
+      const option = getOption(true);
       const items = [
         11191, 11291, 11391, 12101, 12201,
         11195, 11295, 11395, 12301, 12401,
@@ -2010,8 +2019,8 @@
         13199, 13111, 13101,        0, 11401,
         19111, 19131, 11501,        0, 11402];
       const UIString = [
-        checkBoxOnly ? '' : `    <l0>库存</l0><l1>庫存</l1><l2>Warn if supply</l2>&lt;max(100%,<input id="checkSupplyWarn${suffix}" class="hvAANumber" name="checkSupplyWarn${suffix}" placeholder="100" type="number">%)<l0>时提示</l0><l1>時提示</l1>;</br>`,
-        '    <div class="hvAAcheckItems hvAATable">',
+        checkBoxOnly ? '' : `    <span class="checkSupply${suffix}Inner"><l0>库存</l0><l1>庫存</l1><l2>Warn if supply</l2>&lt;max(100%,<input id="checkSupplyWarn${suffix}" class="hvAANumber" name="checkSupplyWarn${suffix}" placeholder="100" type="number">%)<l0>时提示</l0><l1>時提示</l1>;</span></br>`,
+        `    <div class="hvAAcheckItems hvAATable checkSupply${suffix}Inner">`,
       ];
       for (const item of items) {
         if (!item) {
@@ -2106,10 +2115,10 @@
       const container = gE('.equipSetList');
       if (!container) return;
       let innerHTML = [
-        `<div><l0>战斗</l0><l1>戰鬥</l1><l2>Battle</l2></div>`,
-        `<div><l0>挑战人物</l0><l1>挑戰人物</l1><l2>Battle Persona</l2></div>`,
-        `<div><l0>挑战套装</l0><l1>挑戰套裝</l1><l2>Battle Equip Set</l2></div>`,
-      ];
+        ['战斗', '戰鬥', 'Battle'],
+        ['挑战人物', '挑戰人物', 'Battle Persona'],
+        ['挑战套装', '挑戰套裝', 'Battle Equip Set']
+      ].map(args => _alert(-2, ...args));
       const option = getOption();
       const { equips, personas, equipSets } = getValue('itemWorldDatas', true)??{};
       if (!personas || !equipSets) {
@@ -2169,12 +2178,12 @@
       const container = gE('.autoItemWorldList');
       if (!container) return;
       let innerHTML = [
-        `<div><l0>挑战顺序</l0><l1>挑戰順序</l1><l2>Order</l2></div>`,
-        `<div><l0>装备</l0><l1>裝備</l1><l2>Equip</l2></div>`,
-        `<div><l0>停止等级</l0><l1>停止等級</l1><l2>Stop Level</l2></div>`,
-        `<div><l0>挑战人物</l0><l1>挑戰人物</l1><l2>Battle Persona</l2></div>`,
-        `<div><l0>挑战套装</l0><l1>挑戰套裝</l1><l2>Battle Equip Set</l2></div>`,
-      ];
+        ['挑战顺序', '挑戰順序', 'Order'],
+        ['装备', '裝備', 'Equip'],
+        ['停止等级', '停止等級', 'Stop Level'],
+        ['挑战人物', '挑戰人物', 'Battle Persona'],
+        ['挑战套装', '挑戰套裝', 'Battle Equip Set']
+      ].map(args => _alert(-2, ...args));
       const option = getOption();
       const { equips, personas, equipSets } = getValue('itemWorldDatas', true)??{};
       if (!equips || !personas || !equipSets) {
@@ -2216,6 +2225,239 @@
     }
 
     function optionBox() { // 配置界面
+      const UIDatas = {
+        attackStatusOrder: [
+          { id: 0, names: ['物理', '物理', 'Physical'], values: ['Phys'] },
+          { id: 5, names: ['圣', '聖', 'Divine'], values: ['Divi'] },
+          { id: 6, names: ['暗', '暗', 'Forbidden'], values: ['Forb'] },
+          { id: 1, names: ['火', '火', 'Fire'], values: ['Fire'] },
+          { id: 2, names: ['冰', '冰', 'Cold'], values: ['Cold'] },
+          { id: 4, names: ['风', '風', 'Wind'], values: ['Wind'] },
+          { id: 3, names: ['雷', '雷', 'Elec'], values: ['Elec'] },
+        ],
+        attackStatus: [
+          { id: 0, names: ['物理', '物理', 'Physical']},
+          { id: 1, names: ['火', '火', 'Fire']},
+          { id: 2, names: ['冰', '冰', 'Cold']},
+          { id: 3, names: ['雷', '雷', 'Elec']},
+          { id: 4, names: ['风', '風', 'Wind']},
+          { id: 5, names: ['圣', '聖', 'Divine']},
+          { id: 6, names: ['暗', '暗', 'Forbidden']},
+        ],
+        arena: [
+          { id: 1, names: [1], values: [1] },
+          { id: 10, names: [10], values: [3] },
+          { id: 20, names: [20], values: [5] },
+          { id: 30, names: [30], values: [8] },
+          { id: 40, names: [40], values: [9] },
+          { id: 50, names: [50], values: [11] },
+          { id: 60, names: [60], values: [12] },
+          { id: 70, names: [70], values: [13] },
+          { id: 80, names: [80], values: [15] },
+          { id: 90, names: [90], values: [16] },
+          { id: 100, names: [100], values: [17] },
+          { id: 110, names: [110], values: [19] },
+          { id: 120, names: [120], values: [20] },
+          { id: 130, names: [130], values: [21] },
+          { id: 140, names: [140], values: [23] },
+          { id: 150, names: [150], values: [24] },
+          { id: 165, names: [165], values: [26] },
+          { id: 180, names: [180], values: [27] },
+          { id: 200, names: [200], values: [28] },
+          { id: 225, names: [225], values: [29] },
+          { id: 250, names: [250], values: [32] },
+          { id: 300, names: [300], values: [33] },
+          { id: 400, names: [400], values: [34] },
+          { id: 500, names: [500], values: [35] },
+          { id: 'RB50', names: ['RB50'], values: [105] },
+          { id: 'RB75A', names: ['RB75A'], values: [106] },
+          { id: 'RB75B', names: ['RB75B'], values: [107] },
+          { id: 'RB75C', names: ['RB75C'], values: [108] },
+          { id: 'RB100', names: ['RB100'], values: [109] },
+          { id: 'RB150', names: ['RB150'], values: [110] },
+          { id: 'RB200', names: ['RB200'], values: [111] },
+          { id: 'RB250', names: ['RB250'], values: [112] },
+          { id: 'IW', names: ['ItemWorld'], values: ['iw'] },
+          { id: 'GF', names: ['GrindFest'], values: ['gr'] },
+        ],
+        equipSlot: [
+          { id: '1', names: ['主手', '主手', 'Main Hand'] },
+          { id: '2', names: ['副手', '副手', 'Off Hand'] },
+          { id: '13', names: ['头盔', '頭盔', 'Helmet'] },
+          { id: '11', names: ['身体', '身體', 'Body'] },
+          { id: '14', names: ['手部', '手部', 'Hands'] },
+          { id: '12', names: ['腿部', '腿部', 'Legs'] },
+          { id: '15', names: ['脚部', '腳部', 'Feet'] },
+        ],
+        roundType: [
+          { id: 'ar', names: ['竞技场(AR)', '競技場(AR)', 'The Arena'] },
+          { id: 'rb', names: ['浴血擂台(RB)', '浴血擂台(RB)', 'Ring of Blood'] },
+          { id: 'gr', names: ['压榨界(GF)', '壓榨界(GF)', 'GrindFest'] },
+          { id: 'iw', names: ['道具届(IW)', '道具界(IW)', 'Item World'] },
+          { id: 'ba', names: ['随机遭遇(ba)', '隨機遭遇(ba)', 'Encounter'] },
+          { id: 'tw', names: ['塔楼(Tw)', '塔樓(Tw)', 'The Tower'] },
+        ],
+        cure: [
+          { id:'FC', names: ['完全治愈(FC)', '完全治愈(FC)', 'Full-Cure'], values: [313] },
+          { id:'HE', names: ['生命秘药(HE)', '生命秘藥(HE)', 'Health Elixir'], values: [11199] },
+          { id:'LE', names: ['最终秘药(LE)', '最終秘藥(LE)', 'Last Elixir'], values: [11501] },
+          { id:'HG', names: ['生命宝石(HG)', '生命寶石(HG)', 'Health Gem'], values: [10005] },
+          { id:'HP', names: ['生命药水(HP)', '生命藥水(HP)', 'Health Potion'], values: [11195] },
+          { id:'Cure', names: ['治疗(Cure)', '治療(Cure)', 'Cure'], values: [311] },
+          { id:'MG', names: ['魔力宝石(MG)', '魔力寶石(MG)', 'Mana Gem'], values: [10006] },
+          { id:'MP', names: ['魔力药水(MP)', '魔力藥水(MP)', 'Mana Potion'], values: [11295] },
+          { id:'ME', names: ['魔力秘药(ME)', '魔力秘藥(ME)', 'Mana Elixir'], values: [11299] },
+          { id:'SG', names: ['灵力宝石(SG)', '靈力寶石(SG)', 'Spirit Gem'], values: [10007] },
+          { id:'SP', names: ['灵力药水(SP)', '靈力藥水(SP)', 'Spirit Potion'], values: [11395] },
+          { id:'SE', names: ['灵力秘药(SE)', '靈力秘藥(SE)', 'Spirit Elixir'], values: [11399] },
+          { id:'Mystic', names: ['神秘宝石(Mystic)', '神秘寶石(Mystic)', 'Mystic Gem'], values: [10008] },
+          { id:'CC', names: ['咖啡因糖果(CC)', '咖啡因糖果(CC)', 'Caffeinated Candy'], values: [11402] },
+          { id:'ED', names: ['能量饮料(ED)', '能量飲料(ED)', 'Energy Drink'], values: [11401] },
+        ],
+        buff: [
+          { id:'HD', names: ['生命长效药(HD)', '生命長效藥(HD)', 'Health Draught'],values: [ true] },
+          { id:'MD', names: ['魔力长效药(MD)', '魔力長效藥(MD)', 'Mana Draught'],values: [ true] },
+          { id:'SD', names: ['灵力长效药(MD)', '靈力長效藥(MD)', 'Spirit Draught'],values: [ true] },
+          { id:'FV', names: ['花瓶(FV)', '花瓶(FV)', 'Flower Vase'],values: [ true] },
+          { id:'BG', names: ['泡泡糖(BG)', '泡泡糖(BG)', 'Bubble-Gum'],values: [ true] },
+          { id:'SS', names: ['灵力盾(SS)', '靈力盾(SS)', 'Spirit Shield'],values: [ false] },
+          { id:'SL', names: ['生命火花(SL)', '生命火花(SL)', 'Spark of Life'],values: [ false] },
+          { id:'Pr', names: ['守护(Pr)', '守護(Pr)', 'Protection'],values: [ false] },
+          { id:'Ab', names: ['吸收(Ab)', '吸收(Ab)', 'Absorb'],values: [ false] },
+          { id:'SV', names: ['影纱(SV)', '影紗(SV)', 'Shadow Veil'],values: [ false] },
+          { id:'Re', names: ['细胞活化(Re)', '細胞活化(Re)', 'Regen'],values: [ false] },
+          { id:'Ha', names: ['疾速(Ha)', '疾速(Ha)', 'Haste'],values: [ false] },
+          { id:'He', names: ['穿心(He)', '穿心(He)', 'Heartseeker'],values: [ false] },
+          { id:'AF', names: ['奥术集中(AF)', '奧術集中(AF)', 'Arcane Focus'],values: [ false] },
+        ],
+        debuff: [
+          { id:'Sle', names: ['沉眠(Sl)', '沉眠(Sl)', 'Sleep'] },
+          { id:'Bl', names: ['致盲(Bl)', '致盲(Bl)', 'Blind'] },
+          { id:'Slo', names: ['缓慢(Slo)', '緩慢(Slo)', 'Slow'] },
+          { id:'We', names: ['虚弱(We)', '虛弱(We)', 'Weaken'] },
+          { id:'Si', names: ['沉默(Si)', '沉默(Si)', 'Silence'] },
+          { id:'Dr', names: ['枯竭(Dr)', '枯竭(Dr)', 'Drain'] },
+          { id:'Im', names: ['陷危(Im)', '陷危(Im)', 'Imperil'] },
+          { id:'MN', names: ['固定(MN)', '固定(MN)', 'Immobilize(MagNet)'] },
+          { id:'Co', names: ['混乱(Co)', '混亂(Co)', 'Confuse'] },
+        ],
+        channel: [
+          { id: 'FC', names: ['完全治愈(FC)', '完全治愈(FC)', 'Full-Cure'], values: [313] },
+          { id: 'Cure', names: ['治疗(Cure)', '治療(Cure)', 'Cure'], values: [311] },
+          { id: 'SS', names: ['灵力盾(SS)', '靈力盾(SS)', 'Spirit Shield'], values: [423] },
+          { id: 'SL', names: ['生命火花(SL)', '生命火花(SL)', 'Spark of Life'], values: [422] },
+          { id: 'Pr', names: ['守护(Pr)', '守護(Pr)', 'Protection'], values: [411] },
+          { id: 'Ab', names: ['吸收(Ab)', '吸收(Ab)', 'Absorb'], values: [421] },
+          { id: 'SV', names: ['影纱(SV)', '影紗(SV)', 'Shadow Veil'], values: [413] },
+          { id: 'Re', names: ['细胞活化(Re)', '細胞活化(Re)', 'Regen'], values: [312] },
+          { id: 'Ha', names: ['疾速(Ha)', '疾速(Ha)', 'Haste'], values: [412] },
+          { id: 'He', names: ['穿心(He)', '穿心(He)', 'Heartseeker'], values: [431] },
+          { id: 'AF', names: ['奥术集中(AF)', '奧術集中(AF)', 'Arcane Focus'], values: [432] },
+        ],
+        infusion: [
+          { id:'Divinity', names: ['神圣(Divinity)', '神聖(Divinity)', 'Divinity'] },
+          { id:'Darkness', names: ['黑暗(Darkness)', '黑暗(Darkness)', 'Darkness'] },
+          { id:'Flames', names: ['火焰(Flames)', '火焰(Flames)', 'Flames'] },
+          { id:'Frost', names: ['冰冷(Frost)', '冰冷(Frost)', 'Frost'] },
+          { id:'Lightning', names: ['闪电(Lightning)', '閃電(Lightning)', 'Lightning'] },
+          { id:'Storms', names: ['风暴(Storms)', '風暴(Storms)', 'Storms'] },
+        ],
+        scroll: [
+          { id:'Sw', names: ['加速卷轴(Sw)', '加速捲軸(Sw)', 'Scroll of Swiftness'] },
+          { id:'Pr', names: ['守护卷轴(Pr)', '守護捲軸(Pr)', 'Scroll of Protection'] },
+          { id:'Av', names: ['化身卷轴(Av)', '化身捲軸(Av)', 'Scroll of the Avatar'] },
+          { id:'Ab', names: ['吸收卷轴(Ab)', '吸收捲軸(Ab)', 'Scroll of Absorption'] },
+          { id:'Sh', names: ['幻影卷轴(Sh)', '幻影捲軸(Sh)', 'Scroll of Shadows'] },
+          { id:'Li', names: ['生命卷轴(Li)', '生命捲軸(Li)', 'Scroll of Life'] },
+          { id:'Go', names: ['众神卷轴(Go)', '眾神捲軸(Go)', 'Scroll of the Gods'] },
+        ],
+        weight1: [
+          { id:'We', names:['虚弱(We)', '虛弱(We)', 'Weaken'], values: [12] },
+          { id:'Bl', names:['致盲(Bl)', '致盲(Bl)', 'Blind'], values: [10] },
+          { id:'Slo', names:['缓慢(Slo)', '緩慢(Slo)', 'Slow'], values: [15] },
+          { id:'Si', names:['沉默(Si)', '沉默(Si)', 'Silence'], values: [10] },
+          { id:'Sle', names:['沉眠(Sl)', '沉眠(Sl)', 'Sleep'], values: [100] },
+          { id:'Im', names:['陷危(Im)', '陷危(Im)', 'Imperil'], values: [-15] },
+          { id:'PA', names:['破甲(PA)', '破甲(PA)', 'Penetrated Armor'], values: [-12] },
+          { id:'BW', names:['流血(Bl)', '流血(Bl)', 'Bleeding Wound'], values: [-10] },
+          { id:'Co', names:['混乱(Co)', '混亂(Co)', 'Confuse'], values: [300] },
+          { id:'Dr', names:['枯竭(Dr)', '枯竭(Dr)', 'Drain'], values: [2] },
+          { id:'ET', names:['以太窃取(ET)', '以太竊取(ET)', 'Ether Theft'], values: [2] },
+          { id:'ST', names:['灵力窃取(ST)', '靈力竊取(ST)', 'Spirit Theft'], values: [2] },
+          { id:'MN', names:['固定(MN)', '固定(MN)', 'Immobilize(MagNet)'], values: [7] },
+          { id:'Po', names:['流动毒性(Po)', '流动毒性(Po)', 'Spreading Poison'], values: [-10] },
+          { id:'Stun', names:['眩晕(St)', '眩暈(St)', 'Stunned'], values: [290] },
+          { id:'CM', names:['魔力合流(CM)', '魔力合流(CM)', 'Coalesced Mana'], values: [-20] },
+          { id:'BS', names:['焚燒的靈魂(BS)', '焚燒的靈魂(BS)', 'Burning Soul'], values: [0] },
+          { id:'RS', names:['鮮美的靈魂(RS)', '鮮美的靈魂(RS)', 'Ripened Soul'], values: [0] },
+        ],
+        weight2: [
+          { id: 'SS', names: ['灼烧的皮肤(SS)', '燒灼的皮膚(SS)', 'Searing Skin'], values: [-14, 5] },
+          { id: 'FL', names: ['冰封的肢体(FL)', '冰封的肢體(FL)', 'Freezing Limbs'], values: [-14, 5] },
+          { id: 'TA', names: ['湍流的空气(TA)', '湍流的空氣(TA)', 'Turbulent Air'], values: [-14, 5] },
+          { id: 'DB', names: ['深层的烧伤(DB)', '深層的燒傷(DB)', 'Deep Burns'], values: [-19, -4] },
+          { id: 'BD', names: ['崩溃的防御(BD)', '崩潰的防禦(BD)', 'Breached Defense'], values: [-19, -4] },
+          { id: 'BA', names: ['钝化的攻击(BA)', '鈍化的攻擊(BA)', 'Blunted Attack'], values: [-14, 5] },
+        ],
+        weight3: [
+          { id: 'Fos', names: ['姊妹们的盛怒(FoS)', '姊妹們的盛怒(FoS)', 'Fury of the Sisters'], values: [0] },
+          { id: 'Lof', names: ['未来的悲叹(LoF)', '未來的悲歎(LoF)', 'Lamentations of the Future'], values: [0] },
+          { id: 'SoP', names: ['昔日的凄叫(SoP)', '昔日的淒叫(SoP)', 'Screams of the Past'], values: [0] },
+          { id: 'WoP', names: ['此刻的恸哭(WoP)', '此刻的慟哭(WoP)', 'Wailings of the Present'], values: [0] },
+          { id: 'AW', names: ['吸收结界(AW)', '吸收結界(AW)', 'Absorbing Ward'], values: [0] },
+        ],
+        skill: [
+          { id: 'OFC', names: ['友情小马砲', '友情小馬砲', 'OFC'] },
+          { id: 'FRD', names: ['龙吼', '龍吼', 'FRD'] },
+          { id: 'T3', names: ['3阶（如果有）', '3階（如果有）', 'T3(if exist)'] },
+          { id: 'T2', names: ['2阶（如果有）', '2階（如果有）', 'T2(if exist)'] },
+          { id: 'T1', names: ['1阶', '1階', 'T1'] },
+        ],
+        record1: [
+          { id: 'turn', names: ['Turns'] },
+          { id: 'round', names: ['Rounds'] },
+          { id: 'battle', names: ['Battle'] },
+          { id: 'monster', names: ['Monster'] },
+          { id: 'boss', names: ['Boss'] },
+          { id: 'evade', names: ['闪避', '閃避', 'Evade'] },
+          { id: 'miss', names: ['未命中', '未命中', 'Miss'] },
+          { id: 'focus', names: ['集中', '集中', 'Focus'] },
+          { id: 'mp', names: ['MP 总消耗', 'MP 總消耗', 'MP Cost'] },
+          { id: 'oc', names: ['OC 总消耗', 'OC 總消耗', 'OC Cost'] },
+        ],
+        record2: [
+          { id: 'restore', names: ['回复 (总量)', '回复 (總量)', 'Restore (Amount)'] },
+          { id: 'items', names: ['物品 (次数)', '物品 (次數)', 'Items (Count)'] },
+          { id: 'magic', names: ['技能 (次数)', '技能 (次數)', 'Magic (Count)'] },
+          { id: 'damage', names: ['伤害 (总量)', '傷害 (總量)', 'Damage (Amount)'] },
+          { id: 'proficiency', names: ['熟练度 (总量)', '熟練度 (總量)', 'Proficiency (Amount)'] },
+        ],
+        record3: [
+          { id: 'hurtavg', names: ['平均', '平均', 'Avg'] },
+          { id: 'hurtcount', names: ['次数', '次數', 'Count'] },
+          { id: 'hurttotal', names: ['总量', '總量', 'Total'] },
+          { id: 'hurtmavg', names: ['法术平均', '法術平均', 'Magic Avg'] },
+          { id: 'hurtmcount', names: ['法术次数', '法術次數', 'Magic Count'] },
+          { id: 'hurtmtotal', names: ['法术总量', '法術總量', 'Magic Total'] },
+          { id: 'hurtpavg', names: ['物理平均', '物理平均', 'Physical Avg'] },
+          { id: 'hurtpcount', names: ['物理次数', '物理次數', 'Physical Count'] },
+          { id: 'hurtptotal', names: ['物理总量', '物理總量', 'Physical Total'] },
+        ],
+        audio: [
+          { id: 'Common', names: ['通用', 'Common' ,'nput'] },
+          { id: 'Error', names: ['错误', '錯誤' ,'Error'] },
+          { id: 'Defeat', names: ['失败', '失敗' ,'Defeat'] },
+          { id: 'Riddle', names: ['答题', '答題' ,'Riddle'] },
+          { id: 'Victory', names: ['胜利', '勝利' ,'Victory'] },
+        ],
+      };
+
+      function expendDataUI(datas, method) {
+        const mapped = datas.map(args => method(args.id, _alert(-2, ...args.names), ...(args.values??[])));
+        if (Array.isArray(mapped[0])) return mapped.reduce((acc,cur) => (acc??[]).concat(cur??[]),[]);
+        return mapped.reduce((acc,cur) => (acc??'')+(cur??''),'');
+      }
+
       let option = getOption(true);
       let optionBox = gE('#hvAABox');
       if (!optionBox) {
@@ -2254,8 +2496,8 @@
           '<div class="hvAATab" id="hvAATab-Main">',
           '  <div><b><l0>异世界相关</l0><l1>異世界相關</l1><l2>Isekai</l2></b>: ',
           '    <input id="optionStandalone" type="checkbox"><label for="optionStandalone"><l0>两个世界使用不同的配置</l0><l1>兩個世界使用不同的配置</l1><l2>Use standalone options.</l2></label>; ',
-          '    <br><input id="isekai" type="checkbox"><label for="isekai"><l0>在任意页面停留</l0><l1>在任意頁面停留</l1><l2>While idle in any page for </l2><input class="hvAANumber" name="isekaiTime" placeholder="0" type="number"><l0>秒后，自动切换恒定世界和异世界</l0><l1>秒後，自動切換恆定世界和異世界</l1><l2>s, auto switch between Isekai and Persistent</l2></label>',
-          '    <br><l0>自动切换冷却时间</l0><l1>自動切換冷卻時間</l1><l2>Cool down for auto switch</l2></label>: <input class="hvAANumber" name="isekaiCD" placeholder="0" type="number"><l0>秒. 两个世界分别计算冷却</l0><l1>秒. 兩個世界分別計算冷卻</l1><l2> (s). Isekai and Persistent cooldown separately.</l2></label></div>',
+          '    <br><input id="isekai" type="checkbox"><label for="isekai"><l0>在任意页面停留</l0><l1>在任意頁面停留</l1><l2>While idle in any page for </l2><input class="hvAANumber" name="isekaiTime" placeholder="0" type="number"><l0>秒后，自动切换恒定世界和异世界</l0><l1>秒後，自動切換恆定世界和異世界</l1><l2>s, auto switch between Isekai and Persistent</l2></label>. <span class="isekaiSwitchRemain"></span>',
+          '    <br><div class="isekaiInner"><l0>自动切换冷却时间</l0><l1>自動切換冷卻時間</l1><l2>Cool down for auto switch</l2></label>: <input class="hvAANumber" name="isekaiCD" placeholder="0" type="number"><l0>秒. 两个世界分别计算冷却.</l0><l1>秒. 兩個世界分別計算冷卻.</l1><l2> (s). Isekai and Persistent cooldown separately.</l2> <span class="isekaiCDRemain"></span></label></div></div>',
           '  <div>',
           '    <b><l0>小马答题</l0><l1>小馬答題</l1><l2>RIDDLE</l2></b>: <input id="riddlePopup" type="checkbox"><label for="riddlePopup"><l0>弹窗答题</l0><l1>弹窗答题</l1><l2>POPUP a window to answer</l2></label><l0>(Firefox中可能导致报错)</l0><l1>(Firefox中可能導致報錯)</l1><l2>(Might cause in Firefox)</l2>; <button class="testPopup"><l0>预处理</l0><l1>預處理</l1><l2>Pretreat</l2></button>',
           '    <div><l0>时间</l0><l1>時間</l1><l2>If ETR</l2> ≤ <input class="hvAANumber" name="riddleAnswerTime" placeholder="3" type="number"><l0>秒，提交当前选中答案 或 为空时随机选中</l0><l1>秒，提交當前選中答案 或 為空時隨機選中</l1><l2>s submit chosen answers or random </l2> <input class="hvAANumber" name="riddleAnswerChoose" placeholder="0" type="number"><l0>个答案并提交<br><a style="color:red;" href="https://ehwiki.org/wiki/RiddleMaster/Chinese#.E6.AD.A3.E7.A2.BA.E6.88.96.E9.8C.AF.E8.AA.A4">注意：错选小马比漏选小马的错误计数更多 - 所以有疑问时，最好不要猜测，留空就好</a></l0><l1>个答案並提交<br><a style="color:red;" href="https://ehwiki.org/wiki/RiddleMaster/Chinese#.E6.AD.A3.E7.A2.BA.E6.88.96.E9.8C.AF.E8.AA.A4">注意：錯選小馬比漏選小馬的錯誤計數更多 - 所以有疑問時，最好不要猜測，留空就好</a></l1><l2>answers if none is chosen.<br><a style="color:red;" href="https://ehwiki.org/wiki/RiddleMaster#Correct_or_Incorrect">Notice: Selecting a pony that is not in the picture will count more severe towards a penalty than missing one pony - so when in doubt, best not to guess but leave one blank</a></l2></div>',
@@ -2267,9 +2509,11 @@
           '      <input id="stepInButton" type="checkbox"><label for="stepInButton"><l0>步进按钮</l0><l1>步進按鈕</l1><l2>StepIn Button</l2></label>; ',
           '      <input id="stepInHotkey" type="checkbox"><label for="stepInHotkey"><l0>步进热键</l0><l1>步進熱鍵</l1><l2>StepIn Hotkey</l2>: <input class="text" name="stepInHotkeyStr" type="text"><input class="hvAANumber" name="stepInHotkeyCode" type="hidden" disabled="true"></label>',
           '  </div>',
-          ' <div><input id="altButton" type="checkbox"><label for="altButton"><l0>Alt切换按钮</l0><l1>Alt切換按鈕</l1><l2>Alt Switch Button</l2></label>; ',
-          '      <input id="altHotkey" type="checkbox"><label for="altHotkey"><l0>Alt切换热键</l0><l1>Alt切換熱鍵</l1><l2>Alt Switch Hotkey</l2>: <input class="text" name="altHotkeyStr" type="text"><input class="hvAANumber" name="altHotkeyCode" type="hidden" disabled="true"></label></div>',
-          '    <div><l0>警告相关</l0><l1>警告相關</l1><l2>To Warn</l2>: ',
+          '  <div>',
+          '    <input id="altButton" type="checkbox"><label for="altButton"><l0>Alt切换按钮</l0><l1>Alt切換按鈕</l1><l2>Alt Switch Button</l2></label>; ',
+          '    <input id="altHotkey" type="checkbox"><label for="altHotkey"><l0>Alt切换热键</l0><l1>Alt切換熱鍵</l1><l2>Alt Switch Hotkey</l2>: <input class="text" name="altHotkeyStr" type="text"><input class="hvAANumber" name="altHotkeyCode" type="hidden" disabled="true"></label>',
+          '  </div>',
+          '  <div><l0>警告相关</l0><l1>警告相關</l1><l2>To Warn</l2>: ',
           '      <input id="alert" type="checkbox"><label for="alert"><l0>音频警报</l0><l1>音頻警報</l1><l2>Audio Alarms</l2></label>; ',
           '      <input id="notification" type="checkbox"><label for="notification"><l0>桌面通知</l0><l1>桌面通知</l1><l2>Notifications</l2></label> ',
           '      <button class="testNotification"><l0>预处理</l0><l1>預處理</l1><l2>Pretreat</l2></button>',
@@ -2283,7 +2527,7 @@
           '    <select class="hvAANumber" name="attackStatus"><option value="-1"></option><option value="0">物理 / Physical</option><option value="1">火 / Fire</option><option value="2">冰 / Cold</option><option value="3">雷 / Elec</option><option value="4">风 / 風 / Wind</option><option value="5">圣 / 聖 / Divine</option><option value="6">暗 / Forbidden</option></select></div>',
 
           '  <div><b><l0>战斗执行顺序(未配置的按照下面的顺序)</l0><l1>戰鬥執行順序(未配置的按照下面的順序)</l1><l2>Battal Order(Using order below as default if not configed)</l2></b>: <input id="battleOrderDefaultOnly" type="checkbox"><label for="battleOrderDefaultOnly">(<l0>只使用默认顺序</l0><l1>只使用默認順序</l1><l2>Default order only</l2>)</label>',
-          '    <div class="battleOrder"><input name="battleOrderName" style="width:80%;" type="text" disabled="true"><br>',
+          '    <div class="battleOrder battleOrderDefaultOnlyInnerReverted"><input name="battleOrderName" style="width:80%;" type="text" disabled="true"><br>',
           '      <div class="hvAATable" style="display:grid; grid-template-columns:repeat(7, 1fr);">',
           '        <div><input id="battleOrder_autoCure" value="Cure" type="checkbox"><label for="battleOrder_autoCure"><l0>使用治疗</l0><l1>使用治療</l1><l2>Cure</l2></label></div>',
           '        <div><input id="battleOrder_autoPause" value="Pause" type="checkbox"><label for="battleOrder_autoPause"><l0>自动暂停</l0><l1>自動暫停</l1><l2>Auto Pause</l2></label></div>',
@@ -2296,7 +2540,6 @@
           '        <div><input id="battleOrder_useBuffSkill" value="Buff" type="checkbox"><label for="battleOrder_useBuffSkill"><l0>Buff技能</l0><l1>Buff技能</l1><l2>Buff Skills</l2></label></div>',
           '        <div><input id="battleOrder_useDeSkill" value="Debuff" type="checkbox"><label for="battleOrder_useDeSkill"><l0>Debuff技能</l0><l1>Debuff技能</l1><l2>Debuff Skills</l2></label><br></div>',
           '        <div><input id="battleOrder_autoFocus" value="Focus" type="checkbox"><label for="battleOrder_autoFocus"><l0>自动集中</l0><l1>自動集中</l1><l2>Focus</l2></label></div>',
-
           '       <div><input id="battleOrder_autoSS" value="SS" type="checkbox"><label for="battleOrder_autoSS"><l0>灵动架式(开&关)</l0><l1>靈動架式(開&關)</l1><l2>On & Off Sprite</l2></label></div>',
           '       <div><input id="battleOrder_autoSkill" value="Skill" type="checkbox"><label for="battleOrder_autoSkill"><l0>释放技能</l0><l1>釋放技能</l1><l2>Auto Skill</l2></label></div>',
           '       <div><input id="battleOrder_attack" value="Atk" type="checkbox"><label for="battleOrder_attack"><l0>自动攻击</l0><l1>自動攻擊</l1><l2>Attack</l2></label></div>',
@@ -2306,22 +2549,9 @@
           '    <input id="attackStatusSwitchByTier" type="checkbox"><label for="attackStatusSwitchByTier"><l0>先尝试完所有模式的高阶魔法技能再继续中阶和低阶</l0><l1>先嘗試完所有模式的高階魔法技能再繼續中階和低階</l1><l2>Try all 3rd Tier Magic for all Attack Mode then 2nd Tier and 1st Tier</l2></b></label>',
           '    <div class="attackStatusOrder"><input name="attackStatusOrderName" style="width:80%;" type="text" disabled="true"><input name="attackStatusOrderValue" style="width:80%;" type="hidden" disabled="true"><br>',
           '      <div class="hvAATable" style="display:grid; grid-template-columns:repeat(7, 1fr);">',
-          '        <div><input id="attackStatusOrder_0" value="Phys,0" type="checkbox"><label for="attackStatusOrder_0"><l0>物理</l0><l1>物理</l1><l2>Physical</l2></label></div>',
-          '        <div><input id="attackStatusOrder_5" value="Divi,5" type="checkbox"><label for="attackStatusOrder_5"><l0>圣</l0><l1>聖</l1><l2>Divine</l2></label></div>',
-          '        <div><input id="attackStatusOrder_6" value="Forb,6" type="checkbox"><label for="attackStatusOrder_6"><l0>暗</l0><l1>暗</l1><l2>Forbidden</l2></label></div>',
-          '        <div><input id="attackStatusOrder_1" value="Fire,1" type="checkbox"><label for="attackStatusOrder_1"><l0>火</l0><l1>火</l1><l2>Fire</l2></label></div>',
-          '        <div><input id="attackStatusOrder_2" value="Cold,2" type="checkbox"><label for="attackStatusOrder_2"><l0>冰</l0><l1>冰</l1><l2>Cold</l2></label></div>',
-          '        <div><input id="attackStatusOrder_4" value="Wind,4" type="checkbox"><label for="attackStatusOrder_4"><l0>风</l0><l1>風</l1><l2>Wind</l2></label></div>',
-          '        <div><input id="attackStatusOrder_3" value="Elec,3" type="checkbox"><label for="attackStatusOrder_3"><l0>雷</l0><l1>雷</l1><l2>Elec</l2></label></div>',
+          ...expendDataUI(UIDatas.attackStatusOrder, (id, names, v) => `<div><input id="attackStatusOrder_${id}" value="${v},${id}" type="checkbox"><label for="attackStatusOrder_${id}">${names}</label></div>`),
           '    </div></div></div>',
-
-          '    <div><input id="attackStatusSwitch_0" type="checkbox"><label for="attackStatusSwitch_0"><b><l0>攻击模式 物理</l0><l1>攻擊模式 物理</l1><l2>Attack Mode: Physical</l2></b>: {{attackStatusSwitchCondition0}}</label></div>',
-          '    <div><input id="attackStatusSwitch_1" type="checkbox"><label for="attackStatusSwitch_1"><b><l0>攻击模式 火</l0><l1>攻擊模式 火</l1><l2>Attack Mode: Fire</l2></b>: {{attackStatusSwitchCondition1}}</label></div>',
-          '    <div><input id="attackStatusSwitch_2" type="checkbox"><label for="attackStatusSwitch_2"><b><l0>攻击模式 冰</l0><l1>攻擊模式 冰</l1><l2>Attack Mode: Cold</l2></b>: {{attackStatusSwitchCondition2}}</label></div>',
-          '    <div><input id="attackStatusSwitch_3" type="checkbox"><label for="attackStatusSwitch_3"><b><l0>攻击模式 雷</l0><l1>攻擊模式 雷</l1><l2>Attack Mode: Elec</l2></b>: {{attackStatusSwitchCondition3}}</label></div>',
-          '    <div><input id="attackStatusSwitch_4" type="checkbox"><label for="attackStatusSwitch_4"><b><l0>攻击模式 风</l0><l1>攻擊模式 風</l1><l2>Attack Mode: Wind</l2></b>: {{attackStatusSwitchCondition4}}</label></div>',
-          '    <div><input id="attackStatusSwitch_5" type="checkbox"><label for="attackStatusSwitch_5"><b><l0>攻击模式 圣</l0><l1>攻擊模式 聖</l1><l2>Attack Mode: Divine</l2></b>: {{attackStatusSwitchCondition5}}</label></div>',
-          '    <div><input id="attackStatusSwitch_6" type="checkbox"><label for="attackStatusSwitch_6"><b><l0>攻击模式 暗</l0><l1>攻擊模式 暗</l1><l2>Attack Mode: Forbidden</l2></b>: {{attackStatusSwitchCondition6}}</label></div>',
+          ...expendDataUI(UIDatas.attackStatus, (id, names) => `<div><input id="attackStatusSwitch_${id}" type="checkbox"><label for="attackStatusSwitch_${id}"><b><l0>攻击模式 </l0><l1>攻擊模式 </l1><l2>Attack Mode: </l2>${names}</b>: {{attackStatusSwitchCondition${id}}}</label></div>`),
           '    <div><label for="lowSkillCondition"><b><l0>低阶魔法技能使用条件</l0><l1>低階魔法技能使用條件</l1><l2>Conditions for 1st Tier Offensive Magic</l2></b>: {{lowSkillCondition}}</label></div>',
           '    <div><label for="middleSkillCondition"><b><l0>中阶魔法技能使用条件</l0><l1>中階魔法技能使用條件</l1><l2>Conditions for 2nd Tier Offensive Magic</l2></b>: {{middleSkillCondition}}</label></div>',
           '    <div><label for="highSkillCondition"><b><l0>高阶魔法技能使用条件</l0><l1>高階魔法技能使用條件</l1><l2>Conditions for 3rd Tier Offensive Magic</l2></b>: {{highSkillCondition}}</label></div>',
@@ -2355,35 +2585,31 @@
           ' <div><input id="popup" type="checkbox"><label for="popup"><l0>进入失败时窗口内弹窗提示</l0><l1>進入失敗時窗口內彈窗提示</l1><l2>In-window popup while failed start</l2></label>; </div>',
           ' <div><input id="altBattleFirst" type="checkbox"><label for="altBattleFirst"><b><l0>优先使用alt进入</l0><l1>優先使用alt進入</l1><l2>Use alt.hentaiverse as default while auto start.</l2></b></label></div>',
           ' <div><input id="encounter" type="checkbox"><label for="encounter"><b><l0>自动遭遇战</l0><l1>自動遭遇戰</l1><l2>Auto Encounter</l2></b></label><br>',
-          '  <input id="encounterQuickCheck" type="checkbox"><label for="encounterQuickCheck"><l0>精准倒计时(影响性能)</l0><l1>精準(影響性能)</l1><l2>Precise encounter cd(might reduced performsance)</l2></label><br>',
+          '  <div class="encounterInner"><input id="encounterQuickCheck" type="checkbox"><label for="encounterQuickCheck"><l0>精准倒计时(影响性能)</l0><l1>精準(影響性能)</l1><l2>Precise encounter cd(might reduced performsance)</l2></label><br>',
           '  <input id="encounterDisplay" type="checkbox"><label for="encounterDisplay"><l0>不自动遭遇时显示倒计时</l0><l1>不自動遭遇時顯示倒計時</l1><l2>Display CountDown While Not Auto Encounter</l2><br>',
           '  <l0>遭遇战倒计时</l0><l1>遭遇戰倒計時</l1><l2>Wait for encounter first while count down</l2> ≤ <input class="hvAANumber" name="encounterWaitCD" placeholder="0" type="number">s<l0>时优先等待</l0><l1>時優先等待</l1><l2>.</l2>',
           '  </div>',
+          '  </div>',
           '  <div><input id="idleArena" type="checkbox"><label for="idleArena"><b><l0>闲置竞技场</l0><l1>閒置競技場</l1><l2>Idle Arena</l2>: </b>',
-          '    <l0>在任意页面停留</l0><l1>在任意頁面停留</l1><l2>Idle in any page for </l2><input class="hvAANumber" name="idleArenaTime" placeholder="0" type="number"><l0>秒后，开始竞技场</l0><l1>秒後，開始競技場</l1><l2> (s), start Arena</l2></label><button class="idleArenaReset"><l01>重置</l01><l2>Reset</l2></button>;<br>',
+          '    <l0>在任意页面停留</l0><l1>在任意頁面停留</l1><l2>Idle in any page for </l2><input class="hvAANumber" name="idleArenaTime" placeholder="0" type="number"><l0>秒后，开始竞技场</l0><l1>秒後，開始競技場</l1><l2> (s), start Arena</l2></label>',
+          '    <span class="idleArenaInner">',
+          '    <button class="idleArenaReset"><l01>重置</l01><l2>Reset</l2></button>; <span class="arenaRemain"></span><br>',
           '    <l0>进行的竞技场相对应等级</l0><l1>進行的競技場相對應等級</l1><l2>The levels of the Arena you want to complete</l2>:  ',
-          '      <button class="hvAAShowLevels"><l0>显示更多</l0><l1>顯示更多</l1><l2>Show more</l2></button><button class="hvAALevelsClear"><l01>清空</l01><l2>Clear</l2></button><br>',
+          '      <button class="hvAAShowLevels"><l0>详情</l0><l1>詳情</l1><l2>Details</l2>▼</button><button class="hvAALevelsClear"><l01>清空</l01><l2>Clear</l2></button><br>',
           '      <input name="idleArenaLevels" style="width:calc(100% - 20px);" type="text" disabled="true"><input name="idleArenaValue" style="width:98%;" type="hidden" disabled="true">',
           '      <div class="hvAAArenaLevels">',
-          '        <input id="arLevel_1" value="1,1" type="checkbox"><label for="arLevel_1">1</label> <input id="arLevel_10" value="10,3" type="checkbox"><label for="arLevel_10">10</label> <input id="arLevel_20" value="20,5" type="checkbox"><label for="arLevel_20">20</label> <input id="arLevel_30" value="30,8" type="checkbox"><label for="arLevel_30">30</label> <input id="arLevel_40" value="40,9" type="checkbox"><label for="arLevel_40">40</label> <input id="arLevel_50" value="50,11" type="checkbox"><label for="arLevel_50">50</label> <input id="arLevel_60" value="60,12" type="checkbox"><label for="arLevel_60">60</label> <input id="arLevel_70" value="70,13" type="checkbox"><label for="arLevel_70">70</label> <input id="arLevel_80" value="80,15" type="checkbox"><label for="arLevel_80">80</label> <input id="arLevel_90" value="90,16" type="checkbox"><label for="arLevel_90">90</label> <input id="arLevel_100" value="100,17" type="checkbox"><label for="arLevel_100">100</label> <input id="arLevel_110" value="110,19" type="checkbox"><label for="arLevel_110">110</label>',
-          '        <input id="arLevel_120" value="120,20" type="checkbox"><label for="arLevel_120">120</label> <input id="arLevel_130" value="130,21" type="checkbox"><label for="arLevel_130">130</label> <input id="arLevel_140" value="140,23" type="checkbox"><label for="arLevel_140">140</label> <input id="arLevel_150" value="150,24" type="checkbox"><label for="arLevel_150">150</label> <input id="arLevel_165" value="165,26" type="checkbox"><label for="arLevel_165">165</label> <input id="arLevel_180" value="180,27" type="checkbox"><label for="arLevel_180">180</label> <input id="arLevel_200" value="200,28" type="checkbox"><label for="arLevel_200">200</label> <input id="arLevel_225" value="225,29" type="checkbox"><label for="arLevel_225">225</label> <input id="arLevel_250" value="250,32" type="checkbox"><label for="arLevel_250">250</label> <input id="arLevel_300" value="300,33" type="checkbox"><label for="arLevel_300">300</label> <input id="arLevel_400" value="400,34" type="checkbox"><label for="arLevel_400">400</label> <input id="arLevel_500" value="500,35" type="checkbox"><label for="arLevel_500">500</label>',
-          '        <input id="arLevel_RB50" value="RB50,105" type="checkbox"><label for="arLevel_RB50">RB50</label> <input id="arLevel_RB75A" value="RB75A,106" type="checkbox"><label for="arLevel_RB75A">RB75A</label> <input id="arLevel_RB75B" value="RB75B,107" type="checkbox"><label for="arLevel_RB75B">RB75B</label> <input id="arLevel_RB75C" value="RB75C,108" type="checkbox"><label for="arLevel_RB75C">RB75C</label>',
-          '        <input id="arLevel_RB100" value="RB100,109" type="checkbox"><label for="arLevel_RB100">RB100</label> <input id="arLevel_RB150" value="RB150,110" type="checkbox"><label for="arLevel_RB150">RB150</label> <input id="arLevel_RB200" value="RB200,111" type="checkbox"><label for="arLevel_RB200">RB200</label> <input id="arLevel_RB250" value="RB250,112" type="checkbox"><label for="arLevel_RB250">RB250</label> <input id="arLevel_IW" value="IW,iw" type="checkbox"><label for="arLevel_IW" >Item World </label><input id="arLevel_GF" value="GF,gr" type="checkbox"><label for="arLevel_GF" >GrindFest </label><input class="hvAANumber" name="idleArenaGrTime" placeholder="1" type="number">',
+          ...expendDataUI(UIDatas.arena, (id, names, v) => `<input id="arLevel_${id}" value="${id},${v}" type="checkbox"><label for="arLevel_${id}">${names}</label>`),
+          '<input class="hvAANumber" name="idleArenaGrTime" placeholder="1" type="number">',
           '      </div>',
-
-          '      <div><input id="changeEquipSet" type="checkbox"><label for="changeEquipSet"><b><l0>[!!实验性]切换套装</l0><l1>[!!實驗性]切換套裝</l1><l2>[!!Experimental]Switch Equip Set</l2></b></label><button class="updateEquipSet"><l0>更新列表</l0><l1>更新列表</l1><l2>Update List</l2></button>',
-          '        <button class="hvAAShowEquipSet"><l0>详情</l0><l1>詳情</l1><l2>Details</l2></button><br>',
-          '        <div class="equipSetList hvAATable" style="display:none;grid-template-columns: repeat(3, 1fr);"></div>' ,
-          '      </div>',
-
           '      <div><input id="skipUnclearedArena" type="checkbox" placeholder="1"><label for="skipUnclearedArena"><l0>跳过未通关过的</l0><l1>跳過未通關過的</l1><l2>Skip not cleared Arena/RingOfBlood</l2>',
           '      </div>',
           '      <div><input id="obscureNotIdleArena" type="checkbox"><label for="obscureNotIdleArena"><l0>页面中置灰未设置且未完成的</l0><l1>頁面中置灰未設置且未完成的</l1><l2>obscure not setted and not battled in Battle&gt;Arena/RingOfBlood</l2>',
           '      </div>',
           '      <div><input id="idleItemWorld" type="checkbox" placeholder = "true"><label for="idleItemWorld"><b><l0>道具界列表</l0><l1>道具界列表</l1><l2>Item World List</l2>[<l012 class="itemWorldCounts">0/0</l012>]</b></label><button class="updateItemWorld"><l0>更新列表</l0><l1>更新列表</l1><l2>Update List</l2></button>',
-          '        <button class="hvAAShowItemWorld"><l0>详情</l0><l1>詳情</l1><l2>Details</l2></button><button class="hvAAClearItemWorld"><l01>清空</l01><l2>Clear</l2></button><br>',
-          '        <div class="autoItemWorldList hvAATable" style="display:none;grid-template-columns:0.1fr 3fr 0.1fr 1fr 1fr;"></div>' ,
+          '        <button class="hvAAShowItemWorld"><l0>详情</l0><l1>詳情</l1><l2>Details</l2>▼</button><button class="hvAAClearItemWorld"><l01>清空</l01><l2>Clear</l2></button><br>',
+          '        <div class="autoItemWorldList hvAATable" style="display:none;grid-template-columns:0.2fr 3fr 0.2fr 1fr 1fr;"></div>' ,
           '      </div>',
+          '      </span>',
           '    </div>',
           '  <div>',
           '    <b>[S!]<l0>精力</l0><l1>精力</l1><l2>Stamina</l2>: </b>',
@@ -2396,7 +2622,8 @@
           '    <input id="staminaRatio" type="checkbox"><label for="staminaRatio"><l0>检查惩罚倍率</l0><l1>檢查懲罰倍率</l1><l2>Check Punishment Ratio</l2></label>',
           '  </div>',
           '  <div>',
-          '    <input id="repair" type="checkbox"><label for="repair"><b>[R!]<l0>修复装备</l0><l1>修復裝備</l1><l2>Repair Equipment</l2></b></label>: ',
+          '    <input id="repair" type="checkbox"><label for="repair"><b>[R!]<l0>修复装备</l0><l1>修復裝備</l1><l2>Repair Equipment</l2></b></label>',
+          '    <span class="repairInner">: ',
           '    <l0>耐久度</l0><l1>耐久度</l1><l2>Durability</l2> ≤ <input class="hvAANumber" name="repairValue" type="number">% ',
           '    <l0>或 压榨界耐久度</l0><l1>或 壓榨界耐久度</l1><l2>OR Grind Fest Durability</l2> ≤ <input class="hvAANumber" name="repairValueGF" type="number">% ',
           '    <l0>或 道具界压榨界耐久度</l0><l1>或 道具界耐久度</l1><l2>OR Item World Durability</l2> ≤ <input class="hvAANumber" name="repairValueIW" type="number">%',
@@ -2407,29 +2634,31 @@
           '    </label><br><input id="encounterRepair" type="checkbox"><label for="encounterRepair"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label>',
           '    <div><l0>检查非空装备槽位时忽略</l0><l1>檢查非空裝備槽位時忽略</l1><l2>Skip when checking unslotted equipments</l2>: </div>',
           '    <div class="hvAAcheckItems hvAATable" style="grid-template-columns: repeat(7, 1fr)">',
-          '      <div><input id="equipCheckSkip_1" type="checkbox"><label for="equipCheckSkip_1"><l0>主手</l0><l1>主手</l1><l2>Main Hand</l2></label></div>',
-          '      <div><input id="equipCheckSkip_2" type="checkbox"><label for="equipCheckSkip_2"><l0>副手</l0><l1>副手</l1><l2>Off Hand</l2></label></div>',
-          '      <div><input id="equipCheckSkip_13" type="checkbox"><label for="equipCheckSkip_13"><l0>头盔</l0><l1>頭盔</l1><l2>Helmet</l2></label></div>',
-          '      <div><input id="equipCheckSkip_11" type="checkbox"><label for="equipCheckSkip_11"><l0>身体</l0><l1>身體</l1><l2>Body</l2></label></div>',
-          '      <div><input id="equipCheckSkip_14" type="checkbox"><label for="equipCheckSkip_14"><l0>手部</l0><l1>手部</l1><l2>Hands</l2></label></div>',
-          '      <div><input id="equipCheckSkip_12" type="checkbox"><label for="equipCheckSkip_12"><l0>腿部</l0><l1>腿部</l1><l2>Legs</l2></label></div>',
-          '      <div><input id="equipCheckSkip_15" type="checkbox"><label for="equipCheckSkip_15"><l0>脚部</l0><l1>腳部</l1><l2>Feet</l2></label></div>',
+          ...expendDataUI(UIDatas.equipSlot, (id, names) => `<div><input id="equipCheckSkip_${id}" type="checkbox"><label for="equipCheckSkip_${id}">${names}</label></div>`),
           '  </div>',
+          '  </span>',
           '  </div>',
           '  <div>',
-          '    <input id="equStorage" type="checkbox"><label for="equStorage"><b>[E!]<l0>装备库存</l0><l1>裝備庫存</l1><l2>Equipment Storage</l2></b></label> ≤ <input class="hvAANumber" style="width: 32px;" name="equStorageValue" placeholder="150" type="number">; <input id="encounterEquStorage" type="checkbox"><label for="encounterEquStorage"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label>',
+          '    <input id="equStorage" type="checkbox"><label for="equStorage"><b>[E!]<l0>装备库存</l0><l1>裝備庫存</l1><l2>Equipment Storage</l2></b></label> ≤ <input class="hvAANumber" style="width: 32px;" name="equStorageValue" placeholder="150" type="number">; <span class="equStorageInner"><input id="encounterEquStorage" type="checkbox"><label for="encounterEquStorage"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label></span>',
           '  </div>',
+          '      <div><input id="changeEquipSet" type="checkbox"><label for="changeEquipSet"><b><l0>[!!实验性]切换套装</l0><l1>[!!實驗性]切換套裝</l1><l2>[!!Experimental]Switch Equip Set</l2></b></label><span class="changeEquipSetInner"><button class="updateEquipSet"><l0>更新列表</l0><l1>更新列表</l1><l2>Update List</l2></button>',
+          '        <button class="hvAAShowEquipSet"><l0>详情</l0><l1>詳情</l1><l2>Details</l2>▼</button></span><br>',
+          '        <div class="equipSetList hvAATable changeEquipSetInner" style="display:none;grid-template-columns: repeat(3, 1fr);"></div>' ,
+          '      </div>',
+
           '  <div>',
           '    <input id="checkSupplySlotted" type="checkbox"><label for="checkSupplySlotted"><b>[C!]<l0>检查物品是否装备</l0><l1>檢查物品是否裝備</l1><l2>Check is item slotted</l2></b>;</label>',
           ...getCheckSupplyOptionTable('Slotted', true),
+          '  </div>',
+          '  <div>',
           '    <input id="checkSupply" type="checkbox"><label for="checkSupply"><b>[C!]<l0>检查物品库存</l0><l1>檢查物品庫存</l1><l2>Check is item needs supply</l2></b>;</label>',
-          '    <input id="encounterSupply" type="checkbox"><label for="encounterSupply"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label><br>',
+          '    <span class="checkSupplyInner"><input id="encounterSupply" type="checkbox"><label for="encounterSupply"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label><br></span>',
           ...getCheckSupplyOptionTable(),
           '  </div>',
-          '  <div><input id="checkSupplyIW" type="checkbox"><label for="checkSupplyIW"><b>[C!!]<l0>道具界使用额外的库存检查</l0><l1>道具界使用額外的庫存檢查</l1><l2>Extra supply check for Item World</l2></b>;</label>',
+          '  <div class="checkSupplyInner"><input id="checkSupplyIW" type="checkbox"><label for="checkSupplyIW"><b>[C!!]<l0>道具界使用额外的库存检查</l0><l1>道具界使用額外的庫存檢查</l1><l2>Extra supply check for Item World</l2></b>;</label>',
           ...getCheckSupplyOptionTable('IW'),
           '  </div>',
-          '  <div><input id="checkSupplyGF" type="checkbox"><label for="checkSupplyGF"><b>[C!!]<l0>压榨界使用额外的库存检查</l0><l1>壓榨界使用額外的庫存檢查</l1><l2>Extra supply check for Grind Fest</l2></b>;</label>',
+          '  <div class="checkSupplyInner"><input id="checkSupplyGF" type="checkbox"><label for="checkSupplyGF"><b>[C!!]<l0>压榨界使用额外的库存检查</l0><l1>壓榨界使用額外的庫存檢查</l1><l2>Extra supply check for Grind Fest</l2></b>;</label>',
           ...getCheckSupplyOptionTable('GF'),
           '  </div>',
           '</div>',
@@ -2437,83 +2666,30 @@
           '<div class="hvAATab" id="hvAATab-Recovery" style="display:none;">',
           '  <div class="itemOrder"><b><l0>施放顺序(未配置的按照下面的顺序)</l0><l1>施放順序(未配置的按照下面的順序)</l1><l2>Cast Order(Using order below as default if not configed)</l2></b>: <input name="itemOrderName" style="width:80%;" type="text" disabled="true"><input name="itemOrderValue" style="width:80%;" type="hidden" disabled="true"><br>',
           '    <div class="hvAATable" style="grid-template-columns:repeat(5, 1fr);">' ,
-          '    <div><input id="itemOrder_FC" value="FC,313" type="checkbox"><label for="itemOrder_FC"><l0>完全治愈(FC)</l0><l1>完全治愈(FC)</l1><l2>Full-Cure</l2></label></div>',
-          '    <div><input id="itemOrder_HE" value="HE,11199" type="checkbox"><label for="itemOrder_HE"><l0>生命秘药(HE)</l0><l1>生命秘藥(HE)</l1><l2>Health Elixir</l2></label></div>',
-          '    <div><input id="itemOrder_LE" value="LE,11501" type="checkbox"><label for="itemOrder_LE"><l0>最终秘药(LE)</l0><l1>最終秘藥(LE)</l1><l2>Last Elixir</l2></label></div>',
-          '    <div><input id="itemOrder_HG" value="HG,10005" type="checkbox"><label for="itemOrder_HG"><l0>生命宝石(HG)</l0><l1>生命寶石(HG)</l1><l2>Health Gem</l2></label></div>',
-          '    <div><input id="itemOrder_HP" value="HP,11195" type="checkbox"><label for="itemOrder_HP"><l0>生命药水(HP)</l0><l1>生命藥水(HP)</l1><l2>Health Potion</l2></label></div>',
-          '    <div><input id="itemOrder_Cure" value="Cure,311" type="checkbox"><label for="itemOrder_Cure"><l0>治疗(Cure)</l0><l1>治療(Cure)</l1><l2>Cure</l2></label></div>',
-          '    <div><input id="itemOrder_MG" value="MG,10006" type="checkbox"><label for="itemOrder_MG"><l0>魔力宝石(MG)</l0><l1>魔力寶石(MG)</l1><l2>Mana Gem</l2></label></div>',
-          '    <div><input id="itemOrder_MP" value="MP,11295" type="checkbox"><label for="itemOrder_MP"><l0>魔力药水(MP)</l0><l1>魔力藥水(MP)</l1><l2>Mana Potion</l2></label></div>',
-          '    <div><input id="itemOrder_ME" value="ME,11299" type="checkbox"><label for="itemOrder_ME"><l0>魔力秘药(ME)</l0><l1>魔力秘藥(ME)</l1><l2>Mana Elixir</l2></label></div>',
-          '    <div><input id="itemOrder_SG" value="SG,10007" type="checkbox"><label for="itemOrder_SG"><l0>灵力宝石(SG)</l0><l1>靈力寶石(SG)</l1><l2>Spirit Gem</l2></label></div>',
-          '    <div><input id="itemOrder_SP" value="SP,11395" type="checkbox"><label for="itemOrder_SP"><l0>灵力药水(SP)</l0><l1>靈力藥水(SP)</l1><l2>Spirit Potion</l2></label></div>',
-          '    <div><input id="itemOrder_SE" value="SE,11399" type="checkbox"><label for="itemOrder_SE"><l0>灵力秘药(SE)</l0><l1>靈力秘藥(SE)</l1><l2>Spirit Elixir</l2></label></div>',
-          '    <div><input id="itemOrder_Mystic" value="Mystic,10008" type="checkbox"><label for="itemOrder_Mystic"><l0>神秘宝石(Mystic)</l0><l1>神秘寶石(Mystic)</l1><l2>Mystic Gem</l2></label></div>',
-          '    <div><input id="itemOrder_CC" value="CC,11402" type="checkbox"><label for="itemOrder_CC"><l0>咖啡因糖果(CC)</l0><l1>咖啡因糖果(CC)</l1><l2>Caffeinated Candy</l2></label></div>',
-          '    <div><input id="itemOrder_ED" value="ED,11401" type="checkbox"><label for="itemOrder_ED"><l0>能量饮料(ED)</l0><l1>能量飲料(ED)</l1><l2>Energy Drink</l2></label></div>',
-          '  </div></div>',
-
-          '  <div><input id="item_FC" type="checkbox"><label for="item_FC"><b><l0>完全治愈(FC)</l0><l1>完全治愈(FC)</l1><l2>Full-Cure</l2></b></label>: {{itemFCCondition}}</div>',
-          '  <div><input id="item_HE" type="checkbox"><label for="item_HE"><b><l0>生命秘药(HE)</l0><l1>生命秘藥(HE)</l1><l2>Health Elixir</l2></b></label>: {{itemHECondition}}</div>',
-          '  <div><input id="item_LE" type="checkbox"><label for="item_LE"><b><l0>最终秘药(LE)</l0><l1>最終秘藥(LE)</l1><l2>Last Elixir</l2></b></label>: {{itemLECondition}}</div>',
-          '  <div><input id="item_HG" type="checkbox"><label for="item_HG"><b><l0>生命宝石(HG)</l0><l1>生命寶石(HG)</l1><l2>Health Gem</l2></b></label>: {{itemHGCondition}}</div>',
-          '  <div><input id="item_HP" type="checkbox"><label for="item_HP"><b><l0>生命药水(HP)</l0><l1>生命藥水(HP)</l1><l2>Health Potion</l2></b></label>: {{itemHPCondition}}</div>',
-          '  <div><input id="item_Cure" type="checkbox"><label for="item_Cure"><b><l0>治疗(Cure)</l0><l1>治療(Cure)</l1><l2>Cure</l2></b></label>: {{itemCureCondition}}</div>',
-          '  <div><input id="item_MG" type="checkbox"><label for="item_MG"><b><l0>魔力宝石(MG)</l0><l1>魔力寶石(MG)</l1><l2>Mana Gem</l2></b></label>: {{itemMGCondition}}</div>',
-          '  <div><input id="item_MP" type="checkbox"><label for="item_MP"><b><l0>魔力药水(MP)</l0><l1>魔力藥水(MP)</l1><l2>Mana Potion</l2></b></label>: {{itemMPCondition}}</div>',
-          '  <div><input id="item_ME" type="checkbox"><label for="item_ME"><b><l0>魔力秘药(ME)</l0><l1>魔力秘藥(ME)</l1><l2>Mana Elixir</l2></b></label>: {{itemMECondition}}</div>',
-          '  <div><input id="item_SG" type="checkbox"><label for="item_SG"><b><l0>灵力宝石(SG)</l0><l1>靈力寶石(SG)</l1><l2>Spirit Gem</l2></b></label>: {{itemSGCondition}}</div>',
-          '  <div><input id="item_SP" type="checkbox"><label for="item_SP"><b><l0>灵力药水(SP)</l0><l1>靈力藥水(SP)</l1><l2>Spirit Potion</l2></b></label>: {{itemSPCondition}}</div>',
-          '  <div><input id="item_SE" type="checkbox"><label for="item_SE"><b><l0>灵力秘药(SE)</l0><l1>靈力秘藥(SE)</l1><l2>Spirit Elixir</l2></b></label>: {{itemSECondition}}</div>',
-          '  <div><input id="item_Mystic" type="checkbox"><label for="item_Mystic"><b><l0>神秘宝石(Mystic)</l0><l1>神秘寶石(Mystic)</l1><l2>Mystic Gem</l2></b></label>: {{itemMysticCondition}}</div>',
-          '  <div><input id="item_CC" type="checkbox"><label for="item_CC"><b><l0>咖啡因糖果(CC)</l0><l1>咖啡因糖果(CC)</l1><l2>Caffeinated Candy</l2></b></label>: {{itemCCCondition}}</div>',
-          '  <div><input id="item_ED" type="checkbox"><label for="item_ED"><b><l0>能量饮料(ED)</l0><l1>能量飲料(ED)</l1><l2>Energy Drink</l2></b></label>: {{itemEDCondition}}</div></div>',
+          ...expendDataUI(UIDatas.cure, (id, names, v) => `<div><input id="itemOrder_${id}" value="${id},${v}" type="checkbox"><label for="itemOrder_${id}">${names}</label></div>`),
+          '</div>',
+          '</div>',
+          ...expendDataUI(UIDatas.cure, (id, names, v) => `<div><input id="item_${id}" type="checkbox"><label for="item_${id}"><b>${names}</b></label>: {{item${id}Condition}}</div>`),
+          '</div>',
 
           '<div class="hvAATab" id="hvAATab-Channel" style="display:none;">',
           '  <div><l0><b>获得引导时</b>（此时1点MP施法与150%伤害）</l0><l1><b>獲得引導時</b>（此時1點MP施法與150%傷害）</l1><l2><b>During Channeling effect</b> (1 mp spell cost and 150% spell damage)</l2>:</div>',
           '  <div><b><l0>超过时不释放</l0><l1>超過時不釋放</l1><l2>Not cast if remain turns above</l2>  (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</b>: ',
           '  <div class="hvAATable" style="grid-template-columns: repeat(5, 1fr);">',
-          '    <div><label for="channelThreshold_Pr"><l0>守护(Pr)</l0><l1>守護(Pr)</l1><l2>Protection</l2> >= <input class="hvAANumber" placeholder="0" name="channelThreshold_Pr" type="number"></label></div>',
-          '    <div><label for="channelThreshold_SL"><l0>生命火花(SL)</l0><l1>生命火花(SL)</l1><l2>Spark of Life</l2> >= <input class="hvAANumber" placeholder="0" name="channelThreshold_SL" type="number"></label></div>',
-          '    <div><label for="channelThreshold_SS"><l0>灵力盾(SS)</l0><l1>靈力盾(SS)</l1><l2>Spirit Shield</l2> >= <input class="hvAANumber" placeholder="0" name="channelThreshold_SS" type="number"></label></div>',
-          '    <div><label for="channelThreshold_Ha"><l0>疾速(Ha)</l0><l1>疾速(Ha)</l1><l2>Haste</l2> >= <input class="hvAANumber" placeholder="0" name="channelThreshold_Ha" type="number"></label></div>',
-          '    <div><label for="channelThreshold_AF"><l0>奥术集中(AF)</l0><l1>奧術集中(AF)</l1><l2>Arcane Focus</l2> >= <input class="hvAANumber" placeholder="0" name="channelThreshold_AF" type="number"></label></div>',
-          '    <div><label for="channelThreshold_He"><l0>穿心(He)</l0><l1>穿心(He)</l1><l2>Heartseeker</l2> >= <input class="hvAANumber" placeholder="0" name="channelThreshold_He" type="number"></label></div>',
-          '    <div><label for="channelThreshold_Re"><l0>细胞活化(Re)</l0><l1>細胞活化(Re)</l1><l2>Regen</l2> >= <input class="hvAANumber" placeholder="0" name="channelThreshold_Re" type="number"></label></div>',
-          '    <div><label for="channelThreshold_SV"><l0>影纱(SV)</l0><l1>影紗(SV)</l1><l2>Shadow Veil</l2> >= <input class="hvAANumber" placeholder="0" name="channelThreshold_SV" type="number"></label></div>',
-          '    <div><label for="channelThreshold_Ab"><l0>吸收(Ab)</l0><l1>吸收(Ab)</l1><l2>Absorb</l2> >= <input class="hvAANumber" placeholder="0" name="channelThreshold_Ab" type="number"></label></div>',
-
+          ...expendDataUI(UIDatas.buff, (id, names, v) => v?'':`<div><label for="channelThreshold_${id}">${names} >= <input class="hvAANumber" placeholder="0" name="channelThreshold_${id}" type="number"></label></div>`),
           '  </div>',
           '  </div>',
           '  <div><b><l0>先施放引导技能</l0><l1>先施放引導技能</l1><l2>First cast</l2></b>: <br>',
           '    <l0>注意: 此处的施放顺序与</l0><l1>注意: 此處的施放順序与</l1><l2>Note: The cast order here is the same as in</l2><a class="hvAAGoto" name="hvAATab-Buff">BUFF<l01>技能</l01><l2> Spells</l2></a><l0>里的相同</l0><l1>裡的相同</l1><br>',
           '  <div class="hvAATable" style="grid-template-columns: repeat(9, 1fr);">',
-          '    <div><input id="channelSkill_SS" type="checkbox"><label for="channelSkill_SS"><l0>灵力盾(SS)</l0><l1>靈力盾(SS)</l1><l2>Spirit Shield</l2></label></div>',
-          '    <div><input id="channelSkill_SL" type="checkbox"><label for="channelSkill_SL"><l0>生命火花(SL)</l0><l1>生命火花(SL)</l1><l2>Spark of Life</l2></label></div>',
-          '    <div><input id="channelSkill_Pr" type="checkbox"><label for="channelSkill_Pr"><l0>守护(Pr)</l0><l1>守護(Pr)</l1><l2>Protection</l2></label><br></div>',
-          '    <div><input id="channelSkill_Ab" type="checkbox"><label for="channelSkill_Ab"><l0>吸收(Ab)</l0><l1>吸收(Ab)</l1><l2>Absorb</l2></label></div>',
-          '    <div><input id="channelSkill_SV" type="checkbox"><label for="channelSkill_SV"><l0>影纱(SV)</l0><l1>影紗(SV)</l1><l2>Shadow Veil</l2></label></div>',
-          '    <div><input id="channelSkill_Re" type="checkbox"><label for="channelSkill_Re"><l0>细胞活化(Re)</l0><l1>細胞活化(Re)</l1><l2>Regen</l2></label></div>',
-          '    <div><input id="channelSkill_Ha" type="checkbox"><label for="channelSkill_Ha"><l0>疾速(Ha)</l0><l1>疾速(Ha)</l1><l2>Haste</l2></label></div>',
-          '    <div><input id="channelSkill_He" type="checkbox"><label for="channelSkill_He"><l0>穿心(He)</l0><l1>穿心(He)</l1><l2>Heartseeker</l2></label></div>',
-          '    <div><input id="channelSkill_AF" type="checkbox"><label for="channelSkill_AF"><l0>奥术集中(AF)</l0><l1>奧術集中(AF)</l1><l2>Arcane Focus</l2></label></div>',
+          ...expendDataUI(UIDatas.buff, (id, names, v) => v?'':`<div><input id="channelSkill_${id}" type="checkbox"><label for="channelSkill_${id}">${names}</label></div>`),
           '  </div>',
           '  </div>',
           '  <div><input id="channelSkill2" type="checkbox"><label for="channelSkill2"><b><l0>再使用技能</l0><l1>再使用技能</l1><l2>Then use Skill</l2></b></label>: ',
-          '    <div class="channelSkill2Order"><l0>施放顺序</l0><l1>施放順序</l1><l2>Cast Order</l2>: <input name="channelSkill2OrderName" style="width:80%;" type="text" disabled="true"><input name="channelSkill2OrderValue" style="width:80%;" type="hidden" disabled="true"><br>',
+          '    <div class="channelSkill2Order channelSkill2Inner"><l0>施放顺序</l0><l1>施放順序</l1><l2>Cast Order</l2>: <input name="channelSkill2OrderName" style="width:80%;" type="text" disabled="true"><input name="channelSkill2OrderValue" style="width:80%;" type="hidden" disabled="true"><br>',
           '  <div class="hvAATable" style="grid-template-columns: repeat(6, 1fr);">',
-          '    <div><input id="channelSkill2Order_FC" value="FC,313" type="checkbox"><label for="channelSkill2Order_FC"><l0>完全治愈(FC)</l0><l1>完全治愈(FC)</l1><l2>Full-Cure</l2></label></div>',
-          '    <div><input id="channelSkill2Order_Cure" value="Cure,311" type="checkbox"><label for="channelSkill2Order_Cure"><l0>治疗(Cure)</l0><l1>治療(Cure)</l1><l2>Cure</l2></label></div>',
-          '    <div><input id="channelSkill2Order_SS" value="SS,423" type="checkbox"><label for="channelSkill2Order_SS"><l0>灵力盾(SS)</l0><l1>靈力盾(SS)</l1><l2>Spirit Shield</l2></label></div>',
-          '    <div><input id="channelSkill2Order_SL" value="SL,422" type="checkbox"><label for="channelSkill2Order_SL"><l0>生命火花(SL)</l0><l1>生命火花(SL)</l1><l2>Spark of Life</l2></label></div>',
-          '    <div><input id="channelSkill2Order_Pr" value="Pr,411" type="checkbox"><label for="channelSkill2Order_Pr"><l0>守护(Pr)</l0><l1>守護(Pr)</l1><l2>Protection</l2></label></div>',
-          '    <div><input id="channelSkill2Order_Ab" value="Ab,421" type="checkbox"><label for="channelSkill2Order_Ab"><l0>吸收(Ab)</l0><l1>吸收(Ab)</l1><l2>Absorb</l2></label></div>',
-          '    <div><input id="channelSkill2Order_SV" value="SV,413" type="checkbox"><label for="channelSkill2Order_SV"><l0>影纱(SV)</l0><l1>影紗(SV)</l1><l2>Shadow Veil</l2></label></div>',
-          '    <div><input id="channelSkill2Order_Re" value="Re,312" type="checkbox"><label for="channelSkill2Order_Re"><l0>细胞活化(Re)</l0><l1>細胞活化(Re)</l1><l2>Regen</l2></label></div>',
-          '    <div><input id="channelSkill2Order_Ha" value="Ha,412" type="checkbox"><label for="channelSkill2Order_Ha"><l0>疾速(Ha)</l0><l1>疾速(Ha)</l1><l2>Haste</l2></label></div>',
-          '    <div><input id="channelSkill2Order_He" value="He,431" type="checkbox"><label for="channelSkill2Order_He"><l0>穿心(He)</l0><l1>穿心(He)</l1><l2>Heartseeker</l2></label></div>',
-          '    <div><input id="channelSkill2Order_AF" value="AF,432" type="checkbox"><label for="channelSkill2Order_AF"><l0>奥术集中(AF)</l0><l1>奧術集中(AF)</l1><l2>Arcane Focus</l2></label></div>',
+
+          ...expendDataUI(UIDatas.channel, (id, names, v) => `<div><input id="channelSkill2Order_${id}" value="${id},${v}" type="checkbox"><label for="channelSkill2Order_${id}">${names}</label></div>`),
           '  </div>',
           '  </div></div>',
           '  <div><input id="channelRebuff" type="checkbox"><label for="channelRebuff"><l0><b>最后ReBuff</b>: 重新施放最先将要消失的Buff</l0><l1><b>最後ReBuff</b>: 重新施放最先將要消失的Buff</l1><l2><b>At last, re-cast the spells which will expire first</b></l2>.</label></div>',
@@ -2522,94 +2698,40 @@
           '<div class="hvAATab" id="hvAATab-Buff" style="display:none;">',
           '  <div class="buffSkillOrder"><l0>施放顺序(未配置的按照下面的顺序)</l0><l1>施放順序(未配置的按照下面的順序)</l1><l2>Cast Order(Using order below as default if not configed)</l2>: ',
           '    <input name="buffSkillOrderValue" style="width:80%;" type="text" disabled="true"><br>',
-          '    <input id="buffSkillOrder_SS" type="checkbox"><label for="buffSkillOrder_SS"><l0>灵力盾(SS)</l0><l1>靈力盾(SS)</l1><l2>Spirit Shield</l2></label>',
-          '    <input id="buffSkillOrder_SL" type="checkbox"><label for="buffSkillOrder_SL"><l0>生命火花(SL)</l0><l1>生命火花(SL)</l1><l2>Spark of Life</l2></label>',
-          '    <input id="buffSkillOrder_Pr" type="checkbox"><label for="buffSkillOrder_Pr"><l0>守护(Pr)</l0><l1>守護(Pr)</l1><l2>Protection</l2></label>',
-          '    <input id="buffSkillOrder_Ab" type="checkbox"><label for="buffSkillOrder_Ab"><l0>吸收(Ab)</l0><l1>吸收(Ab)</l1><l2>Absorb</l2></label>',
-          '    <input id="buffSkillOrder_SV" type="checkbox"><label for="buffSkillOrder_SV"><l0>影纱(SV)</l0><l1>影紗(SV)</l1><l2>Shadow Veil</l2></label>',
-          '    <input id="buffSkillOrder_Re" type="checkbox"><label for="buffSkillOrder_Re"><l0>细胞活化(Re)</l0><l1>細胞活化(Re)</l1><l2>Regen</l2></label>',
-          '    <input id="buffSkillOrder_Ha" type="checkbox"><label for="buffSkillOrder_Ha"><l0>疾速(Ha)</l0><l1>疾速(Ha)</l1><l2>Haste</l2></label>',
-          '    <input id="buffSkillOrder_He" type="checkbox"><label for="buffSkillOrder_He"><l0>穿心(He)</l0><l1>穿心(He)</l1><l2>Heartseeker</l2></label>',
-          '    <input id="buffSkillOrder_AF" type="checkbox"><label for="buffSkillOrder_AF"><l0>奥术集中(AF)</l0><l1>奧術集中(AF)</l1><l2>Arcane Focus</l2></label>',
+          ...expendDataUI(UIDatas.buff, (id, names, v) => v?'':`<input id="buffSkillOrder_${id}" type="checkbox"><label for="buffSkillOrder_${id}">${names}</label>`),
           '  </div>',
           '  <div><l0>Buff释放条件</l0><l1>Buff釋放條件</l1><l2>Cast spells Condition</l2>{{buffSkillCondition}}</div>',
-          '    <div><input id="buffSkill_HD" type="checkbox"><label for="buffSkill_HD"><l0>生命长效药(HD)</l0><l1>生命長效藥(HD)</l1><l2>Health Draught</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_HD" type="number"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label>{{buffSkillHDCondition}}</div>',
-          '    <div><input id="buffSkill_MD" type="checkbox"><label for="buffSkill_MD"><l0>魔力长效药(MD)</l0><l1>魔力長效藥(MD)</l1><l2>Mana Draught</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_MD" type="number"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label>{{buffSkillMDCondition}}</div>',
-          '    <div><input id="buffSkill_SD" type="checkbox"><label for="buffSkill_SD"><l0>灵力长效药(MD)</l0><l1>靈力長效藥(MD)</l1><l2>Spirit Draught</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_SD" type="number"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label>{{buffSkillSDCondition}}</div>',
-          '    <div><input id="buffSkill_FV" type="checkbox"><label for="buffSkill_FV"><l0>花瓶(FV)</l0><l1>花瓶(FV)</l1><l2>Flower Vase</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_FV" type="number"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label>{{buffSkillFVCondition}}</div>',
-          '    <div><input id="buffSkill_BG" type="checkbox"><label for="buffSkill_BG"><l0>泡泡糖(BG)</l0><l1>泡泡糖(BG)</l1><l2>Bubble-Gum</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_BG" type="number"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label>{{buffSkillBGCondition}}</div>',
-          '    <div><input id="buffSkill_Pr" type="checkbox"><label for="buffSkill_Pr"><l0>守护(Pr)</l0><l1>守護(Pr)</l1><l2>Protection</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_Pr" type="number"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label>{{buffSkillPrCondition}}</div>',
-          '    <div><input id="buffSkill_SL" type="checkbox"><label for="buffSkill_SL"><l0>生命火花(SL)</l0><l1>生命火花(SL)</l1><l2>Spark of Life</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_SL" type="number"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label>{{buffSkillSLCondition}}</div>',
-          '    <div><input id="buffSkill_SS" type="checkbox"><label for="buffSkill_SS"><l0>灵力盾(SS)</l0><l1>靈力盾(SS)</l1><l2>Spirit Shield</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_SS" type="number"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label>{{buffSkillSSCondition}}</div>',
-          '    <div><input id="buffSkill_Ha" type="checkbox"><label for="buffSkill_Ha"><l0>疾速(Ha)</l0><l1>疾速(Ha)</l1><l2>Haste</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_Ha" type="number"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label>{{buffSkillHaCondition}}</div>',
-          '    <div><input id="buffSkill_AF" type="checkbox"><label for="buffSkill_AF"><l0>奥术集中(AF)</l0><l1>奧術集中(AF)</l1><l2>Arcane Focus</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_AF" type="number"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label>{{buffSkillAFCondition}}</div>',
-          '    <div><input id="buffSkill_He" type="checkbox"><label for="buffSkill_He"><l0>穿心(He)</l0><l1>穿心(He)</l1><l2>Heartseeker</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_He" type="number"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label>{{buffSkillHeCondition}}</div>',
-          '    <div><input id="buffSkill_Re" type="checkbox"><label for="buffSkill_Re"><l0>细胞活化(Re)</l0><l1>細胞活化(Re)</l1><l2>Regen</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_Re" type="number"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label>{{buffSkillReCondition}}</div>',
-          '    <div><input id="buffSkill_SV" type="checkbox"><label for="buffSkill_SV"><l0>影纱(SV)</l0><l1>影紗(SV)</l1><l2>Shadow Veil</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_SV" type="number"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label>{{buffSkillSVCondition}}</div>',
-          '    <div><input id="buffSkill_Ab" type="checkbox"><label for="buffSkill_Ab"><l0>吸收(Ab)</l0><l1>吸收(Ab)</l1><l2>Absorb</l2> <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_Ab" type="number"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label>{{buffSkillAbCondition}}</div>',
+          ...expendDataUI(UIDatas.buff, (id, names, v) => `<div><input id="buffSkill_${id}" type="checkbox"><label for="buffSkill_${id}">${names} <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_${id}" type="number"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label>{{buffSkill${id}Condition}}</div>`),
           '  </div>',
 
           '<div class="hvAATab" id="hvAATab-Debuff" style="display:none;">',
           '  <div><l0>Debuff释放条件</l0><l1>Debuff釋放條件</l1><l2>Cast debuff spells Condition</l2>{{debuffSkillCondition}}</div>',
-          '  <div><input id="debuffAutoFill" type="checkbox"><label for="debuffAutoFill"><l0>[!!实验性]补全因超过默认显示上限未显示的怪物buff</l0><l1>[!!實驗性]補全因超過默認顯示上限未顯示的怪物buff</l1><l2>[!!Experimental]Auto fill hidden monster buffs due to display limitation</l2></label><input id="debuffAutoFillRec" type="checkbox"><label for="debuffAutoFillRec">DEBUG RECORD</label></div>',
+          '  <div><input id="debuffAutoFill" type="checkbox"><label for="debuffAutoFill"><l0>[!!实验性]补全因超过默认显示上限未显示的怪物buff</l0><l1>[!!實驗性]補全因超過默認顯示上限未顯示的怪物buff</l1><l2>[!!Experimental]Auto fill hidden monster buffs due to display limitation</l2></label><input id="debuffAutoFillRec" type="checkbox"><label for="debuffAutoFillRec" class="debuffAutoFillInner">DEBUG RECORD</label></div>',
           '  <div>',
           '    <l0>超出6个debuff的默认显示上限时（例如同时使用jpx时可忽略上限）：</l0><l1>超出6個debuff的默認顯示上限時（例如同時使用jpx時可忽略上限）：</l1><l2>When debuff count overflows 6 as the default maximum display count (such as ignore limitation while using jpx): </l2><select class="hvAANumber" name="debuffSkillTurnAlert"><option value="0" selected>跳过 / Skip</option><option value="1">警报 / Alert</option><option value="2">忽略 / Ignore</option></select><br>',
           '    <l0>剩余Turns低于阈值时警报</l0><l1>剩餘Turns低於閾值時警報</l1><l2>Alert when remain expire turns less than threshold</l2><br>',
           '  <div class="hvAATable" style="grid-template-columns: repeat(9, 1fr);">',
-          '    <div><l0>沉眠(Sl)</l0><l1>沉眠(Sl)</l1><l2>Sleep</l2><input class="hvAANumber" placeholder="0" name="debuffSkillTurn_Sle" type="number"></div>',
-          '    <div><l0>致盲(Bl)</l0><l1>致盲(Bl)</l1><l2>Blind</l2><input class="hvAANumber" placeholder="0" name="debuffSkillTurn_Bl" type="number"></div>',
-          '    <div><l0>虚弱(We)</l0><l1>虛弱(We)</l1><l2>Weaken</l2><input class="hvAANumber" placeholder="0" name="debuffSkillTurn_We" type="number"></div>',
-          '    <div><l0>沉默(Si)</l0><l1>沉默(Si)</l1><l2>Silence</l2><input class="hvAANumber" placeholder="0" name="debuffSkillTurn_Si" type="number"></div>',
-          '    <div><l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2><input class="hvAANumber" placeholder="0" name="debuffSkillTurn_Slo" type="number"></div>',
-          '    <div><l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2><input class="hvAANumber" placeholder="0" name="debuffSkillTurn_Im" type="number"></div>',
-          '    <div><l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2><input class="hvAANumber" placeholder="0" name="debuffSkillTurn_Co" type="number"></div>',
-          '    <div><l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2><input class="hvAANumber" placeholder="0" name="debuffSkillTurn_Dr" type="number"></div>',
-          '    <div><l0>固定(MN)</l0><l1>固定(MN)</l1><l2>Immobilize(MagNet)</l2><input class="hvAANumber" placeholder="0" name="debuffSkillTurn_MN" type="number"></div>',
-          '</div>',
+          ...expendDataUI(UIDatas.debuff, (id, names) => `<div>${names}<input class="hvAANumber" placeholder="0" name="debuffSkillTurn_${id}" type="number"></div>`),
+          '  </div>',
           '  </div>',
 
           '  <div class="debuffSkillOrderAll">1. <l0>特殊先给全体施放的顺序(未配置的按照下面的顺序)</l0><l1>特殊先給全體施放的順序(未配置的按照下面的順序)</l1><l2>Cast Order for Special Debuff all enemies first(Using order below as default if not configed)</l2>:',
           '    <input name="debuffSkillOrderAllValue" style="width:80%;" type="text" disabled="true"><br>',
           '<div class="hvAATable" style="grid-template-columns: repeat(7, 1fr) 1.5fr 1fr;">',
-          // Dr, MN无法覆盖全体
-          '    <div><input id="debuffSkillOrderAll_Sle" type="checkbox"><label for="debuffSkillOrderAll_Sle"><l0>沉眠(Sl)</l0><l1>沉眠(Sl)</l1><l2>Sleep</l2></label></div>',
-          '    <div><input id="debuffSkillOrderAll_Bl" type="checkbox"><label for="debuffSkillOrderAll_Bl"><l0>致盲(Bl)</l0><l1>致盲(Bl)</l1><l2>Blind</l2></label></div>',
-          '    <div><input id="debuffSkillOrderAll_Slo" type="checkbox"><label for="debuffSkillOrderAll_Slo"><l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2></label></div>',
-          '    <div><input id="debuffSkillOrderAll_We" type="checkbox"><label for="debuffSkillOrderAll_We"><l0>虚弱(We)</l0><l1>虛弱(We)</l1><l2>Weaken</l2></label></div>',
-          '    <div><input id="debuffSkillOrderAll_Si" type="checkbox"><label for="debuffSkillOrderAll_Si"><l0>沉默(Si)</l0><l1>沉默(Si)</l1><l2>Silence</l2></label></div>',
-          '    <div><input id="debuffSkillOrderAll_Dr" type="checkbox"><label for="debuffSkillOrderAll_Dr"><l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2></label></div>',
-          '    <div><input id="debuffSkillOrderAll_Im" type="checkbox"><label for="debuffSkillOrderAll_Im"><l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2></label></div>',
-          '    <div><input id="debuffSkillOrderAll_MN" type="checkbox"><label for="debuffSkillOrderAll_MN"><l0>固定(MN)</l0><l1>固定(MN)</l1><l2>Immobilize(MagNet)</l2></label></div>',
-          '    <div><input id="debuffSkillOrderAll_Co" type="checkbox"><label for="debuffSkillOrderAll_Co"><l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2></label></div>',
+          ...expendDataUI(UIDatas.debuff, (id, names) => `<div><input id="debuffSkillOrderAll_${id}" type="checkbox"><label for="debuffSkillOrderAll_${id}">${names}</label></div>`),
           '  </div>',
           '  </div>',
 
           '  <div>1.a. <l0>特殊先给全体施放时，视作覆盖的互斥Debuff</l0><l1>特殊特殊先給全體施放時，視作覆蓋的互斥Debuff</l1><l2>Exclusive debuffs during \'Cast Order for Special Debuff all enemies first\'</l2>:',
           '<div class="hvAATable" style="grid-template-columns: repeat(7, 1fr) 1.5fr 1fr;">',
-          '    <div><input id="debuffAllExclusive_Sle" type="checkbox"><label for="debuffAllExclusive_Sle"><l0>沉眠(Sl)</l0><l1>沉眠(Sl)</l1><l2>Sleep</l2></label></div>',
-          '    <div><input id="debuffAllExclusive_Bl" type="checkbox"><label for="debuffAllExclusive_Bl"><l0>致盲(Bl)</l0><l1>致盲(Bl)</l1><l2>Blind</l2></label></div>',
-          '    <div><input id="debuffAllExclusive_Slo" type="checkbox"><label for="debuffAllExclusive_Slo"><l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2></label></div>',
-          '    <div><input id="debuffAllExclusive_We" type="checkbox"><label for="debuffAllExclusive_We"><l0>虚弱(We)</l0><l1>虛弱(We)</l1><l2>Weaken</l2></label></div>',
-          '    <div><input id="debuffAllExclusive_Si" type="checkbox"><label for="debuffAllExclusive_Si"><l0>沉默(Si)</l0><l1>沉默(Si)</l1><l2>Silence</l2></label></div>',
-          '    <div><input id="debuffAllExclusive_Dr" type="checkbox"><label for="debuffAllExclusive_Dr"><l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2></label></div>',
-          '    <div><input id="debuffAllExclusive_Im" type="checkbox"><label for="debuffAllExclusive_Im"><l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2></label></div>',
-          '    <div><input id="debuffAllExclusive_MN" type="checkbox"><label for="debuffAllExclusive_MN"><l0>固定(MN)</l0><l1>固定(MN)</l1><l2>Immobilize(MagNet)</l2></label></div>',
-          '    <div><input id="debuffAllExclusive_Co" type="checkbox"><label for="debuffAllExclusive_Co"><l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2></label></div>',
+          ...expendDataUI(UIDatas.debuff, (id, names) => `<div><input id="debuffAllExclusive_${id}" type="checkbox"><label for="debuffAllExclusive_${id}">${names}</label></div>`),
           '  </div>',
           '  </div>',
 
           '  <div class="debuffSkillOrder">2. <l0>单体施放顺序(未配置的按照下面的顺序)</l0><l1>單體施放順序(未配置的按照下面的順序)</l1><l2>Cast Order for each enemy(Using order below as default if not configed)</l2>:',
           '    <input name="debuffSkillOrderValue" style="width:80%;" type="text" disabled="true"><br>',
           '<div class="hvAATable" style="grid-template-columns: repeat(7, 1fr) 1.5fr 1fr;">',
-          '    <div><input id="debuffSkillOrder_Sle" type="checkbox"><label for="debuffSkillOrder_Sle"><l0>沉眠(Sl)</l0><l1>沉眠(Sl)</l1><l2>Sleep</l2></label></div>',
-          '    <div><input id="debuffSkillOrder_Bl" type="checkbox"><label for="debuffSkillOrder_Bl"><l0>致盲(Bl)</l0><l1>致盲(Bl)</l1><l2>Blind</l2></label></div>',
-          '    <div><input id="debuffSkillOrder_Slo" type="checkbox"><label for="debuffSkillOrder_Slo"><l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2></label></div>',
-          '    <div><input id="debuffSkillOrder_We" type="checkbox"><label for="debuffSkillOrder_We"><l0>虚弱(We)</l0><l1>虛弱(We)</l1><l2>Weaken</l2></label></div>',
-          '    <div><input id="debuffSkillOrder_Si" type="checkbox"><label for="debuffSkillOrder_Si"><l0>沉默(Si)</l0><l1>沉默(Si)</l1><l2>Silence</l2></label></div>',
-          '    <div><input id="debuffSkillOrder_Dr" type="checkbox"><label for="debuffSkillOrder_Dr"><l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2></label></div>',
-          '    <div><input id="debuffSkillOrder_Im" type="checkbox"><label for="debuffSkillOrder_Im"><l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2></label></div>',
-          '    <div><input id="debuffSkillOrder_MN" type="checkbox"><label for="debuffSkillOrder_MN"><l0>固定(MN)</l0><l1>固定(MN)</l1><l2>Immobilize(MagNet)</l2></label></div>',
-          '    <div><input id="debuffSkillOrder_Co" type="checkbox"><label for="debuffSkillOrder_Co"><l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2></label></div>',
+          ...expendDataUI(UIDatas.debuff, (id, names) => `<div><input id="debuffSkillOrder_${id}" type="checkbox"><label for="debuffSkillOrder_${id}">${names}</label></div>`),
           '  </div>',
           '  </div>',
 
@@ -2619,34 +2741,10 @@
           '  </div>',
 
           '<div class="hvAATable" style="grid-template-columns: repeat(2, 1fr); width: 100%">',
-
-          '  <div><input id="debuffSkill_Sle" type="checkbox"><label for="debuffSkill_Sle"><l0>沉眠(Sl)</l0><l1>沉眠(Sl)</l1><l2>Sleep</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2> Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Sle" type="number">; EWF: <input name="excludedWeightFormula_Sle" placeholder="900" type="text">{{debuffSkillSleCondition}}</div>',
-          '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillSleAll" type="checkbox"><label for="debuffSkillSleAll"><l0>先给全体上沉眠(Sl)</l0><l1>先給全體上沉眠(Sl)</l1><l2>Sleep all enemies first.</l2></label><input id="debuffSkillSleAllByIndex" type="checkbox"><label for="debuffSkillSleAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label>{{debuffSkillSleAllCondition}}</div>',
-
-          '  <div><input id="debuffSkill_Bl" type="checkbox"><label for="debuffSkill_Bl"><l0>致盲(Bl)</l0><l1>致盲(Bl)</l1><l2>Blind</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2> Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Bl" type="number">; EWF: <input name="excludedWeightFormula_Bl" placeholder="900" type="text">{{debuffSkillBlCondition}}</div>',
-          '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillBlAll" type="checkbox"><label for="debuffSkillBlAll"><l0>先给全体上致盲(Bl)</l0><l1>先給全體上致盲(Bl)</l1><l2>Blind all enemies first.</l2></label><input id="debuffSkillBlAllByIndex" type="checkbox"><label for="debuffSkillBlAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label>{{debuffSkillBlAllCondition}}</div>',
-
-          '  <div><input id="debuffSkill_We" type="checkbox"><label for="debuffSkill_We"><l0>虚弱(We)</l0><l1>虛弱(We)</l1><l2>Weaken</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2> Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_We" type="number">; EWF: <input name="excludedWeightFormula_We" placeholder="900" type="text">{{debuffSkillWeCondition}}</div>',
-          '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillWeAll" type="checkbox"><label for="debuffSkillWeAll"><l0>先给全体上虚弱(We)</l0><l1>先給全體上虛弱(We)</l1><l2>Weaken all enemies first.</l2></label><input id="debuffSkillWeAllByIndex" type="checkbox"><label for="debuffSkillWeAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label>{{debuffSkillWeAllCondition}}</div>',
-
-          '  <div><input id="debuffSkill_Si" type="checkbox"><label for="debuffSkill_Si"><l0>沉默(Si)</l0><l1>沉默(Si)</l1><l2>Silence</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2> Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Si" type="number">; EWF: <input name="excludedWeightFormula_Si" placeholder="900" type="text">{{debuffSkillSiCondition}}</div>',
-          '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillSiAll" type="checkbox"><label for="debuffSkillSiAll"><l0>先给全体上沉默(Si)</l0><l1>先給全體上沉默(Si)</l1><l2>Silence all enemies first.</l2></label><input id="debuffSkillSiAllByIndex" type="checkbox"><label for="debuffSkillSiAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label>{{debuffSkillSiAllCondition}}</div>',
-
-          '  <div><input id="debuffSkill_Slo" type="checkbox"><label for="debuffSkill_Slo"><l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2> Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Slo" type="number">; EWF: <input name="excludedWeightFormula_Slo" placeholder="900" type="text">{{debuffSkillSloCondition}}</div>',
-          '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillSloAll" type="checkbox"><label for="debuffSkillSloAll"><l0>先给全体上缓慢(Slo)</l0><l1>先給全體上緩慢(Slo)</l1><l2>Slow all enemies first.</l2></label><input id="debuffSkillSloAllByIndex" type="checkbox"><label for="debuffSkillSloAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label>{{debuffSkillSloAllCondition}}</div>',
-
-          '  <div><input id="debuffSkill_Dr" type="checkbox"><label for="debuffSkill_Dr"><l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2> Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Dr" type="number">; EWF: <input name="excludedWeightFormula_Dr" placeholder="900" type="text">{{debuffSkillDrCondition}}</div>',
-          '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillDrAll" type="checkbox"><label for="debuffSkillDrAll"><l0>先给全体上枯竭(Dr)</l0><l1>先給全體上枯竭(Dr)</l1><l2>Drain all enemies first.</l2></label><input id="debuffSkillDrAllByIndex" type="checkbox"><label for="debuffSkillDrAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label>{{debuffSkillDrAllCondition}}</div>',
-
-          '  <div><input id="debuffSkill_Im" type="checkbox"><label for="debuffSkill_Im"><l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2> Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Im" type="number">; EWF: <input name="excludedWeightFormula_Im" placeholder="900" type="text">{{debuffSkillImCondition}}</div>',
-          '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillImAll" type="checkbox"><label for="debuffSkillImAll"><l0>先给全体上陷危(Im)</l0><l1>先給全體上陷危(Im)</l1><l2>Imperil all enemies first.</l2></label><input id="debuffSkillImAllByIndex" type="checkbox"><label for="debuffSkillImAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label>{{debuffSkillImAllCondition}}</div>',
-
-          '  <div><input id="debuffSkill_MN" type="checkbox"><label for="debuffSkill_MN"><l0>固定(MN)</l0><l1>固定(MN)</l1><l2>Immobilize(MagNet)</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2> Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_MN" type="number">; EWF: <input name="excludedWeightFormula_MN" placeholder="900" type="text">{{debuffSkillMNCondition}}</div>',
-          '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillMNAll" type="checkbox"><label for="debuffSkillMNAll"><l0>先给全体上固定(MN)</l0><l1>先給全體上固定(MN)</l1><l2>Immobilize(MagNet) all enemies first.</l2></label><input id="debuffSkillMNAllByIndex" type="checkbox"><label for="debuffSkillMNAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label>{{debuffSkillMNAllCondition}}</div>',
-
-          '  <div><input id="debuffSkill_Co" type="checkbox"><label for="debuffSkill_Co"><l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2></label><l0>阈值: </l0><l1>閾值: </l1><l2> Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_Co" type="number">; EWF: <input name="excludedWeightFormula_Co" placeholder="900" type="text">{{debuffSkillCoCondition}}</div>',
-          '  <div><l01>特殊</l01><l2>Special</l2><input id="debuffSkillCoAll" type="checkbox"><label for="debuffSkillCoAll"><l0>先给全体上混乱(Co)</l0><l1>先給全體上混亂(Co)</l1><l2>Confuse all enemies first.</l2></label><input id="debuffSkillCoAllByIndex" type="checkbox"><label for="debuffSkillCoAllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label>{{debuffSkillCoAllCondition}}</div>',
-
+          ...expendDataUI(UIDatas.debuff, (id, names) => [
+            `<div><input id="debuffSkill_${id}" type="checkbox"><label for="debuffSkill_${id}">${names}</label><l0>阈值: </l0><l1>閾值: </l1><l2> Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_${id}" type="number">; EWF: <input name="excludedWeightFormula_${id}" placeholder="900" type="text">{{debuffSkill${id}Condition}}</div>`,
+            `<div><l01>特殊</l01><l2>Special</l2><input id="debuffSkill${id}All" type="checkbox"><label for="debuffSkill${id}All"><l0>先给全体上</l0><l1>先給全體上</l1>${names}<l2> all enemies first.</l2></label><span class="debuffSkill${id}AllInner"><input id="debuffSkill${id}AllByIndex" type="checkbox"><label for="debuffSkill${id}AllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label></span>{{debuffSkill${id}AllCondition}}</div>`
+          ]),
           '</div>',
           '</div>',
 
@@ -2655,57 +2753,37 @@
 
           '  <div class="skillOrder"><l0>施放顺序(未配置的按照下面的顺序)</l0><l1>施放順序(未配置的按照下面的順序)</l1><l2>Cast Order(Using order below as default if not configed)</l2>: ',
           '  <input name="skillOrderValue" style="width:80%;" type="text" disabled="true"><br>',
-          '  <input id="skillOrder_OFC" type="checkbox"><label for="skillOrder_OFC"><l0>友情小马砲</l0><l1>友情小馬砲</l1><l2>OFC</l2></label><input id="skillOrder_FRD" type="checkbox"><label for="skillOrder_FRD"><l0>龙吼</l0><l1>龍吼</l1><l2>FRD</l2></label><input id="skillOrder_T3" type="checkbox"><label for="skillOrder_T3">T3</label><input id="skillOrder_T2" type="checkbox"><label for="skillOrder_T2">T2</label><input id="skillOrder_T1" type="checkbox"><label for="skillOrder_T1">T1</label></div>',
-          '  <div><input id="skill_OFC" type="checkbox"><label for="skill_OFC"><l0>友情小马砲</l0><l1>友情小馬砲</l1><l2>OFC</l2></label>: <input id="skillOTOS_OFC" type="checkbox"><label for="skillOTOS_OFC"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label>{{skillOFCCondition}}</div>',
-          '  <div><input id="skill_FRD" type="checkbox"><label for="skill_FRD"><l0>龙吼</l0><l1>龍吼</l1><l2>FRD</l2></label>: <input id="skillOTOS_FRD" type="checkbox"><label for="skillOTOS_FRD"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label>{{skillFRDCondition}}</div>',
-          '  <div><input id="skill_T3" type="checkbox"><label for="skill_T3"><l0>3阶（如果有）</l0><l1>3階（如果有）</l1><l2>T3(if exist)</l2></label>: <input id="skillOTOS_T3" type="checkbox"><label for="skillOTOS_T3"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label><br>{{skillT3Condition}}</div>',
-          '  <div><input id="skill_T2" type="checkbox"><label for="skill_T2"><l0>2阶（如果有）</l0><l1>2階（如果有）</l1><l2>T2(if exist)</l2></label>: <input id="skillOTOS_T2" type="checkbox"><label for="skillOTOS_T2"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label>{{skillT2Condition}}</div>',
-          '  <div><input id="skill_T1" type="checkbox"><label for="skill_T1"><l0>1阶</l0><l1>1階</l1><l2>T1</l2></label>: <input id="skillOTOS_T1" type="checkbox"><label for="skillOTOS_T1"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label>{{skillT1Condition}}</div></div>',
+          ...expendDataUI(UIDatas.skill, (id, names) => `<input id="skillOrder_${id}" type="checkbox"><label for="skillOrder_${id}">${names}</label>`),
+          '</div>',
+          ...expendDataUI(UIDatas.skill, (id, names) => `<div><input id="skill_${id}" type="checkbox"><label for="skill_${id}">${names}</label>: <span class="skill_${id}Inner"><input id="skillOTOS_${id}" type="checkbox"><label for="skillOTOS_${id}"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label></span>{{skill${id}Condition}}</div>`),
+          '</div>',
 
           '<div class="hvAATab" id="hvAATab-Infusion" style="display:none;">',
           '  <l0>战役模式</l0><l1>戰役模式</l1><l2>Battle type</l2>: ',
-          '  <input id="infusionRoundType_ar" type="checkbox" placeholder="true"><label for="infusionRoundType_ar"><l0>竞技场(AR)</l0><l1>競技場(AR)</l1><l2>The Arena</l2></label><input id="infusionRoundType_rb" type="checkbox" placeholder="true"><label for="infusionRoundType_rb"><l0>浴血擂台(RB)</l0><l1>浴血擂台(RB)</l1><l2>Ring of Blood</l2></label><input id="infusionRoundType_gr" type="checkbox" placeholder="true"><label for="infusionRoundType_gr"><l0>压榨界(GF)</l0><l1>壓榨界(GF)</l1><l2>GrindFest</l2></label><input id="infusionRoundType_iw" type="checkbox" placeholder="true"><label for="infusionRoundType_iw"><l0>道具届(IW)</l0><l1>道具界(IW)</l1><l2>Item World</l2></label><input id="infusionRoundType_ba" type="checkbox" placeholder="true"><label for="infusionRoundType_ba"><l0>随机遭遇(ba)</l0><l1>隨機遭遇(ba)</l1><l2>Encounter</l2></label><input id="infusionRoundType_tw" type="checkbox" placeholder="true"><label for="infusionRoundType_tw"><l0>塔楼(Tw)</l0><l1>塔樓(Tw)</l1><l2>The Tower</l2></label>',
+          ...expendDataUI(UIDatas.roundType, (id, names) => `<input id="infusionRoundType_${id}" type="checkbox" placeholder="true"><label for="infusionRoundType_${id}">${names}</label>`),
           '  <div><l0>魔药使用条件</l0><l1>魔藥使用條件</l1><l2>Infusion Use Condition</l2>{{infusionCondition}}</div>',
           '  <div><input id="infusionDefaultOnly" type="checkbox" placeholder="true"><label for="infusionDefaultOnly"><b><l0>只使用与默认攻击模式相同的魔药</l0><l1>只使用與默認攻擊模式相同的魔藥</l1><l2>Use Infusion as same as default attack mode only.</l2></b></label></div>',
           '  <div class="infusionOrder"><b><l0>施放顺序(未配置的按照下面的顺序)</l0><l1>施放順序(未配置的按照下面的順序)</l1><l2>Cast Order(Using order below as default if not configed)</l2></b>: <input name="infusionOrderName" style="width:80%;" type="text" disabled="true"><br>',
           '    <div class="hvAATable" style="grid-template-columns:repeat(6, 1fr);">' ,
-          '    <div><input id="infusionOrder_Divinity" type="checkbox"><label for="infusionOrder_Divinity"><l0>神圣(Divinity)</l0><l1>神聖(Divinity)</l1><l2>Divinity</l2></label></div>',
-          '    <div><input id="infusionOrder_Darkness" type="checkbox"><label for="infusionOrder_Darkness"><l0>黑暗(Darkness)</l0><l1>黑暗(Darkness)</l1><l2>Darkness</l2></label></div>',
-          '    <div><input id="infusionOrder_Flames" type="checkbox"><label for="infusionOrder_Flames"><l0>火焰(Flames)</l0><l1>火焰(Flames)</l1><l2>Flames</l2></label></div>',
-          '    <div><input id="infusionOrder_Frost" type="checkbox"><label for="infusionOrder_Frost"><l0>冰冷(Frost)</l0><l1>冰冷(Frost)</l1><l2>Frost</l2></label></div>',
-          '    <div><input id="infusionOrder_Lightning" type="checkbox"><label for="infusionOrder_Lightning"><l0>闪电(Lightning)</l0><l1>閃電(Lightning)</l1><l2>Lightning</l2></label></div>',
-          '    <div><input id="infusionOrder_Storms" value="Storms" type="checkbox"><label for="infusionOrder_Storms"><l0>风暴(Storms)</l0><l1>風暴(Storms)</l1><l2>Storms</l2></label></div>',
-          '  </div></div>',
-
-          '  <div><input id="infusion_Flames" type="checkbox"><label for="infusion_Flames"><l0>火焰魔药</l0><l1>火焰魔藥</l1><l2>Infusion of Flames</l2></label>{{infusionFlamesCondition}}</div>',
-          '  <div><input id="infusion_Frost" type="checkbox"><label for="infusion_Frost"><l0>冰冷魔药</l0><l1>冰冷魔藥</l1><l2>Infusion of Frost</l2></label>{{infusionFrostCondition}}</div>',
-          '  <div><input id="infusion_Lightning" type="checkbox"><label for="infusion_Lightning"><l0>闪电魔药</l0><l1>閃電魔藥</l1><l2>Infusion of Lightning</l2></label>{{infusionLightningCondition}}</div>',
-          '  <div><input id="infusion_Storms" type="checkbox"><label for="infusion_Storms"><l0>风暴魔药</l0><l1>風暴魔藥</l1><l2>Infusion of Storms</l2></label>{{infusionStormsCondition}}</div>',
-          '  <div><input id="infusion_Divinity" type="checkbox"><label for="infusion_Divinity"><l0>神圣魔药</l0><l1>神聖魔藥</l1><l2>Infusion of Divinity</l2></label>{{infusionDivinityCondition}}</div>',
-          '  <div><input id="infusion_Darkness" type="checkbox"><label for="infusion_Darkness"><l0>黑暗魔药</l0><l1>黑暗魔藥</l1><l2>Infusion of Darkness</l2></label>{{infusionDarknessCondition}}</div>',
+          ...expendDataUI(UIDatas.infusion, (id, names) => `<div><input id="infusionOrder_${id}" type="checkbox"><label for="infusionOrder_${id}">${names}</label></div>`),
+          '</div>',
+          '</div>',
+          ...expendDataUI(UIDatas.infusion, (id, names) => `<div><input id="infusion_${id}" type="checkbox"><label for="infusion_${id}">${names}</label>{{infusion${id}Condition}}</div>`),
           '</div>',
 
           '<div class="hvAATab" id="hvAATab-Scroll" style="display:none;">',
           '  <l0>战役模式</l0><l1>戰役模式</l1><l2>Battle type</l2>: ',
-          '  <input id="scrollRoundType_ar" type="checkbox"><label for="scrollRoundType_ar"><l0>竞技场(AR)</l0><l1>競技場(AR)</l1><l2>The Arena</l2></label><input id="scrollRoundType_rb" type="checkbox"><label for="scrollRoundType_rb"><l0>浴血擂台(RB)</l0><l1>浴血擂台(RB)</l1><l2>Ring of Blood</l2></label><input id="scrollRoundType_gr" type="checkbox"><label for="scrollRoundType_gr"><l0>压榨界(GF)</l0><l1>壓榨界(GF)</l1><l2>GrindFest</l2></label><input id="scrollRoundType_iw" type="checkbox"><label for="scrollRoundType_iw"><l0>道具届(IW)</l0><l1>道具界(IW)</l1><l2>Item World</l2></label><input id="scrollRoundType_ba" type="checkbox"><label for="scrollRoundType_ba"><l0>随机遭遇(ba)</l0><l1>隨機遭遇(ba)</l1><l2>Encounter</l2></label><input id="scrollRoundType_tw" type="checkbox"><label for="scrollRoundType_tw"><l0>塔楼(Tw)</l0><l1>塔樓(Tw)</l1><l2>The Tower</l2></label>{{scrollCondition}}',
+          ...expendDataUI(UIDatas.roundType, (id, names) => `<input id="scrollRoundType_${id}" type="checkbox"><label for="scrollRoundType_${id}">${names}</label>`),
+          '  <div><l0>卷轴使用条件</l0><l1>捲軸使用條件</l1><l2>Scroll Use Condition</l2>{{scrollCondition}}</div>',
           '  <input id="scrollFirst" type="checkbox"><label for="scrollFirst"><l0>存在技能生成的Buff时，仍然使用卷轴</l0><l1>存在技能生成的Buff時，仍然使用捲軸</l1><l2>Use Scrolls even when there are effects from spells</l2>.</label>',
-          '  <div><input id="scroll_Sw" type="checkbox"><label for="scroll_Sw"><l0>加速卷轴(Sw)</l0><l1>加速捲軸(Sw)</l1><l2>Scroll of Swiftness</l2></label>{{scrollSwCondition}}</div>',
-          '  <div><input id="scroll_Pr" type="checkbox"><label for="scroll_Pr"><l0>守护卷轴(Pr)</l0><l1>守護捲軸(Pr)</l1><l2>Scroll of Protection</l2></label>{{scrollPrCondition}}</div>',
-          '  <div><input id="scroll_Av" type="checkbox"><label for="scroll_Av"><l0>化身卷轴(Av)</l0><l1>化身捲軸(Av)</l1><l2>Scroll of the Avatar</l2></label>{{scrollAvCondition}}</div>',
-          '  <div><input id="scroll_Ab" type="checkbox"><label for="scroll_Ab"><l0>吸收卷轴(Ab)</l0><l1>吸收捲軸(Ab)</l1><l2>Scroll of Absorption</l2></label>{{scrollAbCondition}}</div>',
-          '  <div><input id="scroll_Sh" type="checkbox"><label for="scroll_Sh"><l0>幻影卷轴(Sh)</l0><l1>幻影捲軸(Sh)</l1><l2>Scroll of Shadows</l2></label>{{scrollShCondition}}</div>',
-          '  <div><input id="scroll_Li" type="checkbox"><label for="scroll_Li"><l0>生命卷轴(Li)</l0><l1>生命捲軸(Li)</l1><l2>Scroll of Life</l2></label>{{scrollLiCondition}}</div>',
-          '  <div><input id="scroll_Go" type="checkbox"><label for="scroll_Go"><l0>众神卷轴(Go)</l0><l1>眾神捲軸(Go)</l1><l2>Scroll of the Gods</l2></label>{{scrollGoCondition}}</div></div>',
-
+          ...expendDataUI(UIDatas.scroll, (id, names) => `<div><input id="scroll_${id}" type="checkbox"><label for="scroll_${id}">${names}</label>{{scroll${id}Condition}}</div>`),
+          '</div>',
           '<div class="hvAATab" id="hvAATab-Alarm" style="display:none;">',
           '  <span class="hvAATitle"><l0>自定义警报</l0><l1>自定義警報</l1><l2>Alarm</l2></span><br>',
           '  <l0>注意：留空则使用默认音频，建议每个用户使用自定义音频</l0><l1>注意：留空則使用默認音頻，建議每個用戶使用自定義音頻</l1><l2>Note: Leave the box blank to use default audio, it\'s recommended for all user to use custom audio.</l2>',
           '  <div>',
-          '    <div><input id="audioEnable_Common" type="checkbox"><label for="audioEnable_Common"><l01>通用</l01><l2>Common</l2>: <input name="audio_Common" placeholder="https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/Common.ogg" type="text"></label><button class="testAlarm"><l0>测试</l0><l1>測試</l1><l2>Test</l2></button></div>',
-          '    <div><input id="audioEnable_Error" type="checkbox"><label for="audioEnable_Error"><l0>错误</l0><l1>錯誤</l1><l2>Error</l2>: <input name="audio_Error" placeholder="https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/Error.ogg" type="text"></label><button class="testAlarm"><l0>测试</l0><l1>測試</l1><l2>Test</l2></button></div>',
-          '    <div><input id="audioEnable_Defeat" type="checkbox"><label for="audioEnable_Defeat"><l0>失败</l0><l1>失敗</l1><l2>Defeat</l2>: <input name="audio_Defeat" placeholder="https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/Defeat.ogg" type="text"></label><button class="testAlarm"><l0>测试</l0><l1>測試</l1><l2>Test</l2></button></div>',
-          '    <div><input id="audioEnable_Riddle" type="checkbox"><label for="audioEnable_Riddle"><l0>答题</l0><l1>答題</l1><l2>Riddle</l2>: <input name="audio_Riddle"  placeholder="https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/Riddle.ogg" type="text"></label><button class="testAlarm"><l0>测试</l0><l1>測試</l1><l2>Test</l2></button></div>',
-          '    <div><input id="audioEnable_Victory" type="checkbox"><label for="audioEnable_Victory"><l0>胜利</l0><l1>勝利</l1><l2>Victory</l2>: <input name="audio_Victory"  placeholder="https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/Victory.ogg" type="text"></label><button class="testAlarm"><l0>测试</l0><l1>測試</l1><l2>Test</l2></button></div></div>',
+          ...expendDataUI(UIDatas.audio, (id, names, v) => `<div><input id="audioEnable_${id}" type="checkbox"><label for="audioEnable_${id}">${names}: <input name="audio_${id}" placeholder="https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/${id}.ogg" type="text"></label><button class="testAlarm"><l0>测试</l0><l1>測試</l1><l2>Test</l2></button></div>`),
+          '</div>',
           '  <div><l0>请将将要测试的音频文件的地址填入这里</l0><l1>請將將要測試的音頻文件的地址填入這裡</l1><l2>Plz put in the audio file address you want to test</l2>: <br><input class="hvAADebug" name="audio_Text" type="text"></div></div>',
 
           '<div class="hvAATab" id="hvAATab-Rule" style="display:none;">',
@@ -2717,50 +2795,19 @@
           '    <input id="cacheMonsterHP" type="checkbox"><label for="cacheMonsterHP"><l0>启用HP缓存</l0><l1>啟用HP緩存</l1><l2>Use HP Cache</l2></label><button class="clearMonsterHPCache"><l0>清空缓存</l0><l1>清空緩存</l1><l2>Clear HP Cache</l2></button><input id="portable_monsterDB" type="checkbox"><label for="portable_monsterDB"><l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2><l0>注意：便携数据模式可能会显著增加硬盘读写</l0><l1>注意：便攜數據模式可能會顯著增加硬盤讀寫</l1><l2>Notice：portable mode may significantly increase hard disk I/O</l2></label><input id="portable_monsterMID" type="checkbox" style="display:none"></div>',
           '  <div><b>2. <l0>初始权重与下述各Buff权重相加</l0><l1>初始權重與下述各Buff權重相加</l1><l2>PW(X) = BaseHpWeight + Accumulated_Weight_of_Deprecating_Spells_In_Effect(X)</l2></b><br>',
           '    <div class="hvAATable" style="grid-template-columns:repeat(6, 1fr);">',
-          '      <div><input class="hvAANumber" name="weight_We" placeholder="12" type="number"> <l0>虚弱(We)</l0><l1>虛弱(We)</l1><l2>Weaken</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_Bl" placeholder="10" type="number"> <l0>致盲(Bl)</l0><l1>致盲(Bl)</l1><l2>Blind</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_Slo" placeholder="15" type="number"> <l0>缓慢(Slo)</l0><l1>緩慢(Slo)</l1><l2>Slow</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_Si" placeholder="10" type="number"> <l0>沉默(Si)</l0><l1>沉默(Si)</l1><l2>Silence</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_Sle" placeholder="100" type="number"> <l0>沉眠(Sl)</l0><l1>沉眠(Sl)</l1><l2>Sleep</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_Im" placeholder="-15" type="number"> <l0>陷危(Im)</l0><l1>陷危(Im)</l1><l2>Imperil</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_PA" placeholder="-12" type="number"> <l0>破甲(PA)</l0><l1>破甲(PA)</l1><l2>Penetrated Armor</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_BW" placeholder="-10" type="number"> <l0>流血(Bl)</l0><l1>流血(Bl)</l1><l2>Bleeding Wound</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_Co" placeholder="300" type="number"> <l0>混乱(Co)</l0><l1>混亂(Co)</l1><l2>Confuse</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_Dr" placeholder="2" type="number"> <l0>枯竭(Dr)</l0><l1>枯竭(Dr)</l1><l2>Drain</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_ET" placeholder="2" type="number"> <l0>以太窃取(ET)</l0><l1>以太竊取(ET)</l1><l2>Ether Theft</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_ST" placeholder="2" type="number"> <l0>灵力窃取(ST)</l0><l1>靈力竊取(ST)</l1><l2>Spirit Theft</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_MN" placeholder="7" type="number"> <l0>固定(MN)</l0><l1>固定(MN)</l1><l2>Immobilize(MagNet)</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_Po" placeholder="-10" type="number"> <l0>流动毒性(Po)</l0><l1>流动毒性(Po)</l1><l2>Spreading Poison</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_Stun" placeholder="290" type="number"> <l0>眩晕(St)</l0><l1>眩暈(St)</l1><l2>Stunned</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_CM" placeholder="-20" type="number"> <l0>魔力合流()</l0><l1>魔力合流(CM)</l1><l2>Coalesced Mana</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_BS" placeholder="0" type="number"> <l0>焚燒的靈魂(BS)</l0><l1>焚燒的靈魂(BS)</l1><l2>Burning Soul</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_RS" placeholder="0" type="number"> <l0>鮮美的靈魂(RS)</l0><l1>鮮美的靈魂(RS)</l1><l2>Ripened Soul</l2></div>',
+          ...expendDataUI(UIDatas.weight1, (id, names, v) => `<div><input class="hvAANumber" name="weight_${id}" placeholder="${v}" type="number">${names}</div>`),
           '    </div>',
           '    <b><l0>降抗性和攻击模式属性</l0><l1>降抗性和攻擊模式屬性</l1><l2>While elements between Resistance-lower-debuff and Attack-Mode matches</l2>  [' + attackStatusType[option.attackStatus??0] + '] <l0>相同时</l0><l1>相同時</l1><l2></l2></b> : <br>',
           '    <div class="hvAATable" style="grid-template-columns: repeat(4, 1fr) repeat(2, 1.25fr);">',
-          '      <div><input class="hvAANumber" name="weight_SS" placeholder="-14" type="number"> <l0>灼烧的皮肤(SS)</l0><l1>燒灼的皮膚(SS)</l1><l2>Searing Skin</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_FL" placeholder="-14" type="number"> <l0>冰封的肢体(FL)</l0><l1>冰封的肢體(FL)</l1><l2>Freezing Limbs</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_TA" placeholder="-14" type="number"> <l0>湍流的空气(TA)</l0><l1>湍流的空氣(TA)</l1><l2>Turbulent Air</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_DB" placeholder="-19" type="number"> <l0>深层的烧伤(DB)</l0><l1>深層的燒傷(DB)</l1><l2>Deep Burns</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_BD" placeholder="-19" type="number"> <l0>崩溃的防御(BD)</l0><l1>崩潰的防禦(BD)</l1><l2>Breached Defense</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_BA" placeholder="-14" type="number"> <l0>钝化的攻击(BA)</l0><l1>鈍化的攻擊(BA)</l1><l2>Blunted Attack</l2></div>',
+          ...expendDataUI(UIDatas.weight2, (id, names, v) => `<div><input class="hvAANumber" name="weight_${id}" placeholder="${v}" type="number">${names}</div>`),
           '    </div>',
           '    <b><l0>降抗性和攻击模式属性</l0><l1>降抗性和攻擊模式屬性</l1><l2>While elements between Resistance-lower-debuff and Attack-Mode NOT matches</l2>  [' + attackStatusType[option.attackStatus??0] + '] <l0>不相同时</l0><l1>不相同時</l1><l2></l2></b>: <br>',
           '    <div class="hvAATable" style="grid-template-columns: repeat(4, 1fr) repeat(2, 1.25fr);">',
-          '      <div><input class="hvAANumber" name="weight_SS1" placeholder="5" type="number"> <l0>灼烧的皮肤(SS)</l0><l1>燒灼的皮膚(SS)</l1><l2>Searing Skin</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_FL1" placeholder="5" type="number"> <l0>冰封的肢体(FL)</l0><l1>冰封的肢體(FL)</l1><l2>Freezing Limbs</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_TA1" placeholder="5" type="number"> <l0>湍流的空气(TA)</l0><l1>湍流的空氣(TA)</l1><l2>Turbulent Air</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_DB1" placeholder="-4" type="number"> <l0>深层的烧伤(DB)</l0><l1>深層的燒傷(DB)</l1><l2>Deep Burns</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_BD1" placeholder="-4" type="number"> <l0>崩溃的防御(BD)</l0><l1>崩潰的防禦(BD)</l1><l2>Breached Defense</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_BA1" placeholder="5" type="number"> <l0>钝化的攻击(BA)</l0><l1>鈍化的攻擊(BA)</l1><l2>Blunted Attack</l2></div>',
+          ...expendDataUI(UIDatas.weight2, (id, names, v, v2) => `<div><input class="hvAANumber" name="weight_${id}1" placeholder="${v2}" type="number">${names}</div>`),
           '    </div>',
           '    <b><l0>敌方增益，暂不清楚具体效果，默认按0权重计算</l0><l1>敵方增益，暫不清楚具體效果，默認按0權重計算</l1><l2>Enemy Procs, Evvecf value unknown, weight default as 0 for now.</l2>:</b><br>',
           '    <div class="hvAATable" style="grid-template-columns: 1fr 1.25fr 1fr 1fr 1fr;">',
-          '      <div><input class="hvAANumber" name="weight_Fos" placeholder="0" type="number"> <l0>姊妹们的盛怒(FoS)</l0><l1>姊妹們的盛怒(FoS)</l1><l2>Fury of the Sisters</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_Lof" placeholder="0" type="number"> <l0>未来的悲叹(LoF)</l0><l1>未來的悲歎(LoF)</l1><l2>Lamentations of the Future</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_SoP" placeholder="0" type="number"> <l0>昔日的凄叫(SoP)</l0><l1>昔日的淒叫(SoP)</l1><l2>Screams of the Past</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_WoP" placeholder="0" type="number"> <l0>此刻的恸哭(WoP)</l0><l1>此刻的慟哭(WoP)</l1><l2>Wailings of the Present</l2></div>',
-          '      <div><input class="hvAANumber" name="weight_AW" placeholder="0" type="number"> <l0>吸收结界(AW)</l0><l1>吸收結界(AW)</l1><l2>Absorbing Ward</l2></div>',
+          ...expendDataUI(UIDatas.weight3, (id, names, v) => `<div><input class="hvAANumber" name="weight_${id}" placeholder="${v}" type="number">${names}</div>`),
           '    </div>',
           '  </div>',
           '  <div><b>3. PW(X) -= Log10(1 + <l0>武器攻击中央目标伤害倍率(副手及冲击技能)</l0><l1>乘以武器攻擊中央目標傷害倍率(副手及衝擊技能)</l1><l2>Weapon Attack Central Target Damage Ratio (Offhand & Strike)</l2>)</b><br><l0>额外伤害比例：</l0><l1>額外傷害比例：</l1><l2>Extra DMG Ratio: </l2><input class="hvAANumber" name="centralExtraRatio" placeholder="0" type="number">%</div>',
@@ -2768,18 +2815,11 @@
           '  <div><b>5. <l0>优先选择权重最低的目标</l0><l1>優先選擇權重最低的目標</l1><l2>Choose target with lowest rank first</l2></b><br>',
           '    <input id="displayWeight" type="checkbox"><label for="displayWeight"><l0>显示权重及顺序</l0><l1>顯示權重及順序</l1><l2>DIsplay Weight and order</l2></label>',
           '    <input id="displayWeightBackground" type="checkbox"><label for="displayWeightBackground"><l0>显示优先级背景色</l0><l1>顯示優先級背景色</l1><l2>DIsplay Priority Background Color</l2></label></br>',
-          '    <l0>CSS格式或可eval执行的公式（可用&lt;rank&gt;, &lt;all&gt;指代优先级和总优先级数量, &lt;style_x&gt;指代第x个的相同配置值），例如：</l0><l1>CSS格式或可eval執行的公式（可用&lt;rank&gt;, &lt;all&gt;指代優先級和總優先級數量, &lt;style_x&gt;指代第x個的相同配置值）：例如</l1><l2>CSS or eval executable formula(use &lt;rank&gt; and &lt;all&gt; to refer to priority rank and total rank count, &lt;style_x&gt; to refer to the same option value of option No.x)Such as: </l2><br>`hsl(${Math.round(240*&lt;rank&gt;/Math.max(1,&lt;all&gt;-1))}deg 50% 50%)`<br>',
+          '    <div class="displayWeightBackgroundInner"><l0>CSS格式或可eval执行的公式（可用&lt;rank&gt;, &lt;all&gt;指代优先级和总优先级数量, &lt;style_x&gt;指代第x个的相同配置值），例如：</l0><l1>CSS格式或可eval執行的公式（可用&lt;rank&gt;, &lt;all&gt;指代優先級和總優先級數量, &lt;style_x&gt;指代第x個的相同配置值）：例如</l1><l2>CSS or eval executable formula(use &lt;rank&gt; and &lt;all&gt; to refer to priority rank and total rank count, &lt;style_x&gt; to refer to the same option value of option No.x)Such as: </l2><br>`hsl(${Math.round(240*&lt;rank&gt;/Math.max(1,&lt;all&gt;-1))}deg 50% 50%)`<br>',
           '    <div class="hvAATable" style="grid-template-columns: repeat(1, 0.05fr 1fr);width:100%;">',
-          '    <div>&nbsp;&nbsp;1.</div><div><input name="weightBackground_0" type="text"></div>',
-          '    <div>&nbsp;&nbsp;2.</div><div><input name="weightBackground_1" type="text"></div>',
-          '    <div>&nbsp;&nbsp;3.</div><div><input name="weightBackground_2" type="text"></div>',
-          '    <div>&nbsp;&nbsp;4.</div><div><input name="weightBackground_3" type="text"></div>',
-          '    <div>&nbsp;&nbsp;5.</div><div><input name="weightBackground_4" type="text"></div>',
-          '    <div>&nbsp;&nbsp;6.</div><div><input name="weightBackground_5" type="text"></div>',
-          '    <div>&nbsp;&nbsp;7.</div><div><input name="weightBackground_6" type="text"></div>',
-          '    <div>&nbsp;&nbsp;8.</div><div><input name="weightBackground_7" type="text"></div>',
-          '    <div>&nbsp;&nbsp;9.</div><div><input name="weightBackground_8" type="text"></div>',
+          ...([0,1,2,3,4,5,6,7,8].map(i => `<div>&nbsp;&nbsp;${i+1}.</div><div><input name="weightBackground_${i}" type="text"></div>`)),
           '    <div>10.</div><div><input name="weightBackground_9" type="text"></div>',
+          '  </div>',
           '  </div>',
           '  </div>',
           '  <div>PS. <l0>如果你对各Buff权重有特别见解，请务必</l0><l1>如果你對各Buff權重有特別見解，請務必</l1><l2>If you have any suggestions, please </l2><a class="hvAAGoto" name="hvAATab-Feedback"><l0>告诉我</l0><l1>告訴我</l1><l2>let me know</l2></a>.<br><l0>参考公式为：</l0><l1>參考公式為：</l1><l2>Basic Weight Calculation as: </l2>PW(X) = Log10(<br>HP/MaxHPOnField/(1+CentralAttackDamageExtraRatio)<br>  *[HPActualEffectivenessRate:∏(1-debuff),debuff=Im|PA|Bl|Co|Dr|MN|St]<br>  /[DMGActualEffectivenessRate:∏(1-debuff),debuff=We|Bl|Slo|Si|Sl|Co|Dr|MN|St]<br>)</div>',
@@ -2794,38 +2834,17 @@
           '  <div><button class="reRecordUsage"><l0>重置数据记录</l0><l1>重置數據記錄</l1><l2>Reset Usage Tracking</l2></button><input id="portable_stats" type="checkbox"><label for="portable_stats"><l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2><l0>注意：便携数据模式可能会显著增加硬盘读写</l0><l1>注意：便攜數據模式可能會顯著增加硬盤讀寫</l1><l2>Notice：portable mode may significantly increase hard disk I/O</l2></label><input id="portable_statsOld" type="checkbox" style="display:none"></div>',
           '  <div><b><l0>自身</l0><l1>自身</l1><l2>Self</l2></b>',
           '  <div class="hvAATable" style="grid-template-columns: repeat(10, 1fr);">' ,
-          '    <div><input id="record_turn" type="checkbox"><label for="record_turn"><l0></l0><l1></l1><l2></l2>Turns</label></div>',
-          '    <div><input id="record_round" type="checkbox"><label for="record_round"><l0></l0><l1></l1><l2></l2>Rounds</label></div>',
-          '    <div><input id="record_battle" type="checkbox"><label for="record_battle"><l0></l0><l1></l1><l2></l2>Battle</label></div>',
-          '    <div><input id="record_monster" type="checkbox"><label for="record_monster"><l0></l0><l1></l1><l2></l2>Monster</label></div>',
-          '    <div><input id="record_boss" type="checkbox"><label for="record_boss"><l0></l0><l1></l1><l2></l2>Boss</label></div>',
-          '    <div><input id="record_evade" type="checkbox"><label for="record_evade"><l0>闪避</l0><l1>閃避</l1><l2>Evade</l2></label></div>',
-          '    <div><input id="record_miss" type="checkbox"><label for="record_miss"><l0>未命中</l0><l1>未命中</l1><l2>Miss</l2></label></div>',
-          '    <div><input id="record_focus" type="checkbox"><label for="record_focus"><l0>集中</l0><l1>集中</l1><l2>Focus</l2></label></div>',
-          '    <div><input id="record_mp" type="checkbox"><label for="record_mp">MP<l0>总消耗</l0><l1>總消耗</l1><l2>Cost</l2></label></div>',
-          '    <div><input id="record_oc" type="checkbox"><label for="record_oc">OC<l0>总消耗</l0><l1>總消耗</l1><l2>Cost</l2></label></div>',
+          ...expendDataUI(UIDatas.record1, (id, names, v) => `<div><input id="record_${id}" type="checkbox"><label for="record_${id}">${names}</label></div>`),
           '  </div>',
           '  </div>',
           '  <div><b><l0>操作</l0><l1>操作</l1><l2>Actions</l2></b>',
           '  <div class="hvAATable" style="grid-template-columns: repeat(5, 1fr);">' ,
-          '    <div><input id="record_restore" type="checkbox"><label for="record_restore"><l0>回复 (总量)</l0><l1>回复 (總量)</l1><l2>Restore (Amount)</l2></label></div>',
-          '    <div><input id="record_items" type="checkbox"><label for="record_items"><l0>物品 (次数)</l0><l1>物品 (次數)</l1><l2>Items (Count)</l2></label></div>',
-          '    <div><input id="record_magic" type="checkbox"><label for="record_magic"><l0>技能 (次数)</l0><l1>技能 (次數)</l1><l2>Magic (Count)</l2></label></div>',
-          '    <div><input id="record_damage" type="checkbox"><label for="record_damage"><l0>伤害 (总量)</l0><l1>傷害 (總量)</l1><l2>Damage (Amount)</l2></label></div>',
-          '    <div><input id="record_proficiency" type="checkbox"><label for="record_proficiency"><l0>熟练度 (总量)</l0><l1>熟練度 (總量)</l1><l2>Proficiency (Amount)</l2></label></div>',
+          ...expendDataUI(UIDatas.record2, (id, names, v) => `<div><input id="record_${id}" type="checkbox"><label for="record_${id}">${names}</label></div>`),
           '  </div>',
           '  </div>',
           '  <div><b><input id="record_hurt" type="checkbox"><label for="record_hurt"><l0>受伤 (总量)</l0><l1>受傷 (總量)</l1><l2>Hurt (Amount)</l</label>2></b>',
           '  <div class="hvAATable" style="grid-template-columns: repeat(3, 1fr) repeat(6, 2fr);">' ,
-          '    <div><input id="record_hurtavg" type="checkbox"><label for="record_hurtavg"><l0>平均</l0><l1>平均</l1><l2>Avg</l2></label></div>',
-          '    <div><input id="record_hurtcount" type="checkbox"><label for="record_hurtcount"><l0>次数</l0><l1>次數</l1><l2>Count</l2></label></div>',
-          '    <div><input id="record_hurttotal" type="checkbox"><label for="record_hurttotal"><l0>总量</l0><l1>總量</l1><l2>Total</l2></label></div>',
-          '    <div><input id="record_hurtmavg" type="checkbox"><label for="record_hurtmavg"><l0>法术平均</l0><l1>法術平均</l1><l2>Magic Avg</l2></label></div>',
-          '    <div><input id="record_hurtmcount" type="checkbox"><label for="record_hurtmcount"><l0>法术次数</l0><l1>法術次數</l1><l2>Magic Count</l2></label></div>',
-          '    <div><input id="record_hurtmtotal" type="checkbox"><label for="record_hurtmtotal"><l0>法术总量</l0><l1>法術總量</l1><l2>Magic Total</l2></label></div>',
-          '    <div><input id="record_hurtpavg" type="checkbox"><label for="record_hurtpavg"><l0>物理平均</l0><l1>物理平均</l1><l2>Physical Avg</l2></label></div>',
-          '    <div><input id="record_hurtpcount" type="checkbox"><label for="record_hurtpcount"><l0>物理次数</l0><l1>物理次數</l1><l2>Physical Count</l2></label></div>',
-          '    <div><input id="record_hurtptotal" type="checkbox"><label for="record_hurtptotal"><l0>物理总量</l0><l1>物理總量</l1><l2>Physical Total</l2></label></div>',
+          ...expendDataUI(UIDatas.record3, (id, names, v) => `<div><input id="record_${id}" type="checkbox"><label for="record_${id}">${names}</label></div>`),
           '  </div>',
           '  </div>',
           '  <table></table>',
@@ -2835,9 +2854,9 @@
           '  <div><span class="hvAATitle"><l0>当前状况</l0><l1>當前狀況</l1><l2>Current status</l2></span>: ',
           '    <l0>如果脚本长期暂停且网络无问题，请点击</l0><l1>如果腳本長期暫停且網絡無問題，請點擊</l1><l2>If the script does not work and you are sure that it\'s not because of your internet, click</l2><button class="hvAAFix"><l0>尝试修复</l0><l1>嘗試修復</l1><l2>Try to fix</l2></button><br>',
           '    <l0>战役模式</l0><l1>戰役模式</l1><l2>Battle type</l2>: <select class="hvAADebug" name="roundType"><option></option><option value="ar">The Arena</option><option value="rb">Ring of Blood</option><option value="gr">GrindFest</option><option value="iw">Item World</option><option value="ba">Encounter</option><option value="tw">The Tower</option></select> <l0>当前回合</l0><l1>當前回合</l1><l2>Current round</l2>: <input name="roundNow" class="hvAADebug hvAANumber" type="number"> <l0>总回合</l0><l1>總回合</l1><l2>Total rounds</l2>: <input name="roundAll" class="hvAADebug hvAANumber" type="number"></div>',
-          '  <div class="hvAAQuickSite"><input id="showQuickSite" type="checkbox"><label for="showQuickSite"><span class="hvAATitle"><l0>快捷站点</l0><l1>快捷站點</l1><l2>Quick Site</l2></span></label><button class="quickSiteAdd"><l01>新增</l01><l2>Add</l2></button><br>',
+          '  <div class="hvAAQuickSite"><input id="showQuickSite" type="checkbox"><label for="showQuickSite"><span class="hvAATitle"><l0>快捷站点</l0><l1>快捷站點</l1><l2>Quick Site</l2></span></label><span class="showQuickSiteInner"><button class="quickSiteAdd"><l01>新增</l01><l2>Add</l2></button><br>',
           '    <l0>注意: 留空“名称”一栏则表示删除该行，修改后请保存</l0><l1>注意: 留空“名稱”一欄則表示刪除該行，修改後請保存</l1><l2>Note: The "name" input box left blank will be deleted, after change please save in time.</l2>',
-          '    <table><tbody><tr class="hvAATh"><td><l0>图标</l0><l1>圖標</l1><l2>ICON</l2></td><td><l0>名称</l0><l1>名稱</l1><l2>Name</l2></td><td><l0>链接</l0><l1>鏈接</l1><l2>Link</l2></td></tr></tbody></table></div>',
+          '    <table><tbody><tr class="hvAATh"><td><l0>图标</l0><l1>圖標</l1><l2>ICON</l2></td><td><l0>名称</l0><l1>名稱</l1><l2>Name</l2></td><td><l0>链接</l0><l1>鏈接</l1><l2>Link</l2></td></tr></tbody></table></span></div>',
           '  <div><span class="hvAATitle"><l0>备份与还原</l0><l1>備份與還原</l1><l2>Backup and Restore</l2></span></br><button class="hvAABackup"><l0>备份设置</l0><l1>備份設置</l1><l2>Backup Confiuration</l2></button><button class="hvAARestore"><l0>还原设置</l0><l1>還原設置</l1><l2>Restore Confiuration</l2></button><button class="hvAADelete"><l0>删除设置</l0><l1>刪除設置</l1><l2>Delete Confiuration</l2></button><ul class="hvAABackupList"></ul></div>',
           '  <div><span class="hvAATitle"><l0>导入与导出</l0><l1>導入與導出</l1><l2>Import and Export</l2></span></br><button class="hvAAExport"><l0>导出设置</l0><l1>導出設置</l1><l2>Export Confiuration</l2></button><button class="hvAAImport"><l0>导入设置</l0><l1>導入設置</l1><l2>Import Confiuration</l2></button><textarea class="hvAAConfig"></textarea></div>',
           '</div>',
@@ -2858,9 +2877,28 @@
           '</div>',
         ].join('').replace(/{{(.*?)}}/g, '<div class="customize" name="$1"></div>');
 
-        gE('#hvAATab-Main').style.zIndex = 1;
+        [...gE('.customize', 'all', optionBox)].map(customize => {
+          const name = customize.getAttribute('name');
+          let replaced = name.replace('Condition', '');
+          let input = gE(`#${name.replace('Condition', '_')}`, optionBox) ?? gE(`#${replaced}`, optionBox) ?? gE(`#${replaced.replace(/(Skill|skill|item|infusion|scroll|pause|flee|debug)/, (...args) => {
+            switch(args[0]) {
+              case 'pause':
+                return 'autoPause';
+              case 'flee':
+                return 'autoFlee';
+              case 'debug':
+                return 'debugCheckCondition';
+              default: // case 'skill': case 'Skill': case 'item': case 'infusion': case 'scroll':
+                return `${args[0]}_`;
+            }
+          })}`, optionBox);
+          if (!input) return;
+          customize.classList.add(`${input.id}Inner`);
+        });
+
+        gE('#hvAATab-Main', optionBox).style.zIndex = 1;
         optionBox.style.display = 'none';
-        gE('select[name="lang"]').value = g().lang;
+        gE('select[name="lang"]', optionBox).value = g().lang;
         bindEvents();
       }
       updateItemWorldList(true, document);
@@ -2869,6 +2907,10 @@
       changeSelectOptionText();
       loadOptionUIData();
       [...gE('select:not([name="lang"])', 'all', optionBox)].forEach(s => { s.onchange ??= () => selectFit(s); });
+      unique([...gE('[class$="Inner"]', 'all', optionBox)].map(inner => [...inner.classList].find(className => className.includes('Inner')))).forEach(innerName => {
+        const onchange = gE(`#${innerName.replace(/Inner$/,'')}`, optionBox)?.onchange;
+        if (onchange) onchange();
+      });
 
       function changeSelectOptionText() {
         const lang = g().lang;
@@ -3122,13 +3164,30 @@
             }
           }, 3000);
         };
+
+        let inners = unique([...gE('[class$="Inner"]', 'all', optionBox)].map(inner => [...inner.classList].find(className=>className.includes('Inner'))));
+        inners.forEach(innerName => {
+          const outter = gE(`#${innerName.replace(/Inner$/,'')}`, optionBox);
+          outter.onchange = function () {
+            [...gE(`.${innerName}`, 'all', optionBox)].forEach(inner => { inner.style.filter = outter.checked ? 'opacity(1)' : 'opacity(0.3)'; });
+          };
+        });
+        inners = unique([...gE('[class$="InnerReverted"]', 'all', optionBox)].map(inner => [...inner.classList].find(className=>className.includes('InnerReverted'))));
+        inners.forEach(innerName => {
+          const outter = gE(`#${innerName.replace(/InnerReverted$/,'')}`, optionBox);
+          outter.onchange = function () {
+            [...gE(`.${innerName}`, 'all', optionBox)].forEach(inner => { inner.style.filter = !outter.checked ? 'opacity(1)' : 'opacity(0.3)'; });
+          };
+        });
         gE('.idleArenaReset', optionBox).onclick = function () {
           if (_alert(1, '是否重置', '是否重置', 'Whether to reset')) {
             delValue('arena');
           }
         };
         gE('.hvAAShowLevels', optionBox).onclick = function () {
-          gE('.hvAAArenaLevels', optionBox).style.display = (gE('.hvAAArenaLevels', optionBox).style.display === 'grid') ? 'none' : 'grid';
+          const isDisplay = gE('.hvAAArenaLevels', optionBox).style.display !== 'grid';
+          this.innerHTML = `<l0>详情</l0><l1>詳情</l1><l2>Details</l2>${isDisplay ? `▲` : `▼`}`;
+          gE('.hvAAArenaLevels', optionBox).style.display = isDisplay ? 'grid' : 'none';
         };
         gE('.hvAALevelsClear', optionBox).onclick = function () {
           gE('[name="idleArenaLevels"]', optionBox).value = '';
@@ -3145,7 +3204,9 @@
           this.innerHTML = `<l0>更新列表</l0><l1>更新列表</l1><l2>Update List</l2>`;
         } catch (err) { console.error(err); }};
         gE('.hvAAShowEquipSet', optionBox).onclick = function () {
-          gE('.equipSetList', optionBox).style.display = (gE('.equipSetList', optionBox).style.display === 'grid') ? 'none' : 'grid';
+          const isDisplay = gE('.equipSetList', optionBox).style.display !== 'grid';
+          this.innerHTML = `<l0>详情</l0><l1>詳情</l1><l2>Details</l2>${isDisplay ? `▲` : `▼`}`;
+          gE('.equipSetList', optionBox).style.display = isDisplay ? 'grid' : 'none';
         };
 
         gE('.updateItemWorld', optionBox).onclick = async function() { try {
@@ -3155,7 +3216,9 @@
           this.innerHTML = `<l0>更新列表</l0><l1>更新列表</l1><l2>Update List</l2>`;
         } catch (err) { console.error(err); }};
         gE('.hvAAShowItemWorld', optionBox).onclick = function () {
-          gE('.autoItemWorldList', optionBox).style.display = (gE('.autoItemWorldList', optionBox).style.display === 'grid') ? 'none' : 'grid';
+          const isDisplay = gE('.autoItemWorldList', optionBox).style.display !== 'grid';
+          this.innerHTML = `<l0>详情</l0><l1>詳情</l1><l2>Details</l2>${isDisplay ? `▲` : `▼`}`;
+          gE('.autoItemWorldList', optionBox).style.display = isDisplay ? 'grid' : 'none';
         };
         gE('.hvAAClearItemWorld', optionBox).onclick = function () {
           const current = getValue('itemWorldDatas');
@@ -4581,10 +4644,36 @@
       return changed;
     }
 
+    async function displayCDRemain(idleStart) { try {
+      const option = getOption();
+      idleStart = idleStart / _1s;
+      const next = {
+        arena: idleStart + (option.idleArenaTime??0),
+        switch: idleStart + (option.isekaiTime??0),
+        switchCD: (getValue('lastSwitch')??0) / _1s + (option.isekaiCD??0),
+      };
+      await until(() => {
+        if (gE('#hvAABox').style.display === 'none') return;
+        const now = time(0) / _1s;
+        const remain = Object.fromEntries(Object.entries(next).map(([k,v]) => [k, Math.floor(Math.max(0, v - now))]));
+        let done = (() => {
+          if (!option.idleArena) return true;
+          gE('.arenaRemain').innerHTML = `<l0>剩余</l0><l1>剩餘</l1><l2>Remain</l2> ${remain.arena}`;
+        })();
+        done &= (() => {
+          if (!option.isekai) return true;
+          gE('.isekaiSwitchRemain').innerHTML = `<l0>剩余</l0><l1>剩餘</l1><l2>Remain</l2> ${remain.switch}`;
+          gE('.isekaiCDRemain').innerHTML = `<l0>剩余</l0><l1>剩餘</l1><l2>Remain</l2> ${remain.switchCD}`;
+        })();
+        return done;
+      }, 1000);
+    } catch (err) { console.error(err); }}
+
     async function asyncOnIdle() { try {
+      const idleStart = time(0);
+      displayCDRemain(idleStart);
       await updateEncounter(false);
       await waitPause();
-      const idleStart = time(0);
       $async.logSwitch(arguments);
       if (onIsekaiEncounter) {
         const persistent = await $ajax.fetch(window.location.href.replace('/isekai', ''));
