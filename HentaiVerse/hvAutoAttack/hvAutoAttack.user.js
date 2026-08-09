@@ -2407,8 +2407,8 @@
           { id: 'AW', names: ['吸收结界(AW)', '吸收結界(AW)', 'Absorbing Ward'], values: [0] },
         ],
         skill: [
-          { id: 'OFC', names: ['友情小马砲', '友情小馬砲', 'OFC'] },
-          { id: 'FRD', names: ['龙吼', '龍吼', 'FRD'] },
+          { id: 'OFC', names: ['友情小马炮（OFC）', '友情小馬砲（OFC）', 'OFC'] },
+          { id: 'FRD', names: ['龙吼（FRD）', '龍吼（FRD）', 'FRD'] },
           { id: 'T3', names: ['3阶（如果有）', '3階（如果有）', 'T3(if exist)'] },
           { id: 'T2', names: ['2阶（如果有）', '2階（如果有）', 'T2(if exist)'] },
           { id: 'T1', names: ['1阶', '1階', 'T1'] },
