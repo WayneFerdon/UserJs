@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.94
+// @version      2.91.95
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -410,7 +410,7 @@
     const isEquipDetail = window.location.href.includes('/equip/');
     const isMaintaining = !gE('#csp') && !isEquipDetail;
     const scriptVersion = Version(GM_info ? GM_info.script.version : '2.91');
-    const hvVersion = Version(gE('script[src*="hvc.js"]', document)?.src.match(/z\/(\d+)(.*)\/hvc.js/)?.slice(1,2));
+    const hvVersion = Version(...gE('script[src*="hvc.js"]', document)?.src.match(/z\/(\d+)(.*?)\/hvc.js/)?.slice(1,3));
 
     let onIsekaiEncounter;
     let monsterBuffSkillLib;
@@ -1197,7 +1197,6 @@
       checkResponsive();
 
       if (getValue('onriddle')) {
-        console.log('onBattle clean onriddle');
         window.history.replaceState(null, '', window.location.href);
         delValue('onriddle');
       }
@@ -3532,7 +3531,7 @@
             let found = false;
             for (const key in option[obj]) {
               if (found ||= gE(`[name="${obj}_${key}"],[id="${obj}_${key}"]`, optionBox)) continue;
-              console.log(`Legacy option deleted: ${obj}_${key}`);
+              if (!['enableItemWorld', 'levelItemWorld', 'enableItemWorld', 'itemWorldPersona', 'itemWorldEquipSet'].includes(obj)) console.log(`Legacy option deleted: ${obj}_${key}`);
               delete option[obj][key];
             }
             if (!found) delete option[obj];
@@ -5168,14 +5167,11 @@
           const [level, world, max] = levels.split(' / ').map(x=>x*1);
           const name = gE('td:first-child', eqp).innerText;
           const quality = name.match(/Fair|Average|Superior|Exquisite|Magnificent|Legendary|Peerless/)[0];
-          let rounds = (()=> { switch (quality) {
+          let rounds = hvVersion.upto(Version('091.e')) ? [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34] :
+          (()=> { switch (quality) {
             case 'Fair': case 'Average': case 'Superior': case 'Exquisite':
-              return [5,6,7,8,9,10,10,10,10,10];
-            case 'Magnificent':
-              return [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 20, 20, 20, 20];
-            case 'Legendary':
-              return [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 20, 20, 20, 20, 25, 25, 25, 25, 25];
-            case 'Peerless':
+              return [5, 6, 7, 8, 9, 10, 10, 10, 10, 10];
+            case 'Magnificent': case 'Legendary': case 'Peerless':
               return [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 20, 20, 20, 20, 25, 25, 25, 25, 25, 30, 30, 30, 30, 30];
             default:
               return;
@@ -5566,7 +5562,7 @@
       let arena = getValue('arena', true);
       const option = getOption();
       const writeArenaStart = function (equip) {
-        console.log('Arena Start', equip ? `e${equip}` : id);
+        console.log('Arena Start', equip ? `e${equip.id} (${equip.world} => ${equip.world+1}) / ${equip.max}\n${JSON.stringify(equip)}` : id);
         if (id === 'iw') {
           // pass
         } else if (id !== 'gr') {
@@ -5698,29 +5694,36 @@
       }
       list.sortBy(id => option.ItemWorldOrder?.[id]??0);
 
+      let doc, errorMsg;
       for (const eid of list) {
         const equip = equips.find(eqp=>eqp.id === eid);
         if (equip.world >= equip.max || equip.world >= option.levelItemWorld?.[eid]) continue;
-        let doc = $doc(await $ajax.insert(`?s=Bazaar&ss=am&screen=modify&eqids[]=${eid}`));
-        if (gE('.messagebox_error', doc)) continue;
+        doc = $doc(await $ajax.insert(`?s=Bazaar&ss=am&screen=modify&eqids[]=${eid}`));
+        if (errorMsg = gE('.messagebox_error', doc)) {
+          console.log(equip, errorMsg.innerText);
+          continue;
+        }
         let title = gE('#equpgrade button', 'all', doc)[1].getAttribute('title');
         if (title?.match(/You need \d+ more World Seeds to spawn this Item World./)) continue;
 
         if (switchEquipSet(option.itemWorldPersona?.[eid], option.itemWorldEquipSet?.[eid], personas, equipSets)) {
           doc = $doc(await $ajax.insert(`?s=Bazaar&ss=am&screen=modify&eqids[]=${eid}`));
-          if (gE('.messagebox_error', doc)) continue;
+          if (errorMsg = gE('.messagebox_error', doc)) {
+            console.log(equip, errorMsg.innerText);
+            continue;
+          }
           title = gE('#equpgrade button', 'all', doc)[1].getAttribute('title');
         }
 
         if (title?.match(/You cannot enter the item world of a currently equipped item./)) {
-          console.trace('Idle Item World: Skip currentlt equiped', eid);
+          console.log('Idle Item World: Skip currently equiped', eid, equip);
           continue;
         }
 
         let query = `?s=Battle&ss=iw&filter=${equip.filter}`;
         const id = 'iw';
         if (((option.checkSupplyIW && !checkSupply('IW')) || (option.repairValueIW && !await asyncCheckRepair('IW')))) {
-          console.log('Check iw Battle Ready Failed in supply/repair', `id:e${id}`, arena);
+          console.log('Check iw Battle Ready Failed in supply/repair', `id:e${eid}`, equip, arena);
           continue;
         }
 
@@ -5729,14 +5732,14 @@
         stamina.time = time(0);
         const cost = equip.round * (_server.isekai ? 2 : 1) * (stamina.current >= 60 ? 0.03 : 0.02);
         if (!await checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: option.encounter, staminaLow: option.staminaItemWorld })) {
-          console.log('Check Battle Ready Failed', `id:e${id}`, arena);
+          console.log('Check Battle Ready Failed', `id:e${eid}`, equip, arena);
           continue;
         }
 
         // switch to itemworld to get correct postoken
         let token = `postoken=${gE('#equipform>input[name="postoken"]', $doc(await $ajax.insert(query))).value}&eqids%5B%5D=${eid}`;
         await waitPause();
-        writeArenaStart(eid);
+        writeArenaStart(equip);
         await until(async () => !option.checkURLBeforeNewRound || await $ajax.insert(option.checkURLBeforeNewRound), option.checkURLBeforeNewRoundRetry);
         await until(async () => await $ajax.insert(query, token), option.checkURLBeforeNewRoundRetry);
         stamina.lastCost = cost;
@@ -6323,7 +6326,7 @@
       let monsterStateKeys = ${JSON.stringify(monsterStateKeys)};
       let ability = ${JSON.stringify(ability)};
       let monsterBuffSkillLib = ${JSON.stringify(monsterBuffSkillLib)};
-      let hvVersion = Version(${hvVersion.ver});
+      let hvVersion = Version(${hvVersion.ver.split('.')});
       // funciton
       ${[updateMonsterEffects, fixMonsterStatus,
          getMonsterID, getMonster, getMonster, getBuff,
