@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.93
+// @version      2.91.94
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -418,6 +418,11 @@
     let lastResponsive = new Date().getTime();
 
     // util methods
+
+    Object.defineProperty(Object.prototype, 'sortBy', { value: function sortBy(by) {
+      return this.sort((x,y) => by(x) < by(y) ? -1 : by(x) > by(y) ? 1 : 0)
+    }, enumerable: false });
+
     const [$RPN, $async, $debug, $ajax] = [initRPN(), initAsync(), initDebug(), window.top.$ajax ??= unsafeWindow.window.top.$ajax ??= initAjax()];
 
     // 初始化结束，开始实际流程
@@ -1833,12 +1838,6 @@
       return window.hvAA[key];
     }
 
-    function objArrSort(key) { // 对象数组排序函数，从小到大排序
-      return function (obj1, obj2) {
-        return (obj2[key] < obj1[key]) ? 1 : (obj2[key] > obj1[key]) ? -1 : 0;
-      };
-    }
-
     function objSort(obj) { // 对象排序
       const objNew = {};
       const arr = Object.keys(obj).sort();
@@ -1995,7 +1994,7 @@
       backups[code].auto = auto ? time(0) : undefined;
       backups[code].server = _server.name;
       const autos = Object.keys(backups).filter(c => backups[c].auto);
-      autos.sort(a => -backups[a].auto);
+      autos.sortBy(a => -backups[a].auto);
       let i = 0, max = 5;
       for (const a of autos) {
         if (backups[a].server !== _server.name) continue;
@@ -2226,7 +2225,7 @@
 
     function optionBox() { // 配置界面
       const UIDatas = {
-        attackStatusOrder: [
+        attackStatus: [
           { id: 0, names: ['物理', '物理', 'Physical'], values: ['Phys'] },
           { id: 5, names: ['圣', '聖', 'Divine'], values: ['Divi'] },
           { id: 6, names: ['暗', '暗', 'Forbidden'], values: ['Forb'] },
@@ -2234,15 +2233,6 @@
           { id: 2, names: ['冰', '冰', 'Cold'], values: ['Cold'] },
           { id: 4, names: ['风', '風', 'Wind'], values: ['Wind'] },
           { id: 3, names: ['雷', '雷', 'Elec'], values: ['Elec'] },
-        ],
-        attackStatus: [
-          { id: 0, names: ['物理', '物理', 'Physical']},
-          { id: 1, names: ['火', '火', 'Fire']},
-          { id: 2, names: ['冰', '冰', 'Cold']},
-          { id: 3, names: ['雷', '雷', 'Elec']},
-          { id: 4, names: ['风', '風', 'Wind']},
-          { id: 5, names: ['圣', '聖', 'Divine']},
-          { id: 6, names: ['暗', '暗', 'Forbidden']},
         ],
         arena: [
           { id: 1, names: [1], values: [1] },
@@ -2549,9 +2539,9 @@
           '    <input id="attackStatusSwitchByTier" type="checkbox"><label for="attackStatusSwitchByTier"><l0>先尝试完所有模式的高阶魔法技能再继续中阶和低阶</l0><l1>先嘗試完所有模式的高階魔法技能再繼續中階和低階</l1><l2>Try all 3rd Tier Magic for all Attack Mode then 2nd Tier and 1st Tier</l2></b></label>',
           '    <div class="attackStatusOrder"><input name="attackStatusOrderName" style="width:80%;" type="text" disabled="true"><input name="attackStatusOrderValue" style="width:80%;" type="hidden" disabled="true"><br>',
           '      <div class="hvAATable" style="display:grid; grid-template-columns:repeat(7, 1fr);">',
-          ...expendDataUI(UIDatas.attackStatusOrder, (id, names, v) => `<div><input id="attackStatusOrder_${id}" value="${v},${id}" type="checkbox"><label for="attackStatusOrder_${id}">${names}</label></div>`),
+          ...expendDataUI(UIDatas.attackStatus, (id, names, v) => `<div><input id="attackStatusOrder_${id}" value="${v},${id}" type="checkbox"><label for="attackStatusOrder_${id}">${names}</label></div>`),
           '    </div></div></div>',
-          ...expendDataUI(UIDatas.attackStatus, (id, names) => `<div><input id="attackStatusSwitch_${id}" type="checkbox"><label for="attackStatusSwitch_${id}"><b><l0>攻击模式 </l0><l1>攻擊模式 </l1><l2>Attack Mode: </l2>${names}</b>: {{attackStatusSwitchCondition${id}}}</label></div>`),
+          ...expendDataUI(UIDatas.attackStatus.map(x=>x).sortBy(x=>x.id), (id, names) => `<div><input id="attackStatusSwitch_${id}" type="checkbox"><label for="attackStatusSwitch_${id}"><b><l0>攻击模式 </l0><l1>攻擊模式 </l1><l2>Attack Mode: </l2>${names}</b>: {{attackStatusSwitchCondition${id}}}</label></div>`),
           '    <div><label for="lowSkillCondition"><b><l0>低阶魔法技能使用条件</l0><l1>低階魔法技能使用條件</l1><l2>Conditions for 1st Tier Offensive Magic</l2></b>: {{lowSkillCondition}}</label></div>',
           '    <div><label for="middleSkillCondition"><b><l0>中阶魔法技能使用条件</l0><l1>中階魔法技能使用條件</l1><l2>Conditions for 2nd Tier Offensive Magic</l2></b>: {{middleSkillCondition}}</label></div>',
           '    <div><label for="highSkillCondition"><b><l0>高阶魔法技能使用条件</l0><l1>高階魔法技能使用條件</l1><l2>Conditions for 3rd Tier Offensive Magic</l2></b>: {{highSkillCondition}}</label></div>',
@@ -3614,7 +3604,7 @@
         uiOption ??= option;
         if (!uiOption) return;
         uiOption = formatOption(uiOption);
-
+        if (onIsekaiEncounter) return;
         const customizes = gE('.customize', 'all', optionBox);
         customizes.forEach(n => { while(n.firstChild) { n.removeChild(n.firstChild); }});
         for (let customize of customizes) {
@@ -4794,7 +4784,7 @@
         dict[key].time = Math.max(dict[key].time, e.time);
         dict[key].encountered = (e.encountered || dict[key].encountered) ? Math.max(dict[key].encountered ?? 0, e.encountered ?? 0) : undefined;
       }
-      return getTodayEncounter(Object.values(dict)).sort((x, y) => x.time < y.time ? 1 : x.time > y.time ? -1 : 0);
+      return getTodayEncounter(Object.values(dict)).sortBy(x => -x.time);
     }
 
     function queryToPersistent(query) {
@@ -5706,10 +5696,7 @@
         $async.logSwitch(arguments);
         return;
       }
-      list.sort((x,y) => {
-        [x, y] = [x,y].map(id=>option.ItemWorldOrder?.[id]??0);
-        return (y < x) ? 1 : (y > x) ? -1 : 0;
-      });
+      list.sortBy(id => option.ItemWorldOrder?.[id]??0);
 
       for (const eid of list) {
         const equip = equips.find(eqp=>eqp.id === eid);
@@ -5780,7 +5767,7 @@
             hp: ms.hp
           }
         });
-        battle.monsterStatus.sort(objArrSort('order'));
+        battle.monsterStatus.sortBy(x=>x.order);
       };
       $debug.log('onBattle', `\n`, battle);
       //人物状态
@@ -6056,14 +6043,14 @@
 
     /**
          * 按照技能范围，获取包含原目标且范围内最终权重(finweight)之和最低的范围的中心目标
-         * @param {int} id id from g().battle.monsterStatus.sort(objArrSort('finWeight'));
+         * @param {int} id id from g().battle.monsterStatus.sortBy(x=>x.finWeight);
          * @param {int} range radius, 0 for single-target and all-targets, 1 for treble-targets, ..., n for (2n+1) targets
          * @param {(target) => number} excludeWeightRatio target with id
          * @returns
          */
     function getRangeCenter(target, range, isWeaponAttack, excludeWeight, forceUseIndex) {
       let msTemp = JSON.parse(JSON.stringify(g().battle.monsterStatus));
-      msTemp.sort(objArrSort('order'));
+      msTemp.sortBy(x=>x.order);
       let minWeight = Number.MAX_SAFE_INTEGER;
       // 0. 范围大于等于全体时，直接释放全体
       if (!range || range >= msTemp.length) {
@@ -6112,7 +6099,18 @@
 
     function autoPause() {
       const option = getOption();
+      let battle = getValue('battle', true);
+      if (battle.paused?.round !== battle.roundNow || battle.paused?.token != battle.token) {
+        battle.paused = { count: 0, round: battle.roundNow, token: battle.token };
+        setValue('battle', battle);
+      }
       if (option.autoPause && checkCondition(option.pauseCondition)) {
+        if (!getValue('stepIn')) {
+          battle = getValue('battle', true);
+          battle.paused.turn = battle.turn;
+          battle.paused.count++;
+          setValue('battle', battle);
+        }
         pauseChange();
         return true;
       }
@@ -6723,6 +6721,7 @@
       }
       if (!isNewTurn) return;
       battle.turnLog = turnLog;
+      battle.time = new Date().getTime();
       setValue('battle', battle);
     }
 
@@ -6748,7 +6747,7 @@
       }
       if (!battle) {
         battle = JSON.parse(JSON.stringify(g().battle ?? {}));
-        battle.monsterStatus?.sort(objArrSort('order'));
+        battle.monsterStatus?.sortBy(x=>x.order);
       };
       battle.token = token;
       battle.proficiency = isSameBattle ? battle?.proficiency ?? prof : prof;
@@ -6942,7 +6941,7 @@
       }
 
       // 先存一次，用于下面的额外权重公式
-      monsterStatus.sort(objArrSort('finWeight'));
+      monsterStatus.sortBy(x=>x.finWeight);
       battle.monsterStatus = monsterStatus;
       g('battle', battle);
 
@@ -6951,7 +6950,7 @@
         const target = battle.monsterStatus[i];
         target.finWeight += resolveRPNFormula(option.extraWeightFormula, target);
       }
-      monsterStatus.sort(objArrSort('finWeight'));
+      monsterStatus.sortBy(x=>x.finWeight);
       battle.monsterStatus = monsterStatus;
       g('battle', battle);
     }
@@ -7431,7 +7430,7 @@
       let monsterStatus = g().battle.monsterStatus;
       if (debuffByIndex) {
         monsterStatus = JSON.parse(JSON.stringify(monsterStatus));
-        monsterStatus.sort(objArrSort('order'));
+        monsterStatus.sortBy(x=>x.order);
       }
       let max = isAll ? monsterStatus.length : 1;
       let id;
