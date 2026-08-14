@@ -879,7 +879,6 @@
 
     function checkIsHV() {
       if (window.location.host !== 'e-hentai.org') {
-        hvVersion = Version(...gE('script[src*="hvc.js"]', document)?.src.match(/z\/(\d+)(.*?)\/hvc.js/)?.slice(1,3));
         if (isMaintaining) {
           // 维护中? 过一个小时再刷新
           (async function onwait() { try {
@@ -899,6 +898,7 @@
           } catch (err) { console.error(err)} })();
           return true;
         }
+        hvVersion = Version(...gE('script[src*="hvc.js"]', document)?.src.match(/z\/(\d+)(.*?)\/hvc.js/)?.slice(1,3));
         setValue('url', window.location.origin);
         monsterBuffSkillLib = setMonsterBuffSkillLib();
 
