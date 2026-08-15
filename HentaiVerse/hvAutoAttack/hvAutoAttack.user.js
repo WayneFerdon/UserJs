@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.97
+// @version      2.91.98
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -5570,6 +5570,7 @@
         } else {
           arena.gr--;
         }
+        arena.equip = equip;
         setValue('arena', arena);
       }
       if (arena.array.length === 0) {
@@ -5873,7 +5874,7 @@
           }
         }
         const type = battle.roundType;
-        let subtype, title;
+        let subtype, title, equip;
         const monsterNames = Array.from(gE(`${monsterStateKeys.name}>div>div`, 'all')).map(monster => monster.innerHTML);
         const lang = g().lang * 1;
         const info = battleInfoList[type];
@@ -5895,6 +5896,12 @@
             }
             break;
           case 'iw':
+            title = `${info.title}`;
+            if (equip = getValue('arena', true)?.equip) {
+              title += `${equip?.world+1}/${equip?.max}`;
+              subtype = `<div style="font-size: 9pt!important">[${equip?.id}]${equip?.name}</div>`;
+            }
+            break;
           case 'gr':
             title = `${info.title}`;
             break;
@@ -5913,7 +5920,7 @@
         `R${battle.roundNow}/${battle.roundAll}:T${currentTurn}`,
         `TPS: ${g().runSpeed}`,
         `<l0>敌人</l0><l1>敵人</l1><l2>Monsters</l2>: ${g().monsterAlive}/${g().monsterAll}`,
-      ].join(`<br>`);
+      ].join(`<br>`).replace(`</div><br>`, `</div>`);
       if (!battle.roundAll) {
         pauseChange();
         $debug.shiftLog();
