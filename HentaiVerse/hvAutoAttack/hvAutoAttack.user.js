@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.98
+// @version      2.91.99
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -3097,15 +3097,14 @@
           }
         }
         optionBox.onmousemove = function (e) { // 自定义条件相关事件
-          const target = (e.target.className === 'customize') ? e.target : (e.target.parentNode.className === 'customize') ? e.target.parentNode : e.target.parentNode.parentNode;
+          const isCustomize = t => t.className?.match('customize');
+          const target = isCustomize(e.target) ? e.target : isCustomize(e.target.parentNode) ? e.target.parentNode : e.target.parentNode.parentNode;
           if (!gE('.customizeBox')) {
             creatCustomizeBox();
           }
           updateGroup();
-          if (target.className !== 'customize' && target.parentNode.className !== 'customize') {
-            if (!target.className.match('customize')) {
-              gE('.customizeBox').style.zIndex = -1;
-            }
+          if (!isCustomize(target) && !isCustomize(target.parentNode)) {
+            gE('.customizeBox').style.zIndex = -1;
             return;
           }
           g('customizeTarget', target);
@@ -3183,6 +3182,7 @@
           gE('[name="idleArenaValue"]', optionBox).value = '';
           gE('.hvAAArenaLevels>input', 'all', optionBox).forEach((input) => {
             input.checked = false;
+            displayCheckBoxNotDefault(input);
           });
         };
 
@@ -5867,10 +5867,10 @@
               ['噩梦×4', '噩夢×4', 'Nightmare×4', 14],
               ['困难×2', '困難×2', 'Hard×2', 7],
               ['普通×1', '普通×1', 'Normal×1', 1],
-            ],
+            ].map(arr => arr.map(s => isNaN(+s) ? `<div style="font-size: 9pt!important">${s}` : s)),
             condition: (bt) => bt[3] && bt[3] <= battle.tower,
             content: (_) => battle.tower,
-            end: battle.tower > 40 ? `+${(battle.tower - 40) * 5}%DMG&HP` : '',
+            end: `${battle.tower > 40 ? `+${(battle.tower - 40) * 5}%DMG&HP` : ''}</div>`,
           }
         }
         const type = battle.roundType;
