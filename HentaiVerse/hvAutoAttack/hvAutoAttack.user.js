@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.99
+// @version      2.91.100
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1010,9 +1010,7 @@
       answers.sort(Math.random);
       const answer = `riddlesubmit=Submit+Answer` + answers.slice(0, Math.max(0, Math.min(6, option.riddleAnswerChoose))).map(ans => `&riddleanswer[]=${ans}`).join('');
       const battle = gE('#battle_main', $doc(await $ajax.fetch(window.location.href, answer)));
-      if (!battle) {
-        console.error('ERROR: Failed fetch submit.');
-      }
+      if (!battle) console.error('ERROR: Failed fetch submit.');
       goto();
     } catch (err) { console.error(err); }}
 
@@ -1885,6 +1883,7 @@
         '.hvAAPauseUI{top:30px;left:1246px;position:absolute;z-index:9999; width:80px}',
         '.hvAAButton{top:5px;left:' + ((isMaintaining || isEquipDetail)?'0':'1255') + 'px;position:absolute;z-index:9999;cursor:pointer;width:40px;height:24px;background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAADi0lEQVRIiZVWPYgUZxj+dvGEk7vsNdPYCMul2J15n+d991PIMkWmOEyMyRW2FoJIUojYp5ADFbZJkyISY3EqKGpgz+Ma4bqrUojICaIsKGIXSSJcsZuD3RT3zWZucquXDwYG5n2f9/d5vnFuHwfAZySfAXgN4DXJzTiOj+3H90OnkmXZAe/9FMm3JJ8AuBGepyRfle2yLDvgnKt8EDVJkq8B3DGzjve+1m63p0n2AVzJbUh2SG455yre+5qZ/aCq983sxMfATwHYJvlCVYckHwFYVdURgO8LAS6RHJJcM7N1VR0CeE5yAGBxT3AR+QrA3wA20tQOq+pFkgOS90Tk85J51Xs9qaorqjoAcC6KohmSGyQHcRx/kbdv7AHgDskXaWqH0zSddc5Voyia2SOXapqmswsLvpam6ez8/Pwn+YcoimYAvARw04XZ5N8qZtZR1aGqXnTOVSd0cRd42U5EzqvqSFWX2u32tPd+yjnnXNiCGslHJAf7ybwM7r2vAdgWkYdZls157w+NK/DeT7Xb7WkAqyTvlZHjOD5oxgtmtqrKLsmze1VJsquqKwsLO9vnnKvkJHpLsq+qo/JAd8BtneTvqvqTiPwoIu9EZKUUpGpmi2Y2UtU+yTdJkhx1JJ8FEl0pruK/TrwA4F2r1WrkgI1G4wjJP0XkdLF9WaZzZnZZVa8GMj5xgf43JvXczFZbLb1ebgnJn0nenjQbEVkG0JsUYOykyi6Aa+XoQTJuTRr8OADJzVBOh+SlckYkz5L8Q0TquXOj0fhURN6r6pkSeAXAUsDaJPnYxXF8jOQrklskh97ryZJTVURWAPwF4DqAX0TkvRl/zTKdK2aeJMnxICFbAHrNZtOKVVdIrrVa2t1jz6sicprkbQC3VPVMGTzMpQvgQY63i8lBFddVdVCk/6TZlMFzopFci+P44H+YHCR3CODc/wUvDPY7ksMg9buZrKr3ATwvyoT3vrafzPP3er1eA9Azs7tjJhcqOBHkeSOKohkROR9K7prZYqnnlSRJjofhb4vIt/V6vUbyN1Xtt1qtb1zpZqs45xyAxXAnvCQ5FJGHqrpiZiMzu5xnHlZxCOABybXw3gvgp/Zq3/gA+BLATVVdyrJsbods2lfVq7lN4crMtapjZndD5pPBixWFLTgU7uQ3AJ6KyLKILAdy9sp25bZMBC//JSRJcjQIYg9Aj+TjZrNp+/mb+Ad711sdZZ1k/QAAAABJRU5ErkJggg==) center no-repeat transparent;}',
         '#hvAABox{left:0;top:50px;font-size:16px!important;z-index:4;width:1238px;height:650px;position:absolute;text-align:left;background-color:#E3E0D1;border:1px solid #000;border-radius:10px;font-family:"Microsoft Yahei";}',
+        '.hvAATab {display: none;}',
         '.hvAATablist{position:relative;left:14px;width:calc(100% - 55px);height:calc(100% - 85px);}',
         '.hvAATabmenu{position:absolute;left:-9px;}',
         '.hvAATabmenu>span{display:block;padding:5px 10px;margin:0 10px 0 0;border:1px solid #91a7b4;border-radius:5px;background-color:#E3F1F8;color:#000;text-decoration:none;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;cursor:pointer;}',
@@ -1940,7 +1939,7 @@
         '.customizeBox>span a{text-decoration:none;}',
         '.customizeBox>select{max-width:60px;}',
         '.favicon{width:16px;height:16px;margin:-3px 1px;border:1px solid #000;border-radius:3px;}',
-        '.answerBar{z-index:1000;width:710px;height:40px;position:absolute;top:55px;left:282px;display:table;border-spacing:5px;}',
+        '.answerBar{000;width:710px;height:40px;position:absolute;top:55px;left:282px;display:table;border-spacing:5px;}',
         '.answerBar>div{border:4px solid red;display:table-cell;cursor:pointer;}',
         '.answerBar>div:hover{background:rgba(63,207,208,0.20);}',
         '#hvAAInspectBox{background-color:#EDEBDF;position:absolute;z-index:9;border: 2px solid #5C0D11;font-size:16px;font-weight:bold;padding:3px;display:none;}',
@@ -2017,7 +2016,7 @@
         13199, 13111, 13101,        0, 11401,
         19111, 19131, 11501,        0, 11402];
       const UIString = [
-        checkBoxOnly ? '' : `    <span class="checkSupply${suffix}Inner"><l0>库存</l0><l1>庫存</l1><l2>Warn if supply</l2>&lt;max(100%,<input id="checkSupplyWarn${suffix}" class="hvAANumber" name="checkSupplyWarn${suffix}" placeholder="100" type="number">%)<l0>时提示</l0><l1>時提示</l1>;</span></br>`,
+        checkBoxOnly ? '' : `    <span class="checkSupply${suffix}Inner"><l0>库存</l0><l1>庫存</l1><l2>Warn if supply</l2>&lt;max(100%,<input id="checkSupplyWarn${suffix}" class="hvAANumber" name="checkSupplyWarn${suffix}" placeholder="100" type="number">%)<l0>时提示</l0><l1>時提示</l1>;</span><br>`,
         `    <div class="hvAAcheckItems hvAATable checkSupply${suffix}Inner">`,
       ];
       for (const item of items) {
@@ -2224,6 +2223,70 @@
 
     function optionBox() { // 配置界面
       const UIDatas = {
+        tablist: [
+          { id: 'Main', names: ['主要选项', '主要選項', 'Main'] },
+          { id: 'BattleStarter', names: ['战斗开启', '戰鬥開啟', 'BattleStarter'] },
+          { id: 'Recovery', names: ['恢复技能', '恢復技能', 'Recovery'] },
+          { id: 'Channel', names: ['引导技能', '引導技能', 'Channel Spells'], values: ['channelSkillSwitch'] },
+          { id: 'Buff', names: ['BUFF 技能', 'BUFF 技能', 'BUFF Spells'], values: ['buffSkillSwitch'] },
+          { id: 'Debuff', names: ['DEBUFF 技能', 'DEBUFF 技能', 'DEBUFF Spells'], values: ['debuffSkillSwitch'] },
+          { id: 'Skill', names: ['其他技能', '其他技能', 'Skills'], values: ['skillSwitch'] },
+          { id: 'Infusion', names: ['魔药', '魔藥', 'Infusion'], values: ['infusionSwitch'] },
+          { id: 'Scroll', names: ['卷轴', '捲軸', 'Scroll'], values: ['scrollSwitch'] },
+          { id: 'Alarm', names: ['警报', '警報', 'Alarm'] },
+          { id: 'Rule', names: ['攻击规则', '攻擊規則', 'Attack Rule'] },
+          { id: 'Drop', names: ['掉落监测', '掉落監測', 'Drops Tracking'], values: ['dropMonitor'] },
+          { id: 'Usage', names: ['数据记录', '數據記錄', 'Usage Tracking'], values: ['recordUsage'] },
+          { id: 'Tools', names: ['工具', '工具', 'Tools'] },
+          { id: 'Feedback', names: ['反馈', '反馈', 'Feedback'] },
+        ],
+        repair: [
+          { id: '', names: [''] },
+          { id: 'GF', names: ['或 压榨界', '或 壓榨界', 'OR Grind Fest'] },
+          { id: 'IW', names: ['或 道具界/压榨界', '或 道具界', 'OR Item World'] },
+        ],
+        repairCharm: [
+          { id: '', names: ['自动战斗(含压榨界/道具界)', '自動戰鬥(含壓榨界/道具界)', 'Idle Battles(including Grind Fest & Item World)'] },
+          { id: 'GF', names: ['压榨界', '壓榨界', 'Grind Fest'] },
+          { id: 'IW', names: ['道具界', '道具界', 'Item World'] },
+        ],
+        staminaCheck: [
+          { names: ['遭遇战', '遭遇戰', 'Random Encounter'], id: 'Encounter', values: [60] },
+          { names: ['竞技场/浴血擂台', '競技場/浴血擂台', 'The Arena or Ring Of Blood'], id: 'Low', values: [60] },
+          { names: ['道具界', '道具界', 'Item World'], id: 'ItemWorld', values: [60] },
+          { names: ['压榨界', '壓榨界', 'GrindFest'], id: 'GrindFest', values: [100] },
+          { names: ['竞技场/浴血擂台/压榨界/道具界(含本日自然恢复)', '競技場/浴血擂台/壓榨界/道具界(含本日自然恢復)', 'Threshold with naturally recovers today for The Arena, Ring Of Bloog, GrindFest and Item World'], id: 'LowWithReNat', values: [0] },
+        ],
+        battleUnresponsive: [
+          { id: 'Alert', names: ['警报', '警報', 'alarm'] },
+          { id: 'Reload', names: ['刷新页面', '刷新頁面', 'reload page'] },
+          { id: 'Alt', names: ['切换主服务器与alt服务器', '切換主服務器與alt服務器', 'switch between alt.hentaiverse'] },
+        ],
+        battleExitDelay: [
+          { id: 'NewRound', names: ['继续新回合', '繼續新回合', 'New round'], values: [0] },
+          { id: 'ExitBattle', names: ['战斗结束退出', '戰鬥結束退出', 'Exit battle'], values: [3] },
+        ],
+        battleOrder: [
+          { id: 'autoCure', names: ['使用治疗', '使用治療', 'Cure'], values: ['Cure'] },
+          { id: 'autoPause', names: ['自动暂停', '自動暫停', 'Auto Pause'], values: ['Pause'] },
+          { id: 'autoSSDisable', names: ['关闭灵动架式', '關閉靈動架式', 'Disable Sprite'], values: ['SSDisable'] },
+          { id: 'autoRecover', names: ['恢复(含治疗)', '恢復(含治療)', 'Recover(& cure)'], values: ['Rec'] },
+          { id: 'useScroll', names: ['使用卷轴', '使用捲軸', 'Use Scroll</l2>'], values: ['Scroll'] },
+          { id: 'useInfusions', names: ['使用魔药', '使用魔藥', 'Infusions'], values: ['Infus'] },
+          { id: 'autoDefend', names: ['自动防御', '自動防禦', 'Auto Defence'], values: ['Def'] },
+          { id: 'useChannelSkill', names: ['引导技能', '引導技能', 'Channel Skill'], values: ['Channel'] },
+          { id: 'useBuffSkill', names: ['Buff技能', 'Buff技能', 'Buff Skills'], values: ['Buff'] },
+          { id: 'useDeSkill', names: ['Debuff技能', 'Debuff技能', 'Debuff Skills</l2>'], values: ['Debuff'] },
+          { id: 'autoFocus', names: ['自动集中', '自動集中', 'Focus'], values: ['Focus'] },
+          { id: 'autoSS', names: ['灵动架式(开&关)', '靈動架式(開&關)', 'On & Off Sprite'], values: ['SS'] },
+          { id: 'autoSkill', names: ['释放技能', '釋放技能', 'Auto Skill'], values: ['Skill'] },
+          { id: 'attack', names: ['自动攻击', '自動攻擊', 'Attack'], values: ['Atk'] },
+        ],
+        hotkeys: [
+          { id: 'pause', names: ['暂停', '暫停', 'Pause']},
+          { id: 'stepIn', names: ['步进', '步進', 'Step In']},
+          { id: 'alt', names: ['Alt切换', 'Alt切換', 'Alt Switch']},
+        ],
         attackStatus: [
           { id: 0, names: ['物理', '物理', 'Physical'], values: ['Phys'] },
           { id: 5, names: ['圣', '聖', 'Divine'], values: ['Divi'] },
@@ -2232,6 +2295,20 @@
           { id: 2, names: ['冰', '冰', 'Cold'], values: ['Cold'] },
           { id: 4, names: ['风', '風', 'Wind'], values: ['Wind'] },
           { id: 3, names: ['雷', '雷', 'Elec'], values: ['Elec'] },
+        ],
+        battleCommons: [
+          { id: 'lowSkill', names: ['低阶魔法技能','低階魔法技能', '1st Tier Offensive Magic'], values: ['true'] },
+          { id: 'middleSkill', names: ['中阶魔法技能', '中階魔法技能', '2nd Tier Offensive Magic'], values: ['true'] },
+          { id: 'highSkill', names: ['高阶魔法技能', '高階魔法技能', '3rd Tier Offensive Magic'], values: ['true'] },
+          { id: 'etherTap', names: ['以太之触', '以太之觸', 'Ether Tap'] },
+          { id: 'turnOnSS', names: ['开启灵动架式', '開啟靈動架勢', 'Turn on Spirit Stance'] },
+          { id: 'turnOffSS', names: ['关闭灵动架式', '關閉靈動架勢', 'Turn off Spirit Stance'] },
+          { id: 'defend', names: ['Defend'] },
+          { id: 'focus', names: ['Focus'] },
+        ],
+        battleBreaks: [
+          { id: 'autoPause', names: ['自动暂停', '自動暫停', 'Pause'], values: ['pause'] },
+          { id: 'autoFlee', names: ['自动逃跑', '自動逃跑', 'Flee'], values: ['flee'] },
         ],
         arena: [
           { id: 1, names: [1], values: [1] },
@@ -2433,18 +2510,47 @@
           { id: 'hurtptotal', names: ['物理总量', '物理總量', 'Physical Total'] },
         ],
         audio: [
-          { id: 'Common', names: ['通用', 'Common' ,'nput'] },
-          { id: 'Error', names: ['错误', '錯誤' ,'Error'] },
-          { id: 'Defeat', names: ['失败', '失敗' ,'Defeat'] },
-          { id: 'Riddle', names: ['答题', '答題' ,'Riddle'] },
-          { id: 'Victory', names: ['胜利', '勝利' ,'Victory'] },
+          { id: 'Common', names: ['通用', '通用', 'Common']},
+          { id: 'Pause', names: ['暂停', '暫停', 'Pause'], values: ['Common'] },
+          { id: 'Flee', names: ['逃跑', '逃跑', 'Flee'], values: ['Common'] },
+          { id: 'Error', names: ['错误', '錯誤', 'Error'] },
+          { id: 'Defeat', names: ['失败', '失敗', 'Defeat'] },
+          { id: 'Riddle', names: ['答题', '答題', 'Riddle'] },
+          { id: 'Victory', names: ['胜利', '勝利', 'Victory'] },
         ],
       };
 
       function expendDataUI(datas, method) {
         const mapped = datas.map(args => method(args.id, _alert(-2, ...args.names), ...(args.values??[])));
-        if (Array.isArray(mapped[0])) return mapped.reduce((acc,cur) => (acc??[]).concat(cur??[]),[]);
+        if (Array.isArray(mapped[0])) return mapped.reduce((acc,cur) => (acc??[]).concat(cur??[]),[])?.join('');
         return mapped.reduce((acc,cur) => (acc??'')+(cur??''),'');
+      }
+
+      function labeled(id, names, ...extraArgs) {
+        return `<input id="${id}" type="checkbox" ${extraArgs?.join(' ') ?? ''}><label for="${id}">${names}</label>`;
+      }
+
+      function div(...datas) {
+        if (datas.length === 0) return `<div></div>`;
+        if (datas.length > 1) {
+          return [`<div>`, ...datas, `</div>`].join('');
+        }
+        datas = datas[0];
+        if (typeof datas === 'string') {
+          return [`<div>`, datas, `</div>`].join('');
+        }
+        if (datas.args || datas.inner) {
+          let args = '';
+          if (typeof datas.args === 'string') {
+            args = datas.args;
+          } else {
+            for (const key in datas.args) {
+              args += ` ${key}="${datas.args[key]}"`;
+            }
+          }
+          return [`<div ${args}>`, ...(typeof datas.inner === 'string' ? [datas.inner] : datas.inner??''), `</div>`].join('');
+        }
+        return [`<div>`, ...datas, `</div>`].join('');
       }
 
       let option = getOption(true);
@@ -2453,417 +2559,519 @@
         optionBox = gE('body').appendChild(cE('div'));
         optionBox.id = 'hvAABox';
         optionBox.innerHTML = [
-          '<div class="hvAACenter">',
-          '  <a href="https://github.com/dodying/UserJs/commits/master/HentaiVerse/hvAutoAttack/hvAutoAttack.user.js" target="_blank"><l0>更新历史</l0><l1>更新歷史</l1><l2>ChangeLog</l2></a>',
-          '  <l01><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README.md" target="_blank">使用说明</a></l01><l2><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README_en.md" target="_blank">README</a></l2>',
-          '  <l012><span style="font-size:small;"><a target="_blank" href="https://greasyfork.org/forum/profile/18194/Koko191" style="color:#E3E0D1;background-color:#E3E0D1;" title="Thanks to Koko191 who give help in the translation">by Koko191</a></span></l012>',
-          '  <h1 style="display:inline;">hvAutoAttack</h1>',
-          '  <select name="lang"><option value="0">简体中文</option><option value="1">繁體中文</option><option value="2">English</option></select>',
-          (option.optionStandalone ? _server.isekai ? '<l0>当前为异世界单独配置</l0><l1>當前為異世界單獨配置</l1><l2>Using Isekai standalone option</l2>' : '<l0>当前为恒定世界单独配置</l0><l1>當前為恆定世界單獨配置</l1><l2>Using Persistent standalone option</l2>' : ''),
-          ' <l0>配置版本</l0><l1>配置版本</l1><l2>Option Version</l2><input name="version" type="text" disabled="true">',
-          '</div>',
-          '<div class="hvAATablist">',
+          div({
+            args: { class: 'hvAACenter' },
+            inner: [
+              '<a href="https://github.com/dodying/UserJs/commits/master/HentaiVerse/hvAutoAttack/hvAutoAttack.user.js" target="_blank"><l0>更新历史</l0><l1>更新歷史</l1><l2>ChangeLog</l2></a>',
+              '<l01><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README.md" target="_blank">使用说明</a></l01><l2><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README_en.md" target="_blank">README</a></l2>',
+              '<l012><span style="font-size:small;"><a target="_blank" href="https://greasyfork.org/forum/profile/18194/Koko191" style="color:#E3E0D1;background-color:#E3E0D1;" title="Thanks to Koko191 who give help in the translation">by Koko191</a></span></l012>',
+              '<h1 style="display:inline;">hvAutoAttack</h1>',
+              '<select name="lang"><option value="0">简体中文</option><option value="1">繁體中文</option><option value="2">English</option></select>',
+              (option.optionStandalone ? _server.isekai ? '<l0>当前为异世界单独配置</l0><l1>當前為異世界單獨配置</l1><l2>Using Isekai standalone option</l2>' : '<l0>当前为恒定世界单独配置</l0><l1>當前為恆定世界單獨配置</l1><l2>Using Persistent standalone option</l2>' : ''),
+              '<l0>配置版本</l0><l1>配置版本</l1><l2>Option Version</l2><input name="version" type="text" disabled="true">',
+            ]
+          }),
+          div({
+            args: { class: 'hvAATablist' },
+            inner: [
+              div({
+                args: { class: 'hvAATabmenu' },
+                inner: expendDataUI(UIDatas.tablist, (id, names, v) => `<span name="${id}">${v ? `<input id="${v}" type="checkbox">` : ''}${names}</span>`),
+              }),
+              div({
+                args: { class: 'hvAATab', id: 'hvAATab-Main', style: 'display:block' },
+                inner: [
+                  div(
+                    '<b><l0>异世界相关</l0><l1>異世界相關</l1><l2>Isekai</l2></b>: ',
+                    `${labeled(`optionStandalone`, `<l0>两个世界使用不同的配置</l0><l1>兩個世界使用不同的配置</l1><l2>Use standalone options.</l2>`)}`,
+                    `<br>${labeled(`isekai`, `<l0>在任意页面停留</l0><l1>在任意頁面停留</l1><l2>While idle in any page for </l2><input class="hvAANumber" name="isekaiTime" placeholder="0" type="number"><l0>秒后，自动切换恒定世界和异世界</l0><l1>秒後，自動切換恆定世界和異世界</l1><l2>s, auto switch between Isekai and Persistent</l2>. <span class="isekaiSwitchRemain"></span>`)}`,
+                    '<br>',
+                    div({
+                      args: { class: 'isekaiInner' },
+                      inner: '<l0>自动切换冷却时间</l0><l1>自動切換冷卻時間</l1><l2>Cool down for auto switch</l2></label>: <input class="hvAANumber" name="isekaiCD" placeholder="0" type="number"><l0>秒. 两个世界分别计算冷却.</l0><l1>秒. 兩個世界分別計算冷卻.</l1><l2> (s). Isekai and Persistent cooldown separately.</l2> <span class="isekaiCDRemain"></span></label>',
+                    }),
+                  ),
+                  div(
+                    '<b><l0>小马答题</l0><l1>小馬答題</l1><l2>RIDDLE</l2></b>: ',
+                    labeled(`riddlePopup`, `<l0>弹窗答题</l0><l1>弹窗答题</l1><l2>POPUP a window to answer</l2>`),
+                    '<l0>(Firefox中可能导致报错)</l0><l1>(Firefox中可能導致報錯)</l1><l2>(Might cause in Firefox)</l2>; ',
+                    '<button class="testPopup"><l0>预处理</l0><l1>預處理</l1><l2>Pretreat</l2></button>',
+                    div(
+                      '<l0>时间</l0><l1>時間</l1><l2>If ETR</l2> ≤ <input class="hvAANumber" name="riddleAnswerTime" placeholder="3" type="number"><l0>秒，提交当前选中答案 或 为空时随机选中</l0><l1>秒，提交當前選中答案 或 為空時隨機選中</l1><l2>s submit chosen answers or random </l2> <input class="hvAANumber" name="riddleAnswerChoose" placeholder="0" type="number"><l0>个答案并提交<br><a style="color:red;" href="https://ehwiki.org/wiki/RiddleMaster/Chinese#.E6.AD.A3.E7.A2.BA.E6.88.96.E9.8C.AF.E8.AA.A4">注意：错选小马比漏选小马的错误计数更多 - 所以有疑问时，最好不要猜测，留空就好</a></l0><l1>个答案並提交<br><a style="color:red;" href="https://ehwiki.org/wiki/RiddleMaster/Chinese#.E6.AD.A3.E7.A2.BA.E6.88.96.E9.8C.AF.E8.AA.A4">注意：錯選小馬比漏選小馬的錯誤計數更多 - 所以有疑問時，最好不要猜測，留空就好</a></l1><l2>answers if none is chosen.<br><a style="color:red;" href="https://ehwiki.org/wiki/RiddleMaster#Correct_or_Incorrect">Notice: Selecting a pony that is not in the picture will count more severe towards a penalty than missing one pony - so when in doubt, best not to guess but leave one blank</a></l2>'
+                    ),
+                  ),
+                  div(
+                    '<b><l0>脚本行为</l0><l1>腳本行為</l1><l2>Script Activity</l2></b>',
+                    expendDataUI(UIDatas.hotkeys, (id, names, v) => div(`${labeled(`${id}Button`, `${names}<l0>按钮</l0><l1>按鈕</l1><l2> Button</l2>`)}; ${labeled(`${id}Hotkey`, `${names}<l0>热键</l0><l1>熱鍵</l1><l2> Hotkey</l2>`)}: <input class="text" name="${id}HotkeyStr" type="text"><input class="hvAANumber" name="${id}HotkeyCode" type="hidden" disabled="true"></label>`)),
+                    div(
+                      '<l0>警告相关</l0><l1>警告相關</l1><l2>To Warn</l2>: ',
+                      `${labeled(`alert`, `<l0>音频警报</l0><l1>音頻警報</l1><l2>Audio Alarms</l2>`)}; `,
+                      `${labeled(`notification`, `<l0>桌面通知</l0><l1>桌面通知</l1><l2>Notifications</l2>`)}; `,
+                      '<button class="testNotification"><l0>预处理</l0><l1>預處理</l1><l2>Pretreat</l2></button>',
+                      `${labeled(`focusNotification`, `<l0>桌面通知时聚焦页面（需要GM_notification）</l0><l1>桌面通知時聚焦頁面（需要GM_notification）</l1><l2>Focus while Notifications (Requires GM_notification)</l2>`, 'placeholder="true"')}; `,
+                    ),
+                    div(`<l0>掉落及数据记录</l0><l1>掉落及數據記錄</l1><l2>Drops and Usage Tracking</l2>: ${labeled(`recordEach`, `<l0>单独记录每场战役（建议使用便携数据模式以避免超出浏览器的localStorage配额限制，但请注意便携数据模式可能会显著增加硬盘读写量）</l0><l1>單獨記錄每場戰役（建議使用便攜數據模式以避免超出瀏覽器localStorage配額限制，但請注意便攜數據模式可能會顯著增加硬盤讀寫）</l1><l2>Record each battle separately (It is recommended to use portable mode to prevent exceeding the localStorage quota, but note that this may significantly increase disk read/write activity.)</l2>`)}`),
+                    div(
+                      '<l0>延迟</l0><l1>延遲</l1><l2>Delay</l2>: 1. <l0>Buff/Debuff/其他技能</l0><l1>Buff/Debuff/其他技能</l1><l2>Skills&BUFF/DEBUFF Spells</l2>: <input class="hvAANumber" name="delay" placeholder="200" type="number">ms 2. <l01>其他</l01><l2>Other</l2>: <input class="hvAANumber" name="delay2" placeholder="30" type="number">ms (',
+                      '<l0>说明: 单位毫秒，且在设定值基础上取其的50%-150%进行延迟，0表示不延迟</l0><l1>說明: 單位毫秒，且在設定值基礎上取其的50%-150%進行延遲，0表示不延遲</l1><l2>Note: unit milliseconds, and based on the set value multiply 50% -150% to delay, 0 means no delay</l2>)'
+                    ),
+                    div('<l0>频率指示符号</l0><l1>頻率指示符號</l1><l2>Frequency Signal</l2>: <input name="frequencySign1" type="text"> & <input name="frequencySign2" type="text">'),
+                  ),
+                  div({
+                    args: { id: 'attackStatus', style: 'color:red;' },
+                    inner: [
+                      '<b>*<l0>默认攻击模式</l0><l1>默認攻擊模式</l1><l2>Default Attack Mode</l2></b>:',
+                      '<select class="hvAANumber" name="attackStatus"><option value="-1"></option><option value="0">物理 / Physical</option><option value="1">火 / Fire</option><option value="2">冰 / Cold</option><option value="3">雷 / Elec</option><option value="4">风 / 風 / Wind</option><option value="5">圣 / 聖 / Divine</option><option value="6">暗 / Forbidden</option></select>']
+                  }),
+                  div(
+                    '<b><l0>战斗执行顺序(未配置的按照下面的顺序)</l0><l1>戰鬥執行順序(未配置的按照下面的順序)</l1><l2>Battal Order(Using order below as default if not configed)</l2></b>: <input id="battleOrderDefaultOnly" type="checkbox"><label for="battleOrderDefaultOnly">(<l0>只使用默认顺序</l0><l1>只使用默認順序</l1><l2>Default order only</l2>)</label>',
+                    div({
+                      args: { class: 'battleOrder battleOrderDefaultOnlyInnerReverted' },
+                      inner: [
+                        '<input name="battleOrderName" style="width:80%;" type="text" disabled="true"><br>',
+                        div({
+                          args: 'class="hvAATable" style="display:grid; grid-template-columns:repeat(7, 1fr);"',
+                          inner: expendDataUI(UIDatas.battleOrder, (id, names, v) => div(`${labeled(`battleOrder_${id}`, names, `value="${v}"`)}`)),
+                        }),
+                      ]}),
+                  ),
+                  div(
+                    '<b><label for="attackStatusOrderName,attackStatusOrder_0,attackStatusOrder_1,attackStatusOrder_2,attackStatusOrder_3,attackStatusOrder_4,attackStatusOrder_5,attackStatusOrder_6,"><l0>次要攻击模式顺序</l0><l1>次要攻擊模式順序</l1><l2>Attack Mode Order</l2></label><l0>(未配置的按照下面的顺序)</l0><l1>(未配置的按照下面的順序)</l1><l2>(Using order below as default if not configed)</l2></b>:',
+                    `${labeled(`attackStatusSwitchByTier`, '<l0>先尝试完所有模式的高阶魔法技能再继续中阶和低阶</l0><l1>先嘗試完所有模式的高階魔法技能再繼續中階和低階</l1><l2>Try all 3rd Tier Magic for all Attack Mode then 2nd Tier and 1st Tier</l2>')}`,
+                    div({
+                      args: { class: 'attackStatusOrder' },
+                      inner: [
+                        '<input name="attackStatusOrderName" style="width:80%;" type="text" disabled="true">',
+                        '<input name="attackStatusOrderValue" style="width:80%;" type="hidden" disabled="true">',
+                        '<br>',
+                        div({
+                          args: { class: 'hvAATable', style: 'display:grid; grid-template-columns:repeat(7, 1fr);' },
+                          inner: expendDataUI(UIDatas.attackStatus, (id, names, v) => div(`${labeled(`attackStatusOrder_${id}`, names, `value="${v},${id}`)}`)),
+                        }),
+                      ]
+                    }),
+                  ),
+                  expendDataUI(UIDatas.attackStatus.map(x=>x).sortBy(x=>x.id), (id, names) => div(`${labeled(`attackStatusSwitch_${id}`, `<b><l0>攻击模式</l0><l1>攻擊模式</l1><l2>Attack Mode:</l2> ${names}</b>`)}: {{attackStatusSwitchCondition${id}}}`)),
+                  expendDataUI(UIDatas.battleCommons, (id, names, v) => div(`${labeled(id, `<b>${names}</b>`, v !== undefined ? `placeholder="${v}"`:'')}: {{${id}Condition}}`)),
+                  expendDataUI(UIDatas.battleBreaks, (id, names, v) => div(`${labeled(id, `<b>${names}</b>`)}${labeled(`${v}Alarm`, `<l0>警报</l0><l1>警報</l1><l2>Alert</l2>`)}: {{${v}Condition}}`)),
+                  div(`${labeled(`autoSkipDefeated`, `<b><l0>战败自动退出战斗</l0><l1>戰敗自動退出戰鬥</l1><l2>Exit battle when defeated.</l2></b>`)}`),
+                  div(`${labeled(`nativeNewRound`, `<b><l0>使用原生方式进入新回合</l0><l1>使用原生方式進入新回合</l1><l2>Native new round</l2></b>`)}`),
+                  div(
+                    '<l0>新回合前检查链接：</l0><l1>新回合前檢查連接：</l1><l2>Check url before new round: </l2>',
+                    '<input name="checkURLBeforeNewRound" type="text">; ',
+                    '<input name="checkURLBeforeNewRoundRetry" placeholder="5" type="number"><l0>秒后重试</l0><l1>秒後重試</l1><l2>(s) to retry</l2>'
+                  ),
+                  div(div({
+                    args: { class: 'hvAATable', style: 'grid-template-columns: repeat(3, 1fr);' },
+                    inner: [
+                      div('<b><l0>延时</l0><l1>延時</l1><l2>Wait time for</l2></b>'),
+                      expendDataUI(UIDatas.battleExitDelay, (id, names, v) => div(`${names}: <input class="hvAANumber" name="${id}WaitTime" placeholder="${v}" type="number"><l0>(秒)</l0><l1>(秒)</l1><l2>(s)</l2>`)),
+                    ]
+                  })),
+                  div(div({
+                    args: { class: 'hvAATable', style: 'grid-template-columns: 1fr 1fr 1.5fr 2fr;' },
+                    inner: [
+                      div('<b><l0>战斗页面停留</l0><l1>戰鬥頁面停留</l1><l2>If not active for </l2>: </b>'),
+                      expendDataUI(UIDatas.battleUnresponsive, (id, names, v) => div(`${labeled(`battleUnresponsive_${id}`, `<input class="hvAANumber" name="battleUnresponsiveTime_${id}" placeholder="1" type="number"> <l0>秒，</l0><l1>秒，</l1><l2>(s), </l2>${names}</label>`)}`)),
+                    ]
+                  })),
+                ]
+              }),
+              div({
+                args: { class: 'hvAATab', id: 'hvAATab-BattleStarter' },
+                inner: [
+                  div(`${labeled(`popup`, `<l0>进入失败时窗口内弹窗提示</l0><l1>進入失敗時窗口內彈窗提示</l1><l2>In-window popup while failed start</l2>`)}`),
+                  div(`${labeled(`altBattleFirst`, `<b><l0>优先使用alt进入</l0><l1>優先使用alt進入</l1><l2>Use alt.hentaiverse as default while auto start.</l2></b>`)}`),
+                  div(
+                    `${labeled(`encounter`, `<b><l0>自动遭遇战</l0><l1>自動遭遇戰</l1><l2>Auto Encounter</l2></b>`)}`,
+                    '<br>',
+                    div({
+                      args: 'class="encounterInner"',
+                      inner: [
+                        `${labeled(`encounterQuickCheck`, `<l0>精准倒计时(影响性能)</l0><l1>精準(影響性能)</l1><l2>Precise encounter cd(might reduced performsance)</l2>`)}<br>`,
+                        `${labeled(`encounterDisplay`, `<l0>不自动遭遇时显示倒计时</l0><l1>不自動遭遇時顯示倒計時</l1><l2>Display CountDown While Not Auto Encounter</l2>`)}<br>`,
+                        '<l0>遭遇战倒计时</l0><l1>遭遇戰倒計時</l1><l2>Wait for encounter first while count down</l2> ≤ <input class="hvAANumber" name="encounterWaitCD" placeholder="0" type="number">s<l0>时优先等待</l0><l1>時優先等待</l1><l2>.</l2>',
+                      ]
+                    }),
+                  ),
+                  div(
+                    div(`${labeled(`idleArena`, `<b><l0>闲置竞技场</l0><l1>閒置競技場</l1><l2>Idle Arena</l2>: </b>`)}`),
+                    '<l0>在任意页面停留</l0><l1>在任意頁面停留</l1><l2>Idle in any page for </l2><input class="hvAANumber" name="idleArenaTime" placeholder="0" type="number"><l0>秒后，开始竞技场</l0><l1>秒後，開始競技場</l1><l2> (s), start Arena</l2></label>',
+                    '<span class="idleArenaInner">',
+                    '<button class="idleArenaReset"><l01>重置</l01><l2>Reset</l2></button>; <span class="arenaRemain"></span><br>',
+                    '<l0>进行的竞技场相对应等级</l0><l1>進行的競技場相對應等級</l1><l2>The levels of the Arena you want to complete</l2>:  ',
+                    '<button class="hvAAShowLevels"><l0>详情</l0><l1>詳情</l1><l2>Details</l2>▼</button><button class="hvAALevelsClear"><l01>清空</l01><l2>Clear</l2></button><br>',
+                    '<input name="idleArenaLevels" style="width:calc(100% - 20px);" type="text" disabled="true"><input name="idleArenaValue" style="width:98%;" type="hidden" disabled="true">',
+                    div({
+                      args: 'class="hvAAArenaLevels"',
+                      inner: [
+                        expendDataUI(UIDatas.arena, (id, names, v) => `<input id="arLevel_${id}" value="${id},${v}" type="checkbox"><label for="arLevel_${id}">${names}</label>`),
+                        '<input class="hvAANumber" name="idleArenaGrTime" placeholder="1" type="number">',
+                      ]
+                    }),
+                    div(`${labeled(`skipUnclearedArena`, `<l0>跳过未通关过的</l0><l1>跳過未通關過的</l1><l2>Skip not cleared Arena/RingOfBlood</l2>`, `placeholder="true"`)}`),
+                    div(`${labeled(`obscureNotIdleArena`, `<l0>页面中置灰未设置且未完成的</l0><l1>頁面中置灰未設置且未完成的</l1><l2>obscure not setted and not battled in Battle&gt;Arena/RingOfBlood</l2>`)}`),
+                    div(
+                      `${labeled(`idleItemWorld`, `<b><l0>道具界列表</l0><l1>道具界列表</l1><l2>Item World List</l2>[<l012 class="itemWorldCounts">0/0</l012>]</b>`, `placeholder="true"`)}`,
+                      '<button class="updateItemWorld"><l0>更新列表</l0><l1>更新列表</l1><l2>Update List</l2></button>',
+                      '<button class="hvAAShowItemWorld"><l0>详情</l0><l1>詳情</l1><l2>Details</l2>▼</button><button class="hvAAClearItemWorld"><l01>清空</l01><l2>Clear</l2></button><br>',
+                      div({ args: 'class="autoItemWorldList hvAATable" style="display:none;grid-template-columns:0.2fr 3fr 0.2fr 1fr 1fr;"'} ),
+                    ),
+                    '</span>',
+                  ),
+                  div(
+                    '<b>[S!]<l0>精力: 进入战斗的最低精力</l0><l1>精力: 戰鬥的最低精力</l1><l2>Stamina: Minimum stamina to auto start battles</l2>: </b><br>',
+                    expendDataUI(UIDatas.staminaCheck, (id, names, v) => `${id === 'LowWithReNat' ? '<br><b>[S!!]</b>' : ''}${names}: ${id==='Low'?'Min(85, ':''}<input class="hvAANumber" name="stamina${id}" placeholder="${v}" type="number">${id==='Low'?')':''};`),
+                    '<br>',
+                    `${labeled(`restoreStamina`, `<l0>战前恢复</l0><l1>戰前恢復</l1><l2>Restore stamina</l2>`)}`,
+                    `${labeled(`staminaRatio`, `<l0>检查惩罚倍率</l0><l1>檢查懲罰倍率</l1><l2>Check Punishment Ratio</l2>`)}`,
+                  ),
+                  div(
+                    '<input id="repair" type="checkbox"><label for="repair"><b>[R!]<l0>修复装备</l0><l1>修復裝備</l1><l2>Repair Equipment</l2></b></label>',
+                    '<span class="repairInner">: ',
+                    expendDataUI(UIDatas.repair, (id, names) => `${names}<l0>耐久度</l0><l1>耐久度</l1><l2> Durability</l2> ≤ <input class="hvAANumber" name="repairValue${id}" type="number">% `),
+                    expendDataUI(UIDatas.repairCharm, (id, names) => `<br>${labeled(`repairCharm${id}`, `<l2>Repair charm before </l2>${names}<l0>前修复护石</l0><l1>前修復護石</l1>`)};`),
+                    '</label><br><input id="encounterRepair" type="checkbox"><label for="encounterRepair"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label>',
+                    div('<l0>检查非空装备槽位时忽略</l0><l1>檢查非空裝備槽位時忽略</l1><l2>Skip when checking unslotted equipments</l2>: '),
+                    div({
+                      args: 'class="hvAAcheckItems hvAATable" style="grid-template-columns: repeat(7, 1fr)"',
+                      inner: expendDataUI(UIDatas.equipSlot, (id, names) => div(`<input id="equipCheckSkip_${id}" type="checkbox"><label for="equipCheckSkip_${id}">${names}</label>`))
+                    }),
+                    '</span>',
+                  ),
+                  div(`${labeled(`equStorage`, `<b>[E!]<l0>装备库存</l0><l1>裝備庫存</l1><l2>Equipment Storage</l2></b>`)} ≤ <input class="hvAANumber" style="width: 32px;" name="equStorageValue" placeholder="150" type="number">; <span class="equStorageInner">${labeled(`encounterEquStorage`, `<l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2>`)}</span>`),
+                  div(
+                    `${labeled(`changeEquipSet`, `<b><l0>[!!实验性]切换套装</l0><l1>[!!實驗性]切換套裝</l1><l2>[!!Experimental]Switch Equip Set</l2></b>`)}<span class="changeEquipSetInner">`,
+                    '<button class="updateEquipSet"><l0>更新列表</l0><l1>更新列表</l1><l2>Update List</l2></button>',
+                    '<button class="hvAAShowEquipSet"><l0>详情</l0><l1>詳情</l1><l2>Details</l2>▼</button></span>',
+                    '<br>',
+                    div({ args: 'class="equipSetList hvAATable changeEquipSetInner" style="display:none;grid-template-columns: repeat(3, 1fr);"' }),
+                  ),
+                  div(
+                    `${labeled(`checkSupplySlotted`, `<b>[C!]<l0>检查物品是否装备</l0><l1>檢查物品是否裝備</l1><l2>Check is item slotted</l2></b>;`)}`,
+                    ...getCheckSupplyOptionTable('Slotted', true),
+                  ),
+                  div(
+                    `${labeled(`checkSupply`, `<b>[C!]<l0>检查物品库存</l0><l1>檢查物品庫存</l1><l2>Check is item needs supply</l2></b>;`)}`,
+                    `<span class="checkSupplyInner">${labeled(`encounterSupply`, `<l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2>`)}<br></span>`,
+                    ...getCheckSupplyOptionTable(),
+                  ),
+                  div({
+                    args: { class: 'checkSupplyInner' },
+                    inner: [
+                      `${labeled(`checkSupplyIW`, `<b>[C!!]<l0>道具界使用额外的库存检查</l0><l1>道具界使用額外的庫存檢查</l1><l2>Extra supply check for Item World</l2></b>;`)}`,
+                      ...getCheckSupplyOptionTable('IW'),
+                    ]
+                  }),
+                  div({
+                    args: { class: 'checkSupplyInner' },
+                    inner: [
+                      `${labeled(`checkSupplyGF`, `<b>[C!!]<l0>压榨界使用额外的库存检查</l0><l1>壓榨界使用額外的庫存檢查</l1><l2>Extra supply check for Grind Fest</l2></b>;`)}`,
+                      ...getCheckSupplyOptionTable('GF'),
+                    ]
+                  }),
+                ]
+              }),
+              div({
+                args: { class: 'hvAATab', id: 'hvAATab-Recovery' },
+                inner: [
+                  div({
+                    args: { class: 'itemOrder' },
+                    inner: [
+                      '<b><l0>施放顺序(未配置的按照下面的顺序)</l0><l1>施放順序(未配置的按照下面的順序)</l1><l2>Cast Order(Using order below as default if not configed)</l2></b>: <input name="itemOrderName" style="width:80%;" type="text" disabled="true"><input name="itemOrderValue" style="width:80%;" type="hidden" disabled="true"><br>',
+                      div({
+                        args: { class: 'hvAATable', style:'grid-template-columns:repeat(5, 1fr);'},
+                        inner: expendDataUI(UIDatas.cure, (id, names, v) => div(labeled(`itemOrder_${id}`, names, `value="${id},${v}"`))),
+                      }),
+                    ]
+                  }),
+                  expendDataUI(UIDatas.cure, (id, names, v) => div(`${labeled(`item_${id}`, names)}: {{item${id}Condition}}`)),
+                ]
+              }),
+              div({
+                args: { class: 'hvAATab', id: 'hvAATab-Channel' },
+                inner: [
+                  div('<l0><b>获得引导时</b>（此时1点MP施法与150%伤害）</l0><l1><b>獲得引導時</b>（此時1點MP施法與150%傷害）</l1><l2><b>During Channeling effect</b> (1 mp spell cost and 150% spell damage)</l2>:'),
+                  div(
+                    '<b><l0>超过时不释放</l0><l1>超過時不釋放</l1><l2>Not cast if remain turns above</l2>  (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</b>: ',
+                    div({
+                      args: { class: 'hvAATable', style: 'grid-template-columns: repeat(5, 1fr);' },
+                      inner: expendDataUI(UIDatas.buff, (id, names, v) => v?'':div(`<label for="channelThreshold_${id}">${names} >= <input class="hvAANumber" placeholder="0" name="channelThreshold_${id}" type="number"></label>`)),
+                    }),
+                  ),
+                  div(
+                    '<b><l0>先施放引导技能</l0><l1>先施放引導技能</l1><l2>First cast</l2></b>: <br>',
+                    '<l0>注意: 此处的施放顺序与</l0><l1>注意: 此處的施放順序与</l1><l2>Note: The cast order here is the same as in</l2><a class="hvAAGoto" name="hvAATab-Buff">BUFF<l01>技能</l01><l2> Spells</l2></a><l0>里的相同</l0><l1>裡的相同</l1><br>',
+                    div({
+                      args: { class: 'hvAATable', style: 'grid-template-columns: repeat(9, 1fr);' },
+                      inner: expendDataUI(UIDatas.buff, (id, names, v) => v?'':div(labeled(`channelSkill_${id}`, names))),
+                    }),
+                  ),
+                  div(
+                    '<input id="channelSkill2" type="checkbox"><label for="channelSkill2"><b><l0>再使用技能</l0><l1>再使用技能</l1><l2>Then use Skill</l2></b></label>: ',
+                    div({
+                      args: { class: 'channelSkill2Order channelSkill2Inner', style:'grid-template-columns:repeat(5, 1fr);'},
+                      inner: [
+                        '<l0>施放顺序</l0><l1>施放順序</l1><l2>Cast Order</l2>: <input name="channelSkill2OrderName" style="width:80%;" type="text" disabled="true"><input name="channelSkill2OrderValue" style="width:80%;" type="hidden" disabled="true"><br>',
+                        div({
+                          args: { class: 'hvAATable', style: 'grid-template-columns: repeat(6, 1fr);' },
+                          inner: expendDataUI(UIDatas.channel, (id, names, v) => div(labeled(`channelSkill2Order_${id}`, names, `value="${id},${v}"`))),
+                        }),
+                      ]
+                    }),
+                  ),
+                  div(labeled('channelRebuff', '<l0><b>最后ReBuff</b>: 重新施放最先将要消失的Buff</l0><l1><b>最後ReBuff</b>: 重新施放最先將要消失的Buff</l1><l2><b>At last, re-cast the spells which will expire first</b></l2>.')),
+                ]
+              }),
+              div({
+                args: { class: 'hvAATab', id: 'hvAATab-Buff' },
+                inner: [
+                  '<div class="buffSkillOrder"><l0>施放顺序(未配置的按照下面的顺序)</l0><l1>施放順序(未配置的按照下面的順序)</l1><l2>Cast Order(Using order below as default if not configed)</l2>: ',
+                  '<input name="buffSkillOrderValue" style="width:80%;" type="text" disabled="true"><br>',
+                  expendDataUI(UIDatas.buff, (id, names, v) => v?'':labeled(`buffSkillOrder_${id}`, names)),
+                  '</div>',
+                  div('<l0>Buff释放条件</l0><l1>Buff釋放條件</l1><l2>Cast spells Condition</l2>{{buffSkillCondition}}'),
+                  expendDataUI(UIDatas.buff, (id, names, v) => div(`${labeled(`buffSkill_${id}`,`${names} <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_${id}" type="number"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)`)}{{buffSkill${id}Condition}}`)),
+                ]
+              }),
+              div({
+                args: { class: 'hvAATab', id: 'hvAATab-Debuff' },
+                inner: [
+                  div('<l0>Debuff释放条件</l0><l1>Debuff釋放條件</l1><l2>Cast debuff spells Condition</l2>{{debuffSkillCondition}}'),
+                  div(`${labeled('debuffAutoFill', '<l0>[!!实验性]补全因超过默认显示上限未显示的怪物buff</l0><l1>[!!實驗性]補全因超過默認顯示上限未顯示的怪物buff</l1><l2>[!!Experimental]Auto fill hidden monster buffs due to display limitation</l2></label>')}<span class="debuffAutoFillInner">${labeled('debuffAutoFillRec', 'DEBUG RECORD')}</span>`),
+                  div(
+                    '<l0>超出6个debuff的默认显示上限时（例如同时使用jpx时可忽略上限）：</l0><l1>超出6個debuff的默認顯示上限時（例如同時使用jpx時可忽略上限）：</l1><l2>When debuff count overflows 6 as the default maximum display count (such as ignore limitation while using jpx): </l2><select class="hvAANumber" name="debuffSkillTurnAlert"><option value="0" selected>跳过 / Skip</option><option value="1">警报 / Alert</option><option value="2">忽略 / Ignore</option></select><br>',
+                    '<l0>剩余Turns低于阈值时警报</l0><l1>剩餘Turns低於閾值時警報</l1><l2>Alert when remain expire turns less than threshold</l2><br>',
+                    '<div class="hvAATable" style="grid-template-columns: repeat(9, 1fr);">',
+                    expendDataUI(UIDatas.debuff, (id, names) => div(`${names}<input class="hvAANumber" placeholder="0" name="debuffSkillTurn_${id}" type="number">`)),
+                    '</div>',
+                  ),
 
-          '<div class="hvAATabmenu">',
-          '  <span name="Main"><l0>主要选项</l0><l1>主要選項</l1><l2>Main</l2></span>',
-          '  <span name="BattleStarter"><l0>战斗开启</l0><l1>戰鬥開啟</l1><l2>BattleStarter</l2></span>',
-          '  <span name="Recovery"><l0>恢复技能</l0><l1>恢復技能</l1><l2>Recovery</l2></span>',
-          '  <span name="Channel"><input id="channelSkillSwitch" type="checkbox"><l0>引导技能</l0><l1>引導技能</l1><l2>Channel Spells</l2></span>',
-          '  <span name="Buff"><input id="buffSkillSwitch" type="checkbox">BUFF<l01>技能</l01><l2> Spells</l2></span>',
-          '  <span name="Debuff"><input id="debuffSkillSwitch" type="checkbox">DEBUFF<l01>技能</l01><l2> Spells</l2></span>',
-          '  <span name="Skill"><input id="skillSwitch" type="checkbox"><l01>其他技能</l01><l2>Skills</l2></span>',
-          '  <span name="Infusion"><input id="infusionSwitch" type="checkbox"><l0>魔药</l0><l1>魔藥</l1><l2>Infusion</l2></span>',
-          '  <span name="Scroll"><input id="scrollSwitch" type="checkbox"><l0>卷轴</l0><l1>捲軸</l1><l2>Scroll</l2></span>',
-          '  <span name="Alarm"><l0>警报</l0><l1>警報</l1><l2>Alarm</l2></span>',
-          '  <span name="Rule"><l0>攻击规则</l0><l1>攻擊規則</l1><l2>Attack Rule</l2></span>',
-          '  <span name="Drop"><input id="dropMonitor" type="checkbox"><l0>掉落监测</l0><l1>掉落監測</l1><l2>Drops Tracking</l2></span>',
-          '  <span name="Usage"><input id="recordUsage" type="checkbox"><l0>数据记录</l0><l1>數據記錄</l1><l2>Usage Tracking</l2></span>',
-          '  <span name="Tools"><l0>工具</l0><l1>工具</l1><l2>Tools</l2></span>',
-          '  <span name="Feedback"><l01>反馈</l01><l2>Feedback</l2></span>',
-          '</div>',
+                  '<div class="debuffSkillOrderAll">1. <l0>特殊先给全体施放的顺序(未配置的按照下面的顺序)</l0><l1>特殊先給全體施放的順序(未配置的按照下面的順序)</l1><l2>Cast Order for Special Debuff all enemies first(Using order below as default if not configed)</l2>:',
+                  '<input name="debuffSkillOrderAllValue" style="width:80%;" type="text" disabled="true"><br>',
+                  '<div class="hvAATable" style="grid-template-columns: repeat(7, 1fr) 1.5fr 1fr;">',
+                  expendDataUI(UIDatas.debuff, (id, names) => div(labeled(`debuffSkillOrderAll_${id}`, names))),
+                  '</div>',
+                  '</div>',
 
-          '<div class="hvAATab" id="hvAATab-Main">',
-          '  <div><b><l0>异世界相关</l0><l1>異世界相關</l1><l2>Isekai</l2></b>: ',
-          '    <input id="optionStandalone" type="checkbox"><label for="optionStandalone"><l0>两个世界使用不同的配置</l0><l1>兩個世界使用不同的配置</l1><l2>Use standalone options.</l2></label>; ',
-          '    <br><input id="isekai" type="checkbox"><label for="isekai"><l0>在任意页面停留</l0><l1>在任意頁面停留</l1><l2>While idle in any page for </l2><input class="hvAANumber" name="isekaiTime" placeholder="0" type="number"><l0>秒后，自动切换恒定世界和异世界</l0><l1>秒後，自動切換恆定世界和異世界</l1><l2>s, auto switch between Isekai and Persistent</l2></label>. <span class="isekaiSwitchRemain"></span>',
-          '    <br><div class="isekaiInner"><l0>自动切换冷却时间</l0><l1>自動切換冷卻時間</l1><l2>Cool down for auto switch</l2></label>: <input class="hvAANumber" name="isekaiCD" placeholder="0" type="number"><l0>秒. 两个世界分别计算冷却.</l0><l1>秒. 兩個世界分別計算冷卻.</l1><l2> (s). Isekai and Persistent cooldown separately.</l2> <span class="isekaiCDRemain"></span></label></div></div>',
-          '  <div>',
-          '    <b><l0>小马答题</l0><l1>小馬答題</l1><l2>RIDDLE</l2></b>: <input id="riddlePopup" type="checkbox"><label for="riddlePopup"><l0>弹窗答题</l0><l1>弹窗答题</l1><l2>POPUP a window to answer</l2></label><l0>(Firefox中可能导致报错)</l0><l1>(Firefox中可能導致報錯)</l1><l2>(Might cause in Firefox)</l2>; <button class="testPopup"><l0>预处理</l0><l1>預處理</l1><l2>Pretreat</l2></button>',
-          '    <div><l0>时间</l0><l1>時間</l1><l2>If ETR</l2> ≤ <input class="hvAANumber" name="riddleAnswerTime" placeholder="3" type="number"><l0>秒，提交当前选中答案 或 为空时随机选中</l0><l1>秒，提交當前選中答案 或 為空時隨機選中</l1><l2>s submit chosen answers or random </l2> <input class="hvAANumber" name="riddleAnswerChoose" placeholder="0" type="number"><l0>个答案并提交<br><a style="color:red;" href="https://ehwiki.org/wiki/RiddleMaster/Chinese#.E6.AD.A3.E7.A2.BA.E6.88.96.E9.8C.AF.E8.AA.A4">注意：错选小马比漏选小马的错误计数更多 - 所以有疑问时，最好不要猜测，留空就好</a></l0><l1>个答案並提交<br><a style="color:red;" href="https://ehwiki.org/wiki/RiddleMaster/Chinese#.E6.AD.A3.E7.A2.BA.E6.88.96.E9.8C.AF.E8.AA.A4">注意：錯選小馬比漏選小馬的錯誤計數更多 - 所以有疑問時，最好不要猜測，留空就好</a></l1><l2>answers if none is chosen.<br><a style="color:red;" href="https://ehwiki.org/wiki/RiddleMaster#Correct_or_Incorrect">Notice: Selecting a pony that is not in the picture will count more severe towards a penalty than missing one pony - so when in doubt, best not to guess but leave one blank</a></l2></div>',
-          '  </div>',
-          '  <div><b><l0>脚本行为</l0><l1>腳本行為</l1><l2>Script Activity</l2></b>',
-          '    <div>',
-          '      <input id="pauseButton" type="checkbox"><label for="pauseButton"><l0>暂停按钮</l0><l1>暫停按鈕</l1><l2>Pause Button</l2></label>; ',
-          '      <input id="pauseHotkey" type="checkbox"><label for="pauseHotkey"><l0>暂停热键</l0><l1>暫停熱鍵</l1><l2>Pause Hotkey</l2>: <input class="text" name="pauseHotkeyStr" type="text"><input class="hvAANumber" name="pauseHotkeyCode" type="hidden" disabled="true"></label><br>',
-          '      <input id="stepInButton" type="checkbox"><label for="stepInButton"><l0>步进按钮</l0><l1>步進按鈕</l1><l2>StepIn Button</l2></label>; ',
-          '      <input id="stepInHotkey" type="checkbox"><label for="stepInHotkey"><l0>步进热键</l0><l1>步進熱鍵</l1><l2>StepIn Hotkey</l2>: <input class="text" name="stepInHotkeyStr" type="text"><input class="hvAANumber" name="stepInHotkeyCode" type="hidden" disabled="true"></label>',
-          '  </div>',
-          '  <div>',
-          '    <input id="altButton" type="checkbox"><label for="altButton"><l0>Alt切换按钮</l0><l1>Alt切換按鈕</l1><l2>Alt Switch Button</l2></label>; ',
-          '    <input id="altHotkey" type="checkbox"><label for="altHotkey"><l0>Alt切换热键</l0><l1>Alt切換熱鍵</l1><l2>Alt Switch Hotkey</l2>: <input class="text" name="altHotkeyStr" type="text"><input class="hvAANumber" name="altHotkeyCode" type="hidden" disabled="true"></label>',
-          '  </div>',
-          '  <div><l0>警告相关</l0><l1>警告相關</l1><l2>To Warn</l2>: ',
-          '      <input id="alert" type="checkbox"><label for="alert"><l0>音频警报</l0><l1>音頻警報</l1><l2>Audio Alarms</l2></label>; ',
-          '      <input id="notification" type="checkbox"><label for="notification"><l0>桌面通知</l0><l1>桌面通知</l1><l2>Notifications</l2></label> ',
-          '      <button class="testNotification"><l0>预处理</l0><l1>預處理</l1><l2>Pretreat</l2></button>',
-          '      <input id="focusNotification" placeholder="true" type="checkbox"><label for="focusNotification"><l0>桌面通知时聚焦页面（需要GM_notification）</l0><l1>桌面通知時聚焦頁面（需要GM_notification）</l1><l2>Focus while Notifications (Requires GM_notification)</l2></label></div>',
-          '    <div><l0>掉落及数据记录</l0><l1>掉落及數據記錄</l1><l2>Drops and Usage Tracking</l2>: <input id="recordEach" type="checkbox"><label for="recordEach"><l0>单独记录每场战役（建议使用便携数据模式以避免超出浏览器的localStorage配额限制，但请注意便携数据模式可能会显著增加硬盘读写量）</l0><l1>單獨記錄每場戰役（建議使用便攜數據模式以避免超出瀏覽器localStorage配額限制，但請注意便攜數據模式可能會顯著增加硬盤讀寫）</l1><l2>Record each battle separately (It is recommended to use portable mode to prevent exceeding the localStorage quota, but note that this may significantly increase disk read/write activity.)</l2></label></div>',
-          '    <div><l0>延迟</l0><l1>延遲</l1><l2>Delay</l2>: 1. <l0>Buff/Debuff/其他技能</l0><l1>Buff/Debuff/其他技能</l1><l2>Skills&BUFF/DEBUFF Spells</l2>: <input class="hvAANumber" name="delay" placeholder="200" type="number">ms 2. <l01>其他</l01><l2>Other</l2>: <input class="hvAANumber" name="delay2" placeholder="30" type="number">ms (',
-          '      <l0>说明: 单位毫秒，且在设定值基础上取其的50%-150%进行延迟，0表示不延迟</l0><l1>說明: 單位毫秒，且在設定值基礎上取其的50%-150%進行延遲，0表示不延遲</l1><l2>Note: unit milliseconds, and based on the set value multiply 50% -150% to delay, 0 means no delay</l2>)</div>',
-          '    <div><l0>频率指示符号</l0><l1>頻率指示符號</l1><l2>Frequency Signal</l2>: <input name="frequencySign1" type="text"> & <input name="frequencySign2" type="text"></div>',
-          '  </div>',
-          '  <div id="attackStatus" style="color:red;"><b>*<l0>默认攻击模式</l0><l1>默認攻擊模式</l1><l2>Default Attack Mode</l2></b>:',
-          '    <select class="hvAANumber" name="attackStatus"><option value="-1"></option><option value="0">物理 / Physical</option><option value="1">火 / Fire</option><option value="2">冰 / Cold</option><option value="3">雷 / Elec</option><option value="4">风 / 風 / Wind</option><option value="5">圣 / 聖 / Divine</option><option value="6">暗 / Forbidden</option></select></div>',
+                  div(
+                    '1.a. <l0>特殊先给全体施放时，视作覆盖的互斥Debuff</l0><l1>特殊特殊先給全體施放時，視作覆蓋的互斥Debuff</l1><l2>Exclusive debuffs during \'Cast Order for Special Debuff all enemies first\'</l2>:',
+                    '<div class="hvAATable" style="grid-template-columns: repeat(7, 1fr) 1.5fr 1fr;">',
+                    expendDataUI(UIDatas.debuff, (id, names) => div(labeled(`debuffAllExclusive_${id}`, names))),
+                    '</div>',
+                  ),
 
-          '  <div><b><l0>战斗执行顺序(未配置的按照下面的顺序)</l0><l1>戰鬥執行順序(未配置的按照下面的順序)</l1><l2>Battal Order(Using order below as default if not configed)</l2></b>: <input id="battleOrderDefaultOnly" type="checkbox"><label for="battleOrderDefaultOnly">(<l0>只使用默认顺序</l0><l1>只使用默認順序</l1><l2>Default order only</l2>)</label>',
-          '    <div class="battleOrder battleOrderDefaultOnlyInnerReverted"><input name="battleOrderName" style="width:80%;" type="text" disabled="true"><br>',
-          '      <div class="hvAATable" style="display:grid; grid-template-columns:repeat(7, 1fr);">',
-          '        <div><input id="battleOrder_autoCure" value="Cure" type="checkbox"><label for="battleOrder_autoCure"><l0>使用治疗</l0><l1>使用治療</l1><l2>Cure</l2></label></div>',
-          '        <div><input id="battleOrder_autoPause" value="Pause" type="checkbox"><label for="battleOrder_autoPause"><l0>自动暂停</l0><l1>自動暫停</l1><l2>Auto Pause</l2></label></div>',
-          '        <div><input id="battleOrder_autoSSDisable" value="SSDisable" type="checkbox"><label for="battleOrder_autoSSDisable"><l0>关闭灵动架式</l0><l1>關閉靈動架式</l1><l2>Disable Sprite</l2></label></div>',
-          '        <div><input id="battleOrder_autoRecover" value="Rec" type="checkbox"><label for="battleOrder_autoRecover"><l0>恢复(含治疗)</l0><l1>恢復(含治療)</l1><l2>Recover(& cure)</l2></label></div>',
-          '        <div><input id="battleOrder_useScroll" value="Scroll" type="checkbox"><label for="battleOrder_useScroll"><l0>使用卷轴</l0><l1>使用捲軸</l1><l2>Use Scroll</l2></label><br></div>',
-          '        <div><input id="battleOrder_useInfusions" value="Infus" type="checkbox"><label for="battleOrder_useInfusions"><l0>使用魔药</l0><l1>使用魔藥</l1><l2>Infusions</l2></label></div>',
-          '        <div><input id="battleOrder_autoDefend" value="Def" type="checkbox"><label for="battleOrder_autoDefend"><l0>自动防御</l0><l1>自動防禦</l1><l2>Auto Defence</l2></label></div>',
-          '        <div><input id="battleOrder_useChannelSkill" value="Channel" type="checkbox"><label for="battleOrder_useChannelSkill"><l0>引导技能</l0><l1>引導技能</l1><l2>Channel Skill</l2></label></div>',
-          '        <div><input id="battleOrder_useBuffSkill" value="Buff" type="checkbox"><label for="battleOrder_useBuffSkill"><l0>Buff技能</l0><l1>Buff技能</l1><l2>Buff Skills</l2></label></div>',
-          '        <div><input id="battleOrder_useDeSkill" value="Debuff" type="checkbox"><label for="battleOrder_useDeSkill"><l0>Debuff技能</l0><l1>Debuff技能</l1><l2>Debuff Skills</l2></label><br></div>',
-          '        <div><input id="battleOrder_autoFocus" value="Focus" type="checkbox"><label for="battleOrder_autoFocus"><l0>自动集中</l0><l1>自動集中</l1><l2>Focus</l2></label></div>',
-          '       <div><input id="battleOrder_autoSS" value="SS" type="checkbox"><label for="battleOrder_autoSS"><l0>灵动架式(开&关)</l0><l1>靈動架式(開&關)</l1><l2>On & Off Sprite</l2></label></div>',
-          '       <div><input id="battleOrder_autoSkill" value="Skill" type="checkbox"><label for="battleOrder_autoSkill"><l0>释放技能</l0><l1>釋放技能</l1><l2>Auto Skill</l2></label></div>',
-          '       <div><input id="battleOrder_attack" value="Atk" type="checkbox"><label for="battleOrder_attack"><l0>自动攻击</l0><l1>自動攻擊</l1><l2>Attack</l2></label></div>',
-          '    </div></div></div>',
+                  '<div class="debuffSkillOrder">2. <l0>单体施放顺序(未配置的按照下面的顺序)</l0><l1>單體施放順序(未配置的按照下面的順序)</l1><l2>Cast Order for each enemy(Using order below as default if not configed)</l2>:',
+                  '<input name="debuffSkillOrderValue" style="width:80%;" type="text" disabled="true"><br>',
+                  '<div class="hvAATable" style="grid-template-columns: repeat(7, 1fr) 1.5fr 1fr;">',
+                  expendDataUI(UIDatas.debuff, (id, names) => div(labeled(`debuffSkillOrder_${id}`, names))),
+                  '</div>',
+                  '</div>',
 
-          '  <div><b><label for="attackStatusOrderName,attackStatusOrder_0,attackStatusOrder_1,attackStatusOrder_2,attackStatusOrder_3,attackStatusOrder_4,attackStatusOrder_5,attackStatusOrder_6,"><l0>次要攻击模式顺序</l0><l1>次要攻擊模式順序</l1><l2>Attack Mode Order</l2></label><l0>(未配置的按照下面的顺序)</l0><l1>(未配置的按照下面的順序)</l1><l2>(Using order below as default if not configed)</l2></b>:',
-          '    <input id="attackStatusSwitchByTier" type="checkbox"><label for="attackStatusSwitchByTier"><l0>先尝试完所有模式的高阶魔法技能再继续中阶和低阶</l0><l1>先嘗試完所有模式的高階魔法技能再繼續中階和低階</l1><l2>Try all 3rd Tier Magic for all Attack Mode then 2nd Tier and 1st Tier</l2></b></label>',
-          '    <div class="attackStatusOrder"><input name="attackStatusOrderName" style="width:80%;" type="text" disabled="true"><input name="attackStatusOrderValue" style="width:80%;" type="hidden" disabled="true"><br>',
-          '      <div class="hvAATable" style="display:grid; grid-template-columns:repeat(7, 1fr);">',
-          ...expendDataUI(UIDatas.attackStatus, (id, names, v) => `<div><input id="attackStatusOrder_${id}" value="${v},${id}" type="checkbox"><label for="attackStatusOrder_${id}">${names}</label></div>`),
-          '    </div></div></div>',
-          ...expendDataUI(UIDatas.attackStatus.map(x=>x).sortBy(x=>x.id), (id, names) => `<div><input id="attackStatusSwitch_${id}" type="checkbox"><label for="attackStatusSwitch_${id}"><b><l0>攻击模式 </l0><l1>攻擊模式 </l1><l2>Attack Mode: </l2>${names}</b>: {{attackStatusSwitchCondition${id}}}</label></div>`),
-          '    <div><label for="lowSkillCondition"><b><l0>低阶魔法技能使用条件</l0><l1>低階魔法技能使用條件</l1><l2>Conditions for 1st Tier Offensive Magic</l2></b>: {{lowSkillCondition}}</label></div>',
-          '    <div><label for="middleSkillCondition"><b><l0>中阶魔法技能使用条件</l0><l1>中階魔法技能使用條件</l1><l2>Conditions for 2nd Tier Offensive Magic</l2></b>: {{middleSkillCondition}}</label></div>',
-          '    <div><label for="highSkillCondition"><b><l0>高阶魔法技能使用条件</l0><l1>高階魔法技能使用條件</l1><l2>Conditions for 3rd Tier Offensive Magic</l2></b>: {{highSkillCondition}}</label></div>',
-          '    <div><input id="etherTap" type="checkbox"><label for="etherTap"><b><l0>以太之触</l0><l1>以太之觸</l1><l2>Ether Tap</l2></b></label>: {{etherTapCondition}}</div>',
-          '    <div><input id="turnOnSS" type="checkbox"><label for="turnOnSS"><b><l0>开启灵动架式</l0><l1>開啟靈動架勢</l1><l2>Turn on Spirit Stance</l2></b></label>: {{turnOnSSCondition}}</div>',
-          '    <div><input id="turnOffSS" type="checkbox"><label for="turnOffSS"><b><l0>关闭灵动架式</l0><l1>關閉靈動架勢</l1><l2>Turn off Spirit Stance</l2></b></label>: {{turnOffSSCondition}}</div>',
-          '    <div><input id="defend" type="checkbox"><label for="defend"><b>Defend</b></label>: {{defendCondition}}</div>',
-          '    <div><input id="focus" type="checkbox"><label for="focus"><b>Focus</b></label>: {{focusCondition}}</div>',
-          '    <div><input id="autoPause" type="checkbox"><label for="autoPause"><b><l0>自动暂停</l0><l1>自動暫停</l1><l2>Pause</l2></b></label>: {{pauseCondition}}</div>',
-          '    <div><input id="autoFlee" type="checkbox"><label for="autoFlee"><b><l0>自动逃跑</l0><l1>自動逃跑</l1><l2>Flee</l2></b></label>: {{fleeCondition}}</div>',
-          '    <div><input id="autoSkipDefeated" type="checkbox"><label for="autoSkipDefeated"><b><l0>战败自动退出战斗</l0><l1>戰敗自動退出戰鬥</l1><l2>Exit battle when defeated.</l2></b></label></div>',
-          '    <div><input id="nativeNewRound" type="checkbox"><label for="nativeNewRound"><b><l0>使用原生方式进入新回合</l0><l1>使用原生方式進入新回合</l1><l2>Native new round</l2></b></label></div>',
-          '    <div><l0>新回合前检查链接：</l0><l1>新回合前檢查連接：</l1><l2>Check url before new round: </l2><input name="checkURLBeforeNewRound" type="text">; <input name="checkURLBeforeNewRoundRetry" placeholder="5" type="number"><l0>秒后重试</l0><l1>秒後重試</l1><l2>(s) to retry</l2></div>',
+                  div(
+                    '<b><l0>特殊先给全体施放和单体施放使用共享的阈值、重复命中权重和各自独立的条件</l0><l1>特殊先給全體施放和單體施放使用共享的閾值、重複命中權重和各自獨立的條件</l1><l2>Using sharing threshold/duplicateCastWeight and standalone conditions between special cast for debuff all enemies first and cast for debuff each enemy</l2></b><br>',
+                    '<l0>Buff持续时间 &lt;= 释放阈值时可释放，阈值 &lt; 0 则不限制</l0><l1>Buff持續時間 &lt;= 釋放閾值時可釋放，閾值 &lt; 0 則不限制</l1><l2>Cast available while buff remain duration &lt;= threshold, threshold &lt; 0 as unlimited</l2><br>',
+                    'EWF: <l0>重复释放权重公式</l0><l1>重複釋放的權重公式</l1><l2>Excluded Weight Formula for duplicate debuff targets</l2>',
+                  ),
 
-          '  <div>',
-          '    <div class="hvAATable" style="grid-template-columns: repeat(3, 1fr);"><div><b><l0>延时</l0><l1>延時</l1><l2>Wait time for</l2></b></div>',
-          '    <div><l0>继续新回合</l0><l1>繼續新回合</l1><l2>New round</l2>: <input class="hvAANumber" name="NewRoundWaitTime" placeholder="0" type="number"><l0>(秒)</l0><l1>(秒)</l1><l2>(s)</l2></div>',
-          '    <div><l0>战斗结束退出</l0><l1>戰鬥結束退出</l1><l2>Exit battle</l2>: <input class="hvAANumber" name="ExitBattleWaitTime" placeholder="3" type="number"><l0>(秒)</l0><l1>(秒)</l1><l2>(s)</l2></div>',
-          '  </div>',
-          '  </div>',
-          '  <div>',
-          '    <div class="hvAATable" style="grid-template-columns: 1fr 1fr 1.5fr 2fr;"><div><b><l0>战斗页面停留</l0><l1>戰鬥頁面停留</l1><l2>If not active for </l2>: </b></div>',
-          '      <div><input id="battleUnresponsive_Alert" type="checkbox"><label for="battleUnresponsive_Alert"><input class="hvAANumber" name="battleUnresponsiveTime_Alert" placeholder="1" type="number"> <l0>秒，警报</l0><l1>秒，警報</l1><l2>(s), alarm</l2></label></div>',
-          '      <div><input id="battleUnresponsive_Reload" type="checkbox"><label for="battleUnresponsive_Reload"><input class="hvAANumber" name="battleUnresponsiveTime_Reload" placeholder="1" type="number"> <l0>秒，刷新页面</l0><l1>秒，刷新頁面</l1><l2>(s), reload page</l2></label></div>',
-          '      <div><input id="battleUnresponsive_Alt" type="checkbox"><label for="battleUnresponsive_Alt"><input class="hvAANumber" name="battleUnresponsiveTime_Alt" placeholder="1" type="number"> <l0>秒，切换主服务器与alt服务器</l0><l1>秒，切換主服務器與alt服務器</l1><l2>(s), switch between alt.hentaiverse</l2></label></div>',
-          '  </div>',
-          '  </div>',
-          '  </div>',
+                  '<div class="hvAATable" style="grid-template-columns: repeat(2, 1fr); width: 100%">',
+                  expendDataUI(UIDatas.debuff, (id, names) => [
+                    div(
+                      labeled(`debuffSkill_${id}`, names),
+                      `<l0>阈值: </l0><l1>閾值: </l1><l2> Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_${id}" type="number">; EWF: <input name="excludedWeightFormula_${id}" placeholder="900" type="text">{{debuffSkill${id}Condition}}`
+                    ),
+                    div(
+                      `<l01>特殊</l01><l2>Special</l2>`,
+                      labeled(`debuffSkill${id}All`, `<l0>先给全体上</l0><l1>先給全體上</l1>${names}<l2> all enemies first.</l2>`),
+                      `<span class="debuffSkill${id}AllInner">${labeled(`debuffSkill${id}AllByIndex`, `<l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2>`)}</span>{{debuffSkill${id}AllCondition}}`)
+                  ]),
+                  '</div>',
+                ]
+              }),
+              div({
+                args: { class: 'hvAATab', id: 'hvAATab-Skill' },
+                inner: [
+                  div(
+                    labeled('skillSSOnly', `<l0>只在灵动架式状态下使用</l0><l1>只在靈動架式狀態下使用</l1><l2>Only use skills under Spirit by default</l2>`, 'placeholder="true"'),
+                    '<br><span><l0>(请在<a class="hvAAGoto" name="hvAATab-Main">主要选项</a>勾选并设置<b>开启/关闭灵动架式</b>)</l0><l1>(請在<a class="hvAAGoto" name="hvAATab-Main">主要選項</a>勾選並設置<b>開啟/關閉靈動架式</b>)</l1><l2>(please check and set the <b>Turn on/off Spirit Stance</b> in <a class="hvAAGoto" name="hvAATab-Main">Main</a>)</l2></span>'
+                  ),
 
-          '<div class="hvAATab" id="hvAATab-BattleStarter" style="display:none;">',
-          ' <div><input id="popup" type="checkbox"><label for="popup"><l0>进入失败时窗口内弹窗提示</l0><l1>進入失敗時窗口內彈窗提示</l1><l2>In-window popup while failed start</l2></label>; </div>',
-          ' <div><input id="altBattleFirst" type="checkbox"><label for="altBattleFirst"><b><l0>优先使用alt进入</l0><l1>優先使用alt進入</l1><l2>Use alt.hentaiverse as default while auto start.</l2></b></label></div>',
-          ' <div><input id="encounter" type="checkbox"><label for="encounter"><b><l0>自动遭遇战</l0><l1>自動遭遇戰</l1><l2>Auto Encounter</l2></b></label><br>',
-          '  <div class="encounterInner"><input id="encounterQuickCheck" type="checkbox"><label for="encounterQuickCheck"><l0>精准倒计时(影响性能)</l0><l1>精準(影響性能)</l1><l2>Precise encounter cd(might reduced performsance)</l2></label><br>',
-          '  <input id="encounterDisplay" type="checkbox"><label for="encounterDisplay"><l0>不自动遭遇时显示倒计时</l0><l1>不自動遭遇時顯示倒計時</l1><l2>Display CountDown While Not Auto Encounter</l2><br>',
-          '  <l0>遭遇战倒计时</l0><l1>遭遇戰倒計時</l1><l2>Wait for encounter first while count down</l2> ≤ <input class="hvAANumber" name="encounterWaitCD" placeholder="0" type="number">s<l0>时优先等待</l0><l1>時優先等待</l1><l2>.</l2>',
-          '  </div>',
-          '  </div>',
-          '  <div><input id="idleArena" type="checkbox"><label for="idleArena"><b><l0>闲置竞技场</l0><l1>閒置競技場</l1><l2>Idle Arena</l2>: </b>',
-          '    <l0>在任意页面停留</l0><l1>在任意頁面停留</l1><l2>Idle in any page for </l2><input class="hvAANumber" name="idleArenaTime" placeholder="0" type="number"><l0>秒后，开始竞技场</l0><l1>秒後，開始競技場</l1><l2> (s), start Arena</l2></label>',
-          '    <span class="idleArenaInner">',
-          '    <button class="idleArenaReset"><l01>重置</l01><l2>Reset</l2></button>; <span class="arenaRemain"></span><br>',
-          '    <l0>进行的竞技场相对应等级</l0><l1>進行的競技場相對應等級</l1><l2>The levels of the Arena you want to complete</l2>:  ',
-          '      <button class="hvAAShowLevels"><l0>详情</l0><l1>詳情</l1><l2>Details</l2>▼</button><button class="hvAALevelsClear"><l01>清空</l01><l2>Clear</l2></button><br>',
-          '      <input name="idleArenaLevels" style="width:calc(100% - 20px);" type="text" disabled="true"><input name="idleArenaValue" style="width:98%;" type="hidden" disabled="true">',
-          '      <div class="hvAAArenaLevels">',
-          ...expendDataUI(UIDatas.arena, (id, names, v) => `<input id="arLevel_${id}" value="${id},${v}" type="checkbox"><label for="arLevel_${id}">${names}</label>`),
-          '<input class="hvAANumber" name="idleArenaGrTime" placeholder="1" type="number">',
-          '      </div>',
-          '      <div><input id="skipUnclearedArena" type="checkbox" placeholder="1"><label for="skipUnclearedArena"><l0>跳过未通关过的</l0><l1>跳過未通關過的</l1><l2>Skip not cleared Arena/RingOfBlood</l2>',
-          '      </div>',
-          '      <div><input id="obscureNotIdleArena" type="checkbox"><label for="obscureNotIdleArena"><l0>页面中置灰未设置且未完成的</l0><l1>頁面中置灰未設置且未完成的</l1><l2>obscure not setted and not battled in Battle&gt;Arena/RingOfBlood</l2>',
-          '      </div>',
-          '      <div><input id="idleItemWorld" type="checkbox" placeholder = "true"><label for="idleItemWorld"><b><l0>道具界列表</l0><l1>道具界列表</l1><l2>Item World List</l2>[<l012 class="itemWorldCounts">0/0</l012>]</b></label><button class="updateItemWorld"><l0>更新列表</l0><l1>更新列表</l1><l2>Update List</l2></button>',
-          '        <button class="hvAAShowItemWorld"><l0>详情</l0><l1>詳情</l1><l2>Details</l2>▼</button><button class="hvAAClearItemWorld"><l01>清空</l01><l2>Clear</l2></button><br>',
-          '        <div class="autoItemWorldList hvAATable" style="display:none;grid-template-columns:0.2fr 3fr 0.2fr 1fr 1fr;"></div>' ,
-          '      </div>',
-          '      </span>',
-          '    </div>',
-          '  <div>',
-          '    <b>[S!]<l0>精力</l0><l1>精力</l1><l2>Stamina</l2>: </b>',
-          '    <l0>进入遭遇战的最低精力</l0><l1>進入遭遇戰的最低精力</l1><l2><b></b>Minimum stamina to engage encounter</l2>: <input class="hvAANumber" name="staminaEncounter" placeholder="60" type="number"></br>',
-          '    <l0>竞技场/浴血擂台阈值</l0><l1>競技場/浴血擂台閾值</l1><l2><b></b>Minimum stamina to auto start The Arena or Ring Of Blood</l2>: Min(85, <input class="hvAANumber" name="staminaLow" placeholder="60" type="number">)<br>',
-          '    <l0>进入道具界的最低精力</l0><l1>進入道具界的最低精力</l1><l2><b></b>Minimum stamina to auto start Item World</l2><input class="hvAANumber" name="staminaItemWorld" placeholder="60" type="number"><br>',
-          '    <l0>进入压榨界的最低精力</l0><l1>進入壓榨界的最低精力</l1><l2><b></b>Minimum stamina to auto start GrindFest</l2>: <input class="hvAANumber" name="staminaGrindFest" placeholder="100" type="number"></br>',
-          '    <b>[S!!]</b><l0>进入竞技场/浴血擂台/压榨界/道具界时，含本日自然恢复的阈值</l0><l1>进入競技場/浴血擂台/壓榨界/道具界时，含本日自然恢復的閾值</l1><l2><b></b>Stamina threshold with naturally recovers today for The Arena, Ring Of Bloog, GrindFest and Item World</l2>: <input class="hvAANumber" name="staminaLowWithReNat" placeholder="0" type="number"></br>',
-          '    <input id="restoreStamina" type="checkbox"><label for="restoreStamina"><l0>战前恢复</l0><l1>戰前恢復</l1><l2>Restore stamina</l2></label>',
-          '    <input id="staminaRatio" type="checkbox"><label for="staminaRatio"><l0>检查惩罚倍率</l0><l1>檢查懲罰倍率</l1><l2>Check Punishment Ratio</l2></label>',
-          '  </div>',
-          '  <div>',
-          '    <input id="repair" type="checkbox"><label for="repair"><b>[R!]<l0>修复装备</l0><l1>修復裝備</l1><l2>Repair Equipment</l2></b></label>',
-          '    <span class="repairInner">: ',
-          '    <l0>耐久度</l0><l1>耐久度</l1><l2>Durability</l2> ≤ <input class="hvAANumber" name="repairValue" type="number">% ',
-          '    <l0>或 压榨界耐久度</l0><l1>或 壓榨界耐久度</l1><l2>OR Grind Fest Durability</l2> ≤ <input class="hvAANumber" name="repairValueGF" type="number">% ',
-          '    <l0>或 道具界压榨界耐久度</l0><l1>或 道具界耐久度</l1><l2>OR Item World Durability</l2> ≤ <input class="hvAANumber" name="repairValueIW" type="number">%',
-          '    <br>',
-          '    <input id="repairCharm" type="checkbox"><label for="repairCharm"><l0>修复护石 (含压榨界/道具界)</l0><l1>修復護石 (含壓榨界/道具界)</l1><l2>Repair charm (including Grind Fest & Item World)</l2>;',
-          '    <input id="repairCharmGF" type="checkbox"><label for="repairCharmGF"><l0>压榨界修复护石</l0><l1>壓榨界修復護石</l1><l2>Repair charm before Grind Fest</l2></label>;',
-          '    <input id="repairCharmIW" type="checkbox"><label for="repairCharmIW"><l0>道具界修复护石</l0><l1>道具界修復護石</l1><l2>Repair charm before Item World</l2></label>',
-          '    </label><br><input id="encounterRepair" type="checkbox"><label for="encounterRepair"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label>',
-          '    <div><l0>检查非空装备槽位时忽略</l0><l1>檢查非空裝備槽位時忽略</l1><l2>Skip when checking unslotted equipments</l2>: </div>',
-          '    <div class="hvAAcheckItems hvAATable" style="grid-template-columns: repeat(7, 1fr)">',
-          ...expendDataUI(UIDatas.equipSlot, (id, names) => `<div><input id="equipCheckSkip_${id}" type="checkbox"><label for="equipCheckSkip_${id}">${names}</label></div>`),
-          '  </div>',
-          '  </span>',
-          '  </div>',
-          '  <div>',
-          '    <input id="equStorage" type="checkbox"><label for="equStorage"><b>[E!]<l0>装备库存</l0><l1>裝備庫存</l1><l2>Equipment Storage</l2></b></label> ≤ <input class="hvAANumber" style="width: 32px;" name="equStorageValue" placeholder="150" type="number">; <span class="equStorageInner"><input id="encounterEquStorage" type="checkbox"><label for="encounterEquStorage"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label></span>',
-          '  </div>',
-          '      <div><input id="changeEquipSet" type="checkbox"><label for="changeEquipSet"><b><l0>[!!实验性]切换套装</l0><l1>[!!實驗性]切換套裝</l1><l2>[!!Experimental]Switch Equip Set</l2></b></label><span class="changeEquipSetInner"><button class="updateEquipSet"><l0>更新列表</l0><l1>更新列表</l1><l2>Update List</l2></button>',
-          '        <button class="hvAAShowEquipSet"><l0>详情</l0><l1>詳情</l1><l2>Details</l2>▼</button></span><br>',
-          '        <div class="equipSetList hvAATable changeEquipSetInner" style="display:none;grid-template-columns: repeat(3, 1fr);"></div>' ,
-          '      </div>',
-
-          '  <div>',
-          '    <input id="checkSupplySlotted" type="checkbox"><label for="checkSupplySlotted"><b>[C!]<l0>检查物品是否装备</l0><l1>檢查物品是否裝備</l1><l2>Check is item slotted</l2></b>;</label>',
-          ...getCheckSupplyOptionTable('Slotted', true),
-          '  </div>',
-          '  <div>',
-          '    <input id="checkSupply" type="checkbox"><label for="checkSupply"><b>[C!]<l0>检查物品库存</l0><l1>檢查物品庫存</l1><l2>Check is item needs supply</l2></b>;</label>',
-          '    <span class="checkSupplyInner"><input id="encounterSupply" type="checkbox"><label for="encounterSupply"><l0>遭遇战前检查</l0><l1>遭遇戰前檢查</l1><l2>Check before encounter</l2></label><br></span>',
-          ...getCheckSupplyOptionTable(),
-          '  </div>',
-          '  <div class="checkSupplyInner"><input id="checkSupplyIW" type="checkbox"><label for="checkSupplyIW"><b>[C!!]<l0>道具界使用额外的库存检查</l0><l1>道具界使用額外的庫存檢查</l1><l2>Extra supply check for Item World</l2></b>;</label>',
-          ...getCheckSupplyOptionTable('IW'),
-          '  </div>',
-          '  <div class="checkSupplyInner"><input id="checkSupplyGF" type="checkbox"><label for="checkSupplyGF"><b>[C!!]<l0>压榨界使用额外的库存检查</l0><l1>壓榨界使用額外的庫存檢查</l1><l2>Extra supply check for Grind Fest</l2></b>;</label>',
-          ...getCheckSupplyOptionTable('GF'),
-          '  </div>',
-          '</div>',
-
-          '<div class="hvAATab" id="hvAATab-Recovery" style="display:none;">',
-          '  <div class="itemOrder"><b><l0>施放顺序(未配置的按照下面的顺序)</l0><l1>施放順序(未配置的按照下面的順序)</l1><l2>Cast Order(Using order below as default if not configed)</l2></b>: <input name="itemOrderName" style="width:80%;" type="text" disabled="true"><input name="itemOrderValue" style="width:80%;" type="hidden" disabled="true"><br>',
-          '    <div class="hvAATable" style="grid-template-columns:repeat(5, 1fr);">' ,
-          ...expendDataUI(UIDatas.cure, (id, names, v) => `<div><input id="itemOrder_${id}" value="${id},${v}" type="checkbox"><label for="itemOrder_${id}">${names}</label></div>`),
-          '</div>',
-          '</div>',
-          ...expendDataUI(UIDatas.cure, (id, names, v) => `<div><input id="item_${id}" type="checkbox"><label for="item_${id}"><b>${names}</b></label>: {{item${id}Condition}}</div>`),
-          '</div>',
-
-          '<div class="hvAATab" id="hvAATab-Channel" style="display:none;">',
-          '  <div><l0><b>获得引导时</b>（此时1点MP施法与150%伤害）</l0><l1><b>獲得引導時</b>（此時1點MP施法與150%傷害）</l1><l2><b>During Channeling effect</b> (1 mp spell cost and 150% spell damage)</l2>:</div>',
-          '  <div><b><l0>超过时不释放</l0><l1>超過時不釋放</l1><l2>Not cast if remain turns above</l2>  (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</b>: ',
-          '  <div class="hvAATable" style="grid-template-columns: repeat(5, 1fr);">',
-          ...expendDataUI(UIDatas.buff, (id, names, v) => v?'':`<div><label for="channelThreshold_${id}">${names} >= <input class="hvAANumber" placeholder="0" name="channelThreshold_${id}" type="number"></label></div>`),
-          '  </div>',
-          '  </div>',
-          '  <div><b><l0>先施放引导技能</l0><l1>先施放引導技能</l1><l2>First cast</l2></b>: <br>',
-          '    <l0>注意: 此处的施放顺序与</l0><l1>注意: 此處的施放順序与</l1><l2>Note: The cast order here is the same as in</l2><a class="hvAAGoto" name="hvAATab-Buff">BUFF<l01>技能</l01><l2> Spells</l2></a><l0>里的相同</l0><l1>裡的相同</l1><br>',
-          '  <div class="hvAATable" style="grid-template-columns: repeat(9, 1fr);">',
-          ...expendDataUI(UIDatas.buff, (id, names, v) => v?'':`<div><input id="channelSkill_${id}" type="checkbox"><label for="channelSkill_${id}">${names}</label></div>`),
-          '  </div>',
-          '  </div>',
-          '  <div><input id="channelSkill2" type="checkbox"><label for="channelSkill2"><b><l0>再使用技能</l0><l1>再使用技能</l1><l2>Then use Skill</l2></b></label>: ',
-          '    <div class="channelSkill2Order channelSkill2Inner"><l0>施放顺序</l0><l1>施放順序</l1><l2>Cast Order</l2>: <input name="channelSkill2OrderName" style="width:80%;" type="text" disabled="true"><input name="channelSkill2OrderValue" style="width:80%;" type="hidden" disabled="true"><br>',
-          '  <div class="hvAATable" style="grid-template-columns: repeat(6, 1fr);">',
-
-          ...expendDataUI(UIDatas.channel, (id, names, v) => `<div><input id="channelSkill2Order_${id}" value="${id},${v}" type="checkbox"><label for="channelSkill2Order_${id}">${names}</label></div>`),
-          '  </div>',
-          '  </div></div>',
-          '  <div><input id="channelRebuff" type="checkbox"><label for="channelRebuff"><l0><b>最后ReBuff</b>: 重新施放最先将要消失的Buff</l0><l1><b>最後ReBuff</b>: 重新施放最先將要消失的Buff</l1><l2><b>At last, re-cast the spells which will expire first</b></l2>.</label></div>',
-          '</div>',
-
-          '<div class="hvAATab" id="hvAATab-Buff" style="display:none;">',
-          '  <div class="buffSkillOrder"><l0>施放顺序(未配置的按照下面的顺序)</l0><l1>施放順序(未配置的按照下面的順序)</l1><l2>Cast Order(Using order below as default if not configed)</l2>: ',
-          '    <input name="buffSkillOrderValue" style="width:80%;" type="text" disabled="true"><br>',
-          ...expendDataUI(UIDatas.buff, (id, names, v) => v?'':`<input id="buffSkillOrder_${id}" type="checkbox"><label for="buffSkillOrder_${id}">${names}</label>`),
-          '  </div>',
-          '  <div><l0>Buff释放条件</l0><l1>Buff釋放條件</l1><l2>Cast spells Condition</l2>{{buffSkillCondition}}</div>',
-          ...expendDataUI(UIDatas.buff, (id, names, v) => `<div><input id="buffSkill_${id}" type="checkbox"><label for="buffSkill_${id}">${names} <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_${id}" type="number"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)</label>{{buffSkill${id}Condition}}</div>`),
-          '  </div>',
-
-          '<div class="hvAATab" id="hvAATab-Debuff" style="display:none;">',
-          '  <div><l0>Debuff释放条件</l0><l1>Debuff釋放條件</l1><l2>Cast debuff spells Condition</l2>{{debuffSkillCondition}}</div>',
-          '  <div><input id="debuffAutoFill" type="checkbox"><label for="debuffAutoFill"><l0>[!!实验性]补全因超过默认显示上限未显示的怪物buff</l0><l1>[!!實驗性]補全因超過默認顯示上限未顯示的怪物buff</l1><l2>[!!Experimental]Auto fill hidden monster buffs due to display limitation</l2></label><input id="debuffAutoFillRec" type="checkbox"><label for="debuffAutoFillRec" class="debuffAutoFillInner">DEBUG RECORD</label></div>',
-          '  <div>',
-          '    <l0>超出6个debuff的默认显示上限时（例如同时使用jpx时可忽略上限）：</l0><l1>超出6個debuff的默認顯示上限時（例如同時使用jpx時可忽略上限）：</l1><l2>When debuff count overflows 6 as the default maximum display count (such as ignore limitation while using jpx): </l2><select class="hvAANumber" name="debuffSkillTurnAlert"><option value="0" selected>跳过 / Skip</option><option value="1">警报 / Alert</option><option value="2">忽略 / Ignore</option></select><br>',
-          '    <l0>剩余Turns低于阈值时警报</l0><l1>剩餘Turns低於閾值時警報</l1><l2>Alert when remain expire turns less than threshold</l2><br>',
-          '  <div class="hvAATable" style="grid-template-columns: repeat(9, 1fr);">',
-          ...expendDataUI(UIDatas.debuff, (id, names) => `<div>${names}<input class="hvAANumber" placeholder="0" name="debuffSkillTurn_${id}" type="number"></div>`),
-          '  </div>',
-          '  </div>',
-
-          '  <div class="debuffSkillOrderAll">1. <l0>特殊先给全体施放的顺序(未配置的按照下面的顺序)</l0><l1>特殊先給全體施放的順序(未配置的按照下面的順序)</l1><l2>Cast Order for Special Debuff all enemies first(Using order below as default if not configed)</l2>:',
-          '    <input name="debuffSkillOrderAllValue" style="width:80%;" type="text" disabled="true"><br>',
-          '<div class="hvAATable" style="grid-template-columns: repeat(7, 1fr) 1.5fr 1fr;">',
-          ...expendDataUI(UIDatas.debuff, (id, names) => `<div><input id="debuffSkillOrderAll_${id}" type="checkbox"><label for="debuffSkillOrderAll_${id}">${names}</label></div>`),
-          '  </div>',
-          '  </div>',
-
-          '  <div>1.a. <l0>特殊先给全体施放时，视作覆盖的互斥Debuff</l0><l1>特殊特殊先給全體施放時，視作覆蓋的互斥Debuff</l1><l2>Exclusive debuffs during \'Cast Order for Special Debuff all enemies first\'</l2>:',
-          '<div class="hvAATable" style="grid-template-columns: repeat(7, 1fr) 1.5fr 1fr;">',
-          ...expendDataUI(UIDatas.debuff, (id, names) => `<div><input id="debuffAllExclusive_${id}" type="checkbox"><label for="debuffAllExclusive_${id}">${names}</label></div>`),
-          '  </div>',
-          '  </div>',
-
-          '  <div class="debuffSkillOrder">2. <l0>单体施放顺序(未配置的按照下面的顺序)</l0><l1>單體施放順序(未配置的按照下面的順序)</l1><l2>Cast Order for each enemy(Using order below as default if not configed)</l2>:',
-          '    <input name="debuffSkillOrderValue" style="width:80%;" type="text" disabled="true"><br>',
-          '<div class="hvAATable" style="grid-template-columns: repeat(7, 1fr) 1.5fr 1fr;">',
-          ...expendDataUI(UIDatas.debuff, (id, names) => `<div><input id="debuffSkillOrder_${id}" type="checkbox"><label for="debuffSkillOrder_${id}">${names}</label></div>`),
-          '  </div>',
-          '  </div>',
-
-          '<div><b><l0>特殊先给全体施放和单体施放使用共享的阈值、重复命中权重和各自独立的条件</l0><l1>特殊先給全體施放和單體施放使用共享的閾值、重複命中權重和各自獨立的條件</l1><l2>Using sharing threshold/duplicateCastWeight and standalone conditions between special cast for debuff all enemies first and cast for debuff each enemy</l2></b><br>',
-          '      <l0>Buff持续时间 &lt;= 释放阈值时可释放，阈值 &lt; 0 则不限制</l0><l1>Buff持續時間 &lt;= 釋放閾值時可釋放，閾值 &lt; 0 則不限制</l1><l2>Cast available while buff remain duration &lt;= threshold, threshold &lt; 0 as unlimited</l2><br>',
-          '      EWF: <l0>重复释放权重公式</l0><l1>重複釋放的權重公式</l1><l2>Excluded Weight Formula for duplicate debuff targets</l2>',
-          '  </div>',
-
-          '<div class="hvAATable" style="grid-template-columns: repeat(2, 1fr); width: 100%">',
-          ...expendDataUI(UIDatas.debuff, (id, names) => [
-            `<div><input id="debuffSkill_${id}" type="checkbox"><label for="debuffSkill_${id}">${names}</label><l0>阈值: </l0><l1>閾值: </l1><l2> Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_${id}" type="number">; EWF: <input name="excludedWeightFormula_${id}" placeholder="900" type="text">{{debuffSkill${id}Condition}}</div>`,
-            `<div><l01>特殊</l01><l2>Special</l2><input id="debuffSkill${id}All" type="checkbox"><label for="debuffSkill${id}All"><l0>先给全体上</l0><l1>先給全體上</l1>${names}<l2> all enemies first.</l2></label><span class="debuffSkill${id}AllInner"><input id="debuffSkill${id}AllByIndex" type="checkbox"><label for="debuffSkill${id}AllByIndex"><l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2></label></span>{{debuffSkill${id}AllCondition}}</div>`
-          ]),
-          '</div>',
-          '</div>',
-
-          '<div class="hvAATab" id="hvAATab-Skill" style="display:none;">',
-          '  <div><input id="skillSSOnly" type="checkbox" placeholder="true"><label for="skillSSOnly"><l0>只在灵动架式状态下使用</l0><l1>只在靈動架式狀態下使用</l1><l2>Only use skills under Spirit by default</l2></label><br/><span><l0>(请在<a class="hvAAGoto" name="hvAATab-Main">主要选项</a>勾选并设置<b>开启/关闭灵动架式</b>)</l0><l1>(請在<a class="hvAAGoto" name="hvAATab-Main">主要選項</a>勾選並設置<b>開啟/關閉靈動架式</b>)</l1><l2>(please check and set the <b>Turn on/off Spirit Stance</b> in <a class="hvAAGoto" name="hvAATab-Main">Main</a>)</l2></span></div>',
-
-          '  <div class="skillOrder"><l0>施放顺序(未配置的按照下面的顺序)</l0><l1>施放順序(未配置的按照下面的順序)</l1><l2>Cast Order(Using order below as default if not configed)</l2>: ',
-          '  <input name="skillOrderValue" style="width:80%;" type="text" disabled="true"><br>',
-          ...expendDataUI(UIDatas.skill, (id, names) => `<input id="skillOrder_${id}" type="checkbox"><label for="skillOrder_${id}">${names}</label>`),
-          '</div>',
-          ...expendDataUI(UIDatas.skill, (id, names) => `<div><input id="skill_${id}" type="checkbox"><label for="skill_${id}">${names}</label>: <span class="skill_${id}Inner"><input id="skillOTOS_${id}" type="checkbox"><label for="skillOTOS_${id}"><l01>一回合只使用一次</l01><l2>One round only spell one time</l2></label></span>{{skill${id}Condition}}</div>`),
-          '</div>',
-
-          '<div class="hvAATab" id="hvAATab-Infusion" style="display:none;">',
-          '  <l0>战役模式</l0><l1>戰役模式</l1><l2>Battle type</l2>: ',
-          ...expendDataUI(UIDatas.roundType, (id, names) => `<input id="infusionRoundType_${id}" type="checkbox" placeholder="true"><label for="infusionRoundType_${id}">${names}</label>`),
-          '  <div><l0>魔药使用条件</l0><l1>魔藥使用條件</l1><l2>Infusion Use Condition</l2>{{infusionCondition}}</div>',
-          '  <div><input id="infusionDefaultOnly" type="checkbox" placeholder="true"><label for="infusionDefaultOnly"><b><l0>只使用与默认攻击模式相同的魔药</l0><l1>只使用與默認攻擊模式相同的魔藥</l1><l2>Use Infusion as same as default attack mode only.</l2></b></label></div>',
-          '  <div class="infusionOrder"><b><l0>施放顺序(未配置的按照下面的顺序)</l0><l1>施放順序(未配置的按照下面的順序)</l1><l2>Cast Order(Using order below as default if not configed)</l2></b>: <input name="infusionOrderName" style="width:80%;" type="text" disabled="true"><br>',
-          '    <div class="hvAATable" style="grid-template-columns:repeat(6, 1fr);">' ,
-          ...expendDataUI(UIDatas.infusion, (id, names) => `<div><input id="infusionOrder_${id}" type="checkbox"><label for="infusionOrder_${id}">${names}</label></div>`),
-          '</div>',
-          '</div>',
-          ...expendDataUI(UIDatas.infusion, (id, names) => `<div><input id="infusion_${id}" type="checkbox"><label for="infusion_${id}">${names}</label>{{infusion${id}Condition}}</div>`),
-          '</div>',
-
-          '<div class="hvAATab" id="hvAATab-Scroll" style="display:none;">',
-          '  <l0>战役模式</l0><l1>戰役模式</l1><l2>Battle type</l2>: ',
-          ...expendDataUI(UIDatas.roundType, (id, names) => `<input id="scrollRoundType_${id}" type="checkbox"><label for="scrollRoundType_${id}">${names}</label>`),
-          '  <div><l0>卷轴使用条件</l0><l1>捲軸使用條件</l1><l2>Scroll Use Condition</l2>{{scrollCondition}}</div>',
-          '  <input id="scrollFirst" type="checkbox"><label for="scrollFirst"><l0>存在技能生成的Buff时，仍然使用卷轴</l0><l1>存在技能生成的Buff時，仍然使用捲軸</l1><l2>Use Scrolls even when there are effects from spells</l2>.</label>',
-          ...expendDataUI(UIDatas.scroll, (id, names) => `<div><input id="scroll_${id}" type="checkbox"><label for="scroll_${id}">${names}</label>{{scroll${id}Condition}}</div>`),
-          '</div>',
-          '<div class="hvAATab" id="hvAATab-Alarm" style="display:none;">',
-          '  <span class="hvAATitle"><l0>自定义警报</l0><l1>自定義警報</l1><l2>Alarm</l2></span><br>',
-          '  <l0>注意：留空则使用默认音频，建议每个用户使用自定义音频</l0><l1>注意：留空則使用默認音頻，建議每個用戶使用自定義音頻</l1><l2>Note: Leave the box blank to use default audio, it\'s recommended for all user to use custom audio.</l2>',
-          '  <div>',
-          ...expendDataUI(UIDatas.audio, (id, names, v) => `<div><input id="audioEnable_${id}" type="checkbox"><label for="audioEnable_${id}">${names}: <input name="audio_${id}" placeholder="https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/${id}.ogg" type="text"></label><button class="testAlarm"><l0>测试</l0><l1>測試</l1><l2>Test</l2></button></div>`),
-          '</div>',
-          '  <div><l0>请将将要测试的音频文件的地址填入这里</l0><l1>請將將要測試的音頻文件的地址填入這裡</l1><l2>Plz put in the audio file address you want to test</l2>: <br><input class="hvAADebug" name="audio_Text" type="text"></div></div>',
-
-          '<div class="hvAATab" id="hvAATab-Rule" style="display:none;">',
-          '  <span class="hvAATitle"><l0>攻击规则</l0><l1>攻擊規則</l1><l2>Attack Rule</l2></span> <l01><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README.md#攻击规则-示例" target="_blank">示例</a></l01><l2><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README_en.md#attack-rule-example" target="_blank">Example</a></l2>',
-          '  <div><b>1. <l0>初始血量权重=Log10(目标血量/场上最低血量)</l0><l1>初始血量權重=Log10(目標血量/場上最低血量)</l1><l2>BaseHpWeight = BaseHpRatio*Log10(TargetHP/MaxHPOnField)</l2></b><br>',
-          '    <l0>初始权重系数(>0:低血量优先;<0:高血量优先)</l0><l1>初始權重係數(>0:低血量優先;<0:高血量優先)</l1><l2>BaseHpRatio(>0:low hp first;<0:high hp first)</l2><input class="hvAANumber" name="baseHpRatio" placeholder="1" type="number"><br>',
-          '    <l0>不可命中目标的权重公式</l0><l1>不可名中目標的權重公式</l1><l2>Unreachable Target Weight Formula</l2>: <input name="unreachableWeight" placeholder="1000" type="text"><br>',
-          '    <l0>BOSS:Yggdrasil额外权重</l0><l1>BOSS:Yggdrasil額外權重</l1><l2>BOSS:Yggdrasil Extra Weight</l2></b><input class="hvAANumber" name="YggdrasilExtraWeight" placeholder="-1000" type="number"><br>',
-          '    <input id="cacheMonsterHP" type="checkbox"><label for="cacheMonsterHP"><l0>启用HP缓存</l0><l1>啟用HP緩存</l1><l2>Use HP Cache</l2></label><button class="clearMonsterHPCache"><l0>清空缓存</l0><l1>清空緩存</l1><l2>Clear HP Cache</l2></button><input id="portable_monsterDB" type="checkbox"><label for="portable_monsterDB"><l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2><l0>注意：便携数据模式可能会显著增加硬盘读写</l0><l1>注意：便攜數據模式可能會顯著增加硬盤讀寫</l1><l2>Notice：portable mode may significantly increase hard disk I/O</l2></label><input id="portable_monsterMID" type="checkbox" style="display:none"></div>',
-          '  <div><b>2. <l0>初始权重与下述各Buff权重相加</l0><l1>初始權重與下述各Buff權重相加</l1><l2>PW(X) = BaseHpWeight + Accumulated_Weight_of_Deprecating_Spells_In_Effect(X)</l2></b><br>',
-          '    <div class="hvAATable" style="grid-template-columns:repeat(6, 1fr);">',
-          ...expendDataUI(UIDatas.weight1, (id, names, v) => `<div><input class="hvAANumber" name="weight_${id}" placeholder="${v}" type="number">${names}</div>`),
-          '    </div>',
-          '    <b><l0>降抗性和攻击模式属性</l0><l1>降抗性和攻擊模式屬性</l1><l2>While elements between Resistance-lower-debuff and Attack-Mode matches</l2>  [' + attackStatusType[option.attackStatus??0] + '] <l0>相同时</l0><l1>相同時</l1><l2></l2></b> : <br>',
-          '    <div class="hvAATable" style="grid-template-columns: repeat(4, 1fr) repeat(2, 1.25fr);">',
-          ...expendDataUI(UIDatas.weight2, (id, names, v) => `<div><input class="hvAANumber" name="weight_${id}" placeholder="${v}" type="number">${names}</div>`),
-          '    </div>',
-          '    <b><l0>降抗性和攻击模式属性</l0><l1>降抗性和攻擊模式屬性</l1><l2>While elements between Resistance-lower-debuff and Attack-Mode NOT matches</l2>  [' + attackStatusType[option.attackStatus??0] + '] <l0>不相同时</l0><l1>不相同時</l1><l2></l2></b>: <br>',
-          '    <div class="hvAATable" style="grid-template-columns: repeat(4, 1fr) repeat(2, 1.25fr);">',
-          ...expendDataUI(UIDatas.weight2, (id, names, v, v2) => `<div><input class="hvAANumber" name="weight_${id}1" placeholder="${v2}" type="number">${names}</div>`),
-          '    </div>',
-          '    <b><l0>敌方增益，暂不清楚具体效果，默认按0权重计算</l0><l1>敵方增益，暫不清楚具體效果，默認按0權重計算</l1><l2>Enemy Procs, Evvecf value unknown, weight default as 0 for now.</l2>:</b><br>',
-          '    <div class="hvAATable" style="grid-template-columns: 1fr 1.25fr 1fr 1fr 1fr;">',
-          ...expendDataUI(UIDatas.weight3, (id, names, v) => `<div><input class="hvAANumber" name="weight_${id}" placeholder="${v}" type="number">${names}</div>`),
-          '    </div>',
-          '  </div>',
-          '  <div><b>3. PW(X) -= Log10(1 + <l0>武器攻击中央目标伤害倍率(副手及冲击技能)</l0><l1>乘以武器攻擊中央目標傷害倍率(副手及衝擊技能)</l1><l2>Weapon Attack Central Target Damage Ratio (Offhand & Strike)</l2>)</b><br><l0>额外伤害比例：</l0><l1>額外傷害比例：</l1><l2>Extra DMG Ratio: </l2><input class="hvAANumber" name="centralExtraRatio" placeholder="0" type="number">%</div>',
-          '  <div><b>4. <l0>额外权重公式</l0><l1>額外權重公式</l1><l2>Extra weight formula</l2>: </b><input name="extraWeightFormula" type="text"></div>',
-          '  <div><b>5. <l0>优先选择权重最低的目标</l0><l1>優先選擇權重最低的目標</l1><l2>Choose target with lowest rank first</l2></b><br>',
-          '    <input id="displayWeight" type="checkbox"><label for="displayWeight"><l0>显示权重及顺序</l0><l1>顯示權重及順序</l1><l2>DIsplay Weight and order</l2></label>',
-          '    <input id="displayWeightBackground" type="checkbox"><label for="displayWeightBackground"><l0>显示优先级背景色</l0><l1>顯示優先級背景色</l1><l2>DIsplay Priority Background Color</l2></label></br>',
-          '    <div class="displayWeightBackgroundInner"><l0>CSS格式或可eval执行的公式（可用&lt;rank&gt;, &lt;all&gt;指代优先级和总优先级数量, &lt;style_x&gt;指代第x个的相同配置值），例如：</l0><l1>CSS格式或可eval執行的公式（可用&lt;rank&gt;, &lt;all&gt;指代優先級和總優先級數量, &lt;style_x&gt;指代第x個的相同配置值）：例如</l1><l2>CSS or eval executable formula(use &lt;rank&gt; and &lt;all&gt; to refer to priority rank and total rank count, &lt;style_x&gt; to refer to the same option value of option No.x)Such as: </l2><br>`hsl(${Math.round(240*&lt;rank&gt;/Math.max(1,&lt;all&gt;-1))}deg 50% 50%)`<br>',
-          '    <div class="hvAATable" style="grid-template-columns: repeat(1, 0.05fr 1fr);width:100%;">',
-          ...([0,1,2,3,4,5,6,7,8].map(i => `<div>&nbsp;&nbsp;${i+1}.</div><div><input name="weightBackground_${i}" type="text"></div>`)),
-          '    <div>10.</div><div><input name="weightBackground_9" type="text"></div>',
-          '  </div>',
-          '  </div>',
-          '  </div>',
-          '  <div>PS. <l0>如果你对各Buff权重有特别见解，请务必</l0><l1>如果你對各Buff權重有特別見解，請務必</l1><l2>If you have any suggestions, please </l2><a class="hvAAGoto" name="hvAATab-Feedback"><l0>告诉我</l0><l1>告訴我</l1><l2>let me know</l2></a>.<br><l0>参考公式为：</l0><l1>參考公式為：</l1><l2>Basic Weight Calculation as: </l2>PW(X) = Log10(<br>HP/MaxHPOnField/(1+CentralAttackDamageExtraRatio)<br>  *[HPActualEffectivenessRate:∏(1-debuff),debuff=Im|PA|Bl|Co|Dr|MN|St]<br>  /[DMGActualEffectivenessRate:∏(1-debuff),debuff=We|Bl|Slo|Si|Sl|Co|Dr|MN|St]<br>)</div>',
-          '</div>',
-
-          '<div class="hvAATab" id="hvAATab-Drop" style="display:none;">',
-          '  <div><button class="reDropMonitor"><l0>重置掉落监测</l0><l1>重置掉落監測</l1><l2>Reset Drops Tracking</l2></button><input id="portable_drop" type="checkbox"><label for="portable_drop"><l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2><l0>注意：便携数据模式可能会显著增加硬盘读写</l0><l1>注意：便攜數據模式可能會顯著增加硬盤讀寫</l1><l2>Notice：portable mode may significantly increase hard disk I/O</l2></label><input id="portable_dropOld" type="checkbox" style="display:none"></div>',
-          '  <div class="hvAACenter"><l0>记录装备的最低品质</l0><l1>記錄裝備的最低品質</l1><l2>Minimum drop quality</l2>: <select name="dropQuality"><option value="0">Crude</option><option value="1">Fair</option><option value="2">Average</option><option value="3">Superior</option><option value="4">Exquisite</option><option value="5">Magnificent</option><option value="6">Legendary</option><option value="7">Peerless</option></select></div>',
-          '  <table class="hvAACenter"></table></div>',
-
-          '<div class="hvAATab" id="hvAATab-Usage" style="display:none;">',
-          '  <div><button class="reRecordUsage"><l0>重置数据记录</l0><l1>重置數據記錄</l1><l2>Reset Usage Tracking</l2></button><input id="portable_stats" type="checkbox"><label for="portable_stats"><l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2><l0>注意：便携数据模式可能会显著增加硬盘读写</l0><l1>注意：便攜數據模式可能會顯著增加硬盤讀寫</l1><l2>Notice：portable mode may significantly increase hard disk I/O</l2></label><input id="portable_statsOld" type="checkbox" style="display:none"></div>',
-          '  <div><b><l0>自身</l0><l1>自身</l1><l2>Self</l2></b>',
-          '  <div class="hvAATable" style="grid-template-columns: repeat(10, 1fr);">' ,
-          ...expendDataUI(UIDatas.record1, (id, names, v) => `<div><input id="record_${id}" type="checkbox"><label for="record_${id}">${names}</label></div>`),
-          '  </div>',
-          '  </div>',
-          '  <div><b><l0>操作</l0><l1>操作</l1><l2>Actions</l2></b>',
-          '  <div class="hvAATable" style="grid-template-columns: repeat(5, 1fr);">' ,
-          ...expendDataUI(UIDatas.record2, (id, names, v) => `<div><input id="record_${id}" type="checkbox"><label for="record_${id}">${names}</label></div>`),
-          '  </div>',
-          '  </div>',
-          '  <div><b><input id="record_hurt" type="checkbox"><label for="record_hurt"><l0>受伤 (总量)</l0><l1>受傷 (總量)</l1><l2>Hurt (Amount)</l</label>2></b>',
-          '  <div class="hvAATable" style="grid-template-columns: repeat(3, 1fr) repeat(6, 2fr);">' ,
-          ...expendDataUI(UIDatas.record3, (id, names, v) => `<div><input id="record_${id}" type="checkbox"><label for="record_${id}">${names}</label></div>`),
-          '  </div>',
-          '  </div>',
-          '  <table></table>',
-          '</div>',
-
-          '<div class="hvAATab" id="hvAATab-Tools" style="display:none;">',
-          '  <div><span class="hvAATitle"><l0>当前状况</l0><l1>當前狀況</l1><l2>Current status</l2></span>: ',
-          '    <l0>如果脚本长期暂停且网络无问题，请点击</l0><l1>如果腳本長期暫停且網絡無問題，請點擊</l1><l2>If the script does not work and you are sure that it\'s not because of your internet, click</l2><button class="hvAAFix"><l0>尝试修复</l0><l1>嘗試修復</l1><l2>Try to fix</l2></button><br>',
-          '    <l0>战役模式</l0><l1>戰役模式</l1><l2>Battle type</l2>: <select class="hvAADebug" name="roundType"><option></option><option value="ar">The Arena</option><option value="rb">Ring of Blood</option><option value="gr">GrindFest</option><option value="iw">Item World</option><option value="ba">Encounter</option><option value="tw">The Tower</option></select> <l0>当前回合</l0><l1>當前回合</l1><l2>Current round</l2>: <input name="roundNow" class="hvAADebug hvAANumber" type="number"> <l0>总回合</l0><l1>總回合</l1><l2>Total rounds</l2>: <input name="roundAll" class="hvAADebug hvAANumber" type="number"></div>',
-          '  <div class="hvAAQuickSite"><input id="showQuickSite" type="checkbox"><label for="showQuickSite"><span class="hvAATitle"><l0>快捷站点</l0><l1>快捷站點</l1><l2>Quick Site</l2></span></label><span class="showQuickSiteInner"><button class="quickSiteAdd"><l01>新增</l01><l2>Add</l2></button><br>',
-          '    <l0>注意: 留空“名称”一栏则表示删除该行，修改后请保存</l0><l1>注意: 留空“名稱”一欄則表示刪除該行，修改後請保存</l1><l2>Note: The "name" input box left blank will be deleted, after change please save in time.</l2>',
-          '    <table><tbody><tr class="hvAATh"><td><l0>图标</l0><l1>圖標</l1><l2>ICON</l2></td><td><l0>名称</l0><l1>名稱</l1><l2>Name</l2></td><td><l0>链接</l0><l1>鏈接</l1><l2>Link</l2></td></tr></tbody></table></span></div>',
-          '  <div><span class="hvAATitle"><l0>备份与还原</l0><l1>備份與還原</l1><l2>Backup and Restore</l2></span></br><button class="hvAABackup"><l0>备份设置</l0><l1>備份設置</l1><l2>Backup Confiuration</l2></button><button class="hvAARestore"><l0>还原设置</l0><l1>還原設置</l1><l2>Restore Confiuration</l2></button><button class="hvAADelete"><l0>删除设置</l0><l1>刪除設置</l1><l2>Delete Confiuration</l2></button><ul class="hvAABackupList"></ul></div>',
-          '  <div><span class="hvAATitle"><l0>导入与导出</l0><l1>導入與導出</l1><l2>Import and Export</l2></span></br><button class="hvAAExport"><l0>导出设置</l0><l1>導出設置</l1><l2>Export Confiuration</l2></button><button class="hvAAImport"><l0>导入设置</l0><l1>導入設置</l1><l2>Import Confiuration</l2></button><textarea class="hvAAConfig"></textarea></div>',
-          '</div>',
-
-          '<div class="hvAATab" id="hvAATab-Feedback" style="display:none;">',
-          '  <span class="hvAATitle"><l01>反馈</l01><l2>Feedback</l2></span>',
-          '  <div><l0>链接</l0><l1>鏈接</l1><l2>Links</l2>: <a href="https://github.com/dodying/UserJs/issues/new" target="_blank">1. GitHub</a><a href="https://greasyfork.org/forum/post/discussion?script=18482" target="_blank">2. GreasyFork</a></div>',
-          '  <div><span class="hvAATitle"><l0>反馈说明</l0><l1>反饋說明</l1><l2>Feedback Note</l2></span>: <br>',
-          '    <l0>如果你遇见了Bug，想帮助作者修复它<br>你应当提供以下多种资料: <br>1. 场景描述<br>2. 你的配置<br>3. 控制台日志 (按Ctrl+Shift+i打开开发者助手，再选择Console(控制台)面板)<br>4. 战斗日志  (如果是在战斗中)<br>如果是无法容忍甚至使脚本失效的Bug，请尝试安装旧版本<hr>如果你有一些建议使这个脚本更加有用，那么: <br>1. 请尽量简述你的想法<br>2. 如果可以，请提供一些场景 (方便作者更好理解)</l0>',
-          '    <l1>如果你遇見了Bug，想幫助作者修復它<br>你應當提供以下多種資料: <br>1. 場景描述<br>2. 你的配置<br>3. 控制台日誌 (按Ctrl+Shift+i打開開發者助手，再選擇Console(控制台)面板)<br>4. 戰鬥日誌 (如果是在戰鬥中)<br>如果是無法容忍甚至使腳本失效的Bug，請嘗試安裝舊版本<hr>如果你有一些建議使這個腳本更加有用，那麼: <br>1. 請盡量簡述你的想法<br>2.如果可以，請提供一些場景 (方便作者更好理解)</l1>',
-          '    <l2>If you encounter a bug and would like to help the author fix it<br>You should provide the following information: <br>1. the Situation<br>2. Your Configuration<br>3. Console Log (press Ctrl + Shift + i to open the Developer Assistant, And then select the Console panel)<br>4. Battle Log (if in combat)<br>If you are unable to tolerate this bug or even the bug made the script fail, try installing the old version<hr>If you have some suggestions to make this script more useful, then: <br>1. Please briefly describe your thoughts<br>2. If you can, please provide some scenes (to facilitate the author to better understand)<br>PS. For English user, please express in basic English (Oh my poor English, thanks for Google Translate)</l2></div>',
-          '  <div><input id="debugCheckCondition" type="checkbox"><label for="debugCheckCondition">debugCheckCondition:<br/>prefix@/# to log result in console, @for formula, #for param</label>: {{debugCondition}}</div>',
-          '</div>',
-          '</div>',
-
-          '<div class="hvAAButtonBox hvAACenter" style="display:grid; grid-template-columns: repeat(8, 1fr)">',
-          '  <div></div><div></div><button class="hvAAApply"><l0>应用</l0><l1>應用</l1><l2>Apply</l2></button><button class="hvAACancel"><l0>关闭</l0><l1>關閉</l1><l2>Close</l2></button><button class="hvAAReset"><l0>撤销</l0><l1>撤銷</l1><l2>Revert</l2></button><button class="hvAADefault"><l0>默认</l0><l1>默認</l1><l2>Default</l2></button><div></div><div></div>',
-          '</div>',
+                  '<div class="skillOrder"><l0>施放顺序(未配置的按照下面的顺序)</l0><l1>施放順序(未配置的按照下面的順序)</l1><l2>Cast Order(Using order below as default if not configed)</l2>: ',
+                  '<input name="skillOrderValue" style="width:80%;" type="text" disabled="true"><br>',
+                  expendDataUI(UIDatas.skill, (id, names) => labeled(`skillOrder_${id}`, names)),
+                  '</div>',
+                  expendDataUI(UIDatas.skill, (id, names) => div(`${labeled(`skill_${id}`, names)}: <span class="skill_${id}Inner">${labeled(`skillOTOS_${id}`, `<l01>一回合只使用一次</l01><l2>One round only spell one time</l2>`)}</span>{{skill${id}Condition}}`)),
+                ]
+              }),
+              div({
+                args: { class: 'hvAATab', id: 'hvAATab-Infusion' },
+                inner: [
+                  '<l0>战役模式</l0><l1>戰役模式</l1><l2>Battle type</l2>: ',
+                  expendDataUI(UIDatas.roundType, (id, names) => labeled(`infusionRoundType_${id}`, names, 'placeholder="true"')),
+                  div('<l0>魔药使用条件</l0><l1>魔藥使用條件</l1><l2>Infusion Use Condition</l2>{{infusionCondition}}'),
+                  div(labeled('infusionDefaultOnly', '<b><l0>只使用与默认攻击模式相同的魔药</l0><l1>只使用與默認攻擊模式相同的魔藥</l1><l2>Use Infusion as same as default attack mode only.</l2></b>', 'placeholder="true"')),
+                  '<div class="infusionOrder"><b><l0>施放顺序(未配置的按照下面的顺序)</l0><l1>施放順序(未配置的按照下面的順序)</l1><l2>Cast Order(Using order below as default if not configed)</l2></b>: <input name="infusionOrderName" style="width:80%;" type="text" disabled="true"><br>',
+                  '<div class="hvAATable" style="grid-template-columns:repeat(6, 1fr);">' ,
+                  expendDataUI(UIDatas.infusion, (id, names) => div(labeled(`infusionOrder_${id}`, names))),
+                  '</div>',
+                  '</div>',
+                  expendDataUI(UIDatas.infusion, (id, names) => div(labeled(`infusion_${id}`, names), `{{infusion${id}Condition}}`)),
+                ]
+              }),
+              div({
+                args: { class: 'hvAATab', id: 'hvAATab-Scroll' },
+                inner: [
+                  '<l0>战役模式</l0><l1>戰役模式</l1><l2>Battle type</l2>: ',
+                  expendDataUI(UIDatas.roundType, (id, names) => labeled(`scrollRoundType_${id}`, names)),
+                  div('<l0>卷轴使用条件</l0><l1>捲軸使用條件</l1><l2>Scroll Use Condition</l2>{{scrollCondition}}'),
+                  labeled(`scrollFirst`,`<l0>存在技能生成的Buff时，仍然使用卷轴</l0><l1>存在技能生成的Buff時，仍然使用捲軸</l1><l2>Use Scrolls even when there are effects from spells</l2>.`),
+                  expendDataUI(UIDatas.scroll, (id, names) => div(labeled(`scroll_${id}`, names), `{{scroll${id}Condition}}`)),
+                ]
+              }),
+              div({
+                args: { class: 'hvAATab', id: 'hvAATab-Alarm' },
+                inner: [
+                  '<span class="hvAATitle"><l0>自定义警报</l0><l1>自定義警報</l1><l2>Alarm</l2></span><br>',
+                  '<l0>注意：留空则使用默认音频，建议每个用户使用自定义音频</l0><l1>注意：留空則使用默認音頻，建議每個用戶使用自定義音頻</l1><l2>Note: Leave the box blank to use default audio, it\'s recommended for all user to use custom audio.</l2>',
+                  div(expendDataUI(UIDatas.audio, (id, names, v) => div(labeled(`audioEnable_${id}`, names), `: <input name="audio_${id}" placeholder="https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/${v??id}.ogg" type="text"></label><button class="testAlarm"><l0>测试</l0><l1>測試</l1><l2>Test</l2></button>`))),
+                  div('<l0>请将将要测试的音频文件的地址填入这里</l0><l1>請將將要測試的音頻文件的地址填入這裡</l1><l2>Plz put in the audio file address you want to test</l2>: <br><input class="hvAADebug" name="audio_Text" type="text">'),
+                ]
+              }),
+              div({
+                args: { class: 'hvAATab', id: 'hvAATab-Rule' },
+                inner: [
+                  '<span class="hvAATitle"><l0>攻击规则</l0><l1>攻擊規則</l1><l2>Attack Rule</l2></span> <l01><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README.md#攻击规则-示例" target="_blank">示例</a></l01><l2><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README_en.md#attack-rule-example" target="_blank">Example</a></l2>',
+                  div(
+                    '<b>1. <l0>初始血量权重=Log10(目标血量/场上最低血量)</l0><l1>初始血量權重=Log10(目標血量/場上最低血量)</l1><l2>BaseHpWeight = BaseHpRatio*Log10(TargetHP/MaxHPOnField)</l2></b><br>',
+                    '<l0>初始权重系数(>0:低血量优先;<0:高血量优先)</l0><l1>初始權重係數(>0:低血量優先;<0:高血量優先)</l1><l2>BaseHpRatio(>0:low hp first;<0:high hp first)</l2><input class="hvAANumber" name="baseHpRatio" placeholder="1" type="number"><br>',
+                    '<l0>不可命中目标的权重公式</l0><l1>不可名中目標的權重公式</l1><l2>Unreachable Target Weight Formula</l2>: <input name="unreachableWeight" placeholder="1000" type="text"><br>',
+                    '<l0>BOSS:Yggdrasil额外权重</l0><l1>BOSS:Yggdrasil額外權重</l1><l2>BOSS:Yggdrasil Extra Weight</l2></b><input class="hvAANumber" name="YggdrasilExtraWeight" placeholder="-1000" type="number"><br>',
+                    labeled('cacheMonsterHP', '<l0>启用HP缓存</l0><l1>啟用HP緩存</l1><l2>Use HP Cache</l2>'),
+                    '<button class="clearMonsterHPCache"><l0>清空缓存</l0><l1>清空緩存</l1><l2>Clear HP Cache</l2></button>',
+                    '<span class="cacheMonsterHPInner">',
+                    labeled('portable_monsterDB', '<l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2><l0>注意：便携数据模式可能会显著增加硬盘读写</l0><l1>注意：便攜數據模式可能會顯著增加硬盤讀寫</l1><l2>Notice：portable mode may significantly increase hard disk I/O</l2>'),
+                    '<input id="portable_monsterMID" type="checkbox" style="display:none">'
+                  ),
+                  '</span>',
+                  div(
+                    '<b>2. <l0>初始权重与下述各Buff权重相加</l0><l1>初始權重與下述各Buff權重相加</l1><l2>PW(X) = BaseHpWeight + Accumulated_Weight_of_Deprecating_Spells_In_Effect(X)</l2></b><br>',
+                    '<div class="hvAATable" style="grid-template-columns:repeat(6, 1fr);">',
+                    expendDataUI(UIDatas.weight1, (id, names, v) => div(`<input class="hvAANumber" name="weight_${id}" placeholder="${v}" type="number">${names}`)),
+                    '</div>',
+                    '<b><l0>降抗性和攻击模式属性</l0><l1>降抗性和攻擊模式屬性</l1><l2>While elements between Resistance-lower-debuff and Attack-Mode matches</l2>  [' + attackStatusType[option.attackStatus??0] + '] <l0>相同时</l0><l1>相同時</l1><l2></l2></b> : <br>',
+                    '<div class="hvAATable" style="grid-template-columns: repeat(4, 1fr) repeat(2, 1.25fr);">',
+                    expendDataUI(UIDatas.weight2, (id, names, v) => div(`<input class="hvAANumber" name="weight_${id}" placeholder="${v}" type="number">${names}`)),
+                    '</div>',
+                    '<b><l0>降抗性和攻击模式属性</l0><l1>降抗性和攻擊模式屬性</l1><l2>While elements between Resistance-lower-debuff and Attack-Mode NOT matches</l2>  [' + attackStatusType[option.attackStatus??0] + '] <l0>不相同时</l0><l1>不相同時</l1><l2></l2></b>: <br>',
+                    '<div class="hvAATable" style="grid-template-columns: repeat(4, 1fr) repeat(2, 1.25fr);">',
+                    expendDataUI(UIDatas.weight2, (id, names, v, v2) => div(`<input class="hvAANumber" name="weight_${id}1" placeholder="${v2}" type="number">${names}`)),
+                    '</div>',
+                    '<b><l0>敌方增益，暂不清楚具体效果，默认按0权重计算</l0><l1>敵方增益，暫不清楚具體效果，默認按0權重計算</l1><l2>Enemy Procs, Evvecf value unknown, weight default as 0 for now.</l2>:</b><br>',
+                    '<div class="hvAATable" style="grid-template-columns: 1fr 1.25fr 1fr 1fr 1fr;">',
+                    expendDataUI(UIDatas.weight3, (id, names, v) => div(`<input class="hvAANumber" name="weight_${id}" placeholder="${v}" type="number">${names}`)),
+                    '</div>',
+                  ),
+                  div('<b>3. PW(X) -= Log10(1 + <l0>武器攻击中央目标伤害倍率(副手及冲击技能)</l0><l1>乘以武器攻擊中央目標傷害倍率(副手及衝擊技能)</l1><l2>Weapon Attack Central Target Damage Ratio (Offhand & Strike)</l2>)</b><br><l0>额外伤害比例：</l0><l1>額外傷害比例：</l1><l2>Extra DMG Ratio: </l2><input class="hvAANumber" name="centralExtraRatio" placeholder="0" type="number">%'),
+                  div('<b>4. <l0>额外权重公式</l0><l1>額外權重公式</l1><l2>Extra weight formula</l2>: </b><input name="extraWeightFormula" type="text">'),
+                  div(
+                    '<b>5. <l0>优先选择权重最低的目标</l0><l1>優先選擇權重最低的目標</l1><l2>Choose target with lowest rank first</l2></b><br>',
+                    labeled('displayWeight', '<l0>显示权重及顺序</l0><l1>顯示權重及順序</l1><l2>DIsplay Weight and order</l2>'),
+                    labeled('displayWeightBackground', '<l0>显示优先级背景色</l0><l1>顯示優先級背景色</l1><l2>DIsplay Priority Background Color</l2>'),
+                    '<br>',
+                    '<div class="displayWeightBackgroundInner"><l0>CSS格式或可eval执行的公式（可用&lt;rank&gt;, &lt;all&gt;指代优先级和总优先级数量, &lt;style_x&gt;指代第x个的相同配置值），例如：</l0><l1>CSS格式或可eval執行的公式（可用&lt;rank&gt;, &lt;all&gt;指代優先級和總優先級數量, &lt;style_x&gt;指代第x個的相同配置值）：例如</l1><l2>CSS or eval executable formula(use &lt;rank&gt; and &lt;all&gt; to refer to priority rank and total rank count, &lt;style_x&gt; to refer to the same option value of option No.x)Such as: </l2><br>`hsl(${Math.round(240*&lt;rank&gt;/Math.max(1,&lt;all&gt;-1))}deg 50% 50%)`<br>',
+                    '<div class="hvAATable" style="grid-template-columns: repeat(1, 0.05fr 1fr);width:100%;">',
+                    ...([0,1,2,3,4,5,6,7,8,9].map(i => `${div(`${i===9?'':`&nbsp;&nbsp;`}${i+1}.`)}${div(`<input name="weightBackground_${i}" type="text">`)}`)),
+                    '</div>',
+                    '</div>',
+                  ),
+                  div(
+                    'PS. <l0>如果你对各Buff权重有特别见解，请务必</l0><l1>如果你對各Buff權重有特別見解，請務必</l1><l2>If you have any suggestions, please </l2><a class="hvAAGoto" name="hvAATab-Feedback"><l0>告诉我</l0><l1>告訴我</l1><l2>let me know</l2></a>.<br>',
+                    '<l0>参考公式为：</l0><l1>參考公式為：</l1><l2>Basic Weight Calculation as: </l2>PW(X) = Log10(<br>HP/MaxHPOnField/(1+CentralAttackDamageExtraRatio)<br>  *[HPActualEffectivenessRate:∏(1-debuff),debuff=Im|PA|Bl|Co|Dr|MN|St]<br>  /[DMGActualEffectivenessRate:∏(1-debuff),debuff=We|Bl|Slo|Si|Sl|Co|Dr|MN|St])'
+                  ),
+                ]
+              }),
+              div({
+                args: { class: 'hvAATab', id: 'hvAATab-Drop' },
+                inner: [
+                  div(
+                    '<button class="reDropMonitor"><l0>重置掉落监测</l0><l1>重置掉落監測</l1><l2>Reset Drops Tracking</l2></button>',
+                    labeled('portable_drop', '<l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2><l0>注意：便携数据模式可能会显著增加硬盘读写</l0><l1>注意：便攜數據模式可能會顯著增加硬盤讀寫</l1><l2>Notice：portable mode may significantly increase hard disk I/O</l2>'),
+                    '<input id="portable_dropOld" type="checkbox" style="display:none">',
+                  ),
+                  '<div class="hvAACenter"><l0>记录装备的最低品质</l0><l1>記錄裝備的最低品質</l1><l2>Minimum drop quality</l2>: <select name="dropQuality"><option value="0">Crude</option><option value="1">Fair</option><option value="2">Average</option><option value="3">Superior</option><option value="4">Exquisite</option><option value="5">Magnificent</option><option value="6">Legendary</option><option value="7">Peerless</option></select></div>',
+                  '<table class="hvAACenter"></table>',
+                ]
+              }),
+              div({
+                args: { class: 'hvAATab', id: 'hvAATab-Usage' },
+                inner: [
+                  div(
+                    '<button class="reRecordUsage"><l0>重置数据记录</l0><l1>重置數據記錄</l1><l2>Reset Usage Tracking</l2></button>',
+                    labeled('portable_stats', '<l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2><l0>注意：便携数据模式可能会显著增加硬盘读写</l0><l1>注意：便攜數據模式可能會顯著增加硬盤讀寫</l1><l2>Notice：portable mode may significantly increase hard disk I/O</l2>'),
+                    '<input id="portable_statsOld" type="checkbox" style="display:none">'
+                  ),
+                  div(
+                    '<b><l0>自身</l0><l1>自身</l1><l2>Self</l2></b>',
+                    '<div class="hvAATable" style="grid-template-columns: repeat(10, 1fr);">' ,
+                    expendDataUI(UIDatas.record1, (id, names, v) => div(labeled(`record_${id}`, names))),
+                    '</div>',
+                  ),
+                  div(
+                    '<b><l0>操作</l0><l1>操作</l1><l2>Actions</l2></b>',
+                    '<div class="hvAATable" style="grid-template-columns: repeat(5, 1fr);">' ,
+                    expendDataUI(UIDatas.record2, (id, names, v) => div(labeled(`record_${id}`, names))),
+                    '</div>',
+                  ),
+                  div(
+                    '<b><input id="record_hurt" type="checkbox"><label for="record_hurt"><l0>受伤 (总量)</l0><l1>受傷 (總量)</l1><l2>Hurt (Amount)</l</label>2></b>',
+                    '<div class="hvAATable" style="grid-template-columns: repeat(3, 1fr) repeat(6, 2fr);">' ,
+                    expendDataUI(UIDatas.record3, (id, names, v) => div(labeled(`record_${id}`, names))),
+                    '</div>',
+                  ),
+                  '<table></table>',
+                ]
+              }),
+              div({
+                args: { class: 'hvAATab', id: 'hvAATab-Tools' },
+                inner: [
+                  div(
+                    '<span class="hvAATitle"><l0>当前状况</l0><l1>當前狀況</l1><l2>Current status</l2></span>: ',
+                    '<l0>如果脚本长期暂停且网络无问题，请点击</l0><l1>如果腳本長期暫停且網絡無問題，請點擊</l1><l2>If the script does not work and you are sure that it\'s not because of your internet, click</l2><button class="hvAAFix"><l0>尝试修复</l0><l1>嘗試修復</l1><l2>Try to fix</l2></button><br>',
+                    '<l0>战役模式</l0><l1>戰役模式</l1><l2>Battle type</l2>: <select class="hvAADebug" name="roundType"><option></option><option value="ar">The Arena</option><option value="rb">Ring of Blood</option><option value="gr">GrindFest</option><option value="iw">Item World</option><option value="ba">Encounter</option><option value="tw">The Tower</option></select> <l0>当前回合</l0><l1>當前回合</l1><l2>Current round</l2>: <input name="roundNow" class="hvAADebug hvAANumber" type="number"> <l0>总回合</l0><l1>總回合</l1><l2>Total rounds</l2>: <input name="roundAll" class="hvAADebug hvAANumber" type="number">'
+                  ),
+                  '<div class="hvAAQuickSite"><input id="showQuickSite" type="checkbox"><label for="showQuickSite"><span class="hvAATitle"><l0>快捷站点</l0><l1>快捷站點</l1><l2>Quick Site</l2></span></label><span class="showQuickSiteInner"><button class="quickSiteAdd"><l01>新增</l01><l2>Add</l2></button><br>',
+                  '<l0>注意: 留空“名称”一栏则表示删除该行，修改后请保存</l0><l1>注意: 留空“名稱”一欄則表示刪除該行，修改後請保存</l1><l2>Note: The "name" input box left blank will be deleted, after change please save in time.</l2>',
+                  '<table><tbody><tr class="hvAATh"><td><l0>图标</l0><l1>圖標</l1><l2>ICON</l2></td><td><l0>名称</l0><l1>名稱</l1><l2>Name</l2></td><td><l0>链接</l0><l1>鏈接</l1><l2>Link</l2></td></tr></tbody></table></span></div>',
+                  div('<span class="hvAATitle"><l0>备份与还原</l0><l1>備份與還原</l1><l2>Backup and Restore</l2></span><br><button class="hvAABackup"><l0>备份设置</l0><l1>備份設置</l1><l2>Backup Confiuration</l2></button><button class="hvAARestore"><l0>还原设置</l0><l1>還原設置</l1><l2>Restore Confiuration</l2></button><button class="hvAADelete"><l0>删除设置</l0><l1>刪除設置</l1><l2>Delete Confiuration</l2></button><ul class="hvAABackupList"></ul>'),
+                  div('<span class="hvAATitle"><l0>导入与导出</l0><l1>導入與導出</l1><l2>Import and Export</l2></span><br><button class="hvAAExport"><l0>导出设置</l0><l1>導出設置</l1><l2>Export Confiuration</l2></button><button class="hvAAImport"><l0>导入设置</l0><l1>導入設置</l1><l2>Import Confiuration</l2></button><textarea class="hvAAConfig"></textarea>'),
+                ]
+              }),
+              div({
+                args: { class: 'hvAATab', id: 'hvAATab-Feedback' },
+                inner: [
+                  '<span class="hvAATitle"><l01>反馈</l01><l2>Feedback</l2></span>',
+                  div('<l0>链接</l0><l1>鏈接</l1><l2>Links</l2>: <a href="https://github.com/dodying/UserJs/issues/new" target="_blank">1. GitHub</a><a href="https://greasyfork.org/forum/post/discussion?script=18482" target="_blank">2. GreasyFork</a>'),
+                  div(
+                    '<span class="hvAATitle"><l0>反馈说明</l0><l1>反饋說明</l1><l2>Feedback Note</l2></span>: <br>',
+                    '<l0>如果你遇见了Bug，想帮助作者修复它<br>你应当提供以下多种资料: <br>1. 场景描述<br>2. 你的配置<br>3. 控制台日志 (按Ctrl+Shift+i打开开发者助手，再选择Console(控制台)面板)<br>4. 战斗日志  (如果是在战斗中)<br>如果是无法容忍甚至使脚本失效的Bug，请尝试安装旧版本<hr>如果你有一些建议使这个脚本更加有用，那么: <br>1. 请尽量简述你的想法<br>2. 如果可以，请提供一些场景 (方便作者更好理解)</l0>',
+                    '<l1>如果你遇見了Bug，想幫助作者修復它<br>你應當提供以下多種資料: <br>1. 場景描述<br>2. 你的配置<br>3. 控制台日誌 (按Ctrl+Shift+i打開開發者助手，再選擇Console(控制台)面板)<br>4. 戰鬥日誌 (如果是在戰鬥中)<br>如果是無法容忍甚至使腳本失效的Bug，請嘗試安裝舊版本<hr>如果你有一些建議使這個腳本更加有用，那麼: <br>1. 請盡量簡述你的想法<br>2.如果可以，請提供一些場景 (方便作者更好理解)</l1>',
+                    '<l2>If you encounter a bug and would like to help the author fix it<br>You should provide the following information: <br>1. the Situation<br>2. Your Configuration<br>3. Console Log (press Ctrl + Shift + i to open the Developer Assistant, And then select the Console panel)<br>4. Battle Log (if in combat)<br>If you are unable to tolerate this bug or even the bug made the script fail, try installing the old version<hr>If you have some suggestions to make this script more useful, then: <br>1. Please briefly describe your thoughts<br>2. If you can, please provide some scenes (to facilitate the author to better understand)<br>PS. For English user, please express in basic English (Oh my poor English, thanks for Google Translate)</l2>'
+                  ),
+                  div('<input id="debugCheckCondition" type="checkbox"><label for="debugCheckCondition">debugCheckCondition:<br>prefix@/# to log result in console, @for formula, #for param</label>: {{debugCondition}}'),
+                ]
+              }),
+            ]
+          }),
+          div({
+            args: { class: 'hvAAButtonBox hvAACenter', style:'display:grid; grid-template-columns: repeat(8, 1fr)' },
+            inner: [
+              div(),div(),
+              '<button class="hvAAApply"><l0>应用</l0><l1>應用</l1><l2>Apply</l2></button>',
+              '<button class="hvAACancel"><l0>关闭</l0><l1>關閉</l1><l2>Close</l2></button>',
+              '<button class="hvAAReset"><l0>撤销</l0><l1>撤銷</l1><l2>Revert</l2></button>',
+              '<button class="hvAADefault"><l0>默认</l0><l1>默認</l1><l2>Default</l2></button>',
+              div(),div(),
+            ]}),
         ].join('').replace(/{{(.*?)}}/g, '<div class="customize" name="$1"></div>');
 
         [...gE('.customize', 'all', optionBox)].map(customize => {
@@ -2885,7 +3093,7 @@
           customize.classList.add(`${input.id}Inner`);
         });
 
-        gE('#hvAATab-Main', optionBox).style.zIndex = 1;
+        gE('.hvAATab', 'all', optionBox).forEach(tab => { tab.style.zIndex = 1; });
         optionBox.style.display = 'none';
         gE('select[name="lang"]', optionBox).value = g().lang;
         bindEvents();
@@ -3068,7 +3276,7 @@
             });
           }
           gE('.hvAATab', 'all', optionBox).forEach((i) => {
-            i.style.display = (i.id === `hvAATab-${name}`) ? 'block' : 'none';
+            i.style.display = (i.id === `hvAATab-${name}`) ? 'block' : '';
           });
         };
         gE('.hvAAGoto', 'all', optionBox).forEach((i) => {
@@ -3912,18 +4120,12 @@
     function setAlarm(e, testSrc) { // 发出警报
       const option = getOption();
       e = e || 'Common';
-      console.log('on alarm:', {
-        notification: option.notification,
-        alert: option.alert,
-        audioEnable: option.audioEnable?.[e],
-      }, e);
       if (option.notification || testSrc) {
         setNotification(e);
       }
       if (option.alert && option.audioEnable?.[e] || testSrc) {
         setAudioAlarm(e, testSrc);
       }
-      return true;
     }
 
     function playAudio(audio) {
@@ -3999,6 +4201,14 @@
             text: '游戏胜利\n页面将在3秒后刷新',
             time: 3,
           },
+          Pause: {
+            text: '触发自动暂停',
+            time: 3,
+          },
+          Flee: {
+            text: '触发自动逃跑',
+            time: 3,
+          },
           BattleUnresponsive: {
             text: '战斗无响应',
             time: 3,
@@ -4028,6 +4238,14 @@
             text: '遊戲勝利\n頁面將在3秒後刷新',
             time: 3,
           },
+          Pause: {
+            text: '觸發自動暫停',
+            time: 3,
+          },
+          Flee: {
+            text: '觸發自動逃跑',
+            time: 3,
+          },
           BattleUnresponsive: {
             text: '戰鬥無響應',
             time: 3,
@@ -4055,6 +4273,14 @@
           },
           Victory: {
             text: 'You\'re victorious.\nThis page will refresh in 3 seconds.',
+            time: 3,
+          },
+          Pause: {
+            text: 'Auto paused',
+            time: 3,
+          },
+          Flee: {
+            text: 'Auto fleed',
             time: 3,
           },
           BattleUnresponsive: {
@@ -5948,6 +6174,7 @@
       killBug(); // 解决 HentaiVerse 可能出现的 bug
 
       if (option.autoFlee && checkCondition(option.fleeCondition)) {
+        if (option.fleeAlarm) setAlarm('Flee');
         gE('1001').click();
         setExitBattleTimeout('Flee');
         return;
@@ -6122,6 +6349,7 @@
           setValue('battle', battle);
         }
         pauseChange();
+        if (option.pauseAlarm) setAlarm('Pause');
         return true;
       }
       return false;
@@ -6139,6 +6367,7 @@
 
     function setExitBattleTimeout(alarm) {
       lastResponsive = Infinity;
+      g('battleExit', true);
       setAlarm(alarm);
       const option = getOption();
       if (alarm === 'Defeat' && !option.autoSkipDefeated) {
@@ -6151,7 +6380,7 @@
     async function checkResponsive() {
       const option = getOption();
       const battleUnresponsive = {
-        'Alert': { method: () => setAlarm('BattleUnresponsive') },
+        'Alert': { method: () => (setAlarm('BattleUnresponsive') || true) },
         'Reload': { method: goto },
         'Alt': { method: gotoAlt }
       }
@@ -6173,7 +6402,7 @@
           if (battleUnresponsive[t].time > waited) continue;
           isBreak ||= battleUnresponsive[t].method();
         }
-        if (isBreak) break;
+        if (g().battleExit || isBreak) break;
         await pauseAsync(min - waited);
       }
     }
