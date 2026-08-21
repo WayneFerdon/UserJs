@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.106
+// @version      2.91.107
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -58,7 +58,7 @@
         img: 'weaken',
         id: '212',
         range: { 4202: [1, 1, 2, 3] },
-        duration: { 4201: [10,11,12,13,14,15] },
+        duration: { 4201: [10, 11, 12, 13, 14, 15] },
         channeling: true,
         description: "'The target has been weakened, making it deal less damage, and preventing it from scoring critical hits.'"
       },
@@ -69,7 +69,7 @@
         img: 'imperil',
         id: '213',
         range: { 4204: [1, 1, 2, 3] },
-        duration: { 4203: [10,11,12,13,14,15] },
+        duration: { 4203: [10, 11, 12, 13, 14, 15] },
         channeling: true,
         description: "'The target has been imperiled, reducing physical and magical mitigation as well as elemental mitigation.'"
       },
@@ -80,7 +80,7 @@
         img: 'blind',
         id: '231',
         range: { 4206: [1, 1, 2, 3] },
-        duration: { 4205: [10,11,12,13,14,15] },
+        duration: { 4205: [10, 11, 12, 13, 14, 15] },
         channeling: true,
         description: "'The target has been blinded, reducing the chance of landing attacks and hitting with magic spells.'"
       },
@@ -91,7 +91,7 @@
         img: 'sleep',
         id: '222',
         range: { 4207: [1, 1, 2, 3] },
-        duration: { 4207: [5,6,6,7] },
+        duration: { 4207: [5, 6, 6, 7] },
         channeling: true,
         description: "'The target has been lulled to sleep, preventing it from taking any actions. Any attacks against this target are guaranteed to hit, but can also wake it up.'"
       },
@@ -102,7 +102,7 @@
         img: 'confuse',
         id: '223',
         range: { 4207: [1, 1, 2, 3] },
-        duration: { 4207: [10,11,12,12] },
+        duration: { 4207: [10, 11, 12, 12] },
         channeling: true,
         description: "'The target has been confused, making it lunge out wildly and strike friends and foes alike.'"
       },
@@ -113,7 +113,7 @@
         img: 'silence',
         id: '232',
         range: { 4211: [1, 1, 2, 3] },
-        duration: { 4211: [10,11,12,13] },
+        duration: { 4211: [10, 11, 12, 13] },
         channeling: true,
         description: "'The target has been silenced, preventing it from using special attacks and magic.'"
       },
@@ -124,7 +124,7 @@
         img: 'magnet',
         id: '233',
         range: { 4212: [1, 1, 1, 2, 2, 3] },
-        duration: { 4212: [10,11,12,13,14,15] },
+        duration: { 4212: [10, 11, 12, 13, 14, 15] },
         channeling: true,
         description: "'The target has been immobilized, eliminating its chance to evade and reducing its magic resistance.'"
       },
@@ -135,9 +135,9 @@
         img: 'slow',
         id: '221',
         range: { 4213: [1, 1, 2, 2, 2, 3] },
-        duration: { 4213: [10,11,12,13,14,15] },
+        duration: { 4213: [10, 11, 12, 13, 14, 15] },
         channeling: true,
-        description: `'The target has been slowed by ${[30,40,40,45,50,50][ability[4213]??0]}%, making it attack less frequently.'`
+        description: `'The target has been slowed by ${[30, 40, 40, 45, 50, 50][ability[4213] ?? 0]}%, making it attack less frequently.'`
       },
       // debuff skills not checked ------------ ??
       Dr: {
@@ -387,7 +387,7 @@
 
     // runtime
     const isFrame = window.self !== window.top;
-    function $id(id,d) {return (d||document).getElementById(id);}
+    function $id(id, d) { return (d || document).getElementById(id); }
     const _servername = location.pathname.includes('/isekai/') ? 'isekai' : 'persistent';
     const addition = {
       other: _servername === 'isekai' ? 'persistent' : 'isekai',
@@ -405,7 +405,7 @@
     let hvVersion;
     let onIsekaiEncounter;
     let monsterBuffSkillLib;
-    let ability = getValue('ability', true)??{};
+    let ability = getValue('ability', true) ?? {};
     let lastResponsive = new Date().getTime();
 
     // util methods
@@ -474,21 +474,24 @@
         return mapped.reduce((acc, cur) => (acc ?? '') + (cur ?? ''), '');
       },
       label: function (ids, inner, ...extra) {
-        return `<label for="${ids}" ${extra?.join('')??''}>${inner??''}</label>`
+        return `<label ${Array.isArray(ids) ? `for="${[...ids, ''].join(',')}"` : `for="${ids}"`} ${extra?.join('') ?? ''}>${inner ?? ''}</label>`
       },
       labeled: function (id, names, ...extra) {
         return `<input id="${id}" type="checkbox" ${extra?.join(' ') ?? ''}>${UI.label(id, names)}`;
       },
-      text: function (id, ...extra) {
-        return `<input name="${id}" type="text" ${extra.join(' ')}></input>`;
+      orderValue: function (id, hidden) {
+        return UI.text(id, 'style="width:80%;" disabled="true"', hidden ? 'type="hidden"' : '') + (hidden ? '' : '<br>');
       },
-      number: function (id, placeholder=0, type='number', classExtra, ...extra) {
+      text: function (id, ...extra) {
+        return `<input name="${id}" ${extra.find(e => e.match('type="hidden"')) ? '' : 'type="text"'} ${extra.join(' ')}></input>`;
+      },
+      number: function (id, placeholder = 0, type = 'number', classExtra, ...extra) {
         return `<input class="hvAANumber ${classExtra ? classExtra : ''}" name="${id}" ${placeholder !== undefined ? `placeholder=${placeholder}` : ''} type="${type}" ${extra?.join(' ') ?? ''}>`;
       },
       b: function (...inner) {
         return `<b>${inner.join('')}</b>`;
       },
-      repeat: function (n, size='1fr') {
+      repeat: function (n, size = '1fr') {
         return `repeat(${n}, ${size})`
       },
       hvAATab: function (id, ...inner) {
@@ -524,7 +527,7 @@
               args += ` ${key}="${datas.args[key]}"`;
             }
           }
-          return [`<div ${args}>`, ...(typeof datas.inner === 'string' ? [datas.inner] : datas.inner??''), `</div>`].join('');
+          return [`<div ${args}>`, ...(typeof datas.inner === 'string' ? [datas.inner] : datas.inner ?? ''), `</div>`].join('');
         }
         return [`<div>`, ...datas, `</div>`].join('');
       },
@@ -541,14 +544,14 @@
     UI.button = {
       ...UI.button,
       update: `${UI.l('更新', '更新', 'Update')}`,
-      updating: UI.l('更新中...','更新中...','Updating...'),
+      updating: UI.l('更新中...', '更新中...', 'Updating...'),
       clear: UI.l('清空', '清空', 'Clear'),
       reset: UI.l('重置', '重置', 'Reset'),
     }
 
     if (typeof Object.sortBy === 'undefined') {
       Object.defineProperty(Object.prototype, 'sortBy', { value: function sortBy(by) {
-        return this.sort((x,y) => by(x) < by(y) ? -1 : by(x) > by(y) ? 1 : 0)
+        return this.sort((x, y) => by(x) < by(y) ? -1 : by(x) > by(y) ? 1 : 0)
       }, enumerable: false });
     }
 
@@ -627,7 +630,6 @@
 
             if (ch === "'" || ch === '"') {
               const quote = ch;
-              let raw = '';
               let j = i;
               while (j < expression.length) {
                 const current = expression[j];
@@ -636,13 +638,13 @@
                   j++;
                   continue;
                 }
-                if (i !== j-1 && current === quote) break; // 字符串结束
+                if (i !== j - 1 && current === quote) break; // 字符串结束
               }
               if (j > expression.length) {
                 throw new Error(`Unclosed ${quote} string`);
               }
               tokens.push(expression.slice(i, j));
-              i = j+1;
+              i = j + 1;
               lastTokenWasOperatorOrLeftParen = false;
               continue;
             }
@@ -753,7 +755,7 @@
               if (typeof value === 'string') {
                 if (value[0] !== `"` && value[0] != `'`) value = `'${value}'`;
                 else if (value[0] === `"` && value[value.length-1] === `"`) {
-                  value = `'${value.slice(1,value.length-1)}'`;
+                  value = `'${value.slice(1, value.length - 1)}'`;
                 }
               }
               stack.push(value);
@@ -876,7 +878,7 @@
           range(count).forEach(_ => list.push(func(...args)));
           return list;
         },
-        add: function (method, url, data, onload, onerror, context={}, headers={}, isInsert=false) {
+        add: function (method, url, data, onload, onerror, context = {}, headers = {}, isInsert = false) {
           method = !data ? 'GET' : method ?? 'POST';
           if (method === 'POST') {
             headers['Content-Type'] ??= 'application/x-www-form-urlencoded';
@@ -1048,7 +1050,7 @@
           } catch (err) { console.error(err)} })();
           return true;
         }
-        hvVersion = Version(...gE('script[src*="hvc.js"]', document)?.src.match(/z\/(\d+)(.*?)\/hvc.js/)?.slice(1,3));
+        hvVersion = Version(...gE('script[src*="hvc.js"]', document)?.src.match(/z\/(\d+)(.*?)\/hvc.js/)?.slice(1, 3));
         setValue('url', window.location.origin);
         monsterBuffSkillLib = setMonsterBuffSkillLib();
 
@@ -1264,7 +1266,7 @@
       //   return false;
       // }
 
-      if (gE('[class^="c5"],[class^="c4"]') && UI.confirm('请设置字体\n使用默认字体可能使某些功能失效\n是否查看相关说明？', '請設置字體\n使用默認字體可能使某些功能失效\n是否查看相關說明？', 'Please set the font\nThe default font may make some functions fail to work\nDo you want to see instructions?')) {
+      if (gE('[class^="c5"], [class^="c4"]') && UI.confirm('请设置字体\n使用默认字体可能使某些功能失效\n是否查看相关说明？', '請設置字體\n使用默認字體可能使某些功能失效\n是否查看相關說明？', 'Please set the font\nThe default font may make some functions fail to work\nDo you want to see instructions?')) {
         $ajax.openNoFetch(`https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README${g().lang === '2' ? '_en.md#about-font' : '.md#关于字体的说明'}`, true);
         return false;
       }
@@ -1294,12 +1296,12 @@
         return false;
       }
       setValue('onriddle', true);
-      (window.opener??window).console.log('onriddle', { riddlePopup: getOption().riddlePopup, opener: window.opener } );
+      (window.opener ?? window).console.log('onriddle', { riddlePopup: getOption().riddlePopup, opener: window.opener });
       if (!getOption().riddlePopup || window.opener) {
         riddleAlert();
         return true;
       }
-      window.open(window.location.href, 'riddleWindow', 'resizable,scrollbars,width=1241,height=707');
+      window.open(window.location.href, 'riddleWindow', 'resizable, scrollbars, width=1241, height=707');
       return true;
     }
 
@@ -1413,12 +1415,12 @@
 
     function getDefaultOrder(idMatch, map) {
       const defaultOrder = g().defaultOrder ??= {};
-      const key = idMatch + (map?.toString()??'');
+      const key = idMatch + (map?.toString() ?? '');
       return (defaultOrder[key] ??= [...gE(`[id^="${idMatch}_"]`, 'all')].map(map ?? (ord => ord.id.match(/_(.*)/)[1])));
     }
 
     function splitOrders(orderValue, defaultOrder, ...args) {
-      return unique(object2Order(orderValue, ...args).concat(defaultOrder ?? []).map(v=>isNaN(v*1)?v:v*1));
+      return unique(object2Order(orderValue, ...args).concat(defaultOrder ?? []).map(v => isNaN(v * 1) ? v : v * 1));
     }
 
     function goto(url) { // 前进
@@ -1464,7 +1466,7 @@
       resolve();
     }
 
-    function pad(num, pad='0', total=2) {
+    function pad(num, pad = '0', total = 2) {
       return num.toString().padStart(total, pad);
     }
 
@@ -1505,7 +1507,7 @@
 
       function r(e) {
         switch(true) {
-          case e.key?.length >=2 && e.key?.includes('F'): return;
+          case e.key?.length >= 2 && e.key?.includes('F'): return;
           case e.ctrlKey: return;
           default: break;
         }
@@ -1541,8 +1543,8 @@
 
     function getStartBattleButtons(doc = undefined, site = undefined) {
       const idMap = {
-        ar: { 1:1, 10:3, 20:5, 30:8, 40:9, 50:11, 60:12, 70:13, 80:15, 90:16, 100:17, 110:19, 120:20, 130:21, 140:23, 150:24, 165:26, 180:27, 200:28, 225:29, 250:32, 300:33, 400:34, 500:35 },
-        rb: [105,106,107,108,109,110,111,112],
+        ar: { 1: 1, 10: 3, 20: 5, 30: 8, 40: 9, 50: 11, 60: 12, 70: 13, 80: 15, 90: 16, 100: 17, 110: 19, 120: 20, 130: 21, 140: 23, 150: 24, 165: 26, 180: 27, 200: 28, 225: 29, 250: 32, 300: 33, 400: 34, 500: 35 },
+        rb: [105, 106, 107, 108, 109, 110, 111, 112],
       }
       const option = getOption(true);
       doc ??= document;
@@ -1633,11 +1635,11 @@
 
       // 迁移2.91.9及之前的权重背景配置
       if (option.weightBackground && Object.values(option.weightBackground).some(Array.isArray)) {
-        option.weightBackground = Object.fromEntries(Object.entries(option.weightBackground).map(([k,w]) => [(k*1+9)%10,w[0]]));
+        option.weightBackground = Object.fromEntries(Object.entries(option.weightBackground).map(([k, w]) => [(k * 1 + 9) % 10, w[0]]));
       }
 
       // 迁移2.90.162及之前的targetHp等到targetHpDecimal等
-      if (!version.upto(2,90,162)) {
+      if (!version.upto(2, 90, 162)) {
         option = JSON.parse(JSON.stringify(option).replace('targetHp', 'targetHpDecimal').replace('targetMp', 'targetMpDecimal').replace('targetSp', 'targetSpDecimal').replace('DecimalDecimal', 'Decimal'));
         option.version = scriptVersion.ver;
         g('version', option.version);
@@ -1848,7 +1850,7 @@
       }
     }
 
-    function setValue(key, value, portable=false) { // 储存数据
+    function setValue(key, value, portable) { // 储存数据
       const isLocalStorage = dataFlags.local.includes(key) && !portable;
       if (!dataFlags.standalone.includes(key)) {
         setLocal(key, value, isLocalStorage);
@@ -1930,7 +1932,7 @@
       GM_deleteValue(key);
     }
 
-    function delValue(key, portable=false) { // 删除数据
+    function delValue(key, portable) { // 删除数据
       const isLocalStorage = portable ? false : dataFlags.local.includes(key);
       if (dataFlags.standalone.includes(key)) {
         onRestoredBattleServer(key, () => {
@@ -1987,7 +1989,7 @@
       const globalStyle = gE('head').appendChild(cE('style'));
       const cssContent = [
         // hvAA
-        'l0,l1,l01,l2{display:none;}', // l0: 简体 l1: 繁体 l01:简繁体共用 l2: 英文
+        'l0, l1, l01, l2 {display:none;}', // l0: 简体 l1: 繁体 l01:简繁体共用 l2: 英文
         '#hvAABox2{position:absolute;left:1075px;padding-top: 6px;}',
         '.hvAALog{font-size:20px;}',
         '.hvAAPauseUI{top:30px;left:1246px;position:absolute;z-index:9999; width:80px}',
@@ -1999,7 +2001,7 @@
         '.hvAATabmenu>span{display:block;padding:5px 10px;margin:0 10px 0 0;border:1px solid #91a7b4;border-radius:5px;background-color:#E3F1F8;color:#000;text-decoration:none;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;cursor:pointer;}',
         '.hvAATabmenu>span:hover{left:-5px;position:relative;color:#0000FF;z-index:2!important;}',
         '.hvAATabmenu>span>input{margin:0 0 0 -8px;}',
-        '.hvAATab{position:absolute;width:calc(100% - 10px);height:calc(100% - 30px);left:36px;padding:5px;border:1px solid #91A7B4;border-radius:3px;box-shadow:0 2px 3px rgba(0,0,0,0.1);color:#666;background-color:#EDEBDF;overflow:auto;}',
+        '.hvAATab{position:absolute;width:calc(100% - 10px);height:calc(100% - 30px);left:36px;padding:5px;border:1px solid #91A7B4;border-radius:3px;box-shadow:0 2px 3px rgba(0, 0, 0, 0.1);color:#666;background-color:#EDEBDF;overflow:auto;}',
         '.hvAATab>div:nth-child(2n){border:1px solid #EAEAEA;background-color:#FAFAFA;}',
         '.hvAATab>div:nth-child(2n+1){border:1px solid #808080;background-color:#DADADA;}',
         '.hvAATab a{margin:0 2px;}',
@@ -2116,8 +2118,7 @@
       li.textContent = code;
     }
 
-    function getCheckSupplyOptionTable(suffix='', checkBoxOnly) {
-      const option = getOption(true);
+    function getCheckSupplyOptionTable(suffix = '', checkBoxOnly) {
       const items = [
         11191, 11291, 11391, 12101, 12201,
         11195, 11295, 11395, 12301, 12401,
@@ -2126,12 +2127,12 @@
         13199, 13111, 13101,        0, 11401,
         19111, 19131, 11501,        0, 11402];
       return [
-        checkBoxOnly ? '' : `    <span class="checkSupply${suffix}Inner">${UI.l('库存', '庫存', 'Warn if supply')}&lt;max(100%,${UI.number(`checkSupplyWarn${suffix}`, 100)}%)${UI.label(`checkSupplyWarn${suffix}`, `${UI.l('提示库存','提示庫存','Supply warn')} ${suffix} %`, 'hidden')}${UI.l('时提示', '時提示')};</span><br>`,
+        checkBoxOnly ? '' : `    <span class="checkSupply${suffix}Inner">${UI.l('库存', '庫存', 'Warn if supply')}&lt;max(100%,${UI.number(`checkSupplyWarn${suffix}`, 100)}%)${UI.label(`checkSupplyWarn${suffix}`, `${UI.l('提示库存', '提示庫存', 'Supply warn')} ${suffix} %`, 'hidden')}${UI.l('时提示', '時提示')};</span><br>`,
         UI.hvAATable(undefined, `hvAAcheckItems checkSupply${suffix}Inner`, ...items.map(item => {
           if (!item) return UI.div();
           return UI.div(UI.labeled(
-              `isCheck${suffix}_${item}`,
-              `${!checkBoxOnly ? UI.number(`checkItem${suffix}_${item}`) : ''}${itemMap[item].map((...args) => `<l${args[1]}>${args[0]}</l${args[1]}>`).join('')}`
+            `isCheck${suffix}_${item}`,
+            `${!checkBoxOnly ? UI.number(`checkItem${suffix}_${item}`) : ''}${itemMap[item].map((...args) => `<l${args[1]}>${args[0]}</l${args[1]}>`).join('')}`
           ))
         }))
       ];
@@ -2190,12 +2191,12 @@
 
     function setEquipSetName(personaSelect, equipSetSelection, personas, equipSets) {
       if ([personas, equipSets].includes(undefined)) {
-        const { e, p, s } = getValue('itemWorldDatas', true)??{};
+        const { e, p, s } = getValue('itemWorldDatas', true) ?? {};
         personas ??= p;
         equipSets ??= s;
       }
       let current = { persona: Object.keys(personas).find(p => personas[p].selected), equipSet: Object.keys(equipSets).find(s => equipSets[s]) };
-      let setNames = JSON.parse(window.localStorage.getItem(_server.utils + '_persona')??'[]');
+      let setNames = JSON.parse(window.localStorage.getItem(_server.utils + '_persona') ?? '[]');
       const currentOptionText = ['(当前)', '(當前)', '(current)'][g().lang];
       const names = setNames?.[current.persona];
       [...gE('option', 'all', equipSetSelection)].forEach(option => {
@@ -2222,7 +2223,7 @@
         ['挑战套装', '挑戰套裝', 'Battle Equip Set']
       ].map(UI.l);
       const option = getOption();
-      const { equips, personas, equipSets } = getValue('itemWorldDatas', true)??{};
+      const { equips, personas, equipSets } = getValue('itemWorldDatas', true) ?? {};
       if (!personas || !equipSets) {
         return;
       }
@@ -2268,7 +2269,7 @@
         '112': 'RB250',
       };
       for (const battle of ordered) {
-        const inherit = battle === 'default' ? undefined : isNaN(+battle) ? 'Default' : battle*1 >= 105 ? 'RB' : 'AR';
+        const inherit = battle === 'default' ? undefined : isNaN(+battle) ? 'Default' : battle * 1 >= 105 ? 'RB' : 'AR';
         appendInput(container, option.enableEquipSet?.[battle], UI.labeled(`enableEquipSet_${battle}`, battles[battle]));
         const persona = appendSelection(container, `switchPersona_${battle}`, option.switchPersona?.[battle], personas, (id, list) => list[id], inherit);
         const equipSet = appendSelection(container, `switchEquipSet_${battle}`, option.switchEquipSet?.[battle], equipSets, (id, list) => { return { name: `Set ${id}`, selected: list[id] }; }, inherit);
@@ -2287,12 +2288,12 @@
         ['挑战套装', '挑戰套裝', 'Battle Equip Set']
       ].map(UI.l);
       const option = getOption();
-      const { equips, personas, equipSets } = getValue('itemWorldDatas', true)??{};
+      const { equips, personas, equipSets } = getValue('itemWorldDatas', true) ?? {};
       if (!equips || !personas || !equipSets) {
-        gE('.itemWorldCounts').innerHTML = `${equips?.filter(eqp=>option.enableItemWorld?.[eqp.id]).length??0}/${equips?.length??0}`;
+        gE('.itemWorldCounts').innerHTML = `${equips?.filter(eqp => option.enableItemWorld?.[eqp.id]).length ?? 0}/${equips?.length ?? 0}`;
         return;
       }
-      gE('.itemWorldCounts').innerHTML = `${equips.filter(eqp=>option.enableItemWorld?.[eqp.id]).length}/${equips.length}`;
+      gE('.itemWorldCounts').innerHTML = `${equips.filter(eqp => option.enableItemWorld?.[eqp.id]).length}/${equips.length}`;
       container.innerHTML = innerHTML.join('');
 
       for (const equip of equips) {
@@ -2402,7 +2403,7 @@
           { id: 3, names: ['雷', '雷', 'Elec'], values: ['Elec'] },
         ],
         battleCommons: [
-          { id: 'lowSkill', names: ['低阶魔法技能','低階魔法技能', '1st Tier Offensive Magic'], values: ['true'] },
+          { id: 'lowSkill', names: ['低阶魔法技能', '低階魔法技能', '1st Tier Offensive Magic'], values: ['true'] },
           { id: 'middleSkill', names: ['中阶魔法技能', '中階魔法技能', '2nd Tier Offensive Magic'], values: ['true'] },
           { id: 'highSkill', names: ['高阶魔法技能', '高階魔法技能', '3rd Tier Offensive Magic'], values: ['true'] },
           { id: 'etherTap', names: ['以太之触', '以太之觸', 'Ether Tap'] },
@@ -2486,20 +2487,20 @@
           { id:'ED', names: ['能量饮料(ED)', '能量飲料(ED)', 'Energy Drink'], values: [11401] },
         ],
         buff: [
-          { id:'HD', names: ['生命长效药(HD)', '生命長效藥(HD)', 'Health Draught'],values: [ true] },
-          { id:'MD', names: ['魔力长效药(MD)', '魔力長效藥(MD)', 'Mana Draught'],values: [ true] },
-          { id:'SD', names: ['灵力长效药(MD)', '靈力長效藥(MD)', 'Spirit Draught'],values: [ true] },
-          { id:'FV', names: ['花瓶(FV)', '花瓶(FV)', 'Flower Vase'],values: [ true] },
-          { id:'BG', names: ['泡泡糖(BG)', '泡泡糖(BG)', 'Bubble-Gum'],values: [ true] },
-          { id:'SS', names: ['灵力盾(SS)', '靈力盾(SS)', 'Spirit Shield'],values: [ false] },
-          { id:'SL', names: ['生命火花(SL)', '生命火花(SL)', 'Spark of Life'],values: [ false] },
-          { id:'Pr', names: ['守护(Pr)', '守護(Pr)', 'Protection'],values: [ false] },
-          { id:'Ab', names: ['吸收(Ab)', '吸收(Ab)', 'Absorb'],values: [ false] },
-          { id:'SV', names: ['影纱(SV)', '影紗(SV)', 'Shadow Veil'],values: [ false] },
-          { id:'Re', names: ['细胞活化(Re)', '細胞活化(Re)', 'Regen'],values: [ false] },
-          { id:'Ha', names: ['疾速(Ha)', '疾速(Ha)', 'Haste'],values: [ false] },
-          { id:'He', names: ['穿心(He)', '穿心(He)', 'Heartseeker'],values: [ false] },
-          { id:'AF', names: ['奥术集中(AF)', '奧術集中(AF)', 'Arcane Focus'],values: [ false] },
+          { id: 'HD', names: ['生命长效药(HD)', '生命長效藥(HD)', 'Health Draught'], values: [true] },
+          { id: 'MD', names: ['魔力长效药(MD)', '魔力長效藥(MD)', 'Mana Draught'], values: [true] },
+          { id: 'SD', names: ['灵力长效药(MD)', '靈力長效藥(MD)', 'Spirit Draught'], values: [true] },
+          { id: 'FV', names: ['花瓶(FV)', '花瓶(FV)', 'Flower Vase'], values: [true] },
+          { id: 'BG', names: ['泡泡糖(BG)', '泡泡糖(BG)', 'Bubble-Gum'], values: [true] },
+          { id: 'SS', names: ['灵力盾(SS)', '靈力盾(SS)', 'Spirit Shield'], values: [false] },
+          { id: 'SL', names: ['生命火花(SL)', '生命火花(SL)', 'Spark of Life'], values: [false] },
+          { id: 'Pr', names: ['守护(Pr)', '守護(Pr)', 'Protection'], values: [false] },
+          { id: 'Ab', names: ['吸收(Ab)', '吸收(Ab)', 'Absorb'], values: [false] },
+          { id: 'SV', names: ['影纱(SV)', '影紗(SV)', 'Shadow Veil'], values: [false] },
+          { id: 'Re', names: ['细胞活化(Re)', '細胞活化(Re)', 'Regen'], values: [false] },
+          { id: 'Ha', names: ['疾速(Ha)', '疾速(Ha)', 'Haste'], values: [false] },
+          { id: 'He', names: ['穿心(He)', '穿心(He)', 'Heartseeker'], values: [false] },
+          { id: 'AF', names: ['奥术集中(AF)', '奧術集中(AF)', 'Arcane Focus'], values: [false] },
         ],
         debuff: [
           { id:'Sle', names: ['沉眠(Sl)', '沉眠(Sl)', 'Sleep'] },
@@ -2658,7 +2659,7 @@
                   ': ',
                   `${UI.labeled(`optionStandalone`, UI.l('两个世界使用不同的配置', '兩個世界使用不同的配置', 'Use standalone options.'))}`,
                   '<br>',
-                  `${UI.labeled(`isekai`, `${UI.l('在任意页面停留', '在任意頁面停留', 'While idle in any page for ')}${UI.number('isekaiTime')}${UI.label('isekaiTime', UI.l('异世界切换时间','異世界切換時間','Isekai Switch Wait'),'hidden')}${UI.l('秒后，自动切换恒定世界和异世界', '秒後，自動切換恆定世界和異世界', 's, auto switch between Isekai and Persistent')}. <span class="isekaiSwitchRemain"></span>`)}`,
+                  `${UI.labeled(`isekai`, `${UI.l('在任意页面停留', '在任意頁面停留', 'While idle in any page for ')}${UI.number('isekaiTime')}${UI.label('isekaiTime', UI.l('异世界切换时间', '異世界切換時間', 'Isekai Switch Wait'), 'hidden')}${UI.l('秒后，自动切换恒定世界和异世界', '秒後，自動切換恆定世界和異世界', 's, auto switch between Isekai and Persistent')}. <span class="isekaiSwitchRemain"></span>`)}`,
                   '<br>',
                   UI.div({
                     args: { class: 'isekaiInner' },
@@ -2704,10 +2705,7 @@
                     `${UI.l('延迟', '延遲', 'Delay')}: 1. ${UI.l('Buff/Debuff/其他技能', 'Buff/Debuff/其他技能', 'Skills&BUFF/DEBUFF Spells')}: ${UI.number('delay', 200)}ms 2. ${UI.l('其他', '其他', 'Other')}: ${UI.number('delay2', 30)}ms (`,
                     UI.l('说明: 单位毫秒，且在设定值基础上取其的50%-150%进行延迟，0表示不延迟', '說明: 單位毫秒，且在設定值基礎上取其的50%-150%進行延遲，0表示不延遲', 'Note: unit milliseconds, and based on the set value multiply 50% -150% to delay, 0 means no delay'),
                   ),
-                  UI.div(
-                    UI.l('频率指示符号', '頻率指示符號', 'Frequency Signal'),
-                    ': <input name="frequencySign1" type="text"> & <input name="frequencySign2" type="text">'
-                  ),
+                  UI.div(UI.l('频率指示符号', '頻率指示符號', 'Frequency Signal'), ': ', UI.text('frequencySign1'), ' & ', UI.text('frequencySign2')),
                 ),
                 UI.div({
                   args: { id: 'attackStatus', style: 'color:red;' },
@@ -2723,13 +2721,13 @@
                   UI.div({
                     args: { class: 'battleOrder battleOrderDefaultOnlyInnerReverted' },
                     inner: [
-                      '<input name="battleOrderName" style="width:80%;" type="text" disabled="true"><br>',
+                      UI.orderValue('battleOrderName'),
                       UI.hvAATable(UI.repeat(7), '', UI.expendData(UIDatas.battleOrder, (id, names, v) => UI.div(`${UI.labeled(`battleOrder_${id}`, names, `value="${v}"`)}`)))
                     ]}),
                 ),
                 UI.div(
                   UI.b(
-                    UI.label(['attackStatusOrderName', ...range(0,7).map(s=>`attackStatusOrder_${s}`)].join(','), UI.l('次要攻击模式顺序', '次要攻擊模式順序', 'Attack Mode Order')),
+                    UI.label(['attackStatusOrderName', ...range(0, 7).map(s => `attackStatusOrder_${s}`)], UI.l('次要攻击模式顺序', '次要攻擊模式順序', 'Attack Mode Order')),
                     UI.l('(未配置的按照下面的顺序)', '(未配置的按照下面的順序)', '(Using order below as default if not configed)')
                   ),
                   ':',
@@ -2737,26 +2735,25 @@
                   UI.div({
                     args: { class: 'attackStatusOrder' },
                     inner: [
-                      '<input name="attackStatusOrderName" style="width:80%;" type="text" disabled="true">',
-                      '<input name="attackStatusOrderValue" style="width:80%;" type="hidden" disabled="true">',
-                      '<br>',
+                      UI.orderValue('attackStatusOrderName'),
+                      UI.orderValue('attackStatusOrderValue', true),
                       UI.hvAATable(UI.repeat(7), '', UI.expendData(UIDatas.attackStatus, (id, names, v) => UI.div(`${UI.labeled(`attackStatusOrder_${id}`, names, `value="${v},${id}"`)}`))),
                     ]
                   }),
                 ),
-                UI.expendData(UIDatas.attackStatus.map(x=>x).sortBy(x=>x.id), (id, names) => UI.div(`${UI.labeled(`attackStatusSwitch_${id}`, UI.b(`${UI.l('攻击模式','攻擊模式','Attack Mode')}: ${names}`))}: {{attackStatusSwitchCondition${id}}}`)),
+                UI.expendData(UIDatas.attackStatus.map(x => x).sortBy(x => x.id), (id, names) => UI.div(`${UI.labeled(`attackStatusSwitch_${id}`, UI.b(`${UI.l('攻击模式', '攻擊模式', 'Attack Mode')}: ${names}`))}: {{attackStatusSwitchCondition${id}}}`)),
                 UI.expendData(UIDatas.battleCommons, (id, names, v) => UI.div(`${UI.labeled(id, `<b>${names}</b>`, v !== undefined ? `placeholder="${v}"`:'')}: {{${id}Condition}}`)),
-                UI.expendData(UIDatas.battleBreaks, (id, names, v) => UI.div(`${UI.labeled(id, `<b>${names}</b>`)}${UI.labeled(`${v}Alarm`, UI.l('警报','警報','Alert'))}: {{${v}Condition}}`)),
-                UI.div(`${UI.labeled(`autoSkipDefeated`, UI.b(UI.l('战败自动退出战斗','戰敗自動退出戰鬥','Exit battle when defeated.')))}`),
+                UI.expendData(UIDatas.battleBreaks, (id, names, v) => UI.div(`${UI.labeled(id, `<b>${names}</b>`)}${UI.labeled(`${v}Alarm`, UI.l('警报', '警報', 'Alert'))}: {{${v}Condition}}`)),
+                UI.div(`${UI.labeled(`autoSkipDefeated`, UI.b(UI.l('战败自动退出战斗', '戰敗自動退出戰鬥', 'Exit battle when defeated.')))}`),
                 UI.div(`${UI.labeled(`nativeNewRound`, UI.b(UI.l('使用原生方式进入新回合', '使用原生方式進入新回合', 'Native new round')))}`),
                 UI.div(
                   UI.l('新回合前检查链接：', '新回合前檢查連接：', 'Check url before new round: '),
-                  '<input name="checkURLBeforeNewRound" type="text">; ',
+                  UI.text('checkURLBeforeNewRound'),
                   UI.number('checkURLBeforeNewRoundRetry', 5),
                   UI.l('秒后重试', '秒後重試', '(s) to retry')
                 ),
                 UI.div(UI.hvAATable(
-                  UI.repeat(3),'',
+                  UI.repeat(3), '',
                   UI.div(UI.b(UI.l('延时', '延時', 'Wait time for'))),
                   UI.expendData(UIDatas.battleExitDelay, (id, names, v) => UI.div(
                     names,
@@ -2766,8 +2763,8 @@
                   )),
                 )),
                 UI.div(UI.hvAATable(
-                  '1fr 1fr 1.5fr 2fr','',
-                  UI.div(UI.b(UI.l('战斗页面停留 ','戰鬥頁面停留 ','If not active for '))),
+                  '1fr 1fr 1.5fr 2fr', '',
+                  UI.div(UI.b(UI.l('战斗页面停留 ', '戰鬥頁面停留 ', 'If not active for '))),
                   UI.expendData(UIDatas.battleUnresponsive, (id, names, v) => UI.div(UI.labeled(`battleUnresponsive_${id}`, `${UI.number(`battleUnresponsiveTime_${id}`, 1)} ${UI.l('秒，', '秒，', '(s), ')} ${names}`)))
                 ))
               ),
@@ -2805,7 +2802,8 @@
                   UI.button.class('hvAAShowLevels', UI.button.details()),
                   UI.button.class('hvAALevelsClear', UI.button.clear),
                   '<br>',
-                  '<input name="idleArenaLevels" style="width:calc(100% - 20px);" type="text" disabled="true"><input name="idleArenaValue" style="width:98%;" type="hidden" disabled="true">',
+                  UI.text('idleArenaLevels', 'style="width:calc(100% - 20px);" disabled="true"'),
+                  UI.text('idleArenaValue', 'style="width:98%;" type="hidden" disabled="true"'),
                   UI.div({
                     args: 'class="hvAAArenaLevels"',
                     inner: [
@@ -2821,7 +2819,7 @@
                     UI.button.class('hvAAShowItemWorld', UI.button.details()),
                     UI.button.class('hvAAClearItemWorld', UI.button.clear),
                     '<br>',
-                    UI.div({ args: 'class="autoItemWorldList hvAATable" style="display:none;grid-template-columns:0.2fr 3fr 0.2fr 1fr 1fr;"' }),
+                    UI.hvAATable('0.2fr 3fr 0.2fr 1fr 1fr;display:none', 'autoItemWorldList'),
                   ),
                   '</span>',
                 ),
@@ -2841,10 +2839,10 @@
                   '<br>',
                   UI.labeled('encounterRepair', UI.l('遭遇战前检查', '遭遇戰前檢查', 'Check before encounter')),
                   UI.div(UI.l('检查非空装备槽位时忽略: ', '檢查非空裝備槽位時忽略: ', 'Skip when checking unslotted equipments: ')),
-                  UI.div({
-                    args: 'class="hvAAcheckItems hvAATable" style="grid-template-columns: repeat(7, 1fr)"',
-                    inner: UI.expendData(UIDatas.equipSlot, (id, names) => UI.div(UI.labeled(`equipCheckSkip_${id}`, names)))
-                  }),
+                  UI.hvAATable(
+                    UI.repeat(7), 'hvAAcheckItems',
+                    UI.expendData(UIDatas.equipSlot, (id, names) => UI.div(UI.labeled(`equipCheckSkip_${id}`, names)))
+                  ),
                   '</span>',
                 ),
                 UI.div(
@@ -2858,14 +2856,14 @@
                   UI.button.class('updateEquipSet', UI.button.update),
                   UI.button.class('hvAAShowEquipSet', UI.button.details()),
                   '<br>',
-                  UI.hvAATable(UI.repeat(3)+';display:none', 'equipSetList changeEquipSetInner'),
+                  UI.hvAATable(UI.repeat(3) + ';display:none', 'equipSetList changeEquipSetInner'),
                 ),
                 UI.div(
-                  UI.labeled(`checkSupplySlotted`, UI.b('[C!]', UI.l('检查物品是否装备','檢查物品是否裝備','Check is item slotted'),';')),
+                  UI.labeled(`checkSupplySlotted`, UI.b('[C!]', UI.l('检查物品是否装备', '檢查物品是否裝備', 'Check is item slotted'), ';')),
                   ...getCheckSupplyOptionTable('Slotted', true),
                 ),
                 UI.div(
-                  UI.labeled(`checkSupply`, UI.b('[C!]', UI.l('检查物品库存','檢查物品庫存','Check is item needs supply'),';')),
+                  UI.labeled(`checkSupply`, UI.b('[C!]', UI.l('检查物品库存', '檢查物品庫存', 'Check is item needs supply'), ';')),
                   '<span class="checkSupplyInner">',
                   UI.labeled(`encounterSupply`, UI.l('遭遇战前检查', '遭遇戰前檢查', 'Check before encounter')),
                   '<br></span>',
@@ -2874,14 +2872,14 @@
                 UI.div({
                   args: { class: 'checkSupplyInner' },
                   inner: [
-                    UI.labeled(`checkSupplyIW`, UI.b('[C!!]', UI.l('道具界使用额外的库存检查','道具界使用額外的庫存檢查','Extra supply check for Item World'),';')),
+                    UI.labeled(`checkSupplyIW`, UI.b('[C!!]', UI.l('道具界使用额外的库存检查', '道具界使用額外的庫存檢查', 'Extra supply check for Item World'), ';')),
                     ...getCheckSupplyOptionTable('IW'),
                   ]
                 }),
                 UI.div({
                   args: { class: 'checkSupplyInner' },
                   inner: [
-                    UI.labeled(`checkSupplyGF`, UI.b('[C!!]', UI.l('压榨界使用额外的库存检查','壓榨界使用額外的庫存檢查','Extra supply check for Grind Fest'),';')),
+                    UI.labeled(`checkSupplyGF`, UI.b('[C!!]', UI.l('压榨界使用额外的库存检查', '壓榨界使用額外的庫存檢查', 'Extra supply check for Grind Fest'), ';')),
                     ...getCheckSupplyOptionTable('GF'),
                   ]
                 }),
@@ -2895,7 +2893,7 @@
                     ': ',
                     UI.text('itemOrderName', 'style="width:80%;"', 'disabled="true"'),
                     '<input name="itemOrderValue" style="width:80%;" type="hidden" disabled="true"><br>',
-                    UI.hvAATable(UI.repeat(5), '',UI.expendData(UIDatas.cure, (id, names, v) => UI.div(UI.labeled(`itemOrder_${id}`, names, `value="${id},${v}"`)))),
+                    UI.hvAATable(UI.repeat(5), '', UI.expendData(UIDatas.cure, (id, names, v) => UI.div(UI.labeled(`itemOrder_${id}`, names, `value="${id},${v}"`)))),
                   ]
                 }),
                 UI.expendData(UIDatas.cure, (id, names, v) => UI.div(`${UI.labeled(`item_${id}`, names)}: {{item${id}Condition}}`)),
@@ -2913,7 +2911,7 @@
                   ),
                   ': ',
                   UI.hvAATable(
-                    UI.repeat(5),'',
+                    UI.repeat(5), '',
                     UI.expendData(UIDatas.buff, (id, names, v) => v ? '' : UI.div(
                       `<label for="channelThreshold_${id}">${names} >= `,
                       UI.number(`channelThreshold_${id}`)
@@ -2921,25 +2919,25 @@
                   ),
                 ),
                 UI.div(
-                  UI.b(UI.l('先施放引导技能','先施放引導技能','First cast')),
+                  UI.b(UI.l('先施放引导技能', '先施放引導技能', 'First cast')),
                   ': <br>',
-                  UI.l('注意: 此处的施放顺序与','注意: 此處的施放順序与','Note: The cast order here is the same as in'),
+                  UI.l('注意: 此处的施放顺序与', '注意: 此處的施放順序与', 'Note: The cast order here is the same as in'),
                   '<a class="hvAAGoto" name="hvAATab-Buff">',
-                  UI.l('BUFF 技能','BUFF 技能', 'BUFF Spells'),
+                  UI.l('BUFF 技能', 'BUFF 技能', 'BUFF Spells'),
                   '</a>',
-                  UI.l('里的相同','裡的相同'),
+                  UI.l('里的相同', '裡的相同'),
                   '<br>',
-                  UI.hvAATable(UI.repeat(9),'', UI.expendData(UIDatas.buff, (id, names, v) => v?'':UI.div(UI.labeled(`channelSkill_${id}`, names)))),
+                  UI.hvAATable(UI.repeat(9), '', UI.expendData(UIDatas.buff, (id, names, v) => v ? '' : UI.div(UI.labeled(`channelSkill_${id}`, names)))),
                 ),
                 UI.div(
-                  UI.labeled('channelSkill2', UI.b(UI.l('再使用技能','再使用技能','Then use Skill'))),
+                  UI.labeled('channelSkill2', UI.b(UI.l('再使用技能', '再使用技能', 'Then use Skill'))),
                   UI.div({
                     args: { class: 'channelSkill2Order channelSkill2Inner', style:'grid-template-columns:repeat(5, 1fr);'},
                     inner: [
                       UI.l('施放顺序', '施放順序', 'Cast Order'),
                       ': ',
-                      UI.text('channelSkill2OrderName','style="width:80%;"','disabled="true"'),
-                      UI.text('channelSkill2OrderValue','style="width:80%;"','disabled="true"','hidden'),
+                      UI.text('channelSkill2OrderName', 'style="width:80%;"', 'disabled="true"'),
+                      UI.text('channelSkill2OrderValue', 'style="width:80%;"', 'disabled="true"', 'hidden'),
                       '<br>',
                       UI.div({
                         args: { class: 'hvAATable', style: 'grid-template-columns: repeat(6, 1fr);' },
@@ -2948,7 +2946,7 @@
                     ]
                   }),
                 ),
-                UI.div(UI.labeled('channelRebuff', UI.l('<b>最后ReBuff</b>: 重新施放最先将要消失的Buff','<b>最後ReBuff</b>: 重新施放最先將要消失的Buff','<b>At last, re-cast the spells which will expire first</b>'))),
+                UI.div(UI.labeled('channelRebuff', UI.l('<b>最后ReBuff</b>: 重新施放最先将要消失的Buff', '<b>最後ReBuff</b>: 重新施放最先將要消失的Buff', '<b>At last, re-cast the spells which will expire first</b>'))),
               ),
               UI.hvAATab(
                 'Buff',
@@ -2957,46 +2955,46 @@
                   inner: [
                     UI.l('施放顺序(未配置的按照下面的顺序)', '施放順序(未配置的按照下面的順序)', 'Cast Order(Using order below as default if not configed)</l2>'),
                     ': ',
-                    UI.label(['buffSkillOrderValue', ...UIDatas.buff.map(buff=>`buffSkillOrder_${buff.id}`)], UI.l('Buff 施放顺序', 'Buff 施放順序', 'Buff Cast Order') ,'hidden'),
-                    UI.text('buffSkillOrderValue','style="width:80%;" disabled="true"'),
+                    UI.label(['buffSkillOrderValue', ...UIDatas.buff.map(buff => `buffSkillOrder_${buff.id}`)], UI.l('Buff 施放顺序', 'Buff 施放順序', 'Buff Cast Order'), 'hidden'),
+                    UI.text('buffSkillOrderValue', 'style="width:80%;" disabled="true"'),
                     '<br>',
-                    UI.expendData(UIDatas.buff, (id, names, v) => v?'':UI.labeled(`buffSkillOrder_${id}`, names)),
+                    UI.expendData(UIDatas.buff, (id, names, v) => v ? '' : UI.labeled(`buffSkillOrder_${id}`, names)),
                   ],
                 }),
-                UI.div(UI.l('Buff释放条件','Buff釋放條件','Cast spells Condition'),'{{buffSkillCondition}}'),
+                UI.div(UI.l('Buff释放条件', 'Buff釋放條件', 'Cast spells Condition'), '{{buffSkillCondition}}'),
                 UI.expendData(UIDatas.buff, (id, names, v) => UI.div(`${UI.labeled(`buffSkill_${id}`, `${names} <= ${UI.number(`buffSkillThreshold_${id}`)} (${UI.l('阈值 &lt; 0 则不限制', '閾值 &lt; 0 則不限制', ' Threshold &lt; 0 as unlimited')})`)}{{buffSkill${id}Condition}}`)),
               ),
               UI.hvAATab(
                 'Debuff',
-                UI.div(UI.l('Debuff释放条件','Debuff釋放條件','Cast debuff spells Condition'),'{{debuffSkillCondition}}'),
-                UI.div(`${UI.labeled('debuffAutoFill', '<l0>[!!实验性]补全因超过默认显示上限未显示的怪物buff</l0><l1>[!!實驗性]補全因超過默認顯示上限未顯示的怪物buff</l1><l2>[!!Experimental]Auto fill hidden monster buffs due to display limitation</l2></label>')}<span class="debuffAutoFillInner">${UI.labeled('debuffAutoFillRec', 'DEBUG RECORD')}</span>`),
+                UI.div(UI.l('Debuff释放条件', 'Debuff釋放條件', 'Cast debuff spells Condition'), '{{debuffSkillCondition}}'),
+                UI.div(`${UI.labeled('debuffAutoFill', UI.l('[!!实验性]补全因超过默认显示上限未显示的怪物buff', '[!!實驗性]補全因超過默認顯示上限未顯示的怪物buff', '[!!Experimental]Auto fill hidden monster buffs due to display limitation'))}<span class="debuffAutoFillInner">${UI.labeled('debuffAutoFillRec', 'DEBUG RECORD')}</span>`),
                 UI.div(
-                  '<l0>超出6个debuff的默认显示上限时（例如同时使用jpx时可忽略上限）：</l0><l1>超出6個debuff的默認顯示上限時（例如同時使用jpx時可忽略上限）：</l1><l2>When debuff count overflows 6 as the default maximum display count (such as ignore limitation while using jpx): </l2><select class="hvAANumber" name="debuffSkillTurnAlert"><option value="0" selected>跳过 / Skip</option><option value="1">警报 / Alert</option><option value="2">忽略 / Ignore</option></select><br>',
-                  '<l0>剩余Turns低于阈值时警报</l0><l1>剩餘Turns低於閾值時警報</l1><l2>Alert when remain expire turns less than threshold</l2><br>',
-                  '<div class="hvAATable" style="grid-template-columns: repeat(9, 1fr);">',
-                  UI.expendData(UIDatas.debuff, (id, names) => UI.div(names, UI.number(`debuffSkillTurn_${id}`))),
-                  '</div>',
+                  UI.l('超出6个debuff的默认显示上限时（例如同时使用jpx时可忽略上限）：', '超出6個debuff的默認顯示上限時（例如同時使用jpx時可忽略上限）：', 'When debuff count overflows 6 as the default maximum display count (such as ignore limitation while using jpx): '),
+                  '<select class="hvAANumber" name="debuffSkillTurnAlert"><option value="0" selected>跳过 / Skip</option><option value="1">警报 / Alert</option><option value="2">忽略 / Ignore</option></select><br>',
+                  UI.l('剩余Turns低于阈值时警报', '剩餘Turns低於閾值時警報', 'Alert when remain expire turns less than threshold'),
+                  '<br>',
+                  UI.hvAATable(UI.repeat(9), '', UI.expendData(UIDatas.debuff, (id, names) => UI.div(names, UI.number(`debuffSkillTurn_${id}`)))),
                 ),
-
-                '<div class="debuffSkillOrderAll">1. <l0>特殊先给全体施放的顺序(未配置的按照下面的顺序)</l0><l1>特殊先給全體施放的順序(未配置的按照下面的順序)</l1><l2>Cast Order for Special Debuff all enemies first(Using order below as default if not configed)</l2>:',
-                '<input name="debuffSkillOrderAllValue" style="width:80%;" type="text" disabled="true"><br>',
-                '<div class="hvAATable" style="grid-template-columns: repeat(7, 1fr) 1.5fr 1fr;">',
-                UI.expendData(UIDatas.debuff, (id, names) => UI.div(UI.labeled(`debuffSkillOrderAll_${id}`, names))),
-                '</div>',
-                '</div>',
-
+                UI.div({
+                  args: { class: 'debuffSkillOrderAll' },
+                  inner: [
+                    '1. ',
+                    UI.l('特殊先给全体施放的顺序(未配置的按照下面的顺序)', '特殊先給全體施放的順序(未配置的按照下面的順序)', 'Cast Order for Special Debuff all enemies first(Using order below as default if not configed)'),
+                    ':',
+                    UI.text('debuffSkillOrderAllValue', 'style="width:80%;" disabled="true"'),
+                    '<br>',
+                    UI.hvAATable(UI.repeat(7) + ' 1.5fr 1fr;', '', UI.expendData(UIDatas.debuff, (id, names) => UI.div(UI.labeled(`debuffSkillOrderAll_${id}`, names)))),
+                  ]
+                }),
                 UI.div(
                   '1.a. <l0>特殊先给全体施放时，视作覆盖的互斥Debuff</l0><l1>特殊特殊先給全體施放時，視作覆蓋的互斥Debuff</l1><l2>Exclusive debuffs during \'Cast Order for Special Debuff all enemies first\'</l2>:',
-                  '<div class="hvAATable" style="grid-template-columns: repeat(7, 1fr) 1.5fr 1fr;">',
-                  UI.expendData(UIDatas.debuff, (id, names) => UI.div(UI.labeled(`debuffAllExclusive_${id}`, names))),
-                  '</div>',
+                  UI.hvAATable(UI.repeat(7) + ' 1.5fr 1fr;', '', UI.expendData(UIDatas.debuff, (id, names) => UI.div(UI.labeled(`debuffAllExclusive_${id}`, names)))),
                 ),
 
                 '<div class="debuffSkillOrder">2. <l0>单体施放顺序(未配置的按照下面的顺序)</l0><l1>單體施放順序(未配置的按照下面的順序)</l1><l2>Cast Order for each enemy(Using order below as default if not configed)</l2>:',
-                '<input name="debuffSkillOrderValue" style="width:80%;" type="text" disabled="true"><br>',
-                '<div class="hvAATable" style="grid-template-columns: repeat(7, 1fr) 1.5fr 1fr;">',
-                UI.expendData(UIDatas.debuff, (id, names) => UI.div(UI.labeled(`debuffSkillOrder_${id}`, names))),
-                '</div>',
+                UI.text('debuffSkillOrderValue', 'style="width:80%;" disabled="true"'),
+                '<br>',
+                UI.hvAATable(UI.repeat(7) + ' 1.5fr 1fr;', '', UI.expendData(UIDatas.debuff, (id, names) => UI.div(UI.labeled(`debuffSkillOrder_${id}`, names)))),
                 '</div>',
 
                 UI.div(
@@ -3017,7 +3015,7 @@
                     ),
                     UI.div(
                       UI.l('特殊 ', '特殊 ', ' Special '),
-                      UI.labeled(`debuffSkill${id}All`, `${UI.l('先给全体上', '先給全體上')}${names}${UI.l('','',' all enemies first.')}`),
+                      UI.labeled(`debuffSkill${id}All`, `${UI.l('先给全体上', '先給全體上')}${names}${UI.l('', '', ' all enemies first.')}`),
                       `<span class="debuffSkill${id}AllInner">`,
                       `${UI.labeled(`debuffSkill${id}AllByIndex`, UI.l('按照顺序而非权重', '按照順序而非權重', 'By index instead of weight'))}`,
                       `</span>{{debuffSkill${id}AllCondition}}`)
@@ -3032,84 +3030,118 @@
                 ),
 
                 '<div class="skillOrder"><l0>施放顺序(未配置的按照下面的顺序)</l0><l1>施放順序(未配置的按照下面的順序)</l1><l2>Cast Order(Using order below as default if not configed)</l2>: ',
-                '<input name="skillOrderValue" style="width:80%;" type="text" disabled="true"><br>',
+                UI.text('skillOrderValue', 'style="width:80%;" disabled="true"'),
+                '<br>',
                 UI.expendData(UIDatas.skill, (id, names) => UI.labeled(`skillOrder_${id}`, names)),
                 '</div>',
                 UI.expendData(UIDatas.skill, (id, names) => UI.div(`${UI.labeled(`skill_${id}`, names)}: <span class="skill_${id}Inner">${UI.labeled(`skillOTOS_${id}`, `<l0>一回合只使用一次</l0><l1>一回合只使用一次</l1><l2>One round only spell one time</l2>`)}</span>{{skill${id}Condition}}`)),
               ),
               UI.hvAATab(
                 'Infusion',
-                '<l0>战役模式</l0><l1>戰役模式</l1><l2>Battle type</l2>: ',
+                UI.l('战役模式', '戰役模式', 'Battle type'), ': ',
                 UI.expendData(UIDatas.roundType, (id, names) => UI.labeled(`infusionRoundType_${id}`, names, 'placeholder="true"')),
                 UI.div('<l0>魔药使用条件</l0><l1>魔藥使用條件</l1><l2>Infusion Use Condition</l2>{{infusionCondition}}'),
                 UI.div(UI.labeled('infusionDefaultOnly', '<b><l0>只使用与默认攻击模式相同的魔药</l0><l1>只使用與默認攻擊模式相同的魔藥</l1><l2>Use Infusion as same as default attack mode only.</l2></b>', 'placeholder="true"')),
-                '<div class="infusionOrder"><b><l0>施放顺序(未配置的按照下面的顺序)</l0><l1>施放順序(未配置的按照下面的順序)</l1><l2>Cast Order(Using order below as default if not configed)</l2></b>: <input name="infusionOrderName" style="width:80%;" type="text" disabled="true"><br>',
-                '<div class="hvAATable" style="grid-template-columns:repeat(6, 1fr);">' ,
-                UI.expendData(UIDatas.infusion, (id, names) => UI.div(UI.labeled(`infusionOrder_${id}`, names))),
-                '</div>',
+                '<div class="infusionOrder"><b><l0>施放顺序(未配置的按照下面的顺序)</l0><l1>施放順序(未配置的按照下面的順序)</l1><l2>Cast Order(Using order below as default if not configed)</l2></b>: ',
+                UI.text('infusionOrderName', 'style="width:80%;" disabled="true"'),
+                '<br>',
+                UI.hvAATable(
+                  UI.repeat(6), '',
+                  UI.expendData(UIDatas.infusion, (id, names) => UI.div(UI.labeled(`infusionOrder_${id}`, names))),
+                ),
                 '</div>',
                 UI.expendData(UIDatas.infusion, (id, names) => UI.div(UI.labeled(`infusion_${id}`, names), `{{infusion${id}Condition}}`)),
               ),
               UI.hvAATab(
                 'Scroll',
-                '<l0>战役模式</l0><l1>戰役模式</l1><l2>Battle type</l2>: ',
+                UI.l('战役模式', '戰役模式', 'Battle type'), ': ',
                 UI.expendData(UIDatas.roundType, (id, names) => UI.labeled(`scrollRoundType_${id}`, names)),
-                UI.div('<l0>卷轴使用条件</l0><l1>捲軸使用條件</l1><l2>Scroll Use Condition</l2>{{scrollCondition}}'),
-                UI.labeled(`scrollFirst`,`<l0>存在技能生成的Buff时，仍然使用卷轴</l0><l1>存在技能生成的Buff時，仍然使用捲軸</l1><l2>Use Scrolls even when there are effects from spells</l2>.`),
+                UI.div(UI.l('卷轴使用条件', '捲軸使用條件', 'Scroll Use Condition'), '{{scrollCondition}}'),
+                UI.labeled(`scrollFirst`, UI.l('存在技能生成的Buff时，仍然使用卷轴', '存在技能生成的Buff時，仍然使用捲軸', 'Use Scrolls even when there are effects from spells')),
                 UI.expendData(UIDatas.scroll, (id, names) => UI.div(UI.labeled(`scroll_${id}`, names), `{{scroll${id}Condition}}`)),
               ),
               UI.hvAATab(
                 'Alarm',
-                '<span class="hvAATitle"><l0>自定义警报</l0><l1>自定義警報</l1><l2>Alarm</l2></span><br>',
-                '<l0>注意：留空则使用默认音频，建议每个用户使用自定义音频</l0><l1>注意：留空則使用默認音頻，建議每個用戶使用自定義音頻</l1><l2>Note: Leave the box blank to use default audio, it\'s recommended for all user to use custom audio.</l2>',
-                UI.div(UI.expendData(UIDatas.audio, (id, names, v) => UI.div(UI.labeled(`audioEnable_${id}`, names), `: <input name="audio_${id}" placeholder="https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/${v??id}.ogg" type="text"></label><button class="testAlarm"><l0>测试</l0><l1>測試</l1><l2>Test</l2></button>`))),
-                UI.div('<l0>请将将要测试的音频文件的地址填入这里</l0><l1>請將將要測試的音頻文件的地址填入這裡</l1><l2>Plz put in the audio file address you want to test</l2>: <br><input class="hvAADebug" name="audio_Text" type="text">'),
+                '<span class="hvAATitle">',
+                UI.l('自定义警报', '自定義警報', 'Alarm'),
+                '</span><br>',
+                UI.l('注意：留空则使用默认音频，建议每个用户使用自定义音频', '注意：留空則使用默認音頻，建議每個用戶使用自定義音頻', 'Note: Leave the box blank to use default audio, it\'s recommended for all user to use custom audio.'),
+                UI.div(UI.expendData(UIDatas.audio, (id, names, v) => UI.div(
+                  UI.labeled(`audioEnable_${id}`, names),
+                  ': ',
+                  UI.text(`audio_${id}`, `placeholder="https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/${v ?? id}.ogg"`),
+                  UI.button.class('testAlarm', UI.l('测试', '測試', 'Test'))
+                ))),
+                UI.div(
+                  UI.l('请将将要测试的音频文件的地址填入这里', '請將將要測試的音頻文件的地址填入這裡', 'Plz put in the audio file address you want to test'),
+                  ': <br>',
+                  '<input class="hvAADebug" name="audio_Text" type="text">'
+                ),
               ),
               UI.hvAATab(
                 'Rule',
-                '<span class="hvAATitle"><l0>攻击规则</l0><l1>攻擊規則</l1><l2>Attack Rule</l2></span> <l01><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README.md#攻击规则-示例" target="_blank">示例</a></l01><l2><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README_en.md#attack-rule-example" target="_blank">Example</a></l2>',
+                '<span class="hvAATitle">',
+                UI.l('攻击规则', '攻擊規則', 'Attack Rule'),
+                '</span> <l01><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README.md#攻击规则-示例" target="_blank">示例</a></l01><l2><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README_en.md#attack-rule-example" target="_blank">Example</a></l2>',
                 UI.div(
                   '<b>1. <l0>初始血量权重=Log10(目标血量/场上最低血量)</l0><l1>初始血量權重=Log10(目標血量/場上最低血量)</l1><l2>BaseHpWeight = BaseHpRatio*Log10(TargetHP/MaxHPOnField)</l2></b><br>',
                   '<l0>初始权重系数(>0:低血量优先;<0:高血量优先)</l0><l1>初始權重係數(>0:低血量優先;<0:高血量優先)</l1><l2>BaseHpRatio(>0:low hp first;<0:high hp first)</l2>',
                   UI.number('baseHpRatio'),
                   '<br>',
-                  '<l0>不可命中目标的权重公式</l0><l1>不可名中目標的權重公式</l1><l2>Unreachable Target Weight Formula</l2>: <input name="unreachableWeight" placeholder="1000" type="text"><br>',
+                  '<l0>不可命中目标的权重公式</l0><l1>不可名中目標的權重公式</l1><l2>Unreachable Target Weight Formula</l2>: ',
+                  UI.text('unreachableWeight', 'placeholder="1000"'),
+                  '<br>',
                   '<l0>BOSS:Yggdrasil额外权重</l0><l1>BOSS:Yggdrasil額外權重</l1><l2>BOSS:Yggdrasil Extra Weight</l2></b>',
                   UI.number('YggdrasilExtraWeight', 1000),
                   '<br>',
-                  UI.labeled('cacheMonsterHP', '<l0>启用HP缓存</l0><l1>啟用HP緩存</l1><l2>Use HP Cache</l2>'),
-                  '<button class="clearMonsterHPCache"><l0>清空缓存</l0><l1>清空緩存</l1><l2>Clear HP Cache</l2></button>',
+                  UI.labeled('cacheMonsterHP', UI.l('启用HP缓存', '啟用HP緩存', 'Use HP Cache')),
+                  UI.button.class('clearMonsterHPCache', UI.l('清空缓存', '清空緩存', 'Clear HP Cache')),
                   '<span class="cacheMonsterHPInner">',
                   UI.labeled('portable_monsterDB', '<l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2><l0>注意：便携数据模式可能会显著增加硬盘读写</l0><l1>注意：便攜數據模式可能會顯著增加硬盤讀寫</l1><l2>Notice：portable mode may significantly increase hard disk I/O</l2>'),
                   '<input id="portable_monsterMID" type="checkbox" style="display:none">'
                 ),
                 '</span>',
                 UI.div(
-                  '<b>2. <l0>初始权重与下述各Buff权重相加</l0><l1>初始權重與下述各Buff權重相加</l1><l2>PW(X) = BaseHpWeight + Accumulated_Weight_of_Deprecating_Spells_In_Effect(X)</l2></b><br>',
+                  UI.b(
+                    '2.',
+                    UI.l('初始权重与下述各Buff权重相加', '初始權重與下述各Buff權重相加', 'PW(X) = BaseHpWeight + Accumulated_Weight_of_Deprecating_Spells_In_Effect(X)')
+                  ),
+                  '<br>',
                   UI.hvAATable(UI.repeat(6), '', UI.expendData(UIDatas.weight1, (id, names, v) => UI.div(UI.number(`weight_${id}`, v), names))),
                   UI.b(
                     UI.l('降抗性和攻击模式属性', '降抗性和攻擊模式屬性', 'While elements between Resistance-lower-debuff and Attack-Mode matches'),
                     `  [${UI.attackStatusType[option.attackStatus ?? 0]}] `,
                     UI.l('相同时', '相同時')
                   ),
-                  ' : <br>',
-                  UI.hvAATable(UI.repeat(4)+' repeat(2, 1.25fr);', '', UI.expendData(UIDatas.weight1, (id, names, v) => UI.div(UI.number(`weight_${id}`, v),names))),
-                  '<b><l0>降抗性和攻击模式属性</l0><l1>降抗性和攻擊模式屬性</l1><l2>While elements between Resistance-lower-debuff and Attack-Mode NOT matches</l2>  [' + UI.attackStatusType[option.attackStatus??0] + '] <l0>不相同时</l0><l1>不相同時</l1><l2></l2></b>: <br>',
-                  UI.hvAATable(UI.repeat(4)+' repeat(2, 1.25fr);', '', UI.expendData(UIDatas.weight2, (id, names, v, v2) => UI.div(UI.number(`weight_${id}1`, v2),names))),
-                  '<b><l0>敌方增益，暂不清楚具体效果，默认按0权重计算</l0><l1>敵方增益，暫不清楚具體效果，默認按0權重計算</l1><l2>Enemy Procs, Evvecf value unknown, weight default as 0 for now.</l2>:</b><br>',
-                  UI.hvAATable('1fr 1.25fr 1fr 1fr 1fr', '', UI.expendData(UIDatas.weight3, (id, names, v) => UI.div(UI.number(`weight_${id}`, v),names))),
+                  ': <br>',
+                  UI.hvAATable(UI.repeat(4) + ' repeat(2, 1.25fr);', '', UI.expendData(UIDatas.weight1, (id, names, v) => UI.div(UI.number(`weight_${id}`, v), names))),
+                  UI.b(
+                    UI.l('降抗性和攻击模式属性', '降抗性和攻擊模式屬性', 'While elements between Resistance-lower-debuff and Attack-Mode NOT matches'),
+                    `  [${UI.attackStatusType[option.attackStatus ?? 0]}] `,
+                    UI.l('不相同时', '不相同時'),
+                  ),
+                  ': <br>',
+                  UI.hvAATable(UI.repeat(4) + ' repeat(2, 1.25fr);', '', UI.expendData(UIDatas.weight2, (id, names, v, v2) => UI.div(UI.number(`weight_${id}1`, v2), names))),
+                  UI.b(UI.l('敌方增益，暂不清楚具体效果，默认按0权重计算', '敵方增益，暫不清楚具體效果，默認按0權重計算', 'Enemy Procs, Evvecf value unknown, weight default as 0 for now.')),
+                  ': <br>',
+                  UI.hvAATable('1fr 1.25fr 1fr 1fr 1fr', '', UI.expendData(UIDatas.weight3, (id, names, v) => UI.div(UI.number(`weight_${id}`, v), names))),
                 ),
-                UI.div('<b>3. PW(X) -= Log10(1 + <l0>武器攻击中央目标伤害倍率(副手及冲击技能)</l0><l1>乘以武器攻擊中央目標傷害倍率(副手及衝擊技能)</l1><l2>Weapon Attack Central Target Damage Ratio (Offhand & Strike)</l2>)</b><br><l0>额外伤害比例：</l0><l1>額外傷害比例：</l1><l2>Extra DMG Ratio: </l2><input class="hvAANumber" name="centralExtraRatio" placeholder="0" type="number">%'),
-                UI.div('<b>4. <l0>额外权重公式</l0><l1>額外權重公式</l1><l2>Extra weight formula</l2>: </b><input name="extraWeightFormula" type="text">'),
+                UI.div(
+                  '<b>3. PW(X) -= Log10(1 + <l0>武器攻击中央目标伤害倍率(副手及冲击技能)</l0><l1>乘以武器攻擊中央目標傷害倍率(副手及衝擊技能)</l1><l2>Weapon Attack Central Target Damage Ratio (Offhand & Strike)</l2>)</b><br><l0>额外伤害比例：</l0><l1>額外傷害比例：</l1><l2>Extra DMG Ratio: </l2>',
+                  UI.number('centralExtraRatio'),
+                  '%'),
+                UI.div('<b>4. <l0>额外权重公式</l0><l1>額外權重公式</l1><l2>Extra weight formula</l2>: </b>', UI.text('extraWeightFormula')),
                 UI.div(
                   '<b>5. <l0>优先选择权重最低的目标</l0><l1>優先選擇權重最低的目標</l1><l2>Choose target with lowest rank first</l2></b><br>',
-                  UI.labeled('displayWeight', '<l0>显示权重及顺序</l0><l1>顯示權重及順序</l1><l2>DIsplay Weight and order</l2>'),
-                  UI.labeled('displayWeightBackground', '<l0>显示优先级背景色</l0><l1>顯示優先級背景色</l1><l2>DIsplay Priority Background Color</l2>'),
+                  UI.labeled('displayWeight', UI.l('显示权重及顺序', '顯示權重及順序', 'Display Weight and order')),
+                  UI.labeled('displayWeightBackground', UI.l('显示优先级背景色', '顯示優先級背景色', 'Display Priority Background Color')),
                   '<br>',
-                  '<div class="displayWeightBackgroundInner"><l0>CSS格式或可eval执行的公式（可用&lt;rank&gt;, &lt;all&gt;指代优先级和总优先级数量, &lt;style_x&gt;指代第x个的相同配置值），例如：</l0><l1>CSS格式或可eval執行的公式（可用&lt;rank&gt;, &lt;all&gt;指代優先級和總優先級數量, &lt;style_x&gt;指代第x個的相同配置值）：例如</l1><l2>CSS or eval executable formula(use &lt;rank&gt; and &lt;all&gt; to refer to priority rank and total rank count, &lt;style_x&gt; to refer to the same option value of option No.x)Such as: </l2><br>`hsl(${Math.round(240*&lt;rank&gt;/Math.max(1,&lt;all&gt;-1))}deg 50% 50%)`<br>',
-                  '<div class="hvAATable" style="grid-template-columns: repeat(1, 0.05fr 1fr);width:100%;">',
-                  ...([0,1,2,3,4,5,6,7,8,9].map(i => `${UI.div(`${i===9?'':`&nbsp;&nbsp;`}${i+1}.`)}${UI.div(`<input name="weightBackground_${i}" type="text">`)}`)),
-                  '</div>',
+                  '<div class="displayWeightBackgroundInner">',
+                  '<l0>CSS格式或可eval执行的公式（可用&lt;rank&gt;, &lt;all&gt;指代优先级和总优先级数量, &lt;style_x&gt;指代第x个的相同配置值），例如：</l0><l1>CSS格式或可eval執行的公式（可用&lt;rank&gt;, &lt;all&gt;指代優先級和總優先級數量, &lt;style_x&gt;指代第x個的相同配置值）：例如</l1><l2>CSS or eval executable formula(use &lt;rank&gt; and &lt;all&gt; to refer to priority rank and total rank count, &lt;style_x&gt; to refer to the same option value of option No.x)Such as: </l2><br>`hsl(${Math.round(240*&lt;rank&gt;/Math.max(1,&lt;all&gt;-1))}deg 50% 50%)`<br>',
+                  UI.hvAATable(
+                    '0.05fr 1fr;width:100%', '',
+                    ...range(0, 10).map(i => `${UI.div(`${i === 9 ? '' : `&nbsp;&nbsp;`}${i + 1}.`)}${UI.div(UI.text(`weightBackground_${i}`))}`),
+                  ),
                   '</div>',
                 ),
                 UI.div(
@@ -3120,7 +3152,7 @@
               UI.hvAATab(
                 'Drop',
                 UI.div(
-                  '<button class="reDropMonitor"><l0>重置掉落监测</l0><l1>重置掉落監測</l1><l2>Reset Drops Tracking</l2></button>',
+                  UI.button.class('reDropMonitor', UI.l('重置掉落监测', '重置掉落監測', 'Reset Drops Tracking')),
                   UI.labeled('portable_drop', '<l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2><l0>注意：便携数据模式可能会显著增加硬盘读写</l0><l1>注意：便攜數據模式可能會顯著增加硬盤讀寫</l1><l2>Notice：portable mode may significantly increase hard disk I/O</l2>'),
                   '<input id="portable_dropOld" type="checkbox" style="display:none">',
                 ),
@@ -3130,19 +3162,20 @@
               UI.hvAATab(
                 'Usage',
                 UI.div(
-                  '<button class="reRecordUsage"><l0>重置数据记录</l0><l1>重置數據記錄</l1><l2>Reset Usage Tracking</l2></button>',
-                  UI.labeled('portable_stats', '<l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2><l0>注意：便携数据模式可能会显著增加硬盘读写</l0><l1>注意：便攜數據模式可能會顯著增加硬盤讀寫</l1><l2>Notice：portable mode may significantly increase hard disk I/O</l2>'),
+                  UI.button.class('reRecordUsage', UI.l('重置数据记录', '重置數據記錄', 'Reset Usage Tracking')),
+                  UI.labeled('portable_stats', UI.l('使用便携数据模式（导出脚本数据时将包含）注意：便携数据模式可能会显著增加硬盘读写', '使用便攜數據模式（導出腳本數據時將包含）注意：便攜數據模式可能會顯著增加硬盤讀寫', 'Portable Mode (will be included while exporting script datas) Notice：portable mode may significantly increase hard disk I/O')),
                   '<input id="portable_statsOld" type="checkbox" style="display:none">'
                 ),
                 UI.div(
-                  '<b><l0>自身</l0><l1>自身</l1><l2>Self</l2></b>',
-                  '<div class="hvAATable" style="grid-template-columns: repeat(10, 1fr);">' ,
-                  UI.expendData(UIDatas.record1, (id, names, v) => UI.div(UI.labeled(`record_${id}`, names))),
-                  '</div>',
+                  UI.b(UI.l('自身', '自身', 'Self')),
+                  UI.hvAATable(
+                    UI.repeat(10), '',
+                    UI.expendData(UIDatas.record1, (id, names, v) => UI.div(UI.labeled(`record_${id}`, names))),
+                  ),
                 ),
                 UI.div(
                   UI.b(UI.l('操作', '操作', 'Actions')),
-                   UI.hvAATable(
+                  UI.hvAATable(
                     UI.repeat(5), '',
                     UI.expendData(UIDatas.record2, (id, names, v) => UI.div(UI.labeled(`record_${id}`, names))),
                   ),
@@ -3160,28 +3193,46 @@
                 'Tools',
                 UI.div(
                   '<span class="hvAATitle"><l0>当前状况</l0><l1>當前狀況</l1><l2>Current status</l2></span>: ',
-                  '<l0>如果脚本长期暂停且网络无问题，请点击</l0><l1>如果腳本長期暫停且網絡無問題，請點擊</l1><l2>If the script does not work and you are sure that it\'s not because of your internet, click</l2><button class="hvAAFix"><l0>尝试修复</l0><l1>嘗試修復</l1><l2>Try to fix</l2></button><br>',
-                  '<l0>战役模式</l0><l1>戰役模式</l1><l2>Battle type</l2>: <select class="hvAADebug" name="roundType"><option></option><option value="ar">The Arena</option><option value="rb">Ring of Blood</option><option value="gr">GrindFest</option><option value="iw">Item World</option><option value="ba">Encounter</option><option value="tw">The Tower</option></select> <l0>当前回合</l0><l1>當前回合</l1><l2>Current round</l2>: <input name="roundNow" class="hvAADebug hvAANumber" type="number"> <l0>总回合</l0><l1>總回合</l1><l2>Total rounds</l2>: <input name="roundAll" class="hvAADebug hvAANumber" type="number">'
+                  '<l0>如果脚本长期暂停且网络无问题，请点击</l0><l1>如果腳本長期暫停且網絡無問題，請點擊</l1><l2>If the script does not work and you are sure that it\'s not because of your internet, click</l2>',
+                  UI.button.class('hvAAFix', UI.l('尝试修复', '嘗試修復', 'Try to fix')),
+                  '<br>',
+                  '<l0>战役模式</l0><l1>戰役模式</l1><l2>Battle type</l2>: <select class="hvAADebug" name="roundType"><option></option><option value="ar">The Arena</option><option value="rb">Ring of Blood</option><option value="gr">GrindFest</option><option value="iw">Item World</option><option value="ba">Encounter</option><option value="tw">The Tower</option></select> <l0>当前回合</l0><l1>當前回合</l1><l2>Current round</l2>: ',
+                  UI.number('roundNow', undefined, 'number', 'hvAADebug'),
+                  ' <l0>总回合</l0><l1>總回合</l1><l2>Total rounds</l2>: ',
+                  UI.number('roundAll', undefined, 'number', 'hvAADebug'),
                 ),
                 '<div class="hvAAQuickSite">',
-                UI.labeled('showQuickSite', `<span class="hvAATitle">${UI.l('快捷站点','快捷站點','Quick Site')}</span>`),
-                '<span class="showQuickSiteInner"><button class="quickSiteAdd"><l0>新增</l0><l1>新增</l1><l2>Add</l2></button><br>',
-                '<l0>注意: 留空“名称”一栏则表示删除该行，修改后请保存</l0><l1>注意: 留空“名稱”一欄則表示刪除該行，修改後請保存</l1><l2>Note: The "name" input box left blank will be deleted, after change please save in time.</l2>',
+                UI.labeled('showQuickSite', `<span class="hvAATitle">${UI.l('快捷站点', '快捷站點', 'Quick Site')}</span>`),
+                '<span class="showQuickSiteInner">',
+                UI.button.class('quickSiteAdd', UI.l('新增', '新增', 'Add')),
+                '<br>',
+                UI.l('注意: 留空“名称”一栏则表示删除该行，修改后请保存', '注意: 留空“名稱”一欄則表示刪除該行，修改後請保存', 'Note: The "name" input box left blank will be deleted, after change please save in time.'),
                 '<table><tbody><tr class="hvAATh"><td><l0>图标</l0><l1>圖標</l1><l2>ICON</l2></td><td><l0>名称</l0><l1>名稱</l1><l2>Name</l2></td><td><l0>链接</l0><l1>鏈接</l1><l2>Link</l2></td></tr></tbody></table></span></div>',
-                UI.div('<span class="hvAATitle"><l0>备份与还原</l0><l1>備份與還原</l1><l2>Backup and Restore</l2></span><br><button class="hvAABackup"><l0>备份设置</l0><l1>備份設置</l1><l2>Backup Confiuration</l2></button><button class="hvAARestore"><l0>还原设置</l0><l1>還原設置</l1><l2>Restore Confiuration</l2></button><button class="hvAADelete"><l0>删除设置</l0><l1>刪除設置</l1><l2>Delete Confiuration</l2></button><ul class="hvAABackupList"></ul>'),
-                UI.div('<span class="hvAATitle"><l0>导入与导出</l0><l1>導入與導出</l1><l2>Import and Export</l2></span><br><button class="hvAAExport"><l0>导出设置</l0><l1>導出設置</l1><l2>Export Confiuration</l2></button><button class="hvAAImport"><l0>导入设置</l0><l1>導入設置</l1><l2>Import Confiuration</l2></button><textarea class="hvAAConfig"></textarea>'),
+                UI.div(
+                  '<span class="hvAATitle"><l0>备份与还原</l0><l1>備份與還原</l1><l2>Backup and Restore</l2></span><br>',
+                  UI.button.class('hvAABackup', UI.l('备份设置', '備份設置', 'Backup Confiuration')),
+                  UI.button.class('hvAARestore', UI.l('', '', 'Restore Confiuration')),
+                  UI.button.class('hvAADelete', UI.l('删除设置', '刪除設置', 'Delete Confiuration')),
+                  '<ul class="hvAABackupList"></ul>'),
+                UI.div(
+                  '<span class="hvAATitle">',
+                  '<l0>导入与导出</l0><l1>導入與導出</l1><l2>Import and Export</l2>',
+                  '</span><br>',
+                  UI.button.class('hvAAExport', UI.l('导出设置', '導出設置', 'Export Confiuration')),
+                  UI.button.class('hvAAImport', UI.l('导入设置', '導入設置', 'Import Confiuration')),
+                  '<textarea class="hvAAConfig"></textarea>'),
               ),
               UI.hvAATab(
                 'Feedback',
                 '<span class="hvAATitle">',
-                UI.l('反馈','反馈','Feedback'),
+                UI.l('反馈', '反馈', 'Feedback'),
                 '</span>',
                 UI.div(
-                  UI.l('链接','鏈接','Links'),
+                  UI.l('链接', '鏈接', 'Links'),
                   ': <a href="https://github.com/dodying/UserJs/issues/new" target="_blank">1. GitHub</a><a href="https://greasyfork.org/forum/post/discussion?script=18482" target="_blank">2. GreasyFork</a>'),
                 UI.div(
                   '<span class="hvAATitle">',
-                  UI.l('反馈说明','反饋說明','Feedback Note'),
+                  UI.l('反馈说明', '反饋說明', 'Feedback Note'),
                   '</span>: <br>',
                   UI.l(
                     '如果你遇见了Bug，想帮助作者修复它<br>你应当提供以下多种资料: <br>1. 场景描述<br>2. 你的配置<br>3. 控制台日志 (按Ctrl+Shift+i打开开发者助手，再选择Console(控制台)面板)<br>4. 战斗日志  (如果是在战斗中)<br>如果是无法容忍甚至使脚本失效的Bug，请尝试安装旧版本<hr>如果你有一些建议使这个脚本更加有用，那么: <br>1. 请尽量简述你的想法<br>2. 如果可以，请提供一些场景 (方便作者更好理解)',
@@ -3189,7 +3240,7 @@
                     'If you encounter a bug and would like to help the author fix it<br>You should provide the following information: <br>1. the Situation<br>2. Your Configuration<br>3. Console Log (press Ctrl + Shift + i to open the Developer Assistant, And then select the Console panel)<br>4. Battle Log (if in combat)<br>If you are unable to tolerate this bug or even the bug made the script fail, try installing the old version<hr>If you have some suggestions to make this script more useful, then: <br>1. Please briefly describe your thoughts<br>2. If you can, please provide some scenes (to facilitate the author to better understand)<br>PS. For English user, please express in basic English (Oh my poor English, thanks for Google Translate)'
                   ),
                 ),
-                UI.div(UI.labeled('debugCheckCondition', 'debugCheckCondition:<br>prefix@/# to log result in console, @for formula, #for param: '),'{{debugCondition}}'),
+                UI.div(UI.labeled('debugCheckCondition', 'debugCheckCondition:<br>prefix@/# to log result in console, @for formula, #for param: '), '{{debugCondition}}'),
               ),
             ]
           }),
@@ -3197,11 +3248,11 @@
             args: { class: 'hvAAButtonBox hvAACenter', style:'display:grid; grid-template-columns: repeat(8, 1fr)' },
             inner: [
               UI.div(), UI.div(),
-              UI.button.class('hvAAApply', UI.l('应用','應用','Apply')),
-              UI.button.class('hvAACancel', UI.l('关闭','關閉','Close')),
-              UI.button.class('hvAAReset', UI.l('撤销','撤銷','Revert')),
-              UI.button.class('hvAADefault', UI.l('默认','默認','Default')),
-              UI.div(),UI.div(),
+              UI.button.class('hvAAApply', UI.l('应用', '應用', 'Apply')),
+              UI.button.class('hvAACancel', UI.l('关闭', '關閉', 'Close')),
+              UI.button.class('hvAAReset', UI.l('撤销', '撤銷', 'Revert')),
+              UI.button.class('hvAADefault', UI.l('默认', '默認', 'Default')),
+              UI.div(), UI.div(),
             ]}),
         ].join('').replace(/{{(.*?)}}/g, '<div class="customize" name="$1"></div>');
 
@@ -3236,7 +3287,7 @@
       loadOptionUIData();
       [...gE('select:not([name="lang"])', 'all', optionBox)].forEach(s => { s.onchange ??= () => selectFit(s); });
       unique([...gE('[class$="Inner"]', 'all', optionBox)].map(inner => [...inner.classList].find(className => className.includes('Inner')))).forEach(innerName => {
-        const onchange = gE(`#${innerName.replace(/Inner$/,'')}`, optionBox)?.onchange;
+        const onchange = gE(`#${innerName.replace(/Inner$/, '')}`, optionBox)?.onchange;
         if (onchange) onchange();
       });
 
@@ -3260,7 +3311,7 @@
           ['(默认)', '(默認)', '(Default)'],
           ['(当前)', '(當前)', '(current)']
         ];
-        [...gE('.equipSetList option,.autoItemWorldList option', 'all', optionBox)].forEach(option => {
+        [...gE('.equipSetList option, .autoItemWorldList option', 'all', optionBox)].forEach(option => {
           for (const texts of autoSwitchOptionText) {
             for (const text of texts) {
               if (!option.innerText.includes(text)) continue;
@@ -3332,13 +3383,13 @@
             let stats = getValue('stats', true) || {};
             const statsOld = getValue('statsOld', true) || [];
             const translation = {
-              self: '<l0>自身</l0><l1>自身</l1><l2>Self</l2>',
-              restore: '<l0>回复 (总量)</l0><l1>回复 (總量)</l1><l2>Restore (Amount)</l2>',
-              items: '<l0>物品 (次数)</l0><l1>物品 (次數)</l1><l2>Items (Frequency)</l2>',
-              magic: '<l0>技能 (次数)</l0><l1>技能 (次數)</l1><l2>Magic (Frequency)</l2>',
-              damage: '<l0>伤害 (总量)</l0><l1>傷害 (總量)</l1><l2>Damage (Amount)</l2>',
-              proficiency: '<l0>熟练度 (总量)</l0><l1>熟練度 (總量)</l1><l2>Proficiency (Amount)</l2>',
-              hurt: '<l0>受伤 (总量)</l0><l1>受傷 (總量)</l1><l2>Loss (Amount)</l2>',
+              self: UI.l('自身', '自身', 'Self'),
+              restore: UI.l('回复 (总量)', '回复 (總量)', 'Restore (Amount)'),
+              items: UI.l('物品 (次数)', '物品 (次數)', 'Items (Frequency)'),
+              magic: UI.l('技能 (次数)', '技能 (次數)', 'Magic (Frequency)'),
+              damage: UI.l('伤害 (总量)', '傷害 (總量)', 'Damage (Amount)'),
+              proficiency: UI.l('熟练度 (总量)', '熟練度 (總量)', 'Proficiency (Amount)'),
+              hurt: UI.l('受伤 (总量)', '受傷 (總量)', 'Loss (Amount)'),
             };
             _html = '<tbody>';
             if (statsOld.length === 0 || (statsOld.length === 1 && !getValue('stats', true))) {
@@ -3347,11 +3398,11 @@
               }
               for (i in stats) {
                 if (['itemsNames', 'magicNames'].includes(i)) continue;
-                _html = `${_html}<tr class="hvAATh"><td>${translation[i]}</td><td><l0>值</l0><l1>值</l1><l2>Value</l2></td></tr>`;
+                _html = `${_html}<tr class="hvAATh"><td>${translation[i]}</td><td>${UI.l('值', '值', 'Value')}</td></tr>`;
                 stats[i] = objSort(stats[i]);
                 let names = stats[`${i}Names`];
                 for (const j in stats[i]) {
-                  _html = `${_html}<tr><td>${j} ${names?.[j]??''}</td><td>${stats[i][j]}</td></tr>`;
+                  _html = `${_html}<tr><td>${j} ${names?.[j] ?? ''}</td><td>${stats[i][j]}</td></tr>`;
                 }
               }
             } else {
@@ -3373,7 +3424,7 @@
                 _html = `${_html}<tr class="hvAATh"><td colspan="${statsOld.length + 1}">${translation[i]}</td></tr>`;
                 getKeys(statsOld, i).forEach((key) => {
                   let names = stats[`${key}Names`];
-                  _html = `${_html}<tr><td>${key} ${names?.[key]??''}</td>`;
+                  _html = `${_html}<tr><td>${key} ${names?.[key] ?? ''}</td>`;
                   statsOld.forEach((_statsOld) => {
                     if (_statsOld[i] && (key in _statsOld[i])) {
                       _html = `${_html}<td>${_statsOld[i][key]}</td>`;
@@ -3460,7 +3511,7 @@
         gE('.testPopup', optionBox).onclick = function () {
           UI.alert('接下来开始预处理。\n关闭本警告框之后，请切换到其他标签页，\n并在足够长的时间后再打开本标签页', '接下來開始預處理。\n關閉本警告框之後，請切換到其他標籤頁，\n並在足夠長的時間後再打開本標籤頁', 'Now, pretreat.\nAfter dismissing this alert, focus other tab,\nfocus this tab again after long time.');
           setTimeout(() => {
-            const riddleWindow = window.open(window.location.href, 'riddleWindow', 'resizable,scrollbars,width=1241,height=707');
+            const riddleWindow = window.open(window.location.href, 'riddleWindow', 'resizable, scrollbars, width=1241, height=707');
             if (riddleWindow) {
               setTimeout(() => {
                 riddleWindow.close();
@@ -3469,16 +3520,16 @@
           }, 3 * _1s);
         };
 
-        let inners = unique([...gE('[class$="Inner"]', 'all', optionBox)].map(inner => [...inner.classList].find(className=>className.includes('Inner'))));
+        let inners = unique([...gE('[class$="Inner"]', 'all', optionBox)].map(inner => [...inner.classList].find(className => className.includes('Inner'))));
         inners.forEach(innerName => {
-          const outter = gE(`#${innerName.replace(/Inner$/,'')}`, optionBox);
+          const outter = gE(`#${innerName.replace(/Inner$/, '')}`, optionBox);
           outter.onchange = function () {
             [...gE(`.${innerName}`, 'all', optionBox)].forEach(inner => { inner.style.filter = outter.checked ? 'opacity(1)' : 'opacity(0.3)'; });
           };
         });
-        inners = unique([...gE('[class$="InnerReverted"]', 'all', optionBox)].map(inner => [...inner.classList].find(className=>className.includes('InnerReverted'))));
+        inners = unique([...gE('[class$="InnerReverted"]', 'all', optionBox)].map(inner => [...inner.classList].find(className => className.includes('InnerReverted'))));
         inners.forEach(innerName => {
-          const outter = gE(`#${innerName.replace(/InnerReverted$/,'')}`, optionBox);
+          const outter = gE(`#${innerName.replace(/InnerReverted$/, '')}`, optionBox);
           outter.onchange = function () {
             [...gE(`.${innerName}`, 'all', optionBox)].forEach(inner => { inner.style.filter = !outter.checked ? 'opacity(1)' : 'opacity(0.3)'; });
           };
@@ -3490,7 +3541,7 @@
         };
         gE('.hvAAShowLevels', optionBox).onclick = function () {
           const isDisplay = gE('.hvAAArenaLevels', optionBox).style.display !== 'grid';
-          this.innerHTML = `<l0>详情</l0><l1>詳情</l1><l2>Details</l2>${isDisplay ? `▲` : `▼`}`;
+          this.innerHTML = UI.button.details(isDisplay);
           gE('.hvAAArenaLevels', optionBox).style.display = isDisplay ? 'grid' : 'none';
         };
         gE('.hvAALevelsClear', optionBox).onclick = function () {
@@ -3533,7 +3584,7 @@
           updateItemWorldListUI();
         };
 
-        const optionBox2Order = (ids, valueFrom=undefined, index=0) => function (e) {
+        const optionBox2Order = (ids, valueFrom = undefined, index = 0) => function (e) {
           if (Array.isArray(ids)) {
             for (const i in ids) {
               optionBox2Order(ids[i], valueFrom, i)(e);
@@ -3588,7 +3639,7 @@
         gE('input[name="audio_Text"]', optionBox).onchange = function () {
           if (this.value === '') return;
           if (!/^http(s)?:|^ftp:|^data:audio/.test(this.value)) {
-            UI.alert('地址必须以"http:","https:","ftp:","data:audio"开头', '地址必須以"http:","https:","ftp:","data:audio"開頭', 'The address must start with "http:", "https:", "ftp:", and "data:audio"');
+            UI.alert('地址必须以"http:", "https:", "ftp:", "data:audio"开头', '地址必須以"http:", "https:", "ftp:", "data:audio"開頭', 'The address must start with "http:", "https:", "ftp:", and "data:audio"');
             return;
           }
           UI.alert('接下来将测试该音频\n如果该音频无法播放或无法载入，请变更\n请测试完成后再键入另一个音频', '接下來將測試該音頻\n如果該音頻無法播放或無法載入，請變更\n請測試完成後再鍵入另一個音頻', 'The audio will be tested after you close this prompt\nIf the audio doesn\'t load or play, change the url');
@@ -3688,9 +3739,9 @@
         function alertDiffs(...lang) {
           const diffs = getOptionDiff(option);
           if (!diffs) return true;
-          const log = UI.byLang(...lang.map(str=>str + diffs));
+          const log = UI.byLang(...lang.map(str => str + diffs));
           console.log(log);
-          return UI.confirm(...lang.map(str=>str + diffs));
+          return UI.confirm(...lang.map(str => str + diffs));
         }
         gE('.hvAADefault', optionBox).onclick = function () {
           if (getOptionDiff() && !alertDiffs('有未保存的选项，是否仍要设置为默认值? 更改数：', '有未保存的選項，是否仍要設置為默認值?更改數：', 'Unsaved changes detected, continue to set options as default? Changes: ')) {
@@ -3750,11 +3801,12 @@
         diffData.prototype.excludes = 'version';
         const diffs = diffData(options);
         const lang = g().lang;
+        console.log(lang)
         if (!diffs) return;
-        let i = 1, hidden,text;
-        return Object.keys(diffs).length+'\n'+Object.entries(diffs).map(([key,data])=> {
-          let defaultStr = ['默认','默認','Default'][lang];
-          switch (gE(`[name="${key}"],[id="${key}"]`, optionBox)?.type) {
+        let i = 1;
+        return Object.keys(diffs).length + '\n' + Object.entries(diffs).map(([key, data]) => {
+          let defaultStr = ['默认', '默認', 'Default'][lang];
+          switch (gE(`[name="${key}"], [id="${key}"]`, optionBox)?.type) {
             case 'hidden': return;
             case 'checkbox':
               defaultStr = 'false';
@@ -3762,11 +3814,15 @@
           }
           return `[${i++}]${Array.from(gE(`label[for="${key}"], label[for*="${key},"]`, 'all', optionBox)).map(x => {
             if (!x) return x;
-            [hidden, x.hidden] = [x.hidden, false];
-            [text, x.hidden] = [x.innerText, hidden];
-            return text;
-          }).reduce((acc,cur)=>(acc??'')+(cur??''), '') || key}: ${data.map(d=>d?String(d):defaultStr)?.join(' -> ')}`;
-        }).filter(d=>d!==undefined).join('\n');
+            return x.innerHTML.replaceAll(/<l(\d+)>(.*?)<\/l(\d+)>/g, (matched, lang1, inner, lang2) => {
+              switch (true) {
+                case lang1 !== lang2: return inner;
+                case lang1 !== lang: return '';
+                default: return inner;
+              }
+            });
+          }).reduce((acc, cur) => (acc ?? '') + (cur ?? ''), '') || key}: ${data.map(d => d ? String(d) : defaultStr)?.join(' -> ')}`;
+        }).filter(d => d !== undefined).join('\n');
 
         function diffData(datas, parents) {
           let json = datas.map(JSON.stringify);
@@ -3776,15 +3832,15 @@
             diff[parents] = datas;
             return diff;
           }
-          const keys = datas.map(data=>data?Object.keys(data):undefined);
+          const keys = datas.map(data => data ? Object.keys(data) : undefined);
           let differents;
-          unique(keys.reduce((acc,cur) => (acc??[]).concat(cur??[]),[])).forEach(key=>{
+          unique(keys.reduce((acc, cur) => (acc ?? []).concat(cur ?? []), [])).forEach(key => {
             if ([diffData.prototype.excludes, ...diffData.prototype.excludes].includes(key)) return;
             let datasSub = datas.map(data => data?.[key]);
             key = parents?`${parents}_${key}`:key;
             const diff = diffData(datasSub, key);
             if (!diff) return;
-            differents = {...(differents??={}), ...diff};
+            differents = { ...(differents ??= {}), ...diff };
           });
           return differents;
         }
@@ -3793,7 +3849,7 @@
       function getCurrentUIOption() {
         const _option = {};
         let name, array, value, type;
-        for (const input of gE('input,select', 'all', optionBox)) {
+        for (const input of gE('input, select', 'all', optionBox)) {
           [name, type, value] = [input.name, input.type, input.value];
           switch(input.className) {
             case 'hvAADebug': continue;
@@ -3818,7 +3874,7 @@
             case 'select-one':
               break;
           }
-          if (['', 'undefined', input.placeholder, input.placeholder*1, !!input.placeholder].includes(value))
+          if (['', 'undefined', input.placeholder, input.placeholder * 1, !!input.placeholder].includes(value))
           {
             continue;
           }
@@ -3828,7 +3884,7 @@
             continue;
           }
           if (input.className === 'customizeInput') {
-            ((_option[array[0]] ??= {})[array[1]]??=[]).push(value);
+            ((_option[array[0]] ??= {})[array[1]] ??= []).push(value);
           } else {
             (_option[array[0]] ??= {})[array[1]] = value;
           }
@@ -3837,7 +3893,7 @@
         const inputs = gE('.hvAAQuickSite input[type="text"], .hvAAQuickSite input[type="number"]', 'all', optionBox);
         if (inputs.length) _option.quickSite = [];
         for (let i = 0; i < inputs.length; i += 3) {
-          const [fav, name, url] = Array.from(inputs).slice(i,i+3).map(input => input.value);
+          const [fav, name, url] = Array.from(inputs).slice(i, i + 3).map(input => input.value);
           if (name === '') continue;
           _option.quickSite.push({ fav, name, url });
         }
@@ -3847,11 +3903,11 @@
       function formatOption(option, skipUI) {
         for (const obj in option) {
           if (['auto', 'server'].includes(obj)) continue;
-          if (gE(`[name="${obj}"],[id="${obj}"]`, optionBox)) continue;
+          if (gE(`[name="${obj}"], [id="${obj}"]`, optionBox)) continue;
           if (option[obj] instanceof Object) {
             let found = false;
             for (const key in option[obj]) {
-              if (found ||= gE(`[name="${obj}_${key}"],[id="${obj}_${key}"]`, optionBox)) continue;
+              if (found ||= gE(`[name="${obj}_${key}"], [id="${obj}_${key}"]`, optionBox)) continue;
               if (!['enableItemWorld', 'levelItemWorld', 'enableItemWorld', 'itemWorldPersona', 'itemWorldEquipSet'].includes(obj)) console.log(`Legacy option deleted: ${obj}_${key}`);
               delete option[obj][key];
             }
@@ -3862,7 +3918,7 @@
           delete option[obj];
         }
 
-        const inputs = gE('input,select', 'all', optionBox);
+        const inputs = gE('input, select', 'all', optionBox);
 
         let name, array, value, type, placeholder, num;
         function formatValue(value, placeholder) {
@@ -3959,7 +4015,7 @@
         g('option', uiOption);
         let _html;
         if (option.quickSite) {
-          _html = `<tr class="hvAATh"><td>${UI.l('图标','圖標','ICON')}</td><td>${UI.l('名称','名稱','Name')}</td><td>${UI.l('链接','鏈接','Link')}</td></tr>`;
+          _html = `<tr class="hvAATh"><td>${UI.l('图标', '圖標', 'ICON')}</td><td>${UI.l('名称', '名稱', 'Name')}</td><td>${UI.l('链接', '鏈接', 'Link')}</td></tr>`;
           option.quickSite.forEach((i) => {
             _html = `${_html}<tr><td><input class="hvAADebug" type="text" value="${i.fav}"></td><td><input class="hvAADebug" type="text" value="${i.name}"></td><td><input class="hvAADebug" type="text" value="${i.url}"></td></tr>`;
           });
@@ -3980,22 +4036,22 @@
     function customizeInputAutoFit(input, isLastCustomizeInput) {
       if (input.type === 'select-one' || input.disabled && input.name !== 'version') return;
       customizerInpuFit(input, isLastCustomizeInput);
-      input.addEventListener('input', event => customizerInpuFit(input, true));
+      input.addEventListener('input', _ => customizerInpuFit(input, true));
       input.addEventListener('keydown', function(event) {
         if (event.key !== 'Enter') return;
         event.preventDefault();
         const currentGroup = input.parentNode;
         let nextGroup = event.shiftKey ? currentGroup.previousElementSibling : currentGroup.nextElementSibling;
         if (!nextGroup && !event.shiftKey) {
-          const nextGroupIndex = input.name.match(/_(\d+)$/)[1]*1+1;
+          const nextGroupIndex = input.name.match(/_(\d+)$/)[1] * 1 + 1;
           nextGroup = input.parentNode.parentNode.appendChild(cE('div'));
           nextGroup.className = 'customizeGroup';
-          nextGroup.innerHTML = `${nextGroupIndex+1}. `
+          nextGroup.innerHTML = `${nextGroupIndex + 1}. `
 
           const newInput = nextGroup.appendChild(cE('input'));
           newInput.type = 'text';
           newInput.className = 'customizeInput';
-          newInput.name = input.name.replace(/_(\d+)$/, (...f)=>`_${nextGroupIndex}`);
+          newInput.name = input.name.replace(/_(\d+)$/, _ => `_${nextGroupIndex}`);
           customizeInputAutoFit(newInput, true);
 
           const select = gE('.customizeBox select[name="groupChoose"]');
@@ -4003,14 +4059,14 @@
             const selectOptions = gE('option', 'all', select);
             const prevSelected = select.value;
             const optionUI = select.appendChild(cE('option'));
-            selectOptions[selectOptions.length-1].value = nextGroupIndex+1;
-            selectOptions[selectOptions.length-1].textContent = nextGroupIndex+1;
+            selectOptions[selectOptions.length - 1].value = nextGroupIndex + 1;
+            selectOptions[selectOptions.length - 1].textContent = nextGroupIndex + 1;
             optionUI.value = 'new';
             optionUI.textContent = 'new';
             select.value = prevSelected;
           }
         }
-        ((nextGroup?gE(event.shiftKey ? '.customizeInput:last-child' : '.customizeInput:first-child', nextGroup):undefined)??gE('.customizeInput:first-child', currentGroup)).focus()
+        ((nextGroup ? gE(event.shiftKey ? '.customizeInput:last-child' : '.customizeInput:first-child', nextGroup) : undefined) ?? gE('.customizeInput:first-child', currentGroup)).focus()
       });
     }
 
@@ -4022,7 +4078,7 @@
       }
     }
 
-    function customizerInpuFit(input, dynamic=false) {
+    function customizerInpuFit(input, dynamic) {
       if (input.value === input.placeholder) {
         input.classList.add('optionDefault');
       } else {
@@ -4147,7 +4203,7 @@
         `<select name="statusA">${statusOption}</select>`,
         '<select name="compareAB"><option value="&gt;">&gt;</option><option value="&lt;">&lt;</option><option value="&gt;=">≥(&gt;=)</option><option value="&lt;=">≤(&lt;=)</option><option value="=">＝</option><option value="!=">≠(!=,<>,~=)</option></select>',
         `<select name="statusB">${statusOption}</select>`,
-        '<button class="groupAdd">ADD</button>',
+        UI.button.class('groupAdd', 'ADD')
       ].join(' ');
       const funcSelect = function (e) {
         let box;
@@ -4206,7 +4262,7 @@
         }
         const items = gE('*', 'all', group);
         let input;
-        for (let i of range(items,0,-1)) {
+        for (let i of range(items, 0, -1)) {
           if (items[i-1].value) break;
           input = items[i-1];
         }
@@ -4244,7 +4300,7 @@
       }
       const select = gE('select[name="groupChoose"]', customizeBox);
       select.textContent = '';
-      for (const i of range(group.length+1)) {
+      for (const i of range(group.length + 1)) {
         const optionUI = select.appendChild(cE('option'));
         optionUI.textContent = optionUI.value = i === group.length ? 'new' : i + 1;
       }
@@ -4581,7 +4637,7 @@
           return g().oc / 100;
         },
       };
-      let currentGroup=null;
+      let currentGroup = null;
       const func = {
         ...returnValueGetter.prototype.func,
         targetBuffStack(...img) {
@@ -4705,7 +4761,7 @@
                 // >= 10 的，视作反方向。即 10 <=> -1 <=> ''(省略但有_分割)
                 [rangeUp, rangeDown] = [rangeUp, rangeDown].map(r => r >= 10 ? 9 - r : r );
                 const center = currentTarget.order;
-                const [startOrder, endOrder] = [center-rangeUp, center+rangeDown];
+                const [startOrder, endOrder] = [center - rangeUp, center + rangeDown];
                 currentGroup = targets.filter(t => t.order >= startOrder && t.order <= endOrder);
               }
               break;
@@ -4713,7 +4769,7 @@
             case 'o': // 按照指定order
               {
                 const [startOrder, endOrder] = numArgs;
-                startOrder??=-1;
+                startOrder ??= -1;
                 if ([undefined, -1].includes(endOrder))
                 {
                   endOrder = 10;
@@ -4734,12 +4790,12 @@
         }
       };
 
-      function switchMaxMin(param, defaultResult, skipAliveCheck=false, targets=undefined) {
+      function switchMaxMin(param, defaultResult, skipAliveCheck = false, targets = undefined) {
         if (['gacount', 'gasum', 'gamax', 'gamin', 'gcount', 'gsum', 'gmax', 'gmin'].includes(param)) {
-          return switchMaxMin(param.replace(/^g/,''), defaultResult, skipAliveCheck, currentGroup);
+          return switchMaxMin(param.replace(/^g/, ''), defaultResult, skipAliveCheck, currentGroup);
         }
         if (['acount', 'asum', 'amax', 'amin', 'agcount', 'agsum', 'agmax', 'agmin'].includes(param)) {
-          return switchMaxMin(param.replace(/^a/,''), defaultResult, true, targets);
+          return switchMaxMin(param.replace(/^a/, ''), defaultResult, true, targets);
         }
         if (targets === undefined) targets = g().battle.monsterStatus; // 只处理 undefined，null 是空 group
         if (!targets) return 0;
@@ -4782,7 +4838,7 @@
         }).split('_');
         let result, isInData;
         const option = getOption();
-        const battle = g().battle??{};
+        const battle = g().battle ?? {};
         while (paramList.length) {
           const key = paramList.shift();
           if (typeof result === 'undefined') { // 获取顶层数据
@@ -4822,7 +4878,7 @@
     function handleRPNFormula(formula, returnValue) {
       let k, isDebug, result;
       if (!formula) return 0;
-      if (!isNaN(formula*1)) return formula * 1; // 纯数字直接处理
+      if (!isNaN(formula * 1)) return formula * 1; // 纯数字直接处理
       k = formula.replace(/,\s*(.*)\s*,/, (match, p1) => {
         switch (p1) {
           case '>':
@@ -4871,20 +4927,20 @@
     }
 
     function resolveRPNFormula(formula, target) {
-      let paramResults={};
+      let paramResults = {};
       const returnValue = returnValueGetter(() => paramResults, () => target);
       return handleRPNFormula(formula, returnValue);
     }
 
     function checkCondition(params, targets = undefined) {
-      let i, j, k, target, paramResults={};
+      let i, j, k, target, paramResults = {};
       targets ??= [g().battle.monsterStatus[0]];
       if (!params || !Object.keys(params).length) {
         return targets[0];
       }
       const returnValue = returnValueGetter(() => paramResults, () => target);
       for (i in params) { for (target of targets.filter(t => !t.isDead)) {
-        paramResults={};
+        paramResults = {};
         let paramResult = true;
         for (j of range(params[i])) {
           let result = true;
@@ -4967,7 +5023,7 @@
       $async.logSwitch(arguments);
       if (!getOption().isekai) return; // 若不启用自动跳转
       const now = time(0);
-      const remain = (getValue('lastSwitch')??0)*1 + (getOption().isekaiCD??0) * _1s - now;
+      const remain = (getValue('lastSwitch') ?? 0) * 1 + (getOption().isekaiCD ?? 0) * _1s - now;
       await pauseAsync(remain);
       await waitPause();
       setValue('lastSwitch', now);
@@ -4990,7 +5046,7 @@
       const persona = getValue('lastPersona');
       let changed;
       if (persona) {
-        await $ajax.fetch(queryToPersistent(`?s=Character&ss=ch`),`persona_set=${persona}`);
+        await $ajax.fetch(queryToPersistent(`?s=Character&ss=ch`), `persona_set=${persona}`);
         delValue('lastPersona');
         changed = true;
       }
@@ -5006,15 +5062,15 @@
     async function displayCDRemain(idleStart) { try {
       const option = getOption();
       const next = {
-        arena: idleStart + (option.idleArenaTime??0) * _1s,
-        switch: idleStart + (option.isekaiTime??0) * _1s,
-        switchCD: (getValue('lastSwitch')??0) + (option.isekaiCD??0) * _1s,
+        arena: idleStart + (option.idleArenaTime ?? 0) * _1s,
+        switch: idleStart + (option.isekaiTime ?? 0) * _1s,
+        switchCD: (getValue('lastSwitch') ?? 0) + (option.isekaiCD ?? 0) * _1s,
       };
       await until(() => {
         if (gE('#hvAABox').style.display === 'none') return;
         const now = time(0);
-        const remain = Object.fromEntries(Object.entries(next).map(([k,v]) => {
-          const r = Math.floor(Math.max(0, v - now)/_1s)*_1s;
+        const remain = Object.fromEntries(Object.entries(next).map(([k, v]) => {
+          const r = Math.floor(Math.max(0, v - now) / _1s) * _1s;
           return [k, `${UI.l('剩余', '剩餘', 'Remain')}${Math.floor(r / _1s)} (${timeStr(r)})`];
         }));
         let done = (() => {
@@ -5169,7 +5225,7 @@
       const proficiency = {};
       gE('#stats_scrollable table:last-child tr', 'all', doc).forEach((tr) => {
         const exec = tr.innerHTML.match(/<td>(.*)<\/td>.*<td>(.*)<\/td>/);
-        proficiency[exec[2]] = exec[1]*1;
+        proficiency[exec[2]] = exec[1] * 1;
       });
       localStorage.setItem(`hvAA-${_server.name}_proficiency`, JSON.stringify(proficiency));
       $async.logSwitch(arguments);
@@ -5264,7 +5320,7 @@
         const name = exec[1];
         const ab = abd[name];
         if (!ab) return;
-        newAbility[ab.id] = exec[2] ? 0 : ab.unlock.indexOf(1*exec[3]) + 1;
+        newAbility[ab.id] = exec[2] ? 0 : ab.unlock.indexOf(1 * exec[3]) + 1;
       });
       setValue('ability', newAbility);
       ability = Object.keys(newAbility).length ? newAbility : ability;
@@ -5281,7 +5337,7 @@
         (async () => { try {
           let perk = stamina.perk;
           if (perk && !Array.isArray(perk)) {
-            perk = Object.keys(perk).map(id => id*1);
+            perk = Object.keys(perk).map(id => id * 1);
           }
           if (!perk?.length) {
             perk = undefined;
@@ -5333,7 +5389,7 @@
         $async.logSwitch(arguments);
         return;
       }
-      const ratio = stamina.punish ? Math.max(1, Math.round(delta / lastCost / 0.25)*0.25) : 1;
+      const ratio = stamina.punish ? Math.max(1, Math.round(delta / lastCost / 0.25) * 0.25) : 1;
       if (stamina.ratio === ratio) {
         setValue('stamina', stamina);
         $async.logSwitch(arguments);
@@ -5368,15 +5424,15 @@
         items[id] = [name, count];
       }
       g('items', items);
-      g('slotItems', Array.from(gE('[id*="item_"]', 'all', gE('#item_slots', doc))).map(slot=>slot.id.match(/item_(\d+)/)[1]));
+      g('slotItems', Array.from(gE('[id*="item_"]', 'all', gE('#item_slots', doc))).map(slot => slot.id.match(/item_(\d+)/)[1]));
       $async.logSwitch(arguments);
     } catch (err) { console.error(err); }}
 
     function popupFailedCheck(title, popupText, ...log) {
       const option = getOption();
       if (title) document.title = `[${title}!${onIsekaiEncounter?'p':''}]` + document.title;
-      if (popupText) popup(`${onIsekaiEncounter?{0:'主世界',1:'主世界',2:'[Persistent]'}[option.lang]??'[Persistent]':''}${popupText[option.lang]??popupText[2]}`);
-      if (log?.length) console.log(`${onIsekaiEncounter?'[Persistent]':''}`, ...log);
+      if (popupText) popup(`${onIsekaiEncounter ? { 0: '主世界', 1: '主世界', 2: '[Persistent]' }[option.lang] ?? '[Persistent]' : ''}${popupText[option.lang] ?? popupText[2]}`);
+      if (log?.length) console.log(`${onIsekaiEncounter ? '[Persistent]' : ''}`, ...log);
     }
 
     function checkSupply(standalone) {
@@ -5491,10 +5547,10 @@
         15: ['脚部', '腳部', 'Feet']
       }
       let emptySlot = Array.from(gE('.eqb:not(.eqdisabled)', 'all', equiped)).map(slot => { return { id: slot.getAttribute('onclick').match(/equip_slot=(\d+)/)[1], empty: gE('.eqempty', slot) }; });
-      emptySlot = emptySlot.filter(slot => slot.empty && !option.equipCheckSkip?.[slot.id]).map(slot => slotMap[slot.id*1][lang]);
+      emptySlot = emptySlot.filter(slot => slot.empty && !option.equipCheckSkip?.[slot.id]).map(slot => slotMap[slot.id * 1][lang]);
       const token = gE('#equipform>input[name="postoken"]', doc).value;
       const [material, materialNames] = doc.body.innerHTML.match(/const eqitems=(\{.*\});/)[1].split(/; const itemdata=/).map(JSON.parse);
-      equiped = Array.from(gE('[onmouseover*="equips.set("]', 'all', equiped)).map(eq=>eq.getAttribute('onmouseover').match(/equips.set\((\d+),/)[1]);
+      equiped = Array.from(gE('[onmouseover*="equips.set("]', 'all', equiped)).map(eq => eq.getAttribute('onmouseover').match(/equips.set\((\d+),/)[1]);
       eqps = await Promise.all(Array.from(gE('#equiplist>table>tbody>tr:not(.eqselall):not(.eqtplabel)', 'all', doc)).map(async eqp => { try {
         const id = gE('input', eqp).value;
         if (!equiped.includes(id)) return;
@@ -5514,10 +5570,10 @@
       }
       if (eqps.length) {
         popupFailedCheck(`R`, {
-          0: `${standalone?.name?.[option.lang]??''}装备需要修理:\n${eqps.join('\n ')}`,
-          1: `${standalone?.name?.[option.lang]??''}裝備需要修理:\n${eqps.join('\n ')}`,
-          2: `${standalone?.name?.[option.lang]??''}Equips need repair:\n${eqps.join('\n ')}`,
-        }, `${standalone?.name?.[option.lang]??''}Equips need repair:\n`, eqps.join('\n '));
+          0: `${standalone?.name?.[option.lang] ?? ''}装备需要修理:\n${eqps.join('\n ')}`,
+          1: `${standalone?.name?.[option.lang] ?? ''}裝備需要修理:\n${eqps.join('\n ')}`,
+          2: `${standalone?.name?.[option.lang] ?? ''}Equips need repair:\n${eqps.join('\n ')}`,
+        }, `${standalone?.name?.[option.lang] ?? ''}Equips need repair:\n`, eqps.join('\n '));
       }
       $async.logSwitch(arguments);
       return !eqps.length;
@@ -5537,15 +5593,15 @@
           const id = gE('input', eqp).value;
           const levels = gE('td:last-child', eqp).innerHTML;
           if (!levels) return;
-          const [level, world, max] = levels.split(' / ').map(x=>x*1);
+          const [level, world, max] = levels.split(' / ').map(x => x * 1);
           const name = gE('td:first-child', eqp).innerText;
           const quality = name.match(/Fair|Average|Superior|Exquisite|Magnificent|Legendary|Peerless/)[0];
-          const rounds = hvv ? range(5,35) :
+          const rounds = hvv ? range(5, 35) :
           (()=> { switch (quality) {
             case 'Fair': case 'Average': case 'Superior': case 'Exquisite':
-              return [...range(5,10), ...repeat(10,5)];
+              return [...range(5, 10), ...repeat(10, 5)];
             case 'Magnificent': case 'Legendary': case 'Peerless':
-              return [...range(5,20),...repeat(20,5),...repeat(25,5),...repeat(30,5)];
+              return [...range(5, 20), ...repeat(20, 5), ...repeat(25, 5), ...repeat(30, 5)];
             default:
               return;
           }})();
@@ -5620,13 +5676,13 @@
       }
       const option = getOption(true);
       const stamina = getValue('stamina', true);
-      const [low, lowNR, cost, ratio] = [condition.staminaLow??option.staminaLow, option.staminaLowWithReNat??0, Math.round((condition.staminaCost??0) * 100) / 100, stamina.punish ? stamina.ratio??1 : 1]
+      const [low, lowNR, cost, ratio] = [condition.staminaLow ?? option.staminaLow, option.staminaLowWithReNat ?? 0, Math.round((condition.staminaCost ?? 0) * 100) / 100, stamina.punish ? stamina.ratio ?? 1 : 1]
       const checked = await checkStamina(low, cost);
       const [staminaChecked, stmNR] = [checked.checked, checked.stmNR];
       const [neat, neatNR] = [stamina.current-low, stmNR-lowNR];
       console.log(
-        `${onIsekaiEncounter?'[Persistent]':''}stamina check succeed:`, staminaChecked === 1, ... staminaChecked === -1 ? ['with nature recover', lowNR, 'stmNR:', stmNR, '(', ... neatNR>=0 ? ['+', neatNR] : ['-', -neatNR], ')'] : [],
-        '\nlow:', low, ... cost ? ['cost:', cost, ... stamina.punish ? ['*', ratio, '=', Math.round(cost*ratio*10000)/10000] : [], 'current:', stamina.current, '(', neat>=0?'+':'-', neat, ')'] : [],
+        `${onIsekaiEncounter ? '[Persistent]' : ''}stamina check succeed:`, staminaChecked === 1, ...staminaChecked === -1 ? ['with nature recover', lowNR, 'stmNR:', stmNR, '(', ...neatNR >= 0 ? ['+', neatNR] : ['-', -neatNR], ')'] : [],
+        '\nlow:', low, ...cost ? ['cost:', cost, ...stamina.punish ? ['*', ratio, '=', Math.round(cost * ratio * 10000) / 10000] : [], 'current:', stamina.current, '(', neat >= 0 ? '+' : '-', neat, ')'] : [],
         '\nstamina:', stamina,
       );
       if (staminaChecked === 1) { // succeed
@@ -5652,7 +5708,7 @@
     async function getCurrentStamina() { try {
       // await waitPause();
       $async.logSwitch(arguments);
-      const doc = $doc(await $ajax.insert(onIsekaiEncounter ? window.location.href.replace(/\/isekai/,'') : window.location.href));
+      const doc = $doc(await $ajax.insert(onIsekaiEncounter ? window.location.href.replace(/\/isekai/, '') : window.location.href));
       if (isInBattle(doc)) {
         $async.logSwitch(arguments);
         return [ undefined, undefined ];
@@ -5766,7 +5822,7 @@
     async function onChangeEquipSet(lastKey, target, list, toFetchParam, reload) { try {
       let changed = false;
       let last = getValue(lastKey);
-      let current = list ? Object.keys(list).find(p => list[p].selected)*1 : undefined;
+      let current = list ? Object.keys(list).find(p => list[p].selected) * 1 : undefined;
       target ??= last;
       if ([undefined, current].includes(target)) return;
       if (!last) setValue(lastKey, current);
@@ -5782,7 +5838,7 @@
       if (equipSets !== undefined) g('equipSets', equipSets);
       equipSets = g().equipSets;
       if ([personas, equipSets].includes(undefined)) {
-        const { e, p, s } = getValue('itemWorldDatas', true)??{};
+        const { e, p, s } = getValue('itemWorldDatas', true) ?? {};
         g('personas', personas ??= p);
         g('equipSets', equipSets ??= s);
       }
@@ -5816,7 +5872,7 @@
 
     function isSwitchEquipSet(target) {
       const last = { persona: getValue('lastPersona'), equipSet: getValue('lastEquipSet') };
-      const { persona, equipSet } = target??{};
+      const { persona, equipSet } = target ?? {};
       return {
         persona: persona !== undefined && (last.persona !== persona) ? persona : undefined,
         equipSet: equipSet !== undefined && (last.equipSet !== equipSet) ? equipSet : undefined
@@ -5935,7 +5991,7 @@
       let arena = getValue('arena', true);
       const option = getOption();
       const writeArenaStart = function (equip) {
-        console.log('Arena Start', equip ? `e${equip.id} (${equip.world} => ${equip.world+1}) / ${equip.max}\n${JSON.stringify(equip)}` : id);
+        console.log('Arena Start', equip ? `e${equip.id} (${equip.world} => ${equip.world + 1}) / ${equip.max}\n${JSON.stringify(equip)}` : id);
         if (id === 'iw') {
           // pass
         } else if (id !== 'gr') {
@@ -6056,21 +6112,21 @@
       if (!option.idleItemWorld) return;
       $async.logSwitch(arguments);
       await updateItemWorldList();
-      const { equips, personas, equipSets } = getValue('itemWorldDatas', true)??{};
+      const { equips, personas, equipSets } = getValue('itemWorldDatas', true) ?? {};
       if (!equips || !personas || !equipSets) {
         $async.logSwitch(arguments);
         return;
       }
-      const list = option.enableItemWorld ? Object.keys(option.enableItemWorld).filter(id=>option.enableItemWorld[id]) : undefined;
+      const list = option.enableItemWorld ? Object.keys(option.enableItemWorld).filter(id => option.enableItemWorld[id]) : undefined;
       if (!list?.length) {
         $async.logSwitch(arguments);
         return;
       }
-      list.sortBy(id => option.ItemWorldOrder?.[id]??0);
+      list.sortBy(id => option.ItemWorldOrder?.[id] ?? 0);
 
       let doc, errorMsg;
       for (const eid of list) {
-        const equip = equips.find(eqp=>eqp.id === eid);
+        const equip = equips.find(eqp => eqp.id === eid);
         if (equip.world >= equip.max || equip.world >= option.levelItemWorld?.[eid]) continue;
         doc = $doc(await $ajax.insert(`?s=Bazaar&ss=am&screen=modify&eqids[]=${eid}`));
         if (errorMsg = gE('.messagebox_error', doc)) {
@@ -6144,7 +6200,7 @@
             hp: ms.hp
           }
         });
-        battle.monsterStatus.sortBy(x=>x.order);
+        battle.monsterStatus.sortBy(x => x.order);
       };
       $debug.log('onBattle', `\n`, battle);
       //人物状态
@@ -6271,7 +6327,7 @@
           case 'iw':
             title = `${info.title}`;
             if (equip = getValue('arena', true)?.equip) {
-              title += `${equip?.world+1}/${equip?.max}`;
+              title += `${equip?.world + 1}/${equip?.max}`;
               subtype = `<div style="font-size: 9pt!important">[${equip?.id}]${equip?.name}</div>`;
             }
             break;
@@ -6299,7 +6355,7 @@
         $debug.shiftLog();
       }
       const option = getOption();
-      document.title = `${currentTurn%2?option.frequencySign1??'':option.frequencySign2??''}${getBattleTypeDisplay(true)}:R${battle.roundNow}/${battle.roundAll}:T${currentTurn}@${g().runSpeed}tps,${g().monsterAlive}/${g().monsterAll}`;
+      document.title = `${currentTurn % 2 ? option.frequencySign1 ?? '' : option.frequencySign2 ?? ''}${getBattleTypeDisplay(true)}:R${battle.roundNow}/${battle.roundAll}:T${currentTurn}@${g().runSpeed}tps,${g().monsterAlive}/${g().monsterAll}`;
       setValue('battle', battle);
       if (!battle.monsterStatus || battle.monsterStatus.length !== g().monsterAll) {
         fixMonsterStatus();
@@ -6366,7 +6422,7 @@
     }
 
     function getBuffStackFromImg(buff) {
-      return (matchBuffImg(buff)?.[1] ?? 1)*1;
+      return (matchBuffImg(buff)?.[1] ?? 1) * 1;
     }
 
     function getBuffTurnFromImg(buff) {
@@ -6374,9 +6430,9 @@
       switch (true) {
         case !duration:
           return 0;
-        case ['autocast', 'permanent', '-'].includes(duration.replaceAll(/'/g,'')):
+        case ['autocast', 'permanent', '-'].includes(duration.replaceAll(/'/g, '')):
           return Infinity;
-        case duration.replaceAll(/'/g,'') === 'decaying':
+        case duration.replaceAll(/'/g, '') === 'decaying':
           {
             duration = 0;
             const decay = 1 - unsafeWindow.battle.set_infopane_effect.toString().match(/Decays by (\d+)% per turn/)[1]/100;
@@ -6427,14 +6483,14 @@
 
     /**
          * 按照技能范围，获取包含原目标且范围内最终权重(finweight)之和最低的范围的中心目标
-         * @param {int} id id from g().battle.monsterStatus.sortBy(x=>x.finWeight);
+         * @param {int} id id from g().battle.monsterStatus.sortBy(x => x.finWeight);
          * @param {int} rangeSize radius, 0 for single-target and all-targets, 1 for treble-targets, ..., n for (2n+1) targets
          * @param {(target) => number} excludeWeightRatio target with id
          * @returns
          */
     function getRangeCenter(target, rangeSize, isWeaponAttack, excludeWeight, forceUseIndex) {
       let msTemp = JSON.parse(JSON.stringify(g().battle.monsterStatus));
-      msTemp.sortBy(x=>x.order);
+      msTemp.sortBy(x => x.order);
       let minWeight = Number.MAX_SAFE_INTEGER;
       // 0. 范围大于等于全体时，直接释放全体
       if (!rangeSize || rangeSize >= msTemp.length) {
@@ -6456,7 +6512,7 @@
       for (const center of range(top, bottom + 1)) {
         if (msTemp[center].isDead) continue;
         let weight = 0;
-        let overflowed = center + Math.max(up-center,0);
+        let overflowed = center + Math.max(up - center, 0);
         for (const inRange of range(overflowed - up, overflowed + down + 1)) {
           let cew = inRange === center ? centralExtraWeight : 0; // cew <= 0, 增加未命中权重，降低命中权重
           let mon = msTemp[inRange];
@@ -6535,7 +6591,7 @@
           delete battleUnresponsive[t];
           continue;
         }
-        battleUnresponsive[t].time = Math.max(1, option.battleUnresponsiveTime?.[t]??1) * _1s;
+        battleUnresponsive[t].time = Math.max(1, option.battleUnresponsiveTime?.[t] ?? 1) * _1s;
         min = Math.min(min, battleUnresponsive[t].time);
       }
       if (!Object.keys(battleUnresponsive).length) return;
@@ -6627,15 +6683,15 @@
             lastResponsive = Infinity;
             await until(async () => { try {
               await waitPause();
-              return await $ajax.insert(url,undefined,undefined,{},{},true);
-            } catch (err) { console.error('Connect failed:', url) }}, option.checkURLBeforeNewRoundRetry*_1s);
+              return await $ajax.insert(url, undefined, undefined, {}, {}, true);
+            } catch (err) { console.error('Connect failed:', url) }}, option.checkURLBeforeNewRoundRetry * _1s);
             lastResponsive = time(0);
           }
           const doc = $doc(await $ajax.insert(window.location.href));
           if (gE('#riddlecounter', doc)) {
             lastResponsive = Infinity;
             if (option.riddlePopup && !window.opener) {
-              window.open(window.location.href, 'riddleWindow', 'resizable,scrollbars,width=1241,height=707');
+              window.open(window.location.href, 'riddleWindow', 'resizable, scrollbars, width=1241, height=707');
               $async.logSwitch(arguments);
               return;
             }
@@ -6738,7 +6794,7 @@
       gE('head').appendChild(fakeApiResponse);
     }
 
-    function updateMonsterEffects(isNewTurn=true) {
+    function updateMonsterEffects(isNewTurn = true) {
       const option = typeof GM_getValue === 'undefined' ? {} : getOption();
       if (!(typeof GM_getValue === 'undefined' ? debuffAutoFill : option.debuffAutoFill)) return;
       let battle = getValue('battle', true);
@@ -6868,13 +6924,13 @@
         if (typeof base === 'number') {
           base = base * 1;
         } else if (base !== 'permanent') { for (const ab in base) {
-          base = base[ab][ability[ab]??0];
+          base = base[ab][ability[ab] ?? 0];
           break;
         } }
         if (skill.proficiency) {
           const [ptype, plow, phigh] = skill.proficiency;
           prof = proficiency[ptype];
-          profRatio = Math.max(1,Math.min(4, (prof-plow)/(phigh-plow) * 4).toFixed(6)*1);
+          profRatio = Math.max(1, Math.min(4, (prof - plow) / (phigh - plow) * 4).toFixed(6) * 1);
         }
         const channelingRatio = skill.channling ? channeling : 1;
         const duration = typeof base === 'number' ? Math.round(base * channelingRatio * profRatio) : base;
@@ -6946,10 +7002,10 @@
         'supportive magic' : 'Supportive',
         'two-handed weapon': 'Two-handed',
       }
-      for (const prof of turnLog.match(regExp.proficiencies)??[]) {
+      for (const prof of turnLog.match(regExp.proficiencies) ?? []) {
         const [_, points, type] = prof.match(regExp.proficiency);
-        proficiency[ptypes[type]] += points*1;
-        proficiency[ptypes[type]] = proficiency[ptypes[type]].toFixed(3)*1;
+        proficiency[ptypes[type]] += points * 1;
+        proficiency[ptypes[type]] = proficiency[ptypes[type]].toFixed(3) * 1;
       }
 
       // cache last turn channeling
@@ -6960,7 +7016,7 @@
 
       // 消除对每次操作影响turns程度最大的加速buff（技能或卷轴）
       let turnDelta = (isNewTurn && !turnLog.match(regExp.zeroturn)) ? 1 : 0;
-      turnDelta *= 100 / ((getBuff('haste')?.getAttribute('onmouseover').match(/increasing its action speed by (.*)%\./)[1] ?? 0)*1 + 100);
+      turnDelta *= 100 / ((getBuff('haste')?.getAttribute('onmouseover').match(/increasing its action speed by (.*)%\./)[1] ?? 0) * 1 + 100);
 
       const getBuffSkill = (buff) => Object.values(monsterBuffSkillLib).find(skill => [skill.name, skill.buff].includes(buff)) ?? console.log('Unknown debuff skill', buff);
       for (const activeMonster of battle.monsterStatus) {
@@ -6989,7 +7045,7 @@
           let dc = getBuffSkill(name)?.description;
           if (dc !== description) {
             // TODO 测试确保 ability[4213] Better Slow 效果描述正常，目前是描述均是30%
-            if (dc !== `'The target has been slowed by ${[30,40,40,45,50,50][abs[4213]??0]}%, making it attack less frequently.'` && description !== `'The target has been slowed by 30%, making it attack less frequently.'`) {
+            if (dc !== `'The target has been slowed by ${[30, 40, 40, 45, 50, 50][abs[4213] ?? 0]}%, making it attack less frequently.'` && description !== `'The target has been slowed by 30%, making it attack less frequently.'`) {
               console.log('Unmatched debuff description:', description, '\n from', name, dc);
             }
           }
@@ -7003,7 +7059,7 @@
           onRestoredBattleServer('rec', () => {
             const rec = JSON.parse(localStorage.getItem(`hvAA-${_server.name}_rec`) ?? `{}`);
             for (const effect of effects) {
-              const turns = effectObj[effect].turns*1;
+              const turns = effectObj[effect].turns * 1;
               if (isNaN(turns)) continue;
               const skill = getBuffSkill(effect);
               if (!skill) continue;
@@ -7022,28 +7078,28 @@
               rec[effect].ch = rec[effect].t && added > 0 ? channelingRatio : rec[effect].ch; // 引导倍率
               rec[effect].t = turns; // 当前剩余持续时间
               rec[effect].d = added; // 新增时间
-              rec[effect].m = Math.max(rec[effect].m??0, added); // 历史最大新增时间
-              rec[effect].a ??= [0,0]; // 推测熟练度倍率 [ 历史最大值, 按照‘缺失引导信息导致变成1.5倍’的修正值(除以1.5)  ]
-              rec[effect].r ??= [0,0,0]; // 实际倍率 [ 0-4 应该正常, 4-6推测缺失引导信息, 6+ 异常]
+              rec[effect].m = Math.max(rec[effect].m ?? 0, added); // 历史最大新增时间
+              rec[effect].a ??= [0, 0]; // 推测熟练度倍率 [ 历史最大值, 按照‘缺失引导信息导致变成1.5倍’的修正值(除以1.5)  ]
+              rec[effect].r ??= [0, 0, 0]; // 实际倍率 [ 0-4 应该正常, 4-6推测缺失引导信息, 6+ 异常]
               rec.error ??= []; // 实际倍率异常时的相关信息
               // 计算推测倍率
               if (base <= added) {
                 const a = Math.max(base, added)/base/channelingRatio
-                rec[effect].a[0] = Math.max(a, rec[effect].a[0]).toFixed(4)*1;
-                rec[effect].a[1] = Math.max(a/1.5, rec[effect].a[1]).toFixed(4)*1;
+                rec[effect].a[0] = Math.max(a, rec[effect].a[0]).toFixed(4) * 1;
+                rec[effect].a[1] = Math.max(a / 1.5, rec[effect].a[1]).toFixed(4) * 1;
               }
               // 检查实际ratio
               const ratio = Math.max(base, added)/duration;
               if (ratio > 1.5) {
-                const e =`${effect}: ${Math.max(base, added).toFixed(4)}/(${base.toFixed(4)}*${channelingRatio.toFixed(4)}*${profRatio.toFixed(4)})=${ratio.toFixed(4)}`
+                const e = `${effect}: ${Math.max(base, added).toFixed(4)}/(${base.toFixed(4)}*${channelingRatio.toFixed(4)}*${profRatio.toFixed(4)})=${ratio.toFixed(4)}`
                 if (!rec.error.includes(e)) rec.error.push(e);
               }
               if (ratio > 1.5 && ratio > rec[effect].r[2]) {
-                rec[effect].r[2] = ratio.toFixed(4)*1;
+                rec[effect].r[2] = ratio.toFixed(4) * 1;
               } else if (ratio <= 1.5 && ratio > 1 && ratio > rec[effect].r[1]) {
-                rec[effect].r[1] = ratio.toFixed(4)*1;
+                rec[effect].r[1] = ratio.toFixed(4) * 1;
               } else if (ratio <= 1 && ratio > rec[effect].r[0]) {
-                rec[effect].r[0] = ratio.toFixed(4)*1;
+                rec[effect].r[0] = ratio.toFixed(4) * 1;
               }
               localStorage.setItem(`hvAA-${_server.name}_rec`, JSON.stringify(rec));
             }
@@ -7077,7 +7133,7 @@
             if (effects.includes(effect)) continue; // updated directly above
             if (!duration) { console.log('duration undefined saved effect:', effect, savedEffects[effect]) }
             if (savedEffects[effect]) {
-              const turn = (savedEffects[effect].turns??0) * 1;
+              const turn = (savedEffects[effect].turns ?? 0) * 1;
               if (isNewTurn && !isNaN(turn)) duration = turn + (duration ?? 0);
             }
             savedEffects[effect] = { turns: duration ?? '-', stack: '-' , channeling: channelingRatio};
@@ -7131,7 +7187,7 @@
       }
       if (!battle) {
         battle = JSON.parse(JSON.stringify(g().battle ?? {}));
-        battle.monsterStatus?.sortBy(x=>x.order);
+        battle.monsterStatus?.sortBy(x => x.order);
       };
       battle.token = token;
       battle.proficiency = isSameBattle ? battle?.proficiency ?? prof : prof;
@@ -7331,7 +7387,7 @@
 
       // 额外权重公式
       monsterStatus.forEach(t => t.finWeight += resolveRPNFormula(option.extraWeightFormula, t));
-      battle.monsterStatus = monsterStatus.sortBy(x=>x.finWeight);
+      battle.monsterStatus = monsterStatus.sortBy(x => x.finWeight);
       g('battle', battle);
     }
 
@@ -7341,7 +7397,7 @@
         return false;
       }
       const name = splitOrders(option.itemOrderName, getDefaultOrder('itemOrder'));
-      const order = splitOrders(option.itemOrderValue, getDefaultOrder('itemOrder', ord=>ord.value.match(/,(.*)/)[1]*1));
+      const order = splitOrders(option.itemOrderValue, getDefaultOrder('itemOrder', ord => ord.value.match(/,(.*)/)[1] * 1));
       const cures = [313, 11199, 11501, 10005, 11195, 311];
       for (const i of range(name)) {
         let id = order[i];
@@ -7433,7 +7489,7 @@
         if (!checkCondition(option[`scroll${i}Condition`])) {
           continue;
         }
-        for (const j of range(scrollLib[i].mult+1)) {
+        for (const j of range(scrollLib[i].mult + 1)) {
           if (getBuff(scrollLib[i][`img${j}`] + scrollFirst)) {
             continue;
           }
@@ -7683,9 +7739,9 @@
       const skillLib = {
         OFC: 1111,
         FRD: 1101,
-        T3: fightStyle ? `2${fightStyle}03`*1 : undefined,
-        T2: fightStyle ? `2${fightStyle}02`*1 : undefined,
-        T1: fightStyle ? `2${fightStyle}01`*1 : undefined,
+        T3: fightStyle ? `2${fightStyle}03` * 1 : undefined,
+        T2: fightStyle ? `2${fightStyle}02` * 1 : undefined,
+        T1: fightStyle ? `2${fightStyle}01` * 1 : undefined,
       };
       const skillInfos = autoSkill.prototype.skillInfos ??= {
         1101: { oc: 4, range: 10 },
@@ -7807,7 +7863,7 @@
       let debuffByIndex = isAll && option[`debuffSkill${buff}AllByIndex`];
       let monsterStatus = g().battle.monsterStatus;
       if (debuffByIndex) {
-        monsterStatus = JSON.parse(JSON.stringify(monsterStatus)).sortBy(x=>x.order);
+        monsterStatus = JSON.parse(JSON.stringify(monsterStatus)).sortBy(x => x.order);
       }
       let max = isAll ? monsterStatus.length : 1;
       let id;
@@ -7866,7 +7922,7 @@
       return current;
     }
 
-    function attack(selectStatusOnly=false) { // 自动打怪
+    function attack(selectStatusOnly = false) { // 自动打怪
       const option = getOption();
       const monsters = g().battle.monsterStatus;
       if (option.attackStatusSwitch) {
@@ -7887,7 +7943,7 @@
       return onAttack(g().attackStatus, selectStatusOnly);
     }
 
-    function onAttack(attackStatus, selectStatusOnly=false, tier=undefined) {
+    function onAttack(attackStatus, selectStatusOnly = false, tier = undefined) {
       const updateAbility = onAttack.prototype.updateAbility ??= {
         4301: { //火
           111: [3, 4, 4, 5, 5, 5, 5, 5],
@@ -7945,8 +8001,8 @@
       // 3.0 try check skill condition
       const skill = 1 * (() => {
         const conditions = [option.lowSkillCondition, option.middleSkillCondition, option.highSkillCondition];
-        for (const lv of range(tier??2, -1, -1)) {
-          let id = `1${attackStatus}${lv+1}`*1;
+        for (const lv of range(tier ?? 2, -1, -1)) {
+          let id = `1${attackStatus}${lv + 1}` * 1;
           if (isOn(id) && (target = checkCondition(conditions[lv], monsters))) return id;
           if (tier) return 0;
         }
@@ -8044,7 +8100,7 @@
           let remainAttemp = 10; // 避免无穷递归
           while (remainAttemp > 0 && colorText && colorText.indexOf(`<style_`) !== -1) {
             for (const i of range(colorTextList)) {
-              colorText = colorText.replace(`<style_${i+1}>`, colorTextList[i]);
+              colorText = colorText.replace(`<style_${i + 1}>`, colorTextList[i]);
             }
             remainAttemp--;
           }
@@ -8233,7 +8289,7 @@
             prev += stats.magic[magicName];
             delete stats.magic[magicName];
           }
-          stats.magic[magic] = prev+1;
+          stats.magic[magic] = prev + 1;
           (stats.magicNames ??= {})[magic] = magicName;
         }
         if (filter.mp) {
@@ -8250,7 +8306,7 @@
             prev += stats.items[itemName];
             delete stats.items[itemName];
           }
-          stats.items[item] = prev+1;
+          stats.items[item] = prev + 1;
           (stats.itemsNames ??= {})[item] = itemName;
         }
       } else {
