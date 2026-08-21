@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.100
+// @version      2.91.101
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -15,6 +15,7 @@
 // @include      http*://alt.hentaiverse.org/*
 // @include      http*://e-hentai.org/*
 // @exclude     http*://*hentaiverse.org/*/y/*
+// @exclude     http*://*hentaiverse.org/*/z/*
 // @connect        hentaiverse.org
 // @connect        e-hentai.org
 // @compatible   Firefox + Greasemonkey
@@ -877,6 +878,26 @@
       return $async;
     }
 
+    function formatTime(t, size = 2, quick) {
+      t = [t / _1h, (t / _1m) % 60, (t / _1s) % 60, (t % _1s) / 10].map(cdi => Math.floor(cdi));
+      const option = getOption();
+      while (t.length > Math.max(size, quick ? 2 : 3)) { // remove zero front
+        const front = t.shift();
+        if (!front) {
+          continue;
+        }
+        t.unshift(front);
+        break;
+      }
+      return t;
+    }
+
+    function timeStr(time, size = 2, quick) {
+      let formated = formatTime(time, size, quick);
+      if (size) formated = formated.slice(0, size);
+      return formated.map(t => pad(t)).join(`:`);
+    }
+
     function checkIsHV() {
       if (window.location.host !== 'e-hentai.org') {
         if (isMaintaining) {
@@ -884,16 +905,18 @@
           (async function onwait() { try {
             const body = document.body;
             const blockTip = /Blocking requests for (\d+) seconds due to excessive request rate/;
-            let blocked = body.innerText?.match(blockTip)?.[1]*1;
-            let remain = isNaN(blocked) ? _1h/_1s : blocked;
+            let blocked = body.innerText?.match(blockTip)?.[1] * _1s;
+            const duration = isNaN(blocked) ? _1h : blocked;
+            const start = time(0);
+            let remain;
             await until(() => {
-              document.title = `[M]${pad(Math.floor(remain/(_1m/_1s)))}:${pad(Math.floor(remain%(_1m/_1s)))}`;
+              remain = duration - time(0) + start;
+              document.title = `[M]${timeStr(remain)}`;
               try { if (!isNaN(blocked)) {
                 body.innerText = body.innerText.replace(blockTip, (...args) => args[0].replace(args[1], remain));
               } } catch (err) { console.log(err) };
-              remain-=1;
               return remain <= 0;
-            }, _1s);
+            });
             goto();
           } catch (err) { console.error(err)} })();
           return true;
@@ -1653,20 +1676,6 @@
           gotoAlt();
         }
       }, false);
-    }
-
-    function formatTime(t, size = 2) {
-      t = [t / _1h, (t / _1m) % 60, (t / _1s) % 60, (t % _1s) / 10].map(cdi => Math.floor(cdi));
-      const option = getOption();
-      while (t.length > Math.max(size, option.encounterQuickCheck ? 2 : 3)) { // remove zero front
-        const front = t.shift();
-        if (!front) {
-          continue;
-        }
-        t.unshift(front);
-        break;
-      }
-      return t;
     }
 
     function getKeys(objArr, prop) {
@@ -4861,27 +4870,29 @@
 
     async function displayCDRemain(idleStart) { try {
       const option = getOption();
-      idleStart = idleStart / _1s;
       const next = {
-        arena: idleStart + (option.idleArenaTime??0),
-        switch: idleStart + (option.isekaiTime??0),
-        switchCD: (getValue('lastSwitch')??0) / _1s + (option.isekaiCD??0),
+        arena: idleStart + (option.idleArenaTime??0) * _1s,
+        switch: idleStart + (option.isekaiTime??0) * _1s,
+        switchCD: (getValue('lastSwitch')??0) + (option.isekaiCD??0) * _1s,
       };
       await until(() => {
         if (gE('#hvAABox').style.display === 'none') return;
-        const now = time(0) / _1s;
-        const remain = Object.fromEntries(Object.entries(next).map(([k,v]) => [k, Math.floor(Math.max(0, v - now))]));
+        const now = time(0);
+        const remain = Object.fromEntries(Object.entries(next).map(([k,v]) => {
+          const r = Math.floor(Math.max(0, v - now)/_1s)*_1s;
+          return [k, `<l0>剩余</l0><l1>剩餘</l1><l2>Remain</l2> ${Math.floor(r / _1s)} (${timeStr(r)})`];
+        }));
         let done = (() => {
           if (!option.idleArena) return true;
-          gE('.arenaRemain').innerHTML = `<l0>剩余</l0><l1>剩餘</l1><l2>Remain</l2> ${remain.arena}`;
+          gE('.arenaRemain').innerHTML = remain.arena;
         })();
         done &= (() => {
           if (!option.isekai) return true;
-          gE('.isekaiSwitchRemain').innerHTML = `<l0>剩余</l0><l1>剩餘</l1><l2>Remain</l2> ${remain.switch}`;
-          gE('.isekaiCDRemain').innerHTML = `<l0>剩余</l0><l1>剩餘</l1><l2>Remain</l2> ${remain.switchCD}`;
+          gE('.isekaiSwitchRemain').innerHTML = remain.switch;
+          gE('.isekaiCDRemain').innerHTML = remain.switchCD;
         })();
         return done;
-      }, 1000);
+      }, _1s);
     } catch (err) { console.error(err); }}
 
     async function asyncOnIdle() { try {
@@ -5581,7 +5592,7 @@
       } else {
         ui.style.cssText += 'color:unset!important;';
       }
-      ui.innerHTML = `${formatTime(cd).slice(0, 2).map(cdi => pad(cdi)).join(`:`)}[${encounter.length ? (count >= MAX ? `☯` : count) : `✪`}${missed ? `-${missed}` : ``}]`;
+      ui.innerHTML = `${timeStr(cd, 2, option.encounterQuickCheck)}[${encounter.length ? (count >= MAX ? `☯` : count) : `✪`}${missed ? `-${missed}` : ``}]`;
       if (document.title.includes(titlePause())) {
         document.title = ui.innerHTML + titlePause();
       }
