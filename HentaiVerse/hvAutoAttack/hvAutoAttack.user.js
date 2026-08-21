@@ -2748,7 +2748,7 @@
                   UI.l('秒后重试', '秒後重試', '(s) to retry')
                 ),
                 UI.div(UI.hvAATable(
-                  UI.repeat(3),
+                  UI.repeat(3),'',
                   UI.div(UI.b(UI.l('延时', '延時', 'Wait time for'))),
                   UI.expendData(UIDatas.battleExitDelay, (id, names, v) => UI.div(
                     names,
@@ -2758,7 +2758,7 @@
                   )),
                 )),
                 UI.div(UI.hvAATable(
-                  '1fr 1fr 1.5fr 2fr',
+                  '1fr 1fr 1.5fr 2fr','',
                   UI.div(UI.b(UI.l('战斗页面停留 ','戰鬥頁面停留 ','If not active for '))),
                   UI.expendData(UIDatas.battleUnresponsive, (id, names, v) => UI.div(UI.labeled(`battleUnresponsive_${id}`, `${UI.number(`battleUnresponsiveTime_${id}`, 1)} ${UI.l('秒，', '秒，', '(s), ')} ${names}`)))
                 ))
