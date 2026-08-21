@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.105
+// @version      2.91.106
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -413,26 +413,28 @@
     function repeat(value, times) {
       return range(times).map(_ => value);
     }
-    function* range(start, stop, step = 1) {
+    function range(start, stop, step = 1) {
       start = start?.length ?? start;
       stop = stop?.length ?? stop;
       if (stop === undefined) [start, stop] = [0, start];
+      const result = [];
       switch (true) {
         case step === 0:
         case step > 0:
           while (start < stop) {
-            yield start;
+            result.push(start);
             start += step;
           }
           break;
         case step < 0:
           while (start > stop) {
-            yield start;
+            result.push(start);
             start += step;
           }
           break;
         default: throw new Error('range() arg 3 must not be zero');
       }
+      return result;
     }
 
     const UI = {
@@ -452,6 +454,7 @@
         class: function (className, ...inner) {
           return `<button class="${className}">${inner?.join('') ?? ''}</button>`
         },
+        details: isDisplay => `${UI.l('详情', '詳情', 'Details')}${isDisplay ? `▲` : `▼`}`,
         pause: function () {
           const option = getOption();
           return `${UI.l('暂停', '暫停', 'Pause')}${(option.pauseHotkey && option.pauseHotkeyStr) ? `(${option.pauseHotkeyStr})` : ''}`;
@@ -470,7 +473,7 @@
         if (Array.isArray(mapped[0])) return mapped.reduce((acc, cur) => (acc ?? []).concat(cur ?? []), [])?.join('');
         return mapped.reduce((acc, cur) => (acc ?? '') + (cur ?? ''), '');
       },
-      label: function (ids, inner, ...extra) { 
+      label: function (ids, inner, ...extra) {
         return `<label for="${ids}" ${extra?.join('')??''}>${inner??''}</label>`
       },
       labeled: function (id, names, ...extra) {
@@ -535,7 +538,15 @@
       UI.l('圣', '聖', 'Divine'),
       UI.l('暗', '暗', 'Forbidden'),
     ];
-    if (typeof Object.sortBy === 'undefined') { 
+    UI.button = {
+      ...UI.button,
+      update: `${UI.l('更新', '更新', 'Update')}`,
+      updating: UI.l('更新中...','更新中...','Updating...'),
+      clear: UI.l('清空', '清空', 'Clear'),
+      reset: UI.l('重置', '重置', 'Reset'),
+    }
+
+    if (typeof Object.sortBy === 'undefined') {
       Object.defineProperty(Object.prototype, 'sortBy', { value: function sortBy(by) {
         return this.sort((x,y) => by(x) < by(y) ? -1 : by(x) > by(y) ? 1 : 0)
       }, enumerable: false });
@@ -2114,21 +2125,16 @@
         13299, 13221, 13211, 13201,        0,
         13199, 13111, 13101,        0, 11401,
         19111, 19131, 11501,        0, 11402];
-      const UIString = [
-        checkBoxOnly ? '' : `    <span class="checkSupply${suffix}Inner">${UI.l('库存', '庫存', 'Warn if supply')}&lt;max(100%,<input id="checkSupplyWarn${suffix}" class="hvAANumber" name="checkSupplyWarn${suffix}" placeholder="100" type="number">%)${UI.label(`checkSupplyWarn${suffix}`, `${UI.l('提示库存','提示庫存','Supply warn')} ${suffix} %`, 'hidden')}${UI.l('时提示', '時提示')};</span><br>`,
-        `    <div class="hvAAcheckItems hvAATable checkSupply${suffix}Inner">`,
+      return [
+        checkBoxOnly ? '' : `    <span class="checkSupply${suffix}Inner">${UI.l('库存', '庫存', 'Warn if supply')}&lt;max(100%,${UI.number(`checkSupplyWarn${suffix}`, 100)}%)${UI.label(`checkSupplyWarn${suffix}`, `${UI.l('提示库存','提示庫存','Supply warn')} ${suffix} %`, 'hidden')}${UI.l('时提示', '時提示')};</span><br>`,
+        UI.hvAATable(undefined, `hvAAcheckItems checkSupply${suffix}Inner`, ...items.map(item => {
+          if (!item) return UI.div();
+          return UI.div(UI.labeled(
+              `isCheck${suffix}_${item}`,
+              `${!checkBoxOnly ? UI.number(`checkItem${suffix}_${item}`) : ''}${itemMap[item].map((...args) => `<l${args[1]}>${args[0]}</l${args[1]}>`).join('')}`
+          ))
+        }))
       ];
-      for (const item of items) {
-        if (!item) {
-          UIString.push('<div></div>');
-          continue;
-        }
-        UIString.push(`<div><input id="isCheck${suffix}_${item}" type="checkbox"><label for="isCheck${suffix}_${item}">`)
-        if (!checkBoxOnly) UIString.push(`<input class="hvAANumber" name="checkItem${suffix}_${item}" placeholder="0" type="number">`);
-        UIString.push(`${itemMap[item].map((...args) => `<l${args[1]}>${args[0]}</l${args[1]}>`).join('')}</label></div>`);
-      }
-      UIString.push('</div>');
-      return UIString;
     }
 
     function appendInput(container, value, innerHTML) {
@@ -2263,7 +2269,7 @@
       };
       for (const battle of ordered) {
         const inherit = battle === 'default' ? undefined : isNaN(+battle) ? 'Default' : battle*1 >= 105 ? 'RB' : 'AR';
-        appendInput(container, option.enableEquipSet?.[battle], `<input id="enableEquipSet_${battle}" type="checkbox"><label for="enableEquipSet_${battle}">${battles[battle]}</label>`);
+        appendInput(container, option.enableEquipSet?.[battle], UI.labeled(`enableEquipSet_${battle}`, battles[battle]));
         const persona = appendSelection(container, `switchPersona_${battle}`, option.switchPersona?.[battle], personas, (id, list) => list[id], inherit);
         const equipSet = appendSelection(container, `switchEquipSet_${battle}`, option.switchEquipSet?.[battle], equipSets, (id, list) => { return { name: `Set ${id}`, selected: list[id] }; }, inherit);
         bindPersonaEquipSetSelection(persona, equipSet, personas, equipSets);
@@ -2292,9 +2298,9 @@
       for (const equip of equips) {
         const eid = equip.id;
         if (equip.world >= equip.max) continue;
-        appendInput(container, option.ItemWorldOrder?.[eid], `<input name="ItemWorldOrder_${eid}" type="number" placeholder="0">`);
-        appendInput(container, option.enableItemWorld?.[eid], `<input id="enableItemWorld_${equip.id}" type="checkbox"><label for="enableItemWorld_${equip.id}">[${eid}]${equip.name} (${equip.level}/${equip.world}/${equip.max})</label>`);
-        appendInput(container, option.levelItemWorld?.[eid], `<input name="levelItemWorld_${eid}" type="number" placeholder="0">`);
+        appendInput(container, option.ItemWorldOrder?.[eid], UI.number(`ItemWorldOrder_${eid}`));
+        appendInput(container, option.enableItemWorld?.[eid], UI.labeled(`enableItemWorld_${equip.id}`, `[${eid}]${equip.name} (${equip.level}/${equip.world}/${equip.max})`));
+        appendInput(container, option.levelItemWorld?.[eid], UI.number(`levelItemWorld_${eid}`));
         const persona = appendSelection(container, `itemWorldPersona_${eid}`, option.itemWorldPersona?.[eid], personas, (id, list) => list[id]);
         const equipSet = appendSelection(container, `itemWorldEquipSet_${eid}`, option.itemWorldEquipSet?.[eid], equipSets, (id, list) => { return { name: '', selected: list[id] }; });
         bindPersonaEquipSetSelection(persona, equipSet, personas, equipSets);
@@ -2723,9 +2729,7 @@
                 ),
                 UI.div(
                   UI.b(
-                    '<label for="attackStatusOrderName,attackStatusOrder_0,attackStatusOrder_1,attackStatusOrder_2,attackStatusOrder_3,attackStatusOrder_4,attackStatusOrder_5,attackStatusOrder_6,">',
-                    UI.l('次要攻击模式顺序', '次要攻擊模式順序', 'Attack Mode Order'),
-                    '</label>',
+                    UI.label(['attackStatusOrderName', ...range(0,7).map(s=>`attackStatusOrder_${s}`)].join(','), UI.l('次要攻击模式顺序', '次要攻擊模式順序', 'Attack Mode Order')),
                     UI.l('(未配置的按照下面的顺序)', '(未配置的按照下面的順序)', '(Using order below as default if not configed)')
                   ),
                   ':',
@@ -2794,18 +2798,18 @@
                   UI.l('在任意页面停留: ', '在任意頁面停留: ', 'Idle in any page for '),
                   UI.number('idleArenaTime'),
                   UI.l('秒后，开始竞技场', '秒後，開始競技場', ' (s), start Arena'),
-                  UI.button.class('idleArenaReset', UI.l('重置', '重置', 'Reset')),
+                  UI.button.class('idleArenaReset', UI.button.reset),
                   '; <span class="arenaRemain"></span><br>',
                   UI.l('进行的竞技场相对应等级', '進行的競技場相對應等級', 'The levels of the Arena you want to complete'),
                   ':  ',
-                  UI.button.class('hvAAShowLevels', `${UI.l('详情', '詳情', 'Details')}▼`),
-                  UI.button.class('hvAALevelsClear', UI.l('清空', '清空', 'Clear')),
+                  UI.button.class('hvAAShowLevels', UI.button.details()),
+                  UI.button.class('hvAALevelsClear', UI.button.clear),
                   '<br>',
                   '<input name="idleArenaLevels" style="width:calc(100% - 20px);" type="text" disabled="true"><input name="idleArenaValue" style="width:98%;" type="hidden" disabled="true">',
                   UI.div({
                     args: 'class="hvAAArenaLevels"',
                     inner: [
-                      UI.expendData(UIDatas.arena, (id, names, v) => `${UI.labeled(`arLevel_${id}`, `${names}${id === 'GF' ? `<input class="hvAANumber arLevel_${id}Inner" name="idleArenaGrTime" placeholder="1" type="number">` : ''}`, `value="${id},${v}"`)}`),
+                      UI.expendData(UIDatas.arena, (id, names, v) => `${UI.labeled(`arLevel_${id}`, `${names}${id === 'GF' ? UI.number('idleArenaGrTime', 1, 'number', `arLevel_GFInner`) : ''}`, `value="${id},${v}"`)}`),
                       '',
                     ]
                   }),
@@ -2813,9 +2817,9 @@
                   UI.div(`${UI.labeled(`obscureNotIdleArena`, UI.l('页面中置灰未设置且未完成的', '頁面中置灰未設置且未完成的', 'obscure not setted and not battled in Battle&gt;Arena/RingOfBlood'))}`),
                   UI.div(
                     `${UI.labeled(`idleItemWorld`, UI.b(`${UI.l('道具界列表', '道具界列表', 'Item World List')}[<span class="itemWorldCounts">0/0</span>]`), `placeholder="true"`)}`,
-                    UI.button.class('updateItemWorld', UI.l('更新列表', '更新列表', 'Update List')),
-                    UI.button.class('hvAAShowItemWorld', `${UI.l('详情', '詳情', 'Details')}▼`),
-                    UI.button.class('hvAAClearItemWorld', UI.l('清空', '清空', 'Clear')),
+                    UI.button.class('updateItemWorld', UI.button.update),
+                    UI.button.class('hvAAShowItemWorld', UI.button.details()),
+                    UI.button.class('hvAAClearItemWorld', UI.button.clear),
                     '<br>',
                     UI.div({ args: 'class="autoItemWorldList hvAATable" style="display:none;grid-template-columns:0.2fr 3fr 0.2fr 1fr 1fr;"' }),
                   ),
@@ -2824,7 +2828,7 @@
                 UI.div(
                   UI.b('[S!]', UI.l('精力: 进入战斗的最低精力', '精力: 戰鬥的最低精力', 'Stamina: Minimum stamina to auto start battles')),
                   ': <br>',
-                  UI.expendData(UIDatas.staminaCheck, (id, names, v) => `${id === 'LowWithReNat' ? UI.b('<br>[S!!]') : ''}${names}: ${id === 'Low' ? 'Min(85, ' : ''}<input class="hvAANumber" name="stamina${id}" placeholder="${v}" type="number">${id === 'Low' ? ')' : ''};`),
+                  UI.expendData(UIDatas.staminaCheck, (id, names, v) => `${id === 'LowWithReNat' ? UI.b('<br>[S!!]') : ''}${names}: ${id === 'Low' ? 'Min(85, ' : ''}${UI.number(`stamina${id}`, v)}${id === 'Low' ? ')' : ''};`),
                   '<br>',
                   `${UI.labeled(`restoreStamina`, UI.l('战前恢复', '戰前恢復', 'Restore stamina'))}`,
                   `${UI.labeled(`staminaRatio`, UI.l('检查惩罚倍率', '檢查懲罰倍率', 'Check Punishment Ratio'))}`,
@@ -2851,8 +2855,8 @@
                 UI.div(
                   UI.labeled(`changeEquipSet`, UI.b(UI.l('[!!实验性]切换套装', '[!!實驗性]切換套裝', '[!!Experimental]Switch Equip Set'))),
                   `<span class="changeEquipSetInner">`,
-                  UI.button.class('updateEquipSet', UI.l('更新列表', '更新列表', 'Update List')),
-                  UI.button.class('hvAAShowEquipSet', `${UI.l('详情', '詳情', 'Details')}▼`),
+                  UI.button.class('updateEquipSet', UI.button.update),
+                  UI.button.class('hvAAShowEquipSet', UI.button.details()),
                   '<br>',
                   UI.hvAATable(UI.repeat(3)+';display:none', 'equipSetList changeEquipSetInner'),
                 ),
@@ -2935,6 +2939,7 @@
                       UI.l('施放顺序', '施放順序', 'Cast Order'),
                       ': ',
                       UI.text('channelSkill2OrderName','style="width:80%;"','disabled="true"'),
+                      UI.text('channelSkill2OrderValue','style="width:80%;"','disabled="true"','hidden'),
                       '<br>',
                       UI.div({
                         args: { class: 'hvAATable', style: 'grid-template-columns: repeat(6, 1fr);' },
@@ -2947,22 +2952,29 @@
               ),
               UI.hvAATab(
                 'Buff',
-                '<div class="buffSkillOrder"><l0>施放顺序(未配置的按照下面的顺序)</l0><l1>施放順序(未配置的按照下面的順序)</l1><l2>Cast Order(Using order below as default if not configed)</l2>: ',
-                '<input name="buffSkillOrderValue" style="width:80%;" type="text" disabled="true"><br>',
-                UI.expendData(UIDatas.buff, (id, names, v) => v?'':UI.labeled(`buffSkillOrder_${id}`, names)),
-                '</div>',
-                UI.div('<l0>Buff释放条件</l0><l1>Buff釋放條件</l1><l2>Cast spells Condition</l2>{{buffSkillCondition}}'),
-                UI.expendData(UIDatas.buff, (id, names, v) => UI.div(`${UI.labeled(`buffSkill_${id}`,`${names} <= <input class="hvAANumber" placeholder="0" name="buffSkillThreshold_${id}" type="number"> (<l0>阈值 &lt; 0 则不限制</l0><l1>閾值 &lt; 0 則不限制</l1><l2> Threshold &lt; 0 as unlimited</l2>)`)}{{buffSkill${id}Condition}}`)),
+                UI.div({
+                  args: { class: 'buffSkillOrder '},
+                  inner: [
+                    UI.l('施放顺序(未配置的按照下面的顺序)', '施放順序(未配置的按照下面的順序)', 'Cast Order(Using order below as default if not configed)</l2>'),
+                    ': ',
+                    UI.label(['buffSkillOrderValue', ...UIDatas.buff.map(buff=>`buffSkillOrder_${buff.id}`)], UI.l('Buff 施放顺序', 'Buff 施放順序', 'Buff Cast Order') ,'hidden'),
+                    UI.text('buffSkillOrderValue','style="width:80%;" disabled="true"'),
+                    '<br>',
+                    UI.expendData(UIDatas.buff, (id, names, v) => v?'':UI.labeled(`buffSkillOrder_${id}`, names)),
+                  ],
+                }),
+                UI.div(UI.l('Buff释放条件','Buff釋放條件','Cast spells Condition'),'{{buffSkillCondition}}'),
+                UI.expendData(UIDatas.buff, (id, names, v) => UI.div(`${UI.labeled(`buffSkill_${id}`, `${names} <= ${UI.number(`buffSkillThreshold_${id}`)} (${UI.l('阈值 &lt; 0 则不限制', '閾值 &lt; 0 則不限制', ' Threshold &lt; 0 as unlimited')})`)}{{buffSkill${id}Condition}}`)),
               ),
               UI.hvAATab(
                 'Debuff',
-                UI.div('<l0>Debuff释放条件</l0><l1>Debuff釋放條件</l1><l2>Cast debuff spells Condition</l2>{{debuffSkillCondition}}'),
+                UI.div(UI.l('Debuff释放条件','Debuff釋放條件','Cast debuff spells Condition'),'{{debuffSkillCondition}}'),
                 UI.div(`${UI.labeled('debuffAutoFill', '<l0>[!!实验性]补全因超过默认显示上限未显示的怪物buff</l0><l1>[!!實驗性]補全因超過默認顯示上限未顯示的怪物buff</l1><l2>[!!Experimental]Auto fill hidden monster buffs due to display limitation</l2></label>')}<span class="debuffAutoFillInner">${UI.labeled('debuffAutoFillRec', 'DEBUG RECORD')}</span>`),
                 UI.div(
                   '<l0>超出6个debuff的默认显示上限时（例如同时使用jpx时可忽略上限）：</l0><l1>超出6個debuff的默認顯示上限時（例如同時使用jpx時可忽略上限）：</l1><l2>When debuff count overflows 6 as the default maximum display count (such as ignore limitation while using jpx): </l2><select class="hvAANumber" name="debuffSkillTurnAlert"><option value="0" selected>跳过 / Skip</option><option value="1">警报 / Alert</option><option value="2">忽略 / Ignore</option></select><br>',
                   '<l0>剩余Turns低于阈值时警报</l0><l1>剩餘Turns低於閾值時警報</l1><l2>Alert when remain expire turns less than threshold</l2><br>',
                   '<div class="hvAATable" style="grid-template-columns: repeat(9, 1fr);">',
-                  UI.expendData(UIDatas.debuff, (id, names) => UI.div(`${names}<input class="hvAANumber" placeholder="0" name="debuffSkillTurn_${id}" type="number">`)),
+                  UI.expendData(UIDatas.debuff, (id, names) => UI.div(names, UI.number(`debuffSkillTurn_${id}`))),
                   '</div>',
                 ),
 
@@ -2992,19 +3004,25 @@
                   '<l0>Buff持续时间 &lt;= 释放阈值时可释放，阈值 &lt; 0 则不限制</l0><l1>Buff持續時間 &lt;= 釋放閾值時可釋放，閾值 &lt; 0 則不限制</l1><l2>Cast available while buff remain duration &lt;= threshold, threshold &lt; 0 as unlimited</l2><br>',
                   'EWF: <l0>重复释放权重公式</l0><l1>重複釋放的權重公式</l1><l2>Excluded Weight Formula for duplicate debuff targets</l2>',
                 ),
-
-                '<div class="hvAATable" style="grid-template-columns: repeat(2, 1fr); width: 100%">',
-                UI.expendData(UIDatas.debuff, (id, names) => [
-                  UI.div(
-                    UI.labeled(`debuffSkill_${id}`, names),
-                    `<l0>阈值: </l0><l1>閾值: </l1><l2> Threshold: </l2><input class="hvAANumber" placeholder="0" name="debuffSkillThreshold_${id}" type="number">; EWF: <input name="excludedWeightFormula_${id}" placeholder="900" type="text">{{debuffSkill${id}Condition}}`
-                  ),
-                  UI.div(
-                    `<l0>特殊</l0><l1>特殊</l1><l2>Special</l2>`,
-                    UI.labeled(`debuffSkill${id}All`, `<l0>先给全体上</l0><l1>先給全體上</l1>${names}<l2> all enemies first.</l2>`),
-                    `<span class="debuffSkill${id}AllInner">${UI.labeled(`debuffSkill${id}AllByIndex`, `<l0>按照顺序而非权重</l0><l1>按照順序而非權重</l1><l2>By index instead of weight</l2>`)}</span>{{debuffSkill${id}AllCondition}}`)
-                ]),
-                '</div>',
+                UI.hvAATable(
+                  UI.repeat(2) + ';width: 100%', '',
+                  UI.expendData(UIDatas.debuff, (id, names) => [
+                    UI.div(
+                      UI.labeled(`debuffSkill_${id}`, names),
+                      UI.l('阈值: ', '閾值: ', ' Threshold: '),
+                      UI.number(`debuffSkillThreshold_${id}`),
+                      '; EWF: ',
+                      UI.number(`excludedWeightFormula_${id}`, 900),
+                      `{{debuffSkill${id}Condition}}`
+                    ),
+                    UI.div(
+                      UI.l('特殊 ', '特殊 ', ' Special '),
+                      UI.labeled(`debuffSkill${id}All`, `${UI.l('先给全体上', '先給全體上')}${names}${UI.l('','',' all enemies first.')}`),
+                      `<span class="debuffSkill${id}AllInner">`,
+                      `${UI.labeled(`debuffSkill${id}AllByIndex`, UI.l('按照顺序而非权重', '按照順序而非權重', 'By index instead of weight'))}`,
+                      `</span>{{debuffSkill${id}AllCondition}}`)
+                  ]),
+                ),
               ),
               UI.hvAATab(
                 'Skill',
@@ -3052,9 +3070,13 @@
                 '<span class="hvAATitle"><l0>攻击规则</l0><l1>攻擊規則</l1><l2>Attack Rule</l2></span> <l01><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README.md#攻击规则-示例" target="_blank">示例</a></l01><l2><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README_en.md#attack-rule-example" target="_blank">Example</a></l2>',
                 UI.div(
                   '<b>1. <l0>初始血量权重=Log10(目标血量/场上最低血量)</l0><l1>初始血量權重=Log10(目標血量/場上最低血量)</l1><l2>BaseHpWeight = BaseHpRatio*Log10(TargetHP/MaxHPOnField)</l2></b><br>',
-                  '<l0>初始权重系数(>0:低血量优先;<0:高血量优先)</l0><l1>初始權重係數(>0:低血量優先;<0:高血量優先)</l1><l2>BaseHpRatio(>0:low hp first;<0:high hp first)</l2><input class="hvAANumber" name="baseHpRatio" placeholder="1" type="number"><br>',
+                  '<l0>初始权重系数(>0:低血量优先;<0:高血量优先)</l0><l1>初始權重係數(>0:低血量優先;<0:高血量優先)</l1><l2>BaseHpRatio(>0:low hp first;<0:high hp first)</l2>',
+                  UI.number('baseHpRatio'),
+                  '<br>',
                   '<l0>不可命中目标的权重公式</l0><l1>不可名中目標的權重公式</l1><l2>Unreachable Target Weight Formula</l2>: <input name="unreachableWeight" placeholder="1000" type="text"><br>',
-                  '<l0>BOSS:Yggdrasil额外权重</l0><l1>BOSS:Yggdrasil額外權重</l1><l2>BOSS:Yggdrasil Extra Weight</l2></b><input class="hvAANumber" name="YggdrasilExtraWeight" placeholder="-1000" type="number"><br>',
+                  '<l0>BOSS:Yggdrasil额外权重</l0><l1>BOSS:Yggdrasil額外權重</l1><l2>BOSS:Yggdrasil Extra Weight</l2></b>',
+                  UI.number('YggdrasilExtraWeight', 1000),
+                  '<br>',
                   UI.labeled('cacheMonsterHP', '<l0>启用HP缓存</l0><l1>啟用HP緩存</l1><l2>Use HP Cache</l2>'),
                   '<button class="clearMonsterHPCache"><l0>清空缓存</l0><l1>清空緩存</l1><l2>Clear HP Cache</l2></button>',
                   '<span class="cacheMonsterHPInner">',
@@ -3064,21 +3086,18 @@
                 '</span>',
                 UI.div(
                   '<b>2. <l0>初始权重与下述各Buff权重相加</l0><l1>初始權重與下述各Buff權重相加</l1><l2>PW(X) = BaseHpWeight + Accumulated_Weight_of_Deprecating_Spells_In_Effect(X)</l2></b><br>',
-                  '<div class="hvAATable" style="grid-template-columns:repeat(6, 1fr);">',
-                  UI.expendData(UIDatas.weight1, (id, names, v) => UI.div(`<input class="hvAANumber" name="weight_${id}" placeholder="${v}" type="number">${names}`)),
-                  '</div>',
-                  '<b><l0>降抗性和攻击模式属性</l0><l1>降抗性和攻擊模式屬性</l1><l2>While elements between Resistance-lower-debuff and Attack-Mode matches</l2>  [' + UI.attackStatusType[option.attackStatus??0] + '] <l0>相同时</l0><l1>相同時</l1><l2></l2></b> : <br>',
-                  '<div class="hvAATable" style="grid-template-columns: repeat(4, 1fr) repeat(2, 1.25fr);">',
-                  UI.expendData(UIDatas.weight2, (id, names, v) => UI.div(`<input class="hvAANumber" name="weight_${id}" placeholder="${v}" type="number">${names}`)),
-                  '</div>',
+                  UI.hvAATable(UI.repeat(6), '', UI.expendData(UIDatas.weight1, (id, names, v) => UI.div(UI.number(`weight_${id}`, v), names))),
+                  UI.b(
+                    UI.l('降抗性和攻击模式属性', '降抗性和攻擊模式屬性', 'While elements between Resistance-lower-debuff and Attack-Mode matches'),
+                    `  [${UI.attackStatusType[option.attackStatus ?? 0]}] `,
+                    UI.l('相同时', '相同時')
+                  ),
+                  ' : <br>',
+                  UI.hvAATable(UI.repeat(4)+' repeat(2, 1.25fr);', '', UI.expendData(UIDatas.weight1, (id, names, v) => UI.div(UI.number(`weight_${id}`, v),names))),
                   '<b><l0>降抗性和攻击模式属性</l0><l1>降抗性和攻擊模式屬性</l1><l2>While elements between Resistance-lower-debuff and Attack-Mode NOT matches</l2>  [' + UI.attackStatusType[option.attackStatus??0] + '] <l0>不相同时</l0><l1>不相同時</l1><l2></l2></b>: <br>',
-                  '<div class="hvAATable" style="grid-template-columns: repeat(4, 1fr) repeat(2, 1.25fr);">',
-                  UI.expendData(UIDatas.weight2, (id, names, v, v2) => UI.div(`<input class="hvAANumber" name="weight_${id}1" placeholder="${v2}" type="number">${names}`)),
-                  '</div>',
+                  UI.hvAATable(UI.repeat(4)+' repeat(2, 1.25fr);', '', UI.expendData(UIDatas.weight2, (id, names, v, v2) => UI.div(UI.number(`weight_${id}1`, v2),names))),
                   '<b><l0>敌方增益，暂不清楚具体效果，默认按0权重计算</l0><l1>敵方增益，暫不清楚具體效果，默認按0權重計算</l1><l2>Enemy Procs, Evvecf value unknown, weight default as 0 for now.</l2>:</b><br>',
-                  '<div class="hvAATable" style="grid-template-columns: 1fr 1.25fr 1fr 1fr 1fr;">',
-                  UI.expendData(UIDatas.weight3, (id, names, v) => UI.div(`<input class="hvAANumber" name="weight_${id}" placeholder="${v}" type="number">${names}`)),
-                  '</div>',
+                  UI.hvAATable('1fr 1.25fr 1fr 1fr 1fr', '', UI.expendData(UIDatas.weight3, (id, names, v) => UI.div(UI.number(`weight_${id}`, v),names))),
                 ),
                 UI.div('<b>3. PW(X) -= Log10(1 + <l0>武器攻击中央目标伤害倍率(副手及冲击技能)</l0><l1>乘以武器攻擊中央目標傷害倍率(副手及衝擊技能)</l1><l2>Weapon Attack Central Target Damage Ratio (Offhand & Strike)</l2>)</b><br><l0>额外伤害比例：</l0><l1>額外傷害比例：</l1><l2>Extra DMG Ratio: </l2><input class="hvAANumber" name="centralExtraRatio" placeholder="0" type="number">%'),
                 UI.div('<b>4. <l0>额外权重公式</l0><l1>額外權重公式</l1><l2>Extra weight formula</l2>: </b><input name="extraWeightFormula" type="text">'),
@@ -3122,16 +3141,18 @@
                   '</div>',
                 ),
                 UI.div(
-                  '<b><l0>操作</l0><l1>操作</l1><l2>Actions</l2></b>',
-                  '<div class="hvAATable" style="grid-template-columns: repeat(5, 1fr);">' ,
-                  UI.expendData(UIDatas.record2, (id, names, v) => UI.div(UI.labeled(`record_${id}`, names))),
-                  '</div>',
+                  UI.b(UI.l('操作', '操作', 'Actions')),
+                   UI.hvAATable(
+                    UI.repeat(5), '',
+                    UI.expendData(UIDatas.record2, (id, names, v) => UI.div(UI.labeled(`record_${id}`, names))),
+                  ),
                 ),
                 UI.div(
-                  '<b><input id="record_hurt" type="checkbox"><label for="record_hurt"><l0>受伤 (总量)</l0><l1>受傷 (總量)</l1><l2>Hurt (Amount)</l</label>2></b>',
-                  '<div class="hvAATable" style="grid-template-columns: repeat(3, 1fr) repeat(6, 2fr);">' ,
-                  UI.expendData(UIDatas.record3, (id, names, v) => UI.div(UI.labeled(`record_${id}`, names))),
-                  '</div>',
+                  UI.labeled('record_hurt', UI.b(UI.l('受伤 (总量)', '受傷 (總量)', 'Hurt (Amount)'))),
+                  UI.hvAATable(
+                    `${UI.repeat(3)} ${UI.repeat(6, '2fr')}`, '',
+                    UI.expendData(UIDatas.record3, (id, names, v) => UI.div(UI.labeled(`record_${id}`, names))),
+                  ),
                 ),
                 '<table></table>',
               ),
@@ -3142,7 +3163,9 @@
                   '<l0>如果脚本长期暂停且网络无问题，请点击</l0><l1>如果腳本長期暫停且網絡無問題，請點擊</l1><l2>If the script does not work and you are sure that it\'s not because of your internet, click</l2><button class="hvAAFix"><l0>尝试修复</l0><l1>嘗試修復</l1><l2>Try to fix</l2></button><br>',
                   '<l0>战役模式</l0><l1>戰役模式</l1><l2>Battle type</l2>: <select class="hvAADebug" name="roundType"><option></option><option value="ar">The Arena</option><option value="rb">Ring of Blood</option><option value="gr">GrindFest</option><option value="iw">Item World</option><option value="ba">Encounter</option><option value="tw">The Tower</option></select> <l0>当前回合</l0><l1>當前回合</l1><l2>Current round</l2>: <input name="roundNow" class="hvAADebug hvAANumber" type="number"> <l0>总回合</l0><l1>總回合</l1><l2>Total rounds</l2>: <input name="roundAll" class="hvAADebug hvAANumber" type="number">'
                 ),
-                '<div class="hvAAQuickSite"><input id="showQuickSite" type="checkbox"><label for="showQuickSite"><span class="hvAATitle"><l0>快捷站点</l0><l1>快捷站點</l1><l2>Quick Site</l2></span></label><span class="showQuickSiteInner"><button class="quickSiteAdd"><l0>新增</l0><l1>新增</l1><l2>Add</l2></button><br>',
+                '<div class="hvAAQuickSite">',
+                UI.labeled('showQuickSite', `<span class="hvAATitle">${UI.l('快捷站点','快捷站點','Quick Site')}</span>`),
+                '<span class="showQuickSiteInner"><button class="quickSiteAdd"><l0>新增</l0><l1>新增</l1><l2>Add</l2></button><br>',
                 '<l0>注意: 留空“名称”一栏则表示删除该行，修改后请保存</l0><l1>注意: 留空“名稱”一欄則表示刪除該行，修改後請保存</l1><l2>Note: The "name" input box left blank will be deleted, after change please save in time.</l2>',
                 '<table><tbody><tr class="hvAATh"><td><l0>图标</l0><l1>圖標</l1><l2>ICON</l2></td><td><l0>名称</l0><l1>名稱</l1><l2>Name</l2></td><td><l0>链接</l0><l1>鏈接</l1><l2>Link</l2></td></tr></tbody></table></span></div>',
                 UI.div('<span class="hvAATitle"><l0>备份与还原</l0><l1>備份與還原</l1><l2>Backup and Restore</l2></span><br><button class="hvAABackup"><l0>备份设置</l0><l1>備份設置</l1><l2>Backup Confiuration</l2></button><button class="hvAARestore"><l0>还原设置</l0><l1>還原設置</l1><l2>Restore Confiuration</l2></button><button class="hvAADelete"><l0>删除设置</l0><l1>刪除設置</l1><l2>Delete Confiuration</l2></button><ul class="hvAABackupList"></ul>'),
@@ -3160,9 +3183,11 @@
                   '<span class="hvAATitle">',
                   UI.l('反馈说明','反饋說明','Feedback Note'),
                   '</span>: <br>',
-                  '<l0>如果你遇见了Bug，想帮助作者修复它<br>你应当提供以下多种资料: <br>1. 场景描述<br>2. 你的配置<br>3. 控制台日志 (按Ctrl+Shift+i打开开发者助手，再选择Console(控制台)面板)<br>4. 战斗日志  (如果是在战斗中)<br>如果是无法容忍甚至使脚本失效的Bug，请尝试安装旧版本<hr>如果你有一些建议使这个脚本更加有用，那么: <br>1. 请尽量简述你的想法<br>2. 如果可以，请提供一些场景 (方便作者更好理解)</l0>',
-                  '<l1>如果你遇見了Bug，想幫助作者修復它<br>你應當提供以下多種資料: <br>1. 場景描述<br>2. 你的配置<br>3. 控制台日誌 (按Ctrl+Shift+i打開開發者助手，再選擇Console(控制台)面板)<br>4. 戰鬥日誌 (如果是在戰鬥中)<br>如果是無法容忍甚至使腳本失效的Bug，請嘗試安裝舊版本<hr>如果你有一些建議使這個腳本更加有用，那麼: <br>1. 請盡量簡述你的想法<br>2.如果可以，請提供一些場景 (方便作者更好理解)</l1>',
-                  '<l2>If you encounter a bug and would like to help the author fix it<br>You should provide the following information: <br>1. the Situation<br>2. Your Configuration<br>3. Console Log (press Ctrl + Shift + i to open the Developer Assistant, And then select the Console panel)<br>4. Battle Log (if in combat)<br>If you are unable to tolerate this bug or even the bug made the script fail, try installing the old version<hr>If you have some suggestions to make this script more useful, then: <br>1. Please briefly describe your thoughts<br>2. If you can, please provide some scenes (to facilitate the author to better understand)<br>PS. For English user, please express in basic English (Oh my poor English, thanks for Google Translate)</l2>'
+                  UI.l(
+                    '如果你遇见了Bug，想帮助作者修复它<br>你应当提供以下多种资料: <br>1. 场景描述<br>2. 你的配置<br>3. 控制台日志 (按Ctrl+Shift+i打开开发者助手，再选择Console(控制台)面板)<br>4. 战斗日志  (如果是在战斗中)<br>如果是无法容忍甚至使脚本失效的Bug，请尝试安装旧版本<hr>如果你有一些建议使这个脚本更加有用，那么: <br>1. 请尽量简述你的想法<br>2. 如果可以，请提供一些场景 (方便作者更好理解)',
+                    '如果你遇見了Bug，想幫助作者修復它<br>你應當提供以下多種資料: <br>1. 場景描述<br>2. 你的配置<br>3. 控制台日誌 (按Ctrl+Shift+i打開開發者助手，再選擇Console(控制台)面板)<br>4. 戰鬥日誌 (如果是在戰鬥中)<br>如果是無法容忍甚至使腳本失效的Bug，請嘗試安裝舊版本<hr>如果你有一些建議使這個腳本更加有用，那麼: <br>1. 請盡量簡述你的想法<br>2.如果可以，請提供一些場景 (方便作者更好理解)',
+                    'If you encounter a bug and would like to help the author fix it<br>You should provide the following information: <br>1. the Situation<br>2. Your Configuration<br>3. Console Log (press Ctrl + Shift + i to open the Developer Assistant, And then select the Console panel)<br>4. Battle Log (if in combat)<br>If you are unable to tolerate this bug or even the bug made the script fail, try installing the old version<hr>If you have some suggestions to make this script more useful, then: <br>1. Please briefly describe your thoughts<br>2. If you can, please provide some scenes (to facilitate the author to better understand)<br>PS. For English user, please express in basic English (Oh my poor English, thanks for Google Translate)'
+                  ),
                 ),
                 UI.div(UI.labeled('debugCheckCondition', 'debugCheckCondition:<br>prefix@/# to log result in console, @for formula, #for param: '),'{{debugCondition}}'),
               ),
@@ -3213,13 +3238,6 @@
       unique([...gE('[class$="Inner"]', 'all', optionBox)].map(inner => [...inner.classList].find(className => className.includes('Inner')))).forEach(innerName => {
         const onchange = gE(`#${innerName.replace(/Inner$/,'')}`, optionBox)?.onchange;
         if (onchange) onchange();
-      });
-      gE('input', 'all', optionBox).forEach(i => { 
-        const key = i.id ?? i.name;
-        const label = gE(`label[for="${key}"], label[for*="${key},"]`,  optionBox);
-        if (label) return;
-        if (i.parentNode.parentNode === gE('.hvAATabmenu')) return;
-        console.log(i, key)
       });
 
       function changeSelectOptionText() {
@@ -3485,26 +3503,26 @@
         };
 
         gE('.updateEquipSet', optionBox).onclick = async function() { try {
-          this.innerHTML = `<l0>更新中...</l0><l1>更新中...</l1><l2>Updating...</l2>`;
+          this.innerHTML = UI.button.updating;
           await updateItemWorldList(true);
           updateEquipSetUI();
-          this.innerHTML = `<l0>更新列表</l0><l1>更新列表</l1><l2>Update List</l2>`;
+          this.innerHTML = UI.button.update;
         } catch (err) { console.error(err); }};
         gE('.hvAAShowEquipSet', optionBox).onclick = function () {
           const isDisplay = gE('.equipSetList', optionBox).style.display !== 'grid';
-          this.innerHTML = `<l0>详情</l0><l1>詳情</l1><l2>Details</l2>${isDisplay ? `▲` : `▼`}`;
+          this.innerHTML = UI.button.details(isDisplay);
           gE('.equipSetList', optionBox).style.display = isDisplay ? 'grid' : 'none';
         };
 
         gE('.updateItemWorld', optionBox).onclick = async function() { try {
-          this.innerHTML = `<l0>更新中...</l0><l1>更新中...</l1><l2>Updating...</l2>`;
+          this.innerHTML = UI.button.updating;
           await updateItemWorldList();
           updateItemWorldListUI();
-          this.innerHTML = `<l0>更新列表</l0><l1>更新列表</l1><l2>Update List</l2>`;
+          this.innerHTML = UI.button.update;
         } catch (err) { console.error(err); }};
         gE('.hvAAShowItemWorld', optionBox).onclick = function () {
           const isDisplay = gE('.autoItemWorldList', optionBox).style.display !== 'grid';
-          this.innerHTML = `<l0>详情</l0><l1>詳情</l1><l2>Details</l2>${isDisplay ? `▲` : `▼`}`;
+          this.innerHTML = UI.button.details(isDisplay);
           gE('.autoItemWorldList', optionBox).style.display = isDisplay ? 'grid' : 'none';
         };
         gE('.hvAAClearItemWorld', optionBox).onclick = function () {
@@ -3742,7 +3760,7 @@
               defaultStr = 'false';
               break;
           }
-          return `[${i++}]${Array.from(gE(`label[for="${key}"], label[for*="${key},"]`, 'all', optionBox)).map(x => { 
+          return `[${i++}]${Array.from(gE(`label[for="${key}"], label[for*="${key},"]`, 'all', optionBox)).map(x => {
             if (!x) return x;
             [hidden, x.hidden] = [x.hidden, false];
             [text, x.hidden] = [x.innerText, hidden];
@@ -5522,7 +5540,7 @@
           const [level, world, max] = levels.split(' / ').map(x=>x*1);
           const name = gE('td:first-child', eqp).innerText;
           const quality = name.match(/Fair|Average|Superior|Exquisite|Magnificent|Legendary|Peerless/)[0];
-          const rounds = hvv ? [...range(5,35)] :
+          const rounds = hvv ? range(5,35) :
           (()=> { switch (quality) {
             case 'Fair': case 'Average': case 'Superior': case 'Exquisite':
               return [...range(5,10), ...repeat(10,5)];
@@ -6269,12 +6287,12 @@
       const currentTurn = (battle.turn ?? 0) + 1;
 
       gE('.hvAALog').innerHTML = [
-        `<l0>攻击模式</l0><l1>攻擊模式</l1><l2>Attack Mode</l2>: ${UI.attackStatusType[g().attackStatus]}`,
-        `${(_server.isekai || onIsekaiEncounter) ? '<l0>异世界</l0><l1>異世界</l1><l2>Isekai</l2>' : '<l0>恒定世界</l0><l1>恆定世界</l1><l2>Persistent</l2>'}`, // 战役模式显示
+        `${UI.l('攻击模式', '攻擊模式', 'Attack Mode')}: ${UI.attackStatusType[g().attackStatus]}`,
+        `${(_server.isekai || onIsekaiEncounter) ? UI.l('异世界', '異世界', 'Isekai') : UI.l('恒定世界', '恆定世界', 'Persistent')}`, // 战役模式显示
         `${getBattleTypeDisplay()}`, // 战役模式显示
         `R${battle.roundNow}/${battle.roundAll}:T${currentTurn}`,
         `TPS: ${g().runSpeed}`,
-        `<l0>敌人</l0><l1>敵人</l1><l2>Monsters</l2>: ${g().monsterAlive}/${g().monsterAll}`,
+        `${UI.l('敌人', '敵人', 'Monsters')}: ${g().monsterAlive}/${g().monsterAll}`,
       ].join(`<br>`).replace(`</div><br>`, `</div>`);
       if (!battle.roundAll) {
         pauseChange();
