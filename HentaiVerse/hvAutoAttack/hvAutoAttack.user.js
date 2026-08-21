@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.107
+// @version      2.91.108
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -3211,7 +3211,7 @@
                 UI.div(
                   '<span class="hvAATitle"><l0>备份与还原</l0><l1>備份與還原</l1><l2>Backup and Restore</l2></span><br>',
                   UI.button.class('hvAABackup', UI.l('备份设置', '備份設置', 'Backup Confiuration')),
-                  UI.button.class('hvAARestore', UI.l('', '', 'Restore Confiuration')),
+                  UI.button.class('hvAARestore', UI.l('还原设置', '還原設置', 'Restore Confiuration')),
                   UI.button.class('hvAADelete', UI.l('删除设置', '刪除設置', 'Delete Confiuration')),
                   '<ul class="hvAABackupList"></ul>'),
                 UI.div(
@@ -5978,6 +5978,7 @@
         arena.array.reverse();
       }
       arena.arrayDone = arena.arrayDone.filter(id => id && (id === 'gr' || !arena.enabled?.includes(id.toString())));
+      delete arena.equip;
       $async.logSwitch(arguments);
       return setValue('arena', arena);
     } catch (err) { console.error(err); }}
@@ -5999,7 +6000,7 @@
         } else {
           arena.gr--;
         }
-        arena.equip = equip;
+        arena.equip = { data: equip };
         setValue('arena', arena);
       }
       if (arena.array.length === 0) {
@@ -6303,10 +6304,16 @@
           }
         }
         const type = battle.roundType;
-        let subtype, title, equip;
+        let subtype, title;
         const monsterNames = Array.from(gE(`${monsterStateKeys.name}>div>div`, 'all')).map(monster => monster.innerHTML);
         const lang = g().lang * 1;
         const info = battleInfoList[type];
+        const arena = getValue('arena', true);
+        const equip = arena?.equip;
+        if (equip && type !== 'iw') { 
+          delete arena.equip;
+          setValue('arena', arena);
+        }
         switch (type) {
           case 'ar':
           case 'rb':
@@ -6326,9 +6333,17 @@
             break;
           case 'iw':
             title = `${info.title}`;
-            if (equip = getValue('arena', true)?.equip) {
-              title += `${equip?.world + 1}/${equip?.max}`;
-              subtype = `<div style="font-size: 9pt!important">[${equip?.id}]${equip?.name}</div>`;
+            if (equip) {
+              if (equip.token && (equip.token !== battle.token)) {
+                // 有旧token，移除
+                delete arena.equip;
+              } else { 
+                // 没有token或是当前token，正常显示
+                equip.token = battle.token;
+                title += `${equip.data.world + 1}/${equip.data.max}`;
+                subtype = `<div style="font-size: 9pt!important">[${equip.data.id}]${equip.data.name}</div>`;
+              }
+              setValue('arena', arena);
             }
             break;
           case 'gr':
