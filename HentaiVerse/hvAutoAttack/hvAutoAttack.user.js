@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.103
+// @version      2.91.104
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -445,33 +445,36 @@
       prompt: (...args) => window.prompt(UI.byLang(...args.slice(0, UI.langs)), args[UI.langs]),
       l: function (...args) {
         if (typeof args[0] !== 'string') args = args[0];
-        const extra = args[UI.langs]??'';
-        return range(UI.langs).map(i=>`<l${i} ${extra}>${args[i]??''}</l${i}>`).join('');
+        const extra = args[UI.langs] ?? '';
+        return range(UI.langs).map(i => `<l${i} ${extra}>${args[i] ?? ''}</l${i}>`).join('');
       },
       button: {
         class: function (className, ...inner) {
-          return `<button class="${className}">${inner?.join('')??''}</button>`
+          return `<button class="${className}">${inner?.join('') ?? ''}</button>`
         },
         pause: function () {
           const option = getOption();
-          return `${UI.l('暂停', '暫停', 'Pause')}${(option.pauseHotkey && option.pauseHotkeyStr) ? `(${option.pauseHotkeyStr})` : '' }`;
+          return `${UI.l('暂停', '暫停', 'Pause')}${(option.pauseHotkey && option.pauseHotkeyStr) ? `(${option.pauseHotkeyStr})` : ''}`;
         },
         stepIn: function () {
           const option = getOption();
-          return `${UI.l('步进', '步進', 'StepIn')}${(option.stepInHotkey && option.stepInHotkeyStr) ? `(${option.stepInHotkeyStr})` : '' }`;
+          return `${UI.l('步进', '步進', 'StepIn')}${(option.stepInHotkey && option.stepInHotkeyStr) ? `(${option.stepInHotkeyStr})` : ''}`;
         },
         continue: function () {
           const option = getOption();
-          return `${UI.l('继续', '繼續', 'Continue', 'style="color:red;"')}<span style="color:red;">${(option.pauseHotkey && option.pauseHotkeyStr) ? `(${option.pauseHotkeyStr})` : '' }</span>`;
+          return `${UI.l('继续', '繼續', 'Continue', 'style="color:red;"')}<span style="color:red;">${(option.pauseHotkey && option.pauseHotkeyStr) ? `(${option.pauseHotkeyStr})` : ''}</span>`;
         },
       },
       expendData: function (datas, method) {
-        const mapped = datas.map(args => method(args.id, UI.l(args.names), ...(args.values??[])));
-        if (Array.isArray(mapped[0])) return mapped.reduce((acc,cur) => (acc??[]).concat(cur??[]),[])?.join('');
-        return mapped.reduce((acc,cur) => (acc??'')+(cur??''),'');
+        const mapped = datas.map(args => method(args.id, UI.l(args.names), ...(args.values ?? [])));
+        if (Array.isArray(mapped[0])) return mapped.reduce((acc, cur) => (acc ?? []).concat(cur ?? []), [])?.join('');
+        return mapped.reduce((acc, cur) => (acc ?? '') + (cur ?? ''), '');
+      },
+      label: function (ids, inner, ...extra) { 
+        return `<label for="${ids}" ${extra?.join('')??''}>${inner??''}</label>`
       },
       labeled: function (id, names, ...extra) {
-        return `<input id="${id}" type="checkbox" ${extra?.join(' ') ?? ''}><label for="${id}">${names}</label>`;
+        return `<input id="${id}" type="checkbox" ${extra?.join(' ') ?? ''}>${UI.label(id, names)}`;
       },
       text: function (id, ...extra) {
         return `<input name="${id}" type="text" ${extra.join(' ')}></input>`;
@@ -532,10 +535,11 @@
       UI.l('圣', '聖', 'Divine'),
       UI.l('暗', '暗', 'Forbidden'),
     ];
-
-    Object.defineProperty(Object.prototype, 'sortBy', { value: function sortBy(by) {
-      return this.sort((x,y) => by(x) < by(y) ? -1 : by(x) > by(y) ? 1 : 0)
-    }, enumerable: false });
+    if (typeof Object.sortBy === 'undefined') { 
+      Object.defineProperty(Object.prototype, 'sortBy', { value: function sortBy(by) {
+        return this.sort((x,y) => by(x) < by(y) ? -1 : by(x) > by(y) ? 1 : 0)
+      }, enumerable: false });
+    }
 
     const [$RPN, $async, $debug, $ajax] = [initRPN(), initAsync(), initDebug(), window.top.$ajax ??= unsafeWindow.window.top.$ajax ??= initAjax()];
 
@@ -2648,7 +2652,7 @@
                   ': ',
                   `${UI.labeled(`optionStandalone`, UI.l('两个世界使用不同的配置', '兩個世界使用不同的配置', 'Use standalone options.'))}`,
                   '<br>',
-                  `${UI.labeled(`isekai`, `${UI.l('在任意页面停留', '在任意頁面停留', 'While idle in any page for ')}${UI.number('isekaiTime')}${UI.l('秒后，自动切换恒定世界和异世界', '秒後，自動切換恆定世界和異世界', 's, auto switch between Isekai and Persistent')}. <span class="isekaiSwitchRemain"></span>`)}`,
+                  `${UI.labeled(`isekai`, `${UI.l('在任意页面停留', '在任意頁面停留', 'While idle in any page for ')}${UI.number('isekaiTime')}${UI.label('isekaiTime', UI.l('异世界切换时间','異世界切換時間','Isekai Switch Wait'),'hidden="true"')}${UI.l('秒后，自动切换恒定世界和异世界', '秒後，自動切換恆定世界和異世界', 's, auto switch between Isekai and Persistent')}. <span class="isekaiSwitchRemain"></span>`)}`,
                   '<br>',
                   UI.div({
                     args: { class: 'isekaiInner' },
@@ -3722,7 +3726,7 @@
         const diffs = diffData(options);
         const lang = g().lang;
         if (!diffs) return;
-        let i=1;
+        let i = 1, hidden,text;
         return Object.keys(diffs).length+'\n'+Object.entries(diffs).map(([key,data])=> {
           let defaultStr = ['默认','默認','Default'][lang];
           switch (gE(`[name="${key}"],[id="${key}"]`, optionBox)?.type) {
@@ -3731,7 +3735,12 @@
               defaultStr = 'false';
               break;
           }
-          return `[${i++}]${Array.from(gE(`label[for="${key}"], label[for*="${key},"]`, 'all', optionBox)).map(x=>x?.innerText).reduce((acc,cur)=>(acc??'')+(cur??''), '') || key}: ${data.map(d=>d?String(d):defaultStr)?.join(' -> ')}`;
+          return `[${i++}]${Array.from(gE(`label[for="${key}"], label[for*="${key},"]`, 'all', optionBox)).map(x => { 
+            if (!x) return x;
+            [hidden, x.hidden] = [x.hidden, false];
+            [text, x.hidden] = [x.innerText, hidden];
+            return text;
+          }).reduce((acc,cur)=>(acc??'')+(cur??''), '') || key}: ${data.map(d=>d?String(d):defaultStr)?.join(' -> ')}`;
         }).filter(d=>d!==undefined).join('\n');
 
         function diffData(datas, parents) {
@@ -6937,7 +6946,7 @@
         let effectObj = {};
         let jpxObj = {};
         let monster_btm6 = gE('.btm6', monster);
-
+        const abs = ability;
         monster_btm6.querySelectorAll('img').forEach((effect) => {
           let tooltip = effect.getAttribute('onmouseover');
           if (!tooltip) return;
@@ -6955,7 +6964,7 @@
           let dc = getBuffSkill(name)?.description;
           if (dc !== description) {
             // TODO 测试确保 ability[4213] Better Slow 效果描述正常，目前是描述均是30%
-            if (dc !== `'The target has been slowed by ${[30,40,40,45,50,50][ability[4213]??0]}%, making it attack less frequently.'` && description !== `'The target has been slowed by 30%, making it attack less frequently.'`) {
+            if (dc !== `'The target has been slowed by ${[30,40,40,45,50,50][abs[4213]??0]}%, making it attack less frequently.'` && description !== `'The target has been slowed by 30%, making it attack less frequently.'`) {
               console.log('Unmatched debuff description:', description, '\n from', name, dc);
             }
           }
