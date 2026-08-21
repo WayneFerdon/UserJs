@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.104
+// @version      2.91.105
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2115,7 +2115,7 @@
         13199, 13111, 13101,        0, 11401,
         19111, 19131, 11501,        0, 11402];
       const UIString = [
-        checkBoxOnly ? '' : `    <span class="checkSupply${suffix}Inner">${UI.l('库存', '庫存', 'Warn if supply')}&lt;max(100%,<input id="checkSupplyWarn${suffix}" class="hvAANumber" name="checkSupplyWarn${suffix}" placeholder="100" type="number">%)${UI.l('时提示', '時提示')};</span><br>`,
+        checkBoxOnly ? '' : `    <span class="checkSupply${suffix}Inner">${UI.l('库存', '庫存', 'Warn if supply')}&lt;max(100%,<input id="checkSupplyWarn${suffix}" class="hvAANumber" name="checkSupplyWarn${suffix}" placeholder="100" type="number">%)${UI.label(`checkSupplyWarn${suffix}`, `${UI.l('提示库存','提示庫存','Supply warn')} ${suffix} %`, 'hidden')}${UI.l('时提示', '時提示')};</span><br>`,
         `    <div class="hvAAcheckItems hvAATable checkSupply${suffix}Inner">`,
       ];
       for (const item of items) {
@@ -2652,7 +2652,7 @@
                   ': ',
                   `${UI.labeled(`optionStandalone`, UI.l('两个世界使用不同的配置', '兩個世界使用不同的配置', 'Use standalone options.'))}`,
                   '<br>',
-                  `${UI.labeled(`isekai`, `${UI.l('在任意页面停留', '在任意頁面停留', 'While idle in any page for ')}${UI.number('isekaiTime')}${UI.label('isekaiTime', UI.l('异世界切换时间','異世界切換時間','Isekai Switch Wait'),'hidden="true"')}${UI.l('秒后，自动切换恒定世界和异世界', '秒後，自動切換恆定世界和異世界', 's, auto switch between Isekai and Persistent')}. <span class="isekaiSwitchRemain"></span>`)}`,
+                  `${UI.labeled(`isekai`, `${UI.l('在任意页面停留', '在任意頁面停留', 'While idle in any page for ')}${UI.number('isekaiTime')}${UI.label('isekaiTime', UI.l('异世界切换时间','異世界切換時間','Isekai Switch Wait'),'hidden')}${UI.l('秒后，自动切换恒定世界和异世界', '秒後，自動切換恆定世界和異世界', 's, auto switch between Isekai and Persistent')}. <span class="isekaiSwitchRemain"></span>`)}`,
                   '<br>',
                   UI.div({
                     args: { class: 'isekaiInner' },
@@ -3213,6 +3213,13 @@
       unique([...gE('[class$="Inner"]', 'all', optionBox)].map(inner => [...inner.classList].find(className => className.includes('Inner')))).forEach(innerName => {
         const onchange = gE(`#${innerName.replace(/Inner$/,'')}`, optionBox)?.onchange;
         if (onchange) onchange();
+      });
+      gE('input', 'all', optionBox).forEach(i => { 
+        const key = i.id ?? i.name;
+        const label = gE(`label[for="${key}"], label[for*="${key},"]`,  optionBox);
+        if (label) return;
+        if (i.parentNode.parentNode === gE('.hvAATabmenu')) return;
+        console.log(i, key)
       });
 
       function changeSelectOptionText() {
