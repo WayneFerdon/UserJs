@@ -5782,7 +5782,11 @@
       } else {
         ui.style.cssText += 'color:unset!important;';
       }
-      ui.innerHTML = `${timeStr(cd, 2, option.encounterQuickCheck)}[${encounter.length ? (count >= MAX ? `☯` : count) : `✪`}${missed ? `-${missed}` : ``}]`;
+      let uiTime = timeStr(cd, 2, option.encounterQuickCheck);
+      if (option.encounterQuickCheck && cd >= 30 * _1m) {
+        uiTime = (Math.floor(cd / _1s) % 2) ? uiTime : uiTime.replace(':', '.');
+      }
+      ui.innerHTML = `${uiTime}[${encounter.length ? (count >= MAX ? `☯` : count) : `✪`}${missed ? `-${missed}` : ``}]`;
       if (document.title.includes(titlePause())) {
         document.title = ui.innerHTML + titlePause();
       }
@@ -5797,7 +5801,7 @@
           return true;
         }
       }
-      let interval = cd > _1h ? _1m : (!option.encounterQuickCheck || cd > _1m) ? _1s : 80;
+      let interval = (!option.encounterQuickCheck && cd > _1h) ? _1m : (!option.encounterQuickCheck || cd > _1m) ? _1s : 80;
       interval = (option.encounterQuickCheck && cd > _1m) ? (interval - cd % interval) / 4 : interval; // 让倒计时显示更平滑
       setTimeout(() => updateEncounter(engage), interval);
       $async.logSwitch(arguments);
