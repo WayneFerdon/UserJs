@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.109
+// @version      2.91.110
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2774,21 +2774,14 @@
                 UI.div(`${UI.labeled(`popup`, UI.l('进入失败时窗口内弹窗提示', '進入失敗時窗口內彈窗提示', 'In-window popup while failed start'))}`),
                 UI.div(`${UI.labeled(`altBattleFirst`, UI.b(UI.l('优先使用alt进入', '優先使用alt進入', 'Use alt.hentaiverse as default while auto start.')))}`),
                 UI.div(
-                  `${UI.labeled(`encounter`, UI.b(UI.l('自动遭遇战', '自動遭遇戰', 'Auto Encounter')))}`,
+                  UI.b(UI.l('随机遭遇战', '隨機遭遇戰', 'Random Encounter')),
                   '<br>',
-                  UI.div({
-                    args: 'class="encounterInner"',
-                    inner: [
-                      UI.labeled(`encounterQuickCheck`, UI.l('精准倒计时(影响性能)', '精準(影響性能)', 'Precise encounter cd(might reduced performsance)')),
-                      '<br>',
-                      UI.labeled(`encounterDisplay`, UI.l('不自动遭遇时显示倒计时', '不自動遭遇時顯示倒計時', 'Display CountDown While Not Auto Encounter')),
-                      '<br>',
-                      UI.l('遭遇战倒计时', '遭遇戰倒計時', 'Wait for encounter first while count down'),
-                      ' ≤ ',
-                      UI.number('encounterWaitCD'), 's ',
-                      UI.l('时优先等待', '時優先等待', '.'),
-                    ]
-                  }),
+                  `${UI.labeled(`encounter`, UI.l('自动遭遇', '自動遭遇', 'Auto Engage'))}`,
+                  `<span class="encounterInner"> ${UI.l('倒计时', '倒計時', 'Wait first while count down')} ≤ ${UI.number('encounterWaitCD')}s ${UI.l('时优先等待', '時優先等待', '.')}</span>`,
+                  '<br>',
+                  UI.l('倒计时显示: ', '倒計時顯示: ', 'Count down display: '),
+                  UI.labeled(`encounterQuickCheck`, UI.l('精准(影响性能); ', '精準(影響性能); ', 'Precise(might reduced performsance); ')),
+                  UI.labeled(`encounterDisplay`, UI.l('不自动遭遇时显示', '不自動遭遇時顯', 'Display CountDown While Not Auto Engage')),
                 ),
                 UI.div(
                   UI.div(UI.labeled(`idleArena`, UI.b(UI.l('闲置竞技场: ', '閒置競技場: ', 'Idle Arena: ')))),
@@ -5020,11 +5013,13 @@
     }
 
     async function autoSwitchIsekai() {
+      const option = getOption();
+      await pauseAsync(option.isekaiTime * _1s - (time(0) - g().idleStart));
       await waitPause();
       $async.logSwitch(arguments);
-      if (!getOption().isekai) return; // 若不启用自动跳转
+      if (!option.isekai) return; // 若不启用自动跳转
       const now = time(0);
-      const remain = (getValue('lastSwitch') ?? 0) * 1 + (getOption().isekaiCD ?? 0) * _1s - now;
+      const remain = (getValue('lastSwitch') ?? 0) * 1 + (option.isekaiCD ?? 0) * _1s - now;
       await pauseAsync(remain);
       await waitPause();
       setValue('lastSwitch', now);
@@ -5060,8 +5055,9 @@
       return changed;
     }
 
-    async function displayCDRemain(idleStart) { try {
+    async function displayCDRemain() { try {
       const option = getOption();
+      const idleStart = g().idleStart;
       const next = {
         arena: idleStart + (option.idleArenaTime ?? 0) * _1s,
         switch: idleStart + (option.isekaiTime ?? 0) * _1s,
@@ -5072,7 +5068,8 @@
         const now = time(0);
         const remain = Object.fromEntries(Object.entries(next).map(([k, v]) => {
           const r = Math.floor(Math.max(0, v - now) / _1s) * _1s;
-          return [k, `${UI.l('剩余', '剩餘', 'Remain')}${Math.floor(r / _1s)} (${timeStr(r)})`];
+          const digits = Math.max(2, r >= _1h ? 3 : 2);
+          return [k, `${UI.l('剩余', '剩餘', 'Remain')}${Math.floor(r / _1s)} (${timeStr(r, digits)})`];
         }));
         let done = (() => {
           if (!option.idleArena) return true;
@@ -5088,8 +5085,8 @@
     } catch (err) { console.error(err); }}
 
     async function asyncOnIdle() { try {
-      const idleStart = time(0);
-      displayCDRemain(idleStart);
+      const idleStart = g('idleStart', time(0));
+      displayCDRemain();
       await updateEncounter(false);
       await waitPause();
       $async.logSwitch(arguments);
@@ -5132,9 +5129,9 @@
         return ready.encounter;
       }
       if (option.idleArena && option.idleArenaValue) {
-        startUpdateArena(idleStart);
+        await startUpdateArena(idleStart);
       }
-      setTimeout(autoSwitchIsekai, (option.isekaiTime * (Math.random() * 20 + 90) / 100) * _1s - (time(0) - idleStart));
+      autoSwitchIsekai();
       $async.logSwitch(arguments);
 
       async function setReady(step, value) { try {
@@ -5929,21 +5926,21 @@
       return true;
     } catch (err) { console.error(err); }}
 
-    async function startUpdateArena(idleStart, startIdleArena = true) { try {
+    async function startUpdateArena(idleStart) { try {
       $async.logSwitchStrict('startUpdateArena', true);
       const now = time(0);
-      if (!idleStart) {
-        await updateArena();
-      }
+      if (!idleStart) await updateArena(); // new day
       let timeout = getOption().idleArenaTime * _1s;
-      if (idleStart) {
-        timeout -= time(0) - idleStart;
-      }
-      if (startIdleArena) {
-        setTimeout(idleArena, timeout);
-      }
+      if (idleStart) timeout -= time(0) - idleStart;
+      if (timeout > 0) await pauseAsync(timeout);
+      await idleArena();
       const last = getValue('arena', true)?.date ?? now;
-      setTimeout(startUpdateArena, Math.max(0, Math.floor(last / _1d + 1) * _1d - now));
+      const nextDay = Math.max(0, Math.floor(last / _1d + 1) * _1d - now);
+      if (nextDay > 0) {
+        setTimeout(startUpdateArena, nextDay); // next day
+      } else {
+        await startUpdateArena();
+      }
       $async.logSwitchStrict('startUpdateArena', false);
     } catch (err) { console.error(err); }}
 
@@ -6005,7 +6002,7 @@
         setValue('arena', arena);
       }
       if (arena.array.length === 0) {
-        setTimeout(autoSwitchIsekai, (option.isekaiTime * (Math.random() * 20 + 90) / 100) * _1s);
+        autoSwitchIsekai();
         return;
       }
       $async.logSwitch(arguments);
