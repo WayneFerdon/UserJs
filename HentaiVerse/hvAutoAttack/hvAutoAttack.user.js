@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.114
+// @version      2.91.115
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -409,7 +409,6 @@
     let lastResponsive = new Date().getTime();
 
     // util methods
-
     function repeat(value, times) {
       return range(times).map(_ => value);
     }
@@ -440,6 +439,7 @@
     const UI = {
       langs: 3,
       byLang: function (...args) {
+        if (Array.isArray(args[0])) args = args[0];
         return args[g().lang];
       },
       alert: (...args) => window.alert(UI.byLang(...args)),
@@ -1537,7 +1537,7 @@
         if (ar.includes(btn.id) && btn.cleared) {
           return;
         }
-        gE('div', 'all', btn.parentNode.parentNode).forEach(div => { div.style.cssText += `color:${btn.cleared?'grey':'red'}!important;` });
+        gE('div', 'all', btn.closest('#arena_list tr')).forEach(div => { div.style.cssText += `color:${btn.cleared?'grey':'red'}!important;` });
       });
     }
 
@@ -1551,7 +1551,7 @@
       site ??= doc.location.href.match(/\?s=Battle\&ss=(.*)/)[1];
       const buttons = gE(`img[src*="startchallenge.png"], img[src*="startgrindfest.png"], img[src*="startchallenge_d.png"]`, 'all', doc);
       buttons.forEach(btn => {
-        const tr = btn.parentNode.parentNode;
+        const tr = btn.closest('#arena_list tr');
         if (btn.enabled = 'challenge_d' !== btn.getAttribute('src').match(`${unsafeWindow.IMG_URL}(.*)/start(.*).png`)[2]) {
           const onclick = btn.getAttribute('onclick');
           const match = onclick.match(/init_battle\((\d+)(,\d+)*\)/);
@@ -3439,7 +3439,8 @@
                 input.value = getValue(input.name);
               }
             });
-          } else if (name === 'Drop' || name === 'Usage') {
+          }
+          if (name === 'Drop' || name === 'Usage') {
             gE('.selectTable', 'all', optionBox).forEach((i) => {
               i.onclick = null;
               i.onclick = function (e) {
@@ -3462,17 +3463,9 @@
         });
 
         optionBox.onmousemove = function (e) { // 自定义条件相关事件
-          const isCustomize = t => t?.classList?.contains('customize');
-          let target = e.target;
-          const customizeBox = creatCustomizeBox();
-          while (!isCustomize(target)) {
-            if (!target) return;
-            target = target.parentNode;
-            if (target === optionBox) {
-              customizeBox.style.zIndex = -1;
-              return;
-            }
-          }
+          const target = e.target.closest('.customize');
+          if (!target) return;
+          creatCustomizeBox();
           g('customizeTarget', target);
           updateGroup();
         };
@@ -4038,7 +4031,7 @@
         let nextGroup = event.shiftKey ? currentGroup.previousElementSibling : currentGroup.nextElementSibling;
         if (!nextGroup && !event.shiftKey) {
           const nextGroupIndex = input.name.match(/_(\d+)$/)[1] * 1 + 1;
-          nextGroup = input.parentNode.parentNode.appendChild(cE('div'));
+          nextGroup = input.closest('.customize').appendChild(cE('div'));
           nextGroup.className = 'customizeGroup';
           nextGroup.innerHTML = `${nextGroupIndex + 1}. `
 
@@ -5082,6 +5075,11 @@
     } catch (err) { console.error(err); }}
 
     async function asyncOnIdle() { try {
+      if (!isInBattle() && !onIsekaiEncounter) {
+        const arena = getValue('arena', true) ?? {};
+        delete arena?.equip;
+        setValue('arena', arena);
+      }
       const idleStart = g('idleStart', time(0));
       displayCDRemain();
       $async.logSwitch(arguments);
@@ -5561,18 +5559,26 @@
         15: ['脚部', '腳部', 'Feet']
       }
       let emptySlot = Array.from(gE('.eqb:not(.eqdisabled)', 'all', equiped)).map(slot => { return { id: slot.getAttribute('onclick').match(/equip_slot=(\d+)/)[1], empty: gE('.eqempty', slot) }; });
-      emptySlot = emptySlot.filter(slot => slot.empty && !option.equipCheckSkip?.[slot.id]).map(slot => slotMap[slot.id * 1][lang]);
+      emptySlot = emptySlot.filter(slot => slot.empty && !option.equipCheckSkip?.[slot.id]).map(slot => UI.byLang(slotMap[slot.id * 1]));
       const token = gE('#equipform>input[name="postoken"]', doc).value;
-      const [material, materialNames] = doc.body.innerHTML.match(/const eqitems=(\{.*\});/)[1].split(/; const itemdata=/).map(JSON.parse);
+      const getCondition = eqp => 1 * gE('td:last-child', eqp).textContent.replace('%', '');
+      let [material, materialNames] = doc.body.innerHTML.match(/const eqitems=(\{.*\});/)[1].split(/; const itemdata=/).map(JSON.parse);
       equiped = Array.from(gE('[onmouseover*="equips.set("]', 'all', equiped)).map(eq => eq.getAttribute('onmouseover').match(/equips.set\((\d+),/)[1]);
-      eqps = await Promise.all(Array.from(gE('#equiplist>table>tbody>tr:not(.eqselall):not(.eqtplabel)', 'all', doc)).map(async eqp => { try {
+      const selector = '#equiplist>table>tbody>tr:not(.eqselall):not(.eqtplabel)';
+      eqps = await Promise.all(Array.from(gE(selector, 'all', doc)).map(async eqp => { try {
         const id = gE('input', eqp).value;
         if (!equiped.includes(id)) return;
-        const condition = 1 * gE('td:last-child', eqp).textContent.replace('%', '');
+        let condition = getCondition(eqp);
         const needRepairCharm = repairCharm && Object.keys(material[id].m).some(m => materialNames[m].n.includes('Charm'));
         if (condition > threshold && !needRepairCharm) return;
-        const after = $doc(await $ajax.insert(url, `&eqids[]=${id}&postoken=${token}&replace_charms=on`));
-        return gE(`#e${id}`, after) ? gE('.lc', eqp).childNodes[2].textContent : undefined;
+        let after = $doc(await $ajax.insert(url, `&eqids[]=${id}&postoken=${token}&replace_charms=on`));
+        let input = gE(`#e${id}`, after);
+        if (input && !needRepairCharm) {
+          condition = getCondition(input.closest(selector));
+          if (condition > threshold) return;
+          after = $doc(await $ajax.insert(url, `&eqids[]=${id}&postoken=${token}&replace_charms=off`));
+        }
+        return gE(`#e${id}`, after) ? gE('.lc', eqp).textContent : undefined;
       } catch (err) { console.error(err); }}));
       eqps = eqps.filter(e => e);
       if (emptySlot.length) {
@@ -6288,7 +6294,7 @@
             title: 'RB',
             list: [
               ['九死一树', '九死一樹', 'Triple Trio and the Tree', 250, 'Yggdrasil'],
-              ['飞天意面怪', '飛行義大利麵怪物', 'Flying Spaghetti Monster', 200],
+              ['飞天意面怪', '飛天義麵怪', 'Flying Spaghetti Monster', 200],
               ['隐形粉红独角兽', '隱形粉紅獨角獸', 'Invisible Pink Unicorn', 150],
               ['现实生活', '現實生活', 'Real Life', 100],
               ['长门有希', '長門有希', 'Yuki Nagato', 75],
@@ -8267,9 +8273,7 @@
 
     function recordUsage(param) {
       const filter = getOption().record;
-      if (!filter) {
-        return;
-      }
+      if (!filter) return;
       const stats = getValue('stats', true) || {};
       stats.self ??= { _startTime: time(3) };
       stats.self._turn = filter.turn ? stats.self._turn ?? 0 : undefined;
