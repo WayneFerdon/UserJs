@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.110
+// @version      2.91.111
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -5087,12 +5087,13 @@
     async function asyncOnIdle() { try {
       const idleStart = g('idleStart', time(0));
       displayCDRemain();
+      $async.logSwitch(arguments);
       await updateEncounter(false);
       await waitPause();
-      $async.logSwitch(arguments);
       if (onIsekaiEncounter) {
         const persistent = await $ajax.fetch(window.location.href.replace('/isekai', ''));
         if (!persistent || isInBattle($doc(persistent))) {
+          $async.logSwitch(arguments);
           return;
         }
         switchCurrent();
@@ -5113,31 +5114,33 @@
       const ready = { isChecked: () => ready.encounter && !steps.find(group => group.find(step => step.check && !ready[step.step]))};
       if (_server.isekai) {
         await setReady('encounter');
-        if (!ready.encounter) return;
+        if (!ready.encounter) {
+          $async.logSwitch(arguments);
+          return;
+        }
       }
 
-      await Promise.all([...steps.map(group => {
-        return (async () => { try {
-          for (const step of group) {
-            await setReady(step.step, await step.method() || !step.check);
-          }
-        } catch (err) { console.error(err); }})();
-      }), onIsekaiEncounter ? undefined : updateArena()]);
-      if (onIsekaiEncounter) switchCurrent();
-      if (!ready.isChecked() || onIsekaiEncounter) {
-        $async.logSwitch(arguments);
-        return ready.encounter;
+      await Promise.all([...steps.map(group => (async () => { try {
+        for (const step of group) {
+          await setReady(step.step, await step.method() || !step.check);
+        }
+      } catch (err) { console.error(err); }})()), onIsekaiEncounter ? undefined : updateArena()]);
+
+      switch (true) {
+        case onIsekaiEncounter:
+        case !ready.isChecked():
+          break;
+        case option.idleArena && option.idleArenaValue:
+          await startUpdateArena(idleStart);
       }
-      if (option.idleArena && option.idleArenaValue) {
-        await startUpdateArena(idleStart);
-      }
-      autoSwitchIsekai();
+      if (!onIsekaiEncounter) autoSwitchIsekai();
       $async.logSwitch(arguments);
+      return ready.encounter;
 
       async function setReady(step, value) { try {
-        $async.logSwitch(arguments);
         ready[step] = value;
         if (ready.encounterUpdated) return;
+        $async.logSwitch(arguments);
         const onEncounter = option.encounter || onIsekaiEncounter;
         if (_server.persistent) {
           if (onEncounter && steps.find(group => group.find(step => step.condition && !ready[step.step]))) return;
