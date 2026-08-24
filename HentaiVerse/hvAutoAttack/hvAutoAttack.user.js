@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.117
+// @version      2.91.118
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -442,9 +442,9 @@
         if (Array.isArray(args[0])) args = args[0];
         return args[g().lang];
       },
-      alert: (...args) => window.alert(UI.byLang(...args)),
-      confirm: (...args) => window.confirm(UI.byLang(...args)),
-      prompt: (...args) => window.prompt(UI.byLang(...args.slice(0, UI.langs)), args[UI.langs]),
+      alert: (...args) => window.alert(UI.byLang(args)),
+      confirm: (...args) => window.confirm(UI.byLang(args)),
+      prompt: (...args) => window.prompt(UI.byLang(args.slice(0, UI.langs)), args[UI.langs]),
       l: function (...args) {
         if (typeof args[0] !== 'string') args = args[0];
         const extra = args[UI.langs] ?? '';
@@ -3732,7 +3732,7 @@
         function alertDiffs(...lang) {
           const diffs = getOptionDiff(option);
           if (!diffs) return true;
-          const log = UI.byLang(...lang.map(str => str + diffs));
+          const log = UI.byLang(lang.map(str => str + diffs));
           console.log(log);
           return UI.confirm(...lang.map(str => str + diffs));
         }
@@ -5110,6 +5110,7 @@
       ];
 
       const ready = { isChecked: () => ready.encounter && !steps.find(group => group.find(step => step.check && !ready[step.step]))};
+      let battleStarted;
       if (_server.isekai) {
         displayProcess(UI.byLang('异世界遭遇', '異世界遭遇', 'Isekai encounter'));
         await setReady('encounter');
@@ -5129,12 +5130,11 @@
       } catch (err) { console.error(err); }})()), onIsekaiEncounter ? undefined : updateArena()]);
 
       if (!onIsekaiEncounter) {
-        let arenaStarted;
         if (ready.isChecked() && option.idleArena && option.idleArenaValue) {
           displayProcess(UI.byLang('竞技场更新', '競技場更新', 'Arena update'));
-          arenaStarted = await startUpdateArena(idleStart);
+          battleStarted = await startUpdateArena(idleStart);
         }
-        if (!arenaStarted) {
+        if (!battleStarted) {
           displayProcess(UI.byLang('切换世界', '切換世界', 'World Switching'));
           autoSwitchIsekai();
         }
@@ -5158,7 +5158,9 @@
           if (onEncounter && steps.find(group => group.find(step => step.condition && !ready[step.step]))) return;
           ready.encounterUpdated = true;
         }
-        ready.encounter ||= !(await updateEncounter(onEncounter));
+        const encounterStarted = await updateEncounter(onEncounter);
+        battleStarted ||= encounterStarted;
+        ready.encounter ||= !encounterStarted;
         ready.encounterUpdated ||= ready.encounter;
         $async.logSwitch(arguments);
       } catch (err) { console.error(err); }}
@@ -6412,8 +6414,7 @@
         return;
       }
       battle = getValue('battle', true);
-      g().battle.turn = currentTurn;
-      battle.turn = currentTurn;
+      battle.turn = g().battle.turn = currentTurn;;
       setValue('battle', battle);
       killBug(); // 解决 HentaiVerse 可能出现的 bug
 
@@ -6696,6 +6697,14 @@
         const bossDead = gE(`${monsterStateKeys.obj}[style*="opacity"] ${monsterStateKeys.lv}[style*="background"]`, 'all').length;
         g('bossAlive', g().bossAll - bossDead);
         const battleLog = gE('#textlog>tbody>tr>td', 'all');
+
+        let stats = getValue('stats', true) || {};
+        const battle = g().battle;
+        if (Object.keys(stats.tokens ?? {}).map(k => battle[k] === stats.tokens?.[k]).some(s => !s)) { 
+          if (option.recordUsage) recordUsage2(true);
+          if (option.dropMonitor) dropMonitor(battleLog, true);
+        }
+
         if (option.recordUsage) {
           obj.log = battleLog;
           recordUsage(obj);
@@ -7255,11 +7264,11 @@
       const types = {
         ar: {
           reg: /^Initializing arena challenge/,
-          extra: (i) => i <= 35,
+          extra: i => i <= 35,
         },
         rb: {
           reg: /^Initializing arena challenge/,
-          extra: (i) => i >= 105,
+          extra: id => id >= 105,
         },
         iw: { reg: /^Initializing Item World/ },
         gr: { reg: /^Initializing Grindfest/ },
@@ -7279,6 +7288,7 @@
           battle.roundType = name;
           break;
         }
+        console.warn('Unable to get battle type from log:', _server, firstLog);
       }
       if (battle.roundType === 'ba' || document.body.innerHTML.match(/Initializing random encounter/)) {
         const encounter = getEncounter();
@@ -7392,6 +7402,7 @@
       const hpMin = Math.min.apply(null, hpArray);
       const option = getOption();
       const yggdrasilExtraWeight = option.YggdrasilExtraWeight;
+      console.log(yggdrasilExtraWeight)
       const baseHpRatio = option.baseHpRatio;
       // 权重越小，优先级越高
       for (i of range(monsterStatus)) { // 死亡的排在最后（优先级最低）
@@ -7402,7 +7413,7 @@
         }
         let weight = baseHpRatio * Math.log10(target.hpNow / hpMin); // > 0 生命越低权重越低优先级越高
         const name = gE(`${monsterStateKeys.name}>div>div`, monsterBuff[i].parentNode).innerText;
-        if (yggdrasilExtraWeight && ('Yggdrasil' === name || '世界树 Yggdrasil' === name)) { // 默认设置下，任何情况都优先击杀群体大量回血的boss"Yggdrasil"
+        if (yggdrasilExtraWeight && (['Yggdrasil', '世界树 Yggdrasil'].includes(name))) { // 默认设置下，任何情况都优先击杀群体大量回血的boss"Yggdrasil"
           weight += yggdrasilExtraWeight; // yggdrasilExtraWeight.defalut -1000
         }
         const known = {};
@@ -8203,7 +8214,7 @@
       });
     }
 
-    function dropMonitor(battleLog) { // 掉落监测
+    function dropMonitor(battleLog, different) { // 掉落监测
       const drop = getValue('drop', true) || {
         '#startTime': time(3),
         '#EXP': 0,
@@ -8249,7 +8260,7 @@
         }
       }
       const battle = g().battle;
-      if (option.recordEach && battle.roundNow === battle.roundAll) {
+      if (option.recordEach && (different || battle.roundNow === battle.roundAll)) {
         const old = getValue('dropOld', true) || [];
         drop.__name = getValue('battleCode', true).name;
         drop['#endTime'] = time(3);
@@ -8288,10 +8299,6 @@
       if (!filter) return;
       let stats = getValue('stats', true) || {};
       const battle = g().battle;
-      if (Object.keys(stats.tokens ?? {}).map(k => battle[k] === stats.tokens?.[k]).some(s => !s)) { 
-        recordUsage2(true);
-        stats = getValue('stats', true) || {};
-      }
       stats.self ??= { _startTime: time(3) };
       stats.tokens ??= { token: battle.token, postoken: battle.postoken };
       stats.self._turn = filter.turn ? stats.self._turn ?? 0 : undefined;
