@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.118
+// @version      2.91.119
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -6700,7 +6700,7 @@
 
         let stats = getValue('stats', true) || {};
         const battle = g().battle;
-        if (Object.keys(stats.tokens ?? {}).map(k => battle[k] === stats.tokens?.[k]).some(s => !s)) { 
+        if (Object.keys(stats.tokens ?? {}).map(k => battle[k] === stats.tokens?.[k]).some(s => !s)) {
           if (option.recordUsage) recordUsage2(true);
           if (option.dropMonitor) dropMonitor(battleLog, true);
         }
@@ -7288,7 +7288,7 @@
           battle.roundType = name;
           break;
         }
-        console.warn('Unable to get battle type from log:', _server, firstLog);
+        if (!battle.roundType) console.warn('Unable to get battle type from log:', _server, firstLog);
       }
       if (battle.roundType === 'ba' || document.body.innerHTML.match(/Initializing random encounter/)) {
         const encounter = getEncounter();
@@ -7402,7 +7402,6 @@
       const hpMin = Math.min.apply(null, hpArray);
       const option = getOption();
       const yggdrasilExtraWeight = option.YggdrasilExtraWeight;
-      console.log(yggdrasilExtraWeight)
       const baseHpRatio = option.baseHpRatio;
       // 权重越小，优先级越高
       for (i of range(monsterStatus)) { // 死亡的排在最后（优先级最低）
@@ -8504,7 +8503,7 @@
       const filter = option.record;
       if (!filter) return;
       const stats = getValue('stats', true);
-      if (!different) { 
+      if (!different) {
         if (filter.monster) stats.self._monster += g().monsterAll;
         if (filter.boss) stats.self._boss += g().bossAll;
       }
