@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.112
+// @version      2.91.113
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -4323,9 +4323,7 @@
     }
 
     function playAudio(audio) {
-      console.log('playAudio')
       audio.onPlay ??= () => {
-        console.log('playAudio by canplaythrough', audio);
         audio.removeEventListener('canplaythrough', audio.onPlay);
         audio.play();
       };
@@ -4333,7 +4331,6 @@
       audio.addEventListener('canplaythrough', audio.onPlay);
       // 如果音频已缓存，canplaythrough 可能不会再次触发，此时可直接播放
       if (audio.readyState >= 3) { // HAVE_FUTURE_DATA 或更高
-        console.log('playAudio by audio.readyState', audio, audio.readyState);
         audio.play();
       }
       if (audio.loop) {
@@ -5090,10 +5087,12 @@
       $async.logSwitch(arguments);
       await updateEncounter(false);
       await waitPause();
+      displayProcess(UI.byLang(['人物套装检查', '人物套裝檢查', 'Persona/EquipSet check']));
       if (onIsekaiEncounter) {
         const persistent = await $ajax.fetch(window.location.href.replace('/isekai', ''));
         if (!persistent || isInBattle($doc(persistent))) {
           $async.logSwitch(arguments);
+          displayProcess();
           return;
         }
         switchCurrent();
@@ -5113,27 +5112,43 @@
 
       const ready = { isChecked: () => ready.encounter && !steps.find(group => group.find(step => step.check && !ready[step.step]))};
       if (_server.isekai) {
+        displayProcess(UI.byLang(['异世界遭遇', '異世界遭遇', 'Isekai encounter']));
         await setReady('encounter');
         if (!ready.encounter) {
           $async.logSwitch(arguments);
+          displayProcess();
           return;
         }
       }
-
+      let done = -1;
+      displayProcess(`[${++done}/${steps.length}] ${UI.byLang(['检查闲置', '檢查閒置', 'Idle check'])}`);
       await Promise.all([...steps.map(group => (async () => { try {
         for (const step of group) {
           await setReady(step.step, await step.method() || !step.check);
         }
+        displayProcess(`[${++done}/${steps.length}] ${UI.byLang(['检查闲置', '檢查閒置', 'Idle check'])}`);
       } catch (err) { console.error(err); }})()), onIsekaiEncounter ? undefined : updateArena()]);
 
       if (!onIsekaiEncounter) {
+        let arenaStarted;
         if (ready.isChecked() && option.idleArena && option.idleArenaValue) {
-          await startUpdateArena(idleStart);
+          displayProcess(UI.byLang(['竞技场更新', '競技場更新', 'Arena update']));
+          arenaStarted = await startUpdateArena(idleStart);
         }
-        autoSwitchIsekai();
+        if (!arenaStarted) {
+          displayProcess(UI.byLang(['切换世界', '切換世界', 'World Switching']));
+          autoSwitchIsekai();
+        }
       }
+      displayProcess();
       $async.logSwitch(arguments);
       return ready.encounter;
+
+      function displayProcess(info) {
+        document.title = document.title.replace(/\[AR\].*\[AR\]/, '');
+        if (!info) return;
+        document.title = `[AR]${info}[AR]` + document.title;
+      }
 
       async function setReady(step, value) { try {
         ready[step] = value;
@@ -5885,12 +5900,8 @@
     async function changeArenaEquipSet(id) { try {
       const target = getArenaEquipSet(id);
       const { persona, equipSet} = isSwitchEquipSet(target);
-      console.log('changeArenaEquipSet', id, target, '=>', { persona, equipSet});
-      if (persona !== undefined || equipSet !== undefined) {
-        return await switchEquipSet(persona, equipSet);
-      } else {
-        return await restorePersonaAndEquipSet();
-      }
+      console.log(`changeArenaEquipSet for arena [${id}]:`, target, '=>', { persona, equipSet});
+      return await ([persona, equipSet].every(c => c === undefined) ? restorePersonaAndEquipSet() : switchEquipSet(persona, equipSet));
     } catch (err) { console.error(err); }}
 
     async function onEncounter() { try {
@@ -5938,15 +5949,16 @@
       let timeout = getOption().idleArenaTime * _1s;
       if (idleStart) timeout -= time(0) - idleStart;
       if (timeout > 0) await pauseAsync(timeout);
-      await idleArena();
+      const started = await idleArena();
       const last = getValue('arena', true)?.date ?? now;
       const nextDay = Math.max(0, Math.floor(last / _1d + 1) * _1d - now);
       if (nextDay > 0) {
         setTimeout(startUpdateArena, nextDay); // next day
       } else {
-        await startUpdateArena();
+        started ||= await startUpdateArena();
       }
       $async.logSwitchStrict('startUpdateArena', false);
+      return started;
     } catch (err) { console.error(err); }}
 
     async function updateArena(forceUpdateToken = false) { try {
@@ -5996,19 +6008,21 @@
       const option = getOption();
       const writeArenaStart = function (equip) {
         console.log('Arena Start', equip ? `e${equip.id} (${equip.world} => ${equip.world + 1}) / ${equip.max}\n${JSON.stringify(equip)}` : id);
-        if (id === 'iw') {
-          // pass
-        } else if (id !== 'gr') {
-          arena.arrayDone.push(id);
-        } else {
-          arena.gr--;
+        switch (id) {
+          case 'iw':
+            break;
+          case 'gr':
+            arena.gr--;
+            break;
+          default:
+            arena.arrayDone.push(id);
         }
         arena.equip = { data: equip };
         setValue('arena', arena);
       }
       if (arena.array.length === 0) {
         autoSwitchIsekai();
-        return;
+        return false;
       }
       $async.logSwitch(arguments);
       const array = [...arena.array];
@@ -6022,7 +6036,8 @@
           id = undefined;
           const iw = await idleItemWorld(writeArenaStart, arena);
           if (iw) {
-            return;
+            $async.logSwitch(arguments);
+            return true;
           } else {
             continue;
           }
@@ -6047,12 +6062,12 @@
         setValue('arena', arena);
         await restorePersonaAndEquipSet();
         $async.logSwitch(arguments);
-        return;
+        return false;
       }
       if (await changeArenaEquipSet(id) && !(await asyncCheckRepair())) {
         await restorePersonaAndEquipSet();
         $async.logSwitch(arguments);
-        return;
+        return false;
       }
       let staminaCost = {
         1: 2, 3: 4, 5: 6, 8: 8, 9: 10,
@@ -6075,10 +6090,9 @@
         query = id >= 105 ? 'rb' : 'ar';
       } else {
         if (arena.gr <= 0) {
-          setValue('arena', arena);
-          idleArena();
           arena.arrayDone.push('gr');
-          return;
+          setValue('arena', arena);
+          return await idleArena();
         }
         query = 'gr';
       }
@@ -6086,13 +6100,13 @@
       if (id === 'gr' && ((option.checkSupplyGF && !checkSupply('GF')) || (option.repairValueGF && !await asyncCheckRepair('GF')))) {
         console.log('Check gr Battle Ready Failed in supply/repair', 'id:', id, arena);
         $async.logSwitch(arguments);
-        return;
+        return false;
       }
       const cost = staminaCost[id];
       if (!await checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: option.encounter, staminaLow: id === 'gr' ? option.staminaGrindFest : undefined })) {
         console.log('Check Battle Ready Failed', 'id:', id, arena);
         $async.logSwitch(arguments);
-        return;
+        return false;
       }
       let token = `&postoken=${gE('#initform>input[name="postoken"]', $doc(await $ajax.insert(query))).value}`;
       await waitPause();
@@ -6109,6 +6123,7 @@
         goto();
       }
       $async.logSwitch(arguments);
+      return true;
     } catch (err) { console.error(err); }}
 
     async function idleItemWorld(writeArenaStart, arena) { try {
