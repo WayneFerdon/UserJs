@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.113
+// @version      2.91.114
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -5087,7 +5087,7 @@
       $async.logSwitch(arguments);
       await updateEncounter(false);
       await waitPause();
-      displayProcess(UI.byLang(['人物套装检查', '人物套裝檢查', 'Persona/EquipSet check']));
+      displayProcess(UI.byLang('人物套装检查', '人物套裝檢查', 'Persona/EquipSet check'));
       if (onIsekaiEncounter) {
         const persistent = await $ajax.fetch(window.location.href.replace('/isekai', ''));
         if (!persistent || isInBattle($doc(persistent))) {
@@ -5112,7 +5112,7 @@
 
       const ready = { isChecked: () => ready.encounter && !steps.find(group => group.find(step => step.check && !ready[step.step]))};
       if (_server.isekai) {
-        displayProcess(UI.byLang(['异世界遭遇', '異世界遭遇', 'Isekai encounter']));
+        displayProcess(UI.byLang('异世界遭遇', '異世界遭遇', 'Isekai encounter'));
         await setReady('encounter');
         if (!ready.encounter) {
           $async.logSwitch(arguments);
@@ -5121,22 +5121,22 @@
         }
       }
       let done = -1;
-      displayProcess(`[${++done}/${steps.length}] ${UI.byLang(['检查闲置', '檢查閒置', 'Idle check'])}`);
+      displayProcess(`[${++done}/${steps.length}] ${UI.byLang('检查闲置', '檢查閒置', 'Idle check')}`);
       await Promise.all([...steps.map(group => (async () => { try {
         for (const step of group) {
           await setReady(step.step, await step.method() || !step.check);
         }
-        displayProcess(`[${++done}/${steps.length}] ${UI.byLang(['检查闲置', '檢查閒置', 'Idle check'])}`);
+        displayProcess(`[${++done}/${steps.length}] ${UI.byLang('检查闲置', '檢查閒置', 'Idle check')}`);
       } catch (err) { console.error(err); }})()), onIsekaiEncounter ? undefined : updateArena()]);
 
       if (!onIsekaiEncounter) {
         let arenaStarted;
         if (ready.isChecked() && option.idleArena && option.idleArenaValue) {
-          displayProcess(UI.byLang(['竞技场更新', '競技場更新', 'Arena update']));
+          displayProcess(UI.byLang('竞技场更新', '競技場更新', 'Arena update'));
           arenaStarted = await startUpdateArena(idleStart);
         }
         if (!arenaStarted) {
-          displayProcess(UI.byLang(['切换世界', '切換世界', 'World Switching']));
+          displayProcess(UI.byLang('切换世界', '切換世界', 'World Switching'));
           autoSwitchIsekai();
         }
       }
