@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.115
+// @version      2.91.116
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1314,6 +1314,11 @@
         backFromBattle();
         return true;
       }
+      const arena = getValue('arena', true) ?? {};
+      delete arena?.equip;
+      arena.postoken = gE('input[name="postoken"]').value;
+      setValue('arena', arena);
+
       if (window.location.href.indexOf(`?s=Battle&ss=ba`) === -1) { // 不缓存encounter
         setValue('lastUrl', window.top.location.href); // 缓存进入战斗前的页面地址
         setArenaDisplay();
@@ -1360,19 +1365,20 @@
       newRound(false);
       updateMonsterEffects(false);
       onBattleRound();
+      const battle = g().battle;
       if (option.recordEach) {
-        const token = document.body.innerHTML.match(`var battle_token = \"(.*)\";`)[1];
         let code = getValue('battleCode', true);
-        if (code?.token != token || !code?.r || !code?.rc) {
-          const now = code?.token === token ? code?.time ?? time(1) : time(1);
-          const type = g().battle?.roundType?.toUpperCase();
-          const roundAll = g().battle?.roundAll;
+        const tokens = { token: document.body.innerHTML.match(`var battle_token = \"(.*)\";`)[1], postoken: battle?.postoken };
+        const same = Object.keys(tokens).map(k => tokens[k] === code?.[k]).every(s => s);
+        if (!same || !code?.roundAll || !code?.roundNow) {
+          const now = same ? code?.time ?? time(1) : time(1);
+          const roundType = battle?.roundType?.toUpperCase();
+          const [roundAll, roundNow] = [battle?.roundAll, battle?.roundNow];
           code = {
-            token: token,
+            ...tokens,
             time: now,
-            roundType: type,
-            roundAll: roundAll,
-            name: `${now}: ${type}-${roundAll}`,
+            roundType, roundAll, roundNow,
+            name: `${now}: ${roundType}-${roundAll}`,
           };
           setValue('battleCode', code);
         }
@@ -5075,11 +5081,6 @@
     } catch (err) { console.error(err); }}
 
     async function asyncOnIdle() { try {
-      if (!isInBattle() && !onIsekaiEncounter) {
-        const arena = getValue('arena', true) ?? {};
-        delete arena?.equip;
-        setValue('arena', arena);
-      }
       const idleStart = g('idleStart', time(0));
       displayCDRemain();
       $async.logSwitch(arguments);
@@ -5917,7 +5918,7 @@
         onIsekaiEncounter = true;
         const engaged = await asyncOnIdle();
         onIsekaiEncounter = false;
-        return engaged ? 'Engaged from isekai' : undefined;
+        return engaged;
       }
       if (await changeArenaEquipSet('ba') && !(await asyncCheckRepair())) {
         await restorePersonaAndEquipSet();
@@ -6334,6 +6335,7 @@
         const info = battleInfoList[type];
         const arena = getValue('arena', true);
         const equip = arena?.equip;
+        battle.postoken ??= arena.postoken;
         if (equip && type !== 'iw') {
           delete arena.equip;
           setValue('arena', arena);
@@ -6358,12 +6360,12 @@
           case 'iw':
             title = `${info.title}`;
             if (equip) {
-              if (equip.token && (equip.token !== battle.token)) {
+              if (Object.keys(equip.tokens ?? {}).map(k => equip.tokens[k] === battle[k]).some(s => !s)) {
                 // 有旧token，移除
                 delete arena.equip;
               } else {
                 // 没有token或是当前token，正常显示
-                equip.token = battle.token;
+                equip.tokens = { token: battle.token, postoken: battle.postoken };
                 title += `${equip.data.world + 1}/${equip.data.max}`;
                 subtype = `<div style="font-size: 9pt!important">[${equip.data.id}]${equip.data.name}</div>`;
               }
@@ -6577,8 +6579,17 @@
     function autoPause() {
       const option = getOption();
       let battle = getValue('battle', true);
-      if (battle.paused?.round !== battle.roundNow || battle.paused?.token != battle.token) {
-        battle.paused = { count: 0, round: battle.roundNow, token: battle.token };
+      if (
+        battle.paused?.round !== battle.roundNow
+        || battle.paused?.token !== battle.token
+        || battle.paused?.postoken !== battle.postoken
+      ) {
+        battle.paused = {
+          count: 0,
+          round: battle.roundNow,
+          token: battle.token,
+          postoken: battle.postoken ??= (getValue('arena', true) ?? {}).postoken
+        };
         setValue('battle', battle);
       }
       if (option.autoPause && checkCondition(option.pauseCondition)) {
@@ -7219,17 +7230,18 @@
       const option = getOption();
       const token = document.documentElement.outerHTML.match(/var battle_token = "(.*)";/)[1];
       let battle = getValue('battle', true);
-      const isSameBattle = battle?.token === token;
+      const arena = getValue('arena', true) ?? {};
+      const same = battle?.token === token && arena?.postoken === battle?.postoken;
       const prof = getValue('proficiency', true);
       if (isNew) {
-        battle = { proficiency: isSameBattle ? battle?.proficiency ?? prof : prof };
+        battle = { proficiency: same ? battle?.proficiency ?? prof : prof };
       }
       if (!battle) {
         battle = JSON.parse(JSON.stringify(g().battle ?? {}));
         battle.monsterStatus?.sortBy(x => x.order);
       };
-      battle.token = token;
-      battle.proficiency = isSameBattle ? battle?.proficiency ?? prof : prof;
+      [battle.token, battle.postoken] = [token, arena.postoken];
+      battle.proficiency = same ? battle?.proficiency ?? prof : prof;
       setValue('battle', battle);
       if (window.location.hash !== '') {
         goto();
@@ -8274,8 +8286,14 @@
     function recordUsage(param) {
       const filter = getOption().record;
       if (!filter) return;
-      const stats = getValue('stats', true) || {};
+      let stats = getValue('stats', true) || {};
+      const battle = g().battle;
+      if (Object.keys(stats.tokens ?? {}).map(k => battle[k] === stats.tokens?.[k]).some(s => !s)) { 
+        recordUsage2(true);
+        stats = getValue('stats', true) || {};
+      }
       stats.self ??= { _startTime: time(3) };
+      stats.tokens ??= { token: battle.token, postoken: battle.postoken };
       stats.self._turn = filter.turn ? stats.self._turn ?? 0 : undefined;
       stats.self._round = filter.round ? stats.self._round ?? 0 : undefined;
       stats.self._battle = filter.battle ? stats.self._battle ?? 0 : undefined;
@@ -8304,7 +8322,6 @@
         stats.hurt._ptotal = filter.hurtptotal ? stats.hurt._ptotal ?? 0 : undefined;
       }
       let text, magic, magicName, item, itemName, point, reg;
-      const battle = g().battle;
       if (g().monsterAlive === 0) {
         if (filter.turn) {
           stats.self._turn += battle.turn;
@@ -8475,15 +8492,17 @@
       }
     }
 
-    function recordUsage2() {
+    function recordUsage2(different) {
       const option = getOption();
       const filter = option.record;
       if (!filter) return;
       const stats = getValue('stats', true);
-      if (filter.monster) stats.self._monster += g().monsterAll;
-      if (filter.boss) stats.self._boss += g().bossAll;
+      if (!different) { 
+        if (filter.monster) stats.self._monster += g().monsterAll;
+        if (filter.boss) stats.self._boss += g().bossAll;
+      }
       const battle = g().battle;
-      if (option.recordEach && battle.roundNow === battle.roundAll) {
+      if (option.recordEach && (different || battle.roundNow === battle.roundAll)) {
         const old = getValue('statsOld', true) || [];
         stats.__name = getValue('battleCode', true).name;
         stats.self._endTime = time(3);
