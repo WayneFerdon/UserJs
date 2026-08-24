@@ -7264,7 +7264,7 @@
       const types = {
         ar: {
           reg: /^Initializing arena challenge/,
-          extra: i => i <= 35,
+          extra: id => id <= 35,
         },
         rb: {
           reg: /^Initializing arena challenge/,
