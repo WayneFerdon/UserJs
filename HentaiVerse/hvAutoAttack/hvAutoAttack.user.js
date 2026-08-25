@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.119
+// @version      2.91.120
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2783,7 +2783,11 @@
                   UI.b(UI.l('随机遭遇战', '隨機遭遇戰', 'Random Encounter')),
                   '<br>',
                   `${UI.labeled(`encounter`, UI.l('自动遭遇', '自動遭遇', 'Auto Engage'))}`,
-                  `<span class="encounterInner"> ${UI.l('倒计时', '倒計時', 'Wait first while count down')} ≤ ${UI.number('encounterWaitCD')}s ${UI.l('时优先等待', '時優先等待', '.')}</span>`,
+                  '<span class="encounterInner">',
+                  `${UI.l('倒计时', '倒計時', 'Wait first while count down')} ≤ ${UI.number('encounterWaitCD')}s ${UI.l('时优先等待', '時優先等待', '.')}; `,
+                  '<br>',
+                  UI.l('进入前额外等待', '進入前額外等待', 'Extra delay '),UI.number('encounterDelay', 5),UI.l(' 秒，避免时间偏差导致需要等多一轮', ' 秒，避免時間偏差導致需要等多一輪', ' (s) before engage to fit potential time bias which might cause extra waiting round.'),
+                  '</span>',
                   '<br>',
                   UI.l('倒计时显示: ', '倒計時顯示: ', 'Count down display: '),
                   UI.labeled(`encounterQuickCheck`, UI.l('精准(影响性能); ', '精準(影響性能); ', 'Precise(might reduced performsance); ')),
@@ -5834,12 +5838,10 @@
 
       function getCD() {
         now = time(0);
-        let cd;
+        let cd = 0;
         if (encounter.filter(e => e.url && (e.encountered || (time(0) - e.time >= 30 * _1m))).length >= MAX) {
           cd = Math.floor(encounter[0].time / _1d + 1) * _1d - now;
-        } else if (!last) {
-          cd = 0;
-        } else {
+        } else if (last) {
           cd = _1h / 2 + last - now;
         }
         return Math.max(0, cd);
@@ -5942,6 +5944,7 @@
         $async.logSwitchStrict('updateEncounter', false);
         return;
       }
+      await pauseAsync(option.encounterDelay * _1s);
       setEncounter(getEncounter()); // 离开页面前保存
       if (!window.top.location.href.endsWith(`?s=Battle`)) {
         setValue('beforeEncounter', setValue('lastUrl', window.top.location.href));
