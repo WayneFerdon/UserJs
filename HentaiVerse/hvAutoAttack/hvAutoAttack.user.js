@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.122
+// @version      2.91.123
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -5070,25 +5070,25 @@
 
     async function displayCDRemain() { try {
       const option = getOption();
-      const idleStart = g().idleStart;
-      const durations = {
-        onIdle: { start: g().beforeIdle, wait: option.onIdleDelay },
-        arena: { start: idleStart, wait: option.idleArenaTime },
-        switch: { start: idleStart, wait: option.isekaiTime },
-        switchCD: { start: (getValue('lastSwitch') ?? 0), wait: option.isekaiCD },
-      }
-      let idleStarted;
       const time2Str = r => {
         const digits = Math.max(2, r >= _1h ? 3 : 2);
         return ` ${UI.l('剩余', '剩餘', 'Remain')}${Math.floor(r / _1s)} (${timeStr(r, digits)})`;
       }
       await until(() => {
+        let idleStarted;
+        const idleStart = g().idleStart;
+        const durations = {
+          onIdle: { start: g().beforeIdle, wait: option.onIdleDelay },
+          arena: { start: idleStart??time(0), wait: option.idleArenaTime },
+          switch: { start: idleStart??time(0), wait: option.isekaiTime },
+          switchCD: { start: (getValue('lastSwitch') ?? 0), wait: option.isekaiCD },
+        }
         if (gE('#hvAABox').style.display === 'none') return;
         const now = time(0);
         const remain = Object.fromEntries(Object.entries(durations).map(([k, {start, wait}]) => {
           const v = start + (wait ?? 0) * _1s;
           const r = Math.floor(Math.max(0, v - now) / _1s) * _1s;
-          if (k === 'onIdle') idleStarted = v <= 0;
+          if (k === 'onIdle') idleStarted = r <= 0;
           return [k, time2Str(r)];
         }));
         gE('.onIdleRemain', 'all').forEach(r => { r.innerHTML = remain.onIdle; });
@@ -5115,9 +5115,9 @@
     async function asyncOnIdle() { try {
       let option = getOption(true);
       const beforeIdle = g('beforeIdle', time(0));
-      const idleStart = g('idleStart', time(0));
       displayCDRemain();
       if (!onIsekaiEncounter && option.onIdleDelay) await pauseAsync(option.onIdleDelay * _1s);
+      const idleStart = g('idleStart', time(0));
       $async.logSwitch(arguments);
       await updateEncounter(false);
       await waitPause();
