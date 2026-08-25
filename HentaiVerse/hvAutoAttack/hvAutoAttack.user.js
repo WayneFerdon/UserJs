@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.121
+// @version      2.91.122
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2666,11 +2666,20 @@
                   ': ',
                   `${UI.labeled(`optionStandalone`, UI.l('两个世界使用不同的配置', '兩個世界使用不同的配置', 'Use standalone options.'))}`,
                   '<br>',
-                  `${UI.labeled(`isekai`, `${UI.l('在任意页面停留', '在任意頁面停留', 'While idle in any page for ')}${UI.number('isekaiTime')}${UI.label('isekaiTime', UI.l('异世界切换时间', '異世界切換時間', 'Isekai Switch Wait'), 'hidden')}${UI.l('秒后，自动切换恒定世界和异世界', '秒後，自動切換恆定世界和異世界', 's, auto switch between Isekai and Persistent')}. <span class="isekaiSwitchRemain"></span>`)}`,
+                  `${UI.labeled(`isekai`, `${UI.l('自动切换恒定世界和异世界', '自動切換恆定世界和異世界', 'auto switch between Isekai and Persistent')}`)}`,
                   '<br>',
                   UI.div({
                     args: { class: 'isekaiInner' },
-                    inner: `${UI.l('自动切换冷却时间', '自動切換冷卻時間', 'Cool down for auto switch')}: ${UI.number('isekaiCD')}${UI.l('秒. 两个世界分别计算冷却', '秒. 兩個世界分別計算冷卻', ' (s). Isekai and Persistent cooldown separately')}. <span class="isekaiCDRemain"></span>`,
+                    inner: [
+                      `${UI.l('闲置达到', '閒置達到', 'While idled for ')}${UI.number('isekaiTime')}${UI.l('秒后切换', '秒後切換', ' (s), switch between isekai and persistent')}${UI.label('isekaiTime', UI.l('异世界切换时间', '異世界切換時間', 'Isekai Switch Wait'), 'hidden')}`,
+                      `<span class="isekaiSwitchRemain"></span>`,
+                      '<br>',
+                      '<a class="hvAAGoto" name="hvAATab-BattleStarter">',
+                      UI.l('距离开始计算闲置 ', '距離開始計算閒置', 'Time before recording idle '),
+                      ' <span class="onIdleRemain"></span></a>',
+                      '<br>',
+                      `${UI.l('自动切换冷却时间', '自動切換冷卻時間', 'Cool down for auto switch')}: ${UI.number('isekaiCD')}${UI.l('秒. 两个世界分别计算冷却', '秒. 兩個世界分別計算冷卻', ' (s). Isekai and Persistent cooldown separately')}. <span class="isekaiCDRemain"></span>`
+                    ],
                   }),
                 ),
                 UI.div(
@@ -2796,7 +2805,11 @@
                 UI.div(
                   UI.div(UI.labeled(`idleArena`, UI.b(UI.l('闲置竞技场: ', '閒置競技場: ', 'Idle Arena: ')))),
                   '<span class="idleArenaInner">',
-                  UI.l('在任意页面停留: ', '在任意頁面停留: ', 'Idle in any page for '),
+                  '<a class="hvAAGoto" name="hvAATab-BattleStarter">',
+                  UI.l('等待', '等待', 'Wait '),UI.number('onIdleDelay', 5),UI.l(' 秒后计算闲置时间', ' 秒後計算閒置時間', ' (s) before start recording idled duration.'),
+                  '; <span class="onIdleRemain"></span><br>',
+                  '</a> ',
+                  UI.l('在任意页面闲置: ', '在任意頁面閒置: ', 'Idle in any page for '),
                   UI.number('idleArenaTime'),
                   UI.l('秒后，开始竞技场', '秒後，開始競技場', ' (s), start Arena'),
                   UI.button.class('idleArenaReset', UI.button.reset),
@@ -5058,35 +5071,53 @@
     async function displayCDRemain() { try {
       const option = getOption();
       const idleStart = g().idleStart;
-      const next = {
-        arena: idleStart + (option.idleArenaTime ?? 0) * _1s,
-        switch: idleStart + (option.isekaiTime ?? 0) * _1s,
-        switchCD: (getValue('lastSwitch') ?? 0) + (option.isekaiCD ?? 0) * _1s,
-      };
+      const durations = {
+        onIdle: { start: g().beforeIdle, wait: option.onIdleDelay },
+        arena: { start: idleStart, wait: option.idleArenaTime },
+        switch: { start: idleStart, wait: option.isekaiTime },
+        switchCD: { start: (getValue('lastSwitch') ?? 0), wait: option.isekaiCD },
+      }
+      let idleStarted;
+      const time2Str = r => {
+        const digits = Math.max(2, r >= _1h ? 3 : 2);
+        return ` ${UI.l('剩余', '剩餘', 'Remain')}${Math.floor(r / _1s)} (${timeStr(r, digits)})`;
+      }
       await until(() => {
         if (gE('#hvAABox').style.display === 'none') return;
         const now = time(0);
-        const remain = Object.fromEntries(Object.entries(next).map(([k, v]) => {
+        const remain = Object.fromEntries(Object.entries(durations).map(([k, {start, wait}]) => {
+          const v = start + (wait ?? 0) * _1s;
           const r = Math.floor(Math.max(0, v - now) / _1s) * _1s;
-          const digits = Math.max(2, r >= _1h ? 3 : 2);
-          return [k, `${UI.l('剩余', '剩餘', 'Remain')}${Math.floor(r / _1s)} (${timeStr(r, digits)})`];
+          if (k === 'onIdle') idleStarted = v <= 0;
+          return [k, time2Str(r)];
         }));
-        let done = (() => {
-          if (!option.idleArena) return true;
-          gE('.arenaRemain').innerHTML = remain.arena;
-        })();
-        done &= (() => {
-          if (!option.isekai) return true;
-          gE('.isekaiSwitchRemain').innerHTML = remain.switch;
+        gE('.onIdleRemain', 'all').forEach(r => { r.innerHTML = remain.onIdle; });
+        if (!idleStarted) {
+          gE('.arenaRemain').innerHTML = time2Str(durations.arena.wait * _1s);
+          gE('.isekaiSwitchRemain').innerHTML = time2Str(durations.switch.wait * _1s);
           gE('.isekaiCDRemain').innerHTML = remain.switchCD;
-        })();
-        return done;
+          return false;
+        } else {
+          let done = (() => {
+            if (!option.idleArena) return true;
+            gE('.arenaRemain').innerHTML = remain.arena;
+          })();
+          done &= (() => {
+            if (!option.isekai) return true;
+            gE('.isekaiSwitchRemain').innerHTML = remain.switch;
+            gE('.isekaiCDRemain').innerHTML = remain.switchCD;
+          })();
+          return done;
+        }
       }, _1s);
     } catch (err) { console.error(err); }}
 
     async function asyncOnIdle() { try {
+      let option = getOption(true);
+      const beforeIdle = g('beforeIdle', time(0));
       const idleStart = g('idleStart', time(0));
       displayCDRemain();
+      if (!onIsekaiEncounter && option.onIdleDelay) await pauseAsync(option.onIdleDelay * _1s);
       $async.logSwitch(arguments);
       await updateEncounter(false);
       await waitPause();
@@ -5102,7 +5133,9 @@
       } else {
         await restorePersonaAndEquipSet();
       }
-      const option = getOption(true);
+      displayProcess();
+      option = getOption(true);
+
       const steps = [
         [{ step: 'proficiency', method: asyncSetProficiency, condition: true }],
         [{ step: 'ability', method: asyncSetAbilityData, condition: true }],
@@ -6417,7 +6450,7 @@
         return;
       }
       battle = getValue('battle', true);
-      battle.turn = g().battle.turn = currentTurn;;
+      battle.turn = g().battle.turn = currentTurn;
       setValue('battle', battle);
       killBug(); // 解决 HentaiVerse 可能出现的 bug
 
