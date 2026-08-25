@@ -5119,6 +5119,8 @@
       let option = getOption(true);
       const beforeIdle = g('beforeIdle', time(0));
       displayCDRemain();
+      $async.logSwitch(arguments);
+      await updateEncounter(false);
       if (!onIsekaiEncounter && option.onIdleDelay) {
         const delay = option.onIdleDelay * _1s;
         until(() => {
@@ -5129,8 +5131,6 @@
         await pauseAsync(option.onIdleDelay * _1s);
       }
       const idleStart = g('idleStart', time(0));
-      $async.logSwitch(arguments);
-      await updateEncounter(false);
       await waitPause();
       displayProcess(UI.byLang('人物套装检查', '人物套裝檢查', 'Persona/EquipSet check'));
       if (onIsekaiEncounter) {
