@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.124
+// @version      2.91.125
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -5068,13 +5068,11 @@
       return changed;
     }
 
-    function remainTime2Str(r, byLang, reverseDetail) {
+    function remainTime2Str(r, short) {
       const digits = Math.max(2, r >= _1h ? 3 : 2);
-      let str = `${Math.floor(r / _1s)}`;
       const detail = timeStr(r, digits);
-      str = reverseDetail ? `${detail} (${str})` : `${str} (${detail})`;
-
-      return byLang ? ` ${UI.byLang('剩余', '剩餘', 'Remain')}${str}` : ` ${UI.l('剩余', '剩餘', 'Remain')}${str}`;
+      if (short) return detail;
+      return ` ${UI.l('剩余', '剩餘', 'Remain')}${Math.floor(r / _1s)} (${detail})`;
     }
 
     async function displayCDRemain() { try {
@@ -5126,8 +5124,8 @@
         until(() => {
           const remain = beforeIdle + delay - time(0);
           if (remain <= 0) return true;
-          displayProcess(`${UI.byLang('等待进入闲置', '等待進入閒置', 'Wait for enter idle')}${remainTime2Str(remain, true, true)}`);
-        });
+          displayProcess(`${remainTime2Str(remain, true, true)}${UI.byLang('等待进入闲置', '等待進入閒置', 'Wait for enter idle')}`);
+        }, 100);
         await pauseAsync(option.onIdleDelay * _1s);
       }
       const idleStart = g('idleStart', time(0));
