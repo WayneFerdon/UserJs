@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.132
+// @version      2.91.133
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -3158,7 +3158,7 @@
                   UI.div(UI.l('公式', '公式', 'Formula')), UI.div(UI.l('取值. 默认undefined (公式中为 _undefined)', '取值. 默認undefined (公式中为 _undefined)', 'Values. default: undefined (as _undefined in formula)')),
                   UI.div(UI.l('参数', '參數', 'Param')), UI.div(UI.l('说明', '說明', 'Notes')),
 
-                  UI.div('skill.[skill_id]<br>skill.111 === 1'), UI.div('1'),
+                  UI.div('skill.[skill_id]<br>skill.111 == 1'), UI.div('1'),
                   UI.div(UI.l('技能id [skill_id]<br>普通攻击(0)、武器技能、攻击/Buff/单体Debuff法术、FRD(1101)、OFC(1111)、逃跑(1001)', '技能id [skill_id]<br>普通攻擊(id=0)、武器技能、攻擊/Buff/單體Debuff法術、FRD(1101)、OFC(1111)、逃跑(1001)', '[skill_id]<br>attack(id=0), weapon skills, offensive/Buff/(single target)Debuff spells, FRD(1101), OFC(1111), Flee(1001)')),
                   UI.div(UI.l('用于带id技能判定', '用於帶id技能判定', 'For formulas before skills with id')),
 
@@ -3177,16 +3177,16 @@
                   UI.div(),
                   UI.div(UI.l('攻击阶数', '攻擊階數', 'Attack tiers')),
 
-                  UI.div('skill.all<br>skill.all === 212'), UI.div('debuff skill ids'),
+                  UI.div('skill.all<br>skill.all == 212'), UI.div('debuff skill ids'),
                   UI.div(),
                   UI.div(UI.l('用于全体debuff的判定', '用於全體debuff的判定', 'For formulas before debuff all')),
 
-                  UI.div('skill.tier<br>skill.tier === 1'), UI.div('1, 2, 3'),
+                  UI.div('skill.tier<br>skill.tier == 1'), UI.div('1, 2, 3'),
                   UI.div(),
                   UI.div(UI.l('用于以太之触或切换攻击模式时判断攻击法术阶数', '用於以太之触或切換攻擊模式時判斷攻擊法術階數', 'For offensive magic spell tiers before checks for attack status switch or ether tap')),
 
                   UI.div('skill.id<br>skill.id == 111'),
-                  UI.div(UI.l('[skill/item id], scroll, infusion, buff, debuff, defend, draught, focus, spiriton, spiritoff, OFC, FRD, T1, T2, T3, switch, etherTap')),
+                  UI.div('[skill/item id], scroll, infusion, buff, debuff, defend, draught, focus, spiriton, spiritoff, OFC, FRD, T1, T2, T3, switch, etherTap'),
                   UI.div(),
                   UI.div('id'),
 
