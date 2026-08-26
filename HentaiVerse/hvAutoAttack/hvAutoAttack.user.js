@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.125
+// @version      2.91.126
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -3109,7 +3109,7 @@
                   UI.text('unreachableWeight', 'placeholder="1000"'),
                   '<br>',
                   '<l0>BOSS:Yggdrasil额外权重</l0><l1>BOSS:Yggdrasil額外權重</l1><l2>BOSS:Yggdrasil Extra Weight</l2></b>',
-                  UI.number('YggdrasilExtraWeight', 1000),
+                  UI.number('YggdrasilExtraWeight', -1000),
                   '<br>',
                   UI.labeled('cacheMonsterHP', UI.l('启用HP缓存', '啟用HP緩存', 'Use HP Cache')),
                   UI.button.class('clearMonsterHPCache', UI.l('清空缓存', '清空緩存', 'Clear HP Cache')),
@@ -3487,7 +3487,10 @@
 
         optionBox.onmousemove = function (e) { // 自定义条件相关事件
           const target = e.target.closest('.customize');
-          if (!target) return;
+          if (!target) {
+            if (gE('.customizeBox')) gE('.customizeBox').style.display = 'none'
+            return;
+          }
           creatCustomizeBox();
           g('customizeTarget', target);
           updateGroup();
@@ -5127,7 +5130,7 @@
           const remain = beforeIdle + delay - time(0);
           if (remain <= 0) return true;
           displayProcess(`${remainTime2Str(remain, true, true)}${UI.byLang('等待进入闲置', '等待進入閒置', 'Wait for enter idle')}`);
-        }, 100);
+        }, 250);
         await pauseAsync(option.onIdleDelay * _1s);
       }
       const idleStart = g('idleStart', time(0));
@@ -6492,6 +6495,7 @@
         checkCondition(option.debugCondition);
       }
       for (const i of range(names)) {
+        console.log(names[i]);
         if (taskList[names[i]]()) {
           onStepInDone();
           return;
