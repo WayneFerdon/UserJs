@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.131
+// @version      2.91.132
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -4714,11 +4714,16 @@
       weighted(...params) {
         const funcName = params.shift();
         const battle = g().battle;
-        const origin = battle.monsterStatus.map(t => t);
-        weightTargets();
-        battle.monsterStatus = battle.monsterStatusWeighted;
-        const result = func[funcName](...params);
-        battle.monsterStatus = origin.map(t => t);
+        let result;
+        if (!g().inSkillExtraWeight) {
+          const origin = JSON.parse(JSON.stringify(g().battle.monsterStatus));
+          battle.monsterStatus.forEach(t => { t.finWeight += resolveSkillExtraWeight(t); });
+          battle.monsterStatus = battle.monsterStatus.sortBy(x => x.finWeight);
+          result = func[funcName](...params);
+          battle.monsterStatus = origin;
+        } else {
+          result = func[funcName](...params);
+        }
         return result;
       },
       targetBuffStack(...img) {
@@ -7580,7 +7585,6 @@
     // 额外权重公式
     monsterStatus.forEach(t => { t.finWeight += resolveRPNFormula(extraWeightFormula, t); });
     battle.monsterStatus = monsterStatus.sortBy(x => x.finWeight);
-    battle.monsterStatusWeighted = battle.monsterStatus.map(t => t);
     g('battle', battle);
   }
 
@@ -7590,13 +7594,6 @@
     const result = resolveRPNFormula(g().option.skillExtraWeight, target);
     g('inSkillExtraWeight', false);
     return result;
-  }
-
-  function weightTargets() {
-    let battle = g().battle;
-    const weighted = battle.monsterStatus.map(t => t);
-    weighted.forEach(t => { t.finWeight += resolveSkillExtraWeight(t); });
-    battle.monsterStatusWeighted = weighted.sortBy(x => x.finWeight);
   }
 
   function autoRecover(isCureOnly) { // 自动回血回魔
