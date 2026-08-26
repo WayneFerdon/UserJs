@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.128
+// @version      2.91.129
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -6310,6 +6310,10 @@
       $async.logSwitch(arguments);
     } catch (err) { console.error(err); }}
 
+    function setBattleSkillParam(id, params) {
+      g().battle.skill = { id, [id]: 1, ...params };
+    }
+
     // 战斗中//
     function onBattleRound() { // 主程序
       if (!gE('#battle_main')) return;
@@ -6512,7 +6516,7 @@
       battle.turn = g().battle.turn = currentTurn;
       setValue('battle', battle);
       killBug(); // 解决 HentaiVerse 可能出现的 bug
-      battle.skill = { 1001: 1};
+      setBattleSkillParam(1001, { flee: 1 });
       if (option.autoFlee && checkCondition(option.fleeCondition)) {
         if (option.fleeAlarm) setAlarm('Flee');
         gE('1001').click();
@@ -6706,7 +6710,7 @@
 
     function autoDefend() {
       const option = getOption();
-      g().battle.skill = { defend: 1 };
+      setBattleSkillParam('defend');
       if (option.defend && checkCondition(option.defendCondition)) {
         updateSkillOTOS('defend');
         gE('#ckey_defend').click();
@@ -7563,7 +7567,7 @@
         if (isCureOnly && !cures.includes(id)) {
           continue;
         }
-        g().battle.skill = { [id]: 1 };
+        setBattleSkillParam(id);
         if (option.item[name[i]] && checkCondition(option[`item${name[i]}Condition`]) && isOn(id)) {
           updateSkillOTOS(id);
           (gE(`.bti3>div[onmouseover*="(${id})"]`) ?? gE(id)).click();
@@ -7587,7 +7591,7 @@
       if (!option.scrollRoundType[g().battle.roundType]) {
         return false;
       }
-      g().battle.skill = { scroll: 1 };
+      setBattleSkillParam('scroll');
       if (!checkCondition(option.scrollCondition)) {
         return false;
       }
@@ -7647,7 +7651,7 @@
         if (!gE(`.bti3>div[onmouseover*="(${id})"]`)) {
           continue;
         }
-        g().battle.skill = { [id]: 1 };
+        setBattleSkillParam(id, { scroll: 1} );
         if (!checkCondition(option[`scroll${i}Condition`])) {
           continue;
         }
@@ -7738,7 +7742,7 @@
       if (!option.buffSkill) {
         return false;
       }
-      g().battle.skill = { buff: 1 };
+      setBattleSkillParam('buff');
       if (!checkCondition(option.buffSkillCondition)) {
         return false;
       }
@@ -7748,7 +7752,7 @@
 
         const { id, buffObj, current, threshold, checked } = checkBuffThreshold(buff, option.buffSkillThreshold);
         if (checked) continue;
-        g().battle.skill = { [id]: 1 };
+        setBattleSkillParam(id, { buff: 1});
         if (checkCondition(option[`buffSkill${buff}Condition`])) {
           onClickBuff(id);
           return true;
@@ -7779,7 +7783,7 @@
       };
       for (const i in draughtPack) {
         const id = draughtPack[i].id;
-        g().battle.skill = { [id]: 1 };
+        setBattleSkillParam(id, { draught: 1});
         if (!getBuff(draughtPack[i].img) && option.buffSkill && option.buffSkill[i] && checkCondition(option[`buffSkill${i}Condition`]) && gE(`.bti3>div[onmouseover*="(${id})"]`)) {
           updateSkillOTOS(id);
           gE(`.bti3>div[onmouseover*="(${id})"]`).click();
@@ -7792,7 +7796,7 @@
     function useInfusions() { // 自动使用魔药
       const option = getOption();
       if (!option.infusionSwitch) return false;
-      g().battle.skill = { infusion: 1 };
+      setBattleSkillParam('infusion');
       if (!checkCondition(option.infusionCondition)) {
         return false;
       }
@@ -7805,31 +7809,33 @@
         itemBtn.click();
         return true;
       }
-      const infusionLib = useInfusions.prototype.infusionLib ??= [ null, {
-        id: 12101,
-        img: 'fireinfusion',
-        name: 'Flames',
-      }, {
-        id: 12201,
-        img: 'coldinfusion',
-        name: 'Frost',
-      }, {
-        id: 12301,
-        img: 'elecinfusion',
-        name: 'Lightning',
-      }, {
-        id: 12401,
-        img: 'windinfusion',
-        name: 'Storms',
-      }, {
-        id: 12501,
-        img: 'holyinfusion',
-        name: 'Divinity',
-      }, {
-        id: 12601,
-        img: 'darkinfusion',
-        name: 'Darkness',
-      }];
+      const infusionLib = useInfusions.prototype.infusionLib ??= [
+        null, {
+          id: 12101,
+          img: 'fireinfusion',
+          name: 'Flames',
+        }, {
+          id: 12201,
+          img: 'coldinfusion',
+          name: 'Frost',
+        }, {
+          id: 12301,
+          img: 'elecinfusion',
+          name: 'Lightning',
+        }, {
+          id: 12401,
+          img: 'windinfusion',
+          name: 'Storms',
+        }, {
+          id: 12501,
+          img: 'holyinfusion',
+          name: 'Divinity',
+        }, {
+          id: 12601,
+          img: 'darkinfusion',
+          name: 'Darkness',
+        }
+      ];
 
       if (option.infusionDefaultOnly) {
         const attackStatus = g().attackStatus;
@@ -7841,7 +7847,8 @@
       for (const name of order) {
         const condition = option[`infusion${name}Condition`];
         const status = infusionLib.findIndex(i => i?.name === name);
-        g().battle.skill = { [infusionLib[status].id]: 1 };
+        const id = infusionLib[status].id;
+        setBattleSkillParam(id, { infusion: 1});
         if (!checkCondition(condition)) continue;
         if (onUse(status)) return true;
       }
@@ -7850,7 +7857,7 @@
 
     function autoFocus() {
       const option = getOption();
-      g().battle.skill = { focus: 1 };
+      setBattleSkillParam('focus');
       if (option.focus && checkCondition(option.focusCondition)) {
         updateSkillOTOS('focus');
         gE('#ckey_focus').click();
@@ -7867,7 +7874,7 @@
       }
       const option = getOption();
       const enabled = gE('#ckey_spirit[src*="spirit_a"]');
-      g().battle.skill = { spirit: enabled ? 'off' : 'on' };
+      setBattleSkillParam(enabled ? 'spiritoff' : 'spiriton', { spirit: enabled ? 'off' : 'on' });
       if (
         (!isDisableOnly && !enabled && option.turnOnSS && checkCondition(option.turnOnSSCondition))
         || (enabled && option.turnOffSS && checkCondition(option.turnOffSSCondition))
@@ -7938,7 +7945,7 @@
         if (option.skillOTOS && option.skillOTOS[skill] && skillOTOS[skill] >= 1) {
           continue;
         }
-        g().battle.skill = { [skill]: 1 };
+        setBattleSkillParam(id, { skill: skill });
         let target = checkCondition(option[`skill${skill}Condition`], monsterStatus);
         if (!target) continue;
         updateSkillOTOS(i, skillOTOS);
@@ -7953,7 +7960,7 @@
     function useDeSkill() { // 自动施法DEBUFF技能
       const option = getOption();
       const monsterStatus = g().battle.monsterStatus;
-      g().battle.skill = { debuff: 1 };
+      setBattleSkillParam('debuff');
       if (!option.debuffSkillSwitch || !checkCondition(option.debuffSkillCondition, monsterStatus)) { // 总开关是否开启
         return false;
       }
@@ -7961,10 +7968,12 @@
       // 先处理特殊的 “先给全体上buff”
       let skillPack = splitOrders(option.debuffSkillOrderAllValue, getDefaultOrder('debuffSkillOrderAll'));
       for (let i = 0; i < skillPack.length; i++) {
-        if (option[`debuffSkill${skillPack[i]}All`]) { // 是否启用
-          const skill = monsterBuffSkillLib[skillPack[i]];
-          g().battle.skill = { all: skill.id*1 };
-          if (checkCondition(option[`debuffSkill${skillPack[i]}AllCondition`], monsterStatus)) { // 检查条件
+        let buff = skillPack[i];
+        if (option[`debuffSkill${buff}All`]) { // 是否启用
+          const skill = monsterBuffSkillLib[buff];
+          const id = skill.id*1;
+          setBattleSkillParam(id, { all: id, debuff: buff, debuffAll: buff });
+          if (checkCondition(option[`debuffSkill${buff}AllCondition`], monsterStatus)) { // 检查条件
             continue;
           }
         }
@@ -7981,7 +7990,8 @@
         const isToAll = i < toAllCount;
         if (!isToAll) { // 非先全体
           const skill = monsterBuffSkillLib[skillPack[i]];
-          g().battle.skill = { [skill]: 1 };
+          const id = skill.id*1;
+          setBattleSkillParam(id, { debuff: buff });
           if (!buff || !option.debuffSkill[buff] || !checkCondition(option[`debuffSkill${buff}Condition`], monsterStatus)) { // 检查条件
             continue;
           }
@@ -8040,7 +8050,7 @@
       let id;
       let minWeight = Number.MAX_SAFE_INTEGER;
       const condition = option[`debuffSkill${buff}${isAll ? 'All' : ''}Condition`];
-      g().battle.skill = isAll ? { all: skill.id*1 } : { [skill.id]: 1 };
+      setBattleSkillParam(skill.id, { debuff: buff, ...isAll ? { all: skill.id, debuffAll: buff }: { }});
       const excludeCondition = target => checkCondition(condition, [target]) ? isDebuffed(target) : excludedWeight(target);
       for (const i of range(max)) {
         let target = buff === 'Dr' ? monsterStatus[max - i - 1] : monsterStatus[i];
@@ -8103,7 +8113,7 @@
             if (!status && tier) continue;
             if (!option.attackStatusSwitch[status]) continue;
             g('attackStatusCurrent', status);
-            g().battle.skill = { tier: tier };
+            setBattleSkillParam('switch', { tier: tier });
             if (!checkCondition(option[`attackStatusSwitchCondition${status}`], monsters)) continue;
             if (onAttack(status, selectStatusOnly, tier)) return true;
           }
@@ -8157,7 +8167,7 @@
       // 3. 满足条件
       // 使用物理普通攻击，跳过Offensive Magic
       // 否则按照属性攻击模式释放Spell > Offensive Magic
-      let skillRange = 1, skill = 0;
+      let skillRange = 1, skill = 0, attackTier = 0;
       const fightingStyle = g().fightingStyle*1;
       // 1. physical
       if (attackStatus === 0) {
@@ -8167,7 +8177,7 @@
       // 2. etherTap
       if (option.etherTap && getBuff('coalescemana', getMonsterID(target))) {
         const expiring = [getBuffStackFromImg, getBuffTurnFromImg].map(getter => getter(getBuff('wpn_et')) <= 1).reduce((acc, cur) => acc || cur);
-        battle.skill = { tier, etherTap: 1 };
+        setBattleSkillParam('etherTap', { tier });
         if (expiring && checkCondition(option.etherTapCondition)) {
           return tryAttack();
         }
@@ -8177,13 +8187,15 @@
         const conditions = [option.lowSkillCondition, option.middleSkillCondition, option.highSkillCondition];
         for (const lv of range(tier ?? 2, -1, -1)) {
           let id = `1${attackStatus}${lv + 1}` * 1;
-          battle.skill = { [id]: 1 };
+          attackTier = lv+1;
+          setBattleSkillParam(id, { attackTier });
           if (isOn(id) && (target = checkCondition(conditions[lv], monsters))) return id;
           if (tier) return 0;
         }
       })();
       // 3.a no skill available
       if (!skill) {
+        attackTier = 0;
         if (tier) return false;
         return tryAttack();
       }
@@ -8197,7 +8209,7 @@
       }
       return tryAttack(skill);
 
-      function tryAttack (skill) {
+      function tryAttack (skill=0) {
         if (!target || target.isDead) {
           return false;
         }
@@ -8206,9 +8218,11 @@
         }
         if (skill && gE(skill)) {
           updateSkillOTOS(skill);
+          updateSkillOTOS(`attackStatus${attackStatus}`);
+          updateSkillOTOS(`attackTier${attackTier}`);
           gE(skill).click();
         }
-        battle.skill = { [skill]: 1 };
+        setBattleSkillParam(skill, { attackTier });
         clickMonster(getRangeCenter(target, skillRange ?? 1, !attackStatus).id);
         return true;
       };
