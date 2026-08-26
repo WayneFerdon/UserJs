@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.129
+// @version      2.91.130
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -3156,12 +3156,27 @@
                   UI.hvAATable(
                     '1fr 1fr 2fr 2fr;display:none','hvAASkillFormulaParamsTable',
 
-                    UI.div(UI.l('公式', '公式', 'Formula')), UI.div(UI.l('取值（默認undefined）', '取值（默認undefined）', 'Values (default: undefined)')),
+                    UI.div(UI.l('公式', '公式', 'Formula')), UI.div(UI.l('取值. 默认undefined (公式中为 _undefined)', '取值. 默認undefined (公式中为 _undefined)', 'Values. default: undefined (as _undefined in formula)')),
                     UI.div(UI.l('参数', '參數', 'Param')), UI.div(UI.l('说明', '說明', 'Notes')),
 
                     UI.div('skill.[skill_id]<br>skill.111 === 1'), UI.div('1'),
                     UI.div(UI.l('技能id [skill_id]<br>普通攻击(0)、武器技能、攻击/Buff/单体Debuff法术、FRD(1101)、OFC(1111)、逃跑(1001)', '技能id [skill_id]<br>普通攻擊(id=0)、武器技能、攻擊/Buff/單體Debuff法術、FRD(1101)、OFC(1111)、逃跑(1001)', '[skill_id]<br>attack(id=0), weapon skills, offensive/Buff/(single target)Debuff spells, FRD(1101), OFC(1111), Flee(1001)')),
                     UI.div(UI.l('用于带id技能判定', '用於帶id技能判定', 'For formulas before skills with id')),
+
+                    UI.div('skill.skill<br>skill.skill == T2'),
+                    UI.div('OFC, FRD, flee, T1, T2, T3'),
+                    UI.div(),
+                    UI.div(UI.l('武器/非法术技能名称', '武器/非法術技能名稱', 'weapon/not-spell skill name')),
+
+                    UI.div('skill.[debuff/debuffAll]<br>skill.debuffAll == Sle'),
+                    UI.div('debuff main switch : 1<br>debuff/debuffAll: Sl, Bl, Slo, We, Si, Dr, Im, MN, Co'),
+                    UI.div('debuff main switch: debuff<br>debuff(singal): debuff<br>debuff(all): debuff, debuffAll'),
+                    UI.div(UI.l('Debuff技能简称', 'Debuff技能簡稱', 'Debuff spell short name')),
+
+                    UI.div('skill.attackTier<br>skill.attackTier == 3'),
+                    UI.div('Weapon attack: 0, Offensive spells: 1, 2, 3'),
+                    UI.div(),
+                    UI.div(UI.l('攻击阶数', '攻擊階數', 'Attack tiers')),
 
                     UI.div('skill.all<br>skill.all === 212'), UI.div('debuff skill ids'),
                     UI.div(),
@@ -3171,19 +3186,23 @@
                     UI.div(),
                     UI.div(UI.l('用于以太之触或切换攻击模式时判断攻击法术阶数', '用於以太之触或切換攻擊模式時判斷攻擊法術階數', 'For offensive magic spell tiers before checks for attack status switch or ether tap')),
 
-                    // 下面几个应该用不到/有其他参数代替
-                    // UI.div('skill.[battleSteps]<br>skill.defend === 1'),
-                    // UI.div('1'),
-                    // UI.div('[battleSteps]<br>defend, focus, scroll, buff, debuff, infusion'),
-                    // UI.div(UI.l('用于战斗步骤（防御、集中、卷轴/BUFF/DEBUFF/魔药总开关）', '用於戰鬥步驟（防禦、集中、捲軸/BUFF/DEBUFF/魔藥總開關）', 'For battle step checks (Defend, Focus, MAIN SWITCH for Scroll/Buff/Debuff/Infusion)')),
-                    // UI.div('skill.etherTap<br>skill.etherTap === 1'),
-                    // UI.div('1'),
-                    // UI.div(),
-                    // UI.div(UI.l('用于以太之触', '用於以太之觸', 'For ether tap check')),
-                    // UI.div('skill.spirit<br>skill.spirit === off'),
-                    // UI.div('on, off'),
-                    // UI.div(),
-                    // UI.div(UI.l('用于灵动架势', '用於靈動架勢', 'For spirit check')),
+                    UI.div('skill.id<br>skill.id == 111'),
+                    UI.div(UI.l('[skill/item id], scroll, infusion, buff, debuff, defend, draught, focus, spiriton, spiritoff, OFC, FRD, T1, T2, T3, switch, etherTap')),
+                    UI.div(),
+                    UI.div('id'),
+
+                    UI.div('skill.[battleSteps]<br>skill.defend === 1'),
+                    UI.div('1'),
+                    UI.div('[battleSteps]<br>flee, defend, focus, scroll, buff, debuff, infusion'),
+                    UI.div(UI.l('用于战斗步骤（逃跑、防御、集中、卷轴/BUFF/DEBUFF/魔药总开关）', '用於戰鬥步驟（逃跑、防禦、集中、捲軸/BUFF/DEBUFF/魔藥總開關）', 'For battle step checks (Flee, Defend, Focus, MAIN SWITCH for Scroll/Buff/Debuff/Infusion)')),
+                    UI.div('skill.etherTap<br>skill.etherTap === 1'),
+                    UI.div('1'),
+                    UI.div(),
+                    UI.div(UI.l('用于以太之触', '用於以太之觸', 'For ether tap check')),
+                    UI.div('skill.spirit<br>skill.spirit === off'),
+                    UI.div('on, off'),
+                    UI.div(),
+                    UI.div(UI.l('用于灵动架势', '用於靈動架勢', 'For spirit check')),
                   ),
                 ),
                 UI.div(
@@ -4840,7 +4859,9 @@
               throw new Error(`Unsupported targetGroup mode: ${groupMode}.`);
           }
           return currentGroup ? Object.keys(currentGroup).length : 0;
-        }
+        },
+        undefined: () => undefined,
+        null: () => null
       };
 
       function switchMaxMin(param, defaultResult, skipAliveCheck = false, targets = undefined) {
@@ -6516,7 +6537,7 @@
       battle.turn = g().battle.turn = currentTurn;
       setValue('battle', battle);
       killBug(); // 解决 HentaiVerse 可能出现的 bug
-      setBattleSkillParam(1001, { flee: 1 });
+      setBattleSkillParam(1001, { flee: 1, skill: 'flee' });
       if (option.autoFlee && checkCondition(option.fleeCondition)) {
         if (option.fleeAlarm) setAlarm('Flee');
         gE('1001').click();
@@ -8113,7 +8134,7 @@
             if (!status && tier) continue;
             if (!option.attackStatusSwitch[status]) continue;
             g('attackStatusCurrent', status);
-            setBattleSkillParam('switch', { tier: tier });
+            setBattleSkillParam('switch', { tier });
             if (!checkCondition(option[`attackStatusSwitchCondition${status}`], monsters)) continue;
             if (onAttack(status, selectStatusOnly, tier)) return true;
           }
