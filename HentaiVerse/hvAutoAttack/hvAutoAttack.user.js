@@ -5170,10 +5170,10 @@
       await updateEncounter(false);
       if (!onIsekaiEncounter && option.onIdleDelay) {
         const delay = option.onIdleDelay * _1s;
-        until(() => {
+        until(async () => {
           const remain = beforeIdle + delay - time(0);
           if (remain <= 0) return true;
-          if (getValue('disabled')) return;
+          await waitPause();
           displayProcess(`${remainTime2Str(remain, true, true)}${UI.byLang('等待进入闲置', '等待進入閒置', 'Wait for enter idle')}`);
         }, 250);
         await pauseAsync(option.onIdleDelay * _1s);
