@@ -2227,7 +2227,7 @@
       ['战斗', '戰鬥', 'Battle'],
       ['挑战人物', '挑戰人物', 'Battle Persona'],
       ['挑战套装', '挑戰套裝', 'Battle Equip Set']
-    ].map(UI.l);
+    ].map(s => UI.b(UI.l(s)));
     const option = getOption();
     const { equips, personas, equipSets } = getValue('itemWorldDatas', true) ?? {};
     if (!personas || !equipSets) {
@@ -2292,7 +2292,7 @@
       ['停止等级', '停止等級', 'Stop Level'],
       ['挑战人物', '挑戰人物', 'Battle Persona'],
       ['挑战套装', '挑戰套裝', 'Battle Equip Set']
-    ].map(UI.l);
+    ].map(s => UI.b(UI.l(s)));
     const option = getOption();
     const { equips, personas, equipSets } = getValue('itemWorldDatas', true) ?? {};
     if (!equips || !personas || !equipSets) {
@@ -3155,8 +3155,8 @@
                 UI.hvAATable(
                   '1fr 1fr 2fr 2fr;display:none','hvAASkillFormulaParamsTable',
 
-                  UI.div(UI.l('公式', '公式', 'Formula')), UI.div(UI.l('取值. 默认undefined (公式中为 _undefined)', '取值. 默認undefined (公式中为 _undefined)', 'Values. default: undefined (as _undefined in formula)')),
-                  UI.div(UI.l('参数', '參數', 'Param')), UI.div(UI.l('说明', '說明', 'Notes')),
+                  UI.div(UI.b(UI.l('公式', '公式', 'Formula'))), UI.div(UI.b(UI.l('取值.', '取值.', 'Values.')), UI.l('默认undefined (公式中为 _undefined)', '默認undefined (公式中为 _undefined)', 'default: undefined (as _undefined in formula)')),
+                  UI.div(UI.b(UI.l('参数', '參數', 'Param'))), UI.div(UI.b(UI.l('说明', '說明', 'Notes'))),
 
                   UI.div('skill.[skill_id]<br>skill.111 == 1'), UI.div('1'),
                   UI.div(UI.l('技能id [skill_id]<br>普通攻击(0)、武器技能、攻击/Buff/单体Debuff法术、FRD(1101)、OFC(1111)、逃跑(1001)', '技能id [skill_id]<br>普通攻擊(id=0)、武器技能、攻擊/Buff/單體Debuff法術、FRD(1101)、OFC(1111)、逃跑(1001)', '[skill_id]<br>attack(id=0), weapon skills, offensive/Buff/(single target)Debuff spells, FRD(1101), OFC(1111), Flee(1001)')),
