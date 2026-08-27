@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.136
+// @version      2.91.137
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -5594,10 +5594,10 @@
     if (log?.length) console.log(`${onIsekaiEncounter ? '[Persistent]' : ''}`, ...log);
   }
 
-  function checkSupply(standalone) {
+  function checkSupply(extra) {
     const option = getOption(true);
-    if (standalone && !option[`checkSupply${standalone}`]) return true;
-    standalone = {
+    if (extra && !option[`checkSupply${extra}`]) return true;
+    extra = {
       GF: {
         name: { 0: '压榨界', 1: '壓榨界', 2: 'Grindfest' },
         thresholdList: option.checkItemGF,
@@ -5610,16 +5610,16 @@
         checkList: option.isCheckIW,
         percentage: option.checkSupplyWarnIW
       },
-    }[standalone]
+    }[extra]
     if (!option.checkSupply) return true;
     const items = g().items;
     if (!items) return false;
     const slotItems = g().slotItems;
     const slotedCheckList = option.checkSupplySlotted ? option.isCheckSlotted : undefined;
-    const name = standalone?.name ?? '';
-    const thresholdList = standalone?.checkItem ?? option.checkItem;
-    const checkList = standalone?.isCheck ?? option.isCheck;
-    const percentage = standalone?.checkSupplyWarn ?? option.checkSupplyWarn;
+    const name = extra?.name ?? '';
+    const thresholdList = extra?.checkItem ?? option.checkItem;
+    const checkList = extra?.isCheck ?? option.isCheck;
+    const percentage = extra?.checkSupplyWarn ?? option.checkSupplyWarn;
     const unslotted = [], needs = [], warns = [];
     const lang = option.lang;
     for (let id in slotedCheckList) {
@@ -5648,31 +5648,31 @@
         2: `Consumables not slotted:\n${unslotted}`,
       }, `Unslotted items:${unslotted}`);
     } else if (needs.length) {
-      popupFailedCheck(`C${standalone ? '!' : ''}`, {
-        0: `消耗品${standalone ? `(${standalone.name[option.lang]}独立配置)` : ''}不足:\n${needs}`,
-        1: `消耗品${standalone ? `(${standalone.name[option.lang]}獨立配置)` : ''}不足:\n${needs}`,
-        2: `Failed supply check${standalone ? ` for ${standalone.name[option.lang]} standalone` : ''}:\n${needs}`,
-      }, `${standalone ? `${standalone.name[2]} ` : ''}Needs supply:${needs}`);
+      popupFailedCheck(`C${extra ? '!' : ''}`, {
+        0: `消耗品${extra ? `(${extra.name[option.lang]}额外配置)` : ''}不足:\n${needs}`,
+        1: `消耗品${extra ? `(${extra.name[option.lang]}額外配置)` : ''}不足:\n${needs}`,
+        2: `Failed supply check${extra ? ` for ${extra.name[option.lang]} extra` : ''}:\n${needs}`,
+      }, `${extra ? `${extra.name[2]} ` : ''}Needs supply:${needs}`);
     } else if (warns.length) {
-      popupFailedCheck(`C${standalone ? '!' : ''}`, {
-        0: `消耗品${standalone ? `(${standalone.name[option.lang]}独立配置)` : ''} < ${percentage}%:\n${warns}`,
-        1: `消耗品${standalone ? `(${standalone.name[option.lang]}獨立配置)`: ''} < ${percentage}%:\n${warns}`,
-        2: `Supplys ${standalone ? ` for ${standalone.name[option.lang]} standalone` : ''} < ${percentage}%:\n${warns}`,
-      }, `${standalone ? `${standalone.name[2]} ` : ''}Warn supply:${warns}`);
+      popupFailedCheck(`C${extra ? '!' : ''}`, {
+        0: `消耗品${extra ? `(${extra.name[option.lang]}额外配置)` : ''} < ${percentage}%:\n${warns}`,
+        1: `消耗品${extra ? `(${extra.name[option.lang]}額外配置)`: ''} < ${percentage}%:\n${warns}`,
+        2: `Supplys ${extra ? ` for ${extra.name[option.lang]} extra` : ''} < ${percentage}%:\n${warns}`,
+      }, `${extra ? `${extra.name[2]} ` : ''}Warn supply:${warns}`);
     }
     return !needs.length && !unslotted.length;
   }
 
-  async function asyncCheckRepair(standalone) { try {
+  async function asyncCheckRepair(extra) { try {
     const option = getOption(true);
-    if (standalone && !option[`repairValue${extra}`]) return true;
+    if (extra && !option[`repairValue${extra}`]) return true;
     if (!option.repair) {
       return true;
     }
     await waitPause();
     $async.logSwitch(arguments);
     let eqps;
-    standalone = {
+    extra = {
       GF: {
         name: { 0: '压榨界', 1: '壓榨界', 2: 'Grindfest' },
         threshold: option.repairValueGF,
@@ -5683,10 +5683,10 @@
         threshold: option.repairValueIW,
         repairCharm: option.repairCharmIW,
       },
-    }[standalone];
+    }[extra];
 
-    const threshold = standalone?.repairValue ?? option.repairValue;
-    const repairCharm = standalone?.repairCharm || option.repairCharm;
+    const threshold = extra?.repairValue ?? option.repairValue;
+    const repairCharm = extra?.repairCharm || option.repairCharm;
     if (threshold === undefined || threshold < 0) { // skip because default repair has been checked before idleArena>GF
       $async.logSwitch(arguments);
       return true;
@@ -5739,10 +5739,10 @@
     }
     if (eqps.length) {
       popupFailedCheck(`R`, {
-        0: `${standalone?.name?.[option.lang] ?? ''}装备需要修理:\n${eqps.join('\n ')}`,
-        1: `${standalone?.name?.[option.lang] ?? ''}裝備需要修理:\n${eqps.join('\n ')}`,
-        2: `${standalone?.name?.[option.lang] ?? ''}Equips need repair:\n${eqps.join('\n ')}`,
-      }, `${standalone?.name?.[option.lang] ?? ''}Equips need repair:\n`, eqps.join('\n '));
+        0: `${extra?.name?.[option.lang] ?? ''}装备需要修理:\n${eqps.join('\n ')}`,
+        1: `${extra?.name?.[option.lang] ?? ''}裝備需要修理:\n${eqps.join('\n ')}`,
+        2: `${extra?.name?.[option.lang] ?? ''}Equips need repair:\n${eqps.join('\n ')}`,
+      }, `${extra?.name?.[option.lang] ?? ''}Equips need repair:\n`, eqps.join('\n '));
     }
     $async.logSwitch(arguments);
     return !eqps.length;
@@ -6297,17 +6297,16 @@
     const cost = rounds * (_server.isekai ? 2 : 1) * (stamina.current >= 60 ? 0.03 : 0.02);
 
     const arena = getValue('arena', true);
-    let query;
+    let query = id;
     if (!['gr', 'iw', 'tw'].includes(id)) {
       query = id >= 105 ? 'rb' : 'ar';
-    } else {
+    } else if (id === 'gr') {
       if (arena.gr <= 0) {
         arena.arrayDone.push('gr');
         setValue('arena', arena);
         $async.logSwitch(arguments);
         return await idleArena();
       }
-      query = 'gr';
     }
     query = `?s=Battle&ss=${query}`;
 
