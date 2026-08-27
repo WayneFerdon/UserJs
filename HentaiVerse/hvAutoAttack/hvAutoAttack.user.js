@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.137
+// @version      2.91.138
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -6325,7 +6325,7 @@
     await waitPause();
     await until(async () => !option.checkURLBeforeNewRound || await $ajax.insert(option.checkURLBeforeNewRound), option.checkURLBeforeNewRoundRetry);
     const queryDoc = $doc(await $ajax.insert(query));
-    const data = `${equip ? `eqids%5B%5D=${equip.id}` : `initid=${id === 'gr' ? 1 : id}`}&postoken=${gE('input[name="postoken"]', queryDoc).value}`;
+    const data = `${equip ? `eqids%5B%5D=${equip.id}` : `initid=${['gr', 'tw'].includes(id) ? 1 : id}`}&postoken=${gE('input[name="postoken"]', queryDoc).value}`;
     await until(async () => await $ajax.insert(query, data), option.checkURLBeforeNewRoundRetry);
 
     console.log('Arena Start', equip ? `e${equip.id} (${equip.world} => ${equip.world + 1}) / ${equip.max}\n${JSON.stringify(equip)}` : id);
