@@ -6198,8 +6198,7 @@
       }
       if (id === 'iw') {
         id = undefined;
-        const iw = await idleItemWorld();
-        if (!iw) continue;
+        if (!await idleItemWorld()) continue;
         $async.logSwitch(arguments);
         return true;
       }
@@ -6222,7 +6221,7 @@
     return done;
   } catch (err) { console.error(err); }}
 
-  async function idleItemWorld(arena) { try {
+  async function idleItemWorld() { try {
     const option = getOption();
     if (!option.idleItemWorld) return;
     $async.logSwitch(arguments);
@@ -6264,7 +6263,6 @@
         console.log('Idle Item World: Skip currently equiped', eid, equip);
         continue;
       }
-
       if (await gotoBattle('iw', equip.round, equip)) {
         $async.logSwitch(arguments);
         return true;
