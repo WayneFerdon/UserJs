@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.134
+// @version      2.91.135
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1549,7 +1549,7 @@
       return;
     }
     getStartBattleButtons().forEach(btn => {
-      if (ar.includes(btn.id) && btn.cleared) {
+      if (ar.includes(btn.id) && btn.cleared && !option.arLevelDisable[btn.id]) {
         return;
       }
       gE('div', 'all', btn.closest('#arena_list tr')).forEach(div => { div.style.cssText += `color:${btn.cleared?'grey':'red'}!important;` });
@@ -3633,7 +3633,7 @@
       gE('.hvAALevelsClear', optionBox).onclick = function () {
         gE('[name="idleArenaLevels"]', optionBox).value = '';
         gE('[name="idleArenaValue"]', optionBox).value = '';
-        gE('.hvAAArenaLevels>input[id^="arLevel_"]', 'all', optionBox).forEach((input) => {
+        gE('.hvAAArenaLevels input[id^="arLevel_"]', 'all', optionBox).forEach((input) => {
           input.checked = false;
           displayCheckBoxNotDefault(input);
         });
@@ -6270,7 +6270,7 @@
     }
     $async.logSwitch(arguments);
   } catch (err) { console.error(err); }}
-  
+
   async function gotoBattle(id, rounds, equip) { try {
     $async.logSwitch(arguments);
     const option = getOption();
@@ -6326,7 +6326,7 @@
     const queryDoc = $doc(await $ajax.insert(query));
     const data = `${equip ? `eqids%5B%5D=${equip.id}` : `initid=${id === 'gr' ? 1 : id}`}&postoken=${gE('input[name="postoken"]', queryDoc).value}`;
     await until(async () => await $ajax.insert(query, data), option.checkURLBeforeNewRoundRetry);
-    
+
     console.log('Arena Start', equip ? `e${equip.id} (${equip.world} => ${equip.world + 1}) / ${equip.max}\n${JSON.stringify(equip)}` : id);
     switch (id) {
       case 'tw': case 'iw':
@@ -6339,7 +6339,7 @@
     }
     if (equip) arena.equip = { data: equip };
     setValue('arena', arena);
-    
+
     stamina.lastCost = id === 'gr' ? undefined : cost;
     setValue('stamina', stamina);
     if (option.altBattleFirst && await $ajax.insert(window.location.href.replace('://hentaiverse.org', '://alt.hentaiverse.org'))) {
