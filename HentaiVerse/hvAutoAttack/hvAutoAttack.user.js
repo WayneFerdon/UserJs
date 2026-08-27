@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.135
+// @version      2.91.136
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -6182,6 +6182,8 @@
         if (_server.persistent) continue;
         const doc = $doc(await $ajax.insert('?s=Battle&ss=tw'));
         let [_, floor, rounds, attempts, maxAttempts, clears, max] = gE('#towerstart', doc).innerText.match(/Current Floor: (\d+) \((\d+) Rounds\)\n\t.*\n\tDaily Attempts: (\d+) \/ (\d+)\n\tDaily Clears: (\d+) \/ (\d+)/).map(x => x * 1);
+        arena.tw = { data: attempts };
+        setValue('arena', arena);
         if (clears >= max || attempts >= maxAttempts) {
           arena.arrayDone.push('tw');
           setValue('arena', arena);
@@ -6311,13 +6313,13 @@
 
     let extra = { gr: 'GF', iw: 'IW', tw: 'TW' }[id];
     if (extra && ((!checkSupply(extra)) || !await asyncCheckRepair(extra))) {
-      console.log('Check Extra Battle Ready Failed in supply/repair', 'id:', id, `eid:${equip.id}`, equip, arena);
+      console.log('Check Extra Battle Ready Failed in supply/repair', 'id:', id, `eid:${equip?.id}`, equip, arena);
       $async.logSwitch(arguments);
       return false;
     }
     extra = { gr: 'GrindFest', iw: 'ItemWorld', tw: 'Tower' }[id];
     if (!await checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: option.encounter, staminaLow: extra ? option[`stamina${extra}`] : undefined })) {
-      console.log('Check Battle Ready Failed', 'id:', id, `eid:${equip.id}`, equip, arena);
+      console.log('Check Battle Ready Failed', 'id:', id, `eid:${equip?.id}`, equip, arena);
       $async.logSwitch(arguments);
       return false;
     }
