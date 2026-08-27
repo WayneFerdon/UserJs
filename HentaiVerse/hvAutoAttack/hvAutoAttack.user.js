@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.133
+// @version      2.91.134
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -445,9 +445,10 @@
     confirm: (...args) => window.confirm(UI.byLang(args)),
     prompt: (...args) => window.prompt(UI.byLang(args.slice(0, UI.langs)), args[UI.langs]),
     l: function (...args) {
+      if (!args.length) return '';
       if (typeof args[0] !== 'string') args = args[0];
-      const extra = args[UI.langs] ?? '';
-      return range(UI.langs).map(i => `<l${i} ${extra}>${args[i] ?? ''}</l${i}>`).join('');
+      const extra = args?.[UI.langs] ?? '';
+      return range(UI.langs).map(i => `<l${i} ${extra}>${args?.[i] ?? ''}</l${i}>`).join('');
     },
     button: {
       class: function (className, ...inner) {
@@ -506,6 +507,15 @@
       return UI.div({
         args: `class="hvAATable ${className}" style="grid-template-columns: ${style};"`,
         inner: inner
+      });
+    },
+    checkSupplyInnerExtra: function (key, names) {
+      return UI.div({
+        args: { class: 'checkSupplyInner' },
+        inner: [
+          UI.labeled(`checkSupply${key}`, UI.b('[C!!]', UI.l(['[name]使用额外的库存检查', '[name]使用額外的庫存檢查', 'Extra supply check for [name]'].map(t => t.replace('[name]', UI.byLang(names)))), ';')),
+          ...getCheckSupplyOptionTable(key),
+        ]
       });
     },
     div: function (...datas) {
@@ -2037,7 +2047,6 @@
       '.hvAANew{width:25px;height:25px;float:left;background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAMCAYAAACX8hZLAAAAcElEQVQ4jbVRSQ4AIQjz/59mTiZIF3twmnCwFAq4FkeFXM+5vCzohYxjPMtfxS8CN6iqQ7TfE0wrODxVbzJNgoaTo4CmbBO1ZWICouQ0DHaL259MEzaU+w8pZOdSjcUgaPJDHCbO0A2kuAiuwPGQ+wBms12x8HExTwAAAABJRU5ErkJggg==) center no-repeat transparent;}',
       '#hvAATab-Alarm input[type="text"]{width:512px;}',
       '.testAlarms>div{border:2px solid #000;}',
-      '.hvAAArenaLevels{display:none; grid-template-columns:repeat(7, 20px 1fr);}',
       '.hvAAcheckItems{display:grid; grid-template-columns:repeat(5, 1fr)}',
       '.hvAAcheckItems>input.hvAANumber{width:32px}',
       '.hvAAConfig{width:100%;height:16px;}',
@@ -2234,11 +2243,12 @@
       return;
     }
     container.innerHTML = innerHTML.join('');
-    const ordered = ['default', 'ba', 'gr', 'rb', '105', '106', '107', '108', '109', '110', '111', '112', 'ar', '1', '3', '5', '8', '9', '11', '12', '13', '15', '16', '17', '19', '20', '21', '23', '24', '26', '27', '28', '29', '32', '33', '34', '35'];
+    const ordered = ['default', 'ba', 'gr', 'tw', 'rb', '105', '106', '107', '108', '109', '110', '111', '112', 'ar', '1', '3', '5', '8', '9', '11', '12', '13', '15', '16', '17', '19', '20', '21', '23', '24', '26', '27', '28', '29', '32', '33', '34', '35'];
     const battles = {
       'default': 'Default',
       'ba': 'BA',
       'gr': 'GF',
+      'tw': 'TW',
       'rb': 'RB',
       'ar': 'AR',
       '1': 'AR1',
@@ -2335,6 +2345,11 @@
 
   function optionBox() { // 配置界面
     const UIDatas = {
+      checkSupplyInnerExtra: [
+        { id: 'IW', names: ['道具界', '道具界', 'Item World'] },
+        { id: 'GF', names: ['压榨界', '壓榨界', 'Grind Fest'] },
+        { id: 'TW', names: ['塔楼', '塔樓', 'The Tower'] },
+      ],
       tablist: [
         { id: 'Main', names: ['主要选项', '主要選項', 'Main'] },
         { id: 'BattleStarter', names: ['战斗开启', '戰鬥開啟', 'BattleStarter'] },
@@ -2355,19 +2370,22 @@
       repair: [
         { id: '', names: [''] },
         { id: 'GF', names: ['或 压榨界', '或 壓榨界', 'OR Grind Fest'] },
+        { id: 'TW', names: ['或 塔楼', '或 塔樓', 'OR Tower'] },
         { id: 'IW', names: ['或 道具界/压榨界', '或 道具界', 'OR Item World'] },
       ],
       repairCharm: [
         { id: '', names: ['自动战斗(含压榨界/道具界)', '自動戰鬥(含壓榨界/道具界)', 'Idle Battles(including Grind Fest & Item World)'] },
         { id: 'GF', names: ['压榨界', '壓榨界', 'Grind Fest'] },
         { id: 'IW', names: ['道具界', '道具界', 'Item World'] },
+        { id: 'TW', names: ['塔楼', '塔樓', 'Tower'] },
       ],
       staminaCheck: [
         { names: ['遭遇战', '遭遇戰', 'Random Encounter'], id: 'Encounter', values: [60] },
         { names: ['竞技场/浴血擂台', '競技場/浴血擂台', 'The Arena or Ring Of Blood'], id: 'Low', values: [60] },
         { names: ['道具界', '道具界', 'Item World'], id: 'ItemWorld', values: [60] },
         { names: ['压榨界', '壓榨界', 'GrindFest'], id: 'GrindFest', values: [100] },
-        { names: ['竞技场/浴血擂台/压榨界/道具界(含本日自然恢复)', '競技場/浴血擂台/壓榨界/道具界(含本日自然恢復)', 'Threshold with naturally recovers today for The Arena, Ring Of Bloog, GrindFest and Item World'], id: 'LowWithReNat', values: [0] },
+        { names: ['塔楼', '塔樓', 'Tower'], id: 'Tower', values: [60] },
+        { names: ['竞技场/浴血擂台/压榨界/道具界/塔楼(含本日自然恢复)', '競技場/浴血擂台/壓榨界/道具界/塔樓(含本日自然恢復)', 'Threshold with naturally recovers today for The Arena, Ring Of Bloog, GrindFest,  Item World and Tower'], id: 'LowWithReNat', values: [0] },
       ],
       battleUnresponsive: [
         { id: 'Alert', names: ['警报', '警報', 'alarm'] },
@@ -2423,40 +2441,41 @@
         { id: 'autoFlee', names: ['自动逃跑', '自動逃跑', 'Flee'], values: ['flee'] },
       ],
       arena: [
-        { id: 1, names: [1], values: [1] },
-        { id: 10, names: [10], values: [3] },
-        { id: 20, names: [20], values: [5] },
-        { id: 30, names: [30], values: [8] },
-        { id: 40, names: [40], values: [9] },
-        { id: 50, names: [50], values: [11] },
-        { id: 60, names: [60], values: [12] },
-        { id: 70, names: [70], values: [13] },
-        { id: 80, names: [80], values: [15] },
-        { id: 90, names: [90], values: [16] },
-        { id: 100, names: [100], values: [17] },
-        { id: 110, names: [110], values: [19] },
-        { id: 120, names: [120], values: [20] },
-        { id: 130, names: [130], values: [21] },
-        { id: 140, names: [140], values: [23] },
-        { id: 150, names: [150], values: [24] },
-        { id: 165, names: [165], values: [26] },
-        { id: 180, names: [180], values: [27] },
-        { id: 200, names: [200], values: [28] },
-        { id: 225, names: [225], values: [29] },
-        { id: 250, names: [250], values: [32] },
-        { id: 300, names: [300], values: [33] },
-        { id: 400, names: [400], values: [34] },
-        { id: 500, names: [500], values: [35] },
-        { id: 'RB50', names: ['RB50'], values: [105] },
-        { id: 'RB75A', names: ['RB75A'], values: [106] },
-        { id: 'RB75B', names: ['RB75B'], values: [107] },
-        { id: 'RB75C', names: ['RB75C'], values: [108] },
-        { id: 'RB100', names: ['RB100'], values: [109] },
-        { id: 'RB150', names: ['RB150'], values: [110] },
-        { id: 'RB200', names: ['RB200'], values: [111] },
-        { id: 'RB250', names: ['RB250'], values: [112] },
-        { id: 'IW', names: ['ItemWorld'], values: ['iw'] },
-        { id: 'GF', names: ['GrindFest'], values: ['gr'] },
+        { id: 1, values: [1] },
+        { id: 10, values: [3] },
+        { id: 20, values: [5] },
+        { id: 30, values: [8] },
+        { id: 40, values: [9] },
+        { id: 50, values: [11] },
+        { id: 60, values: [12] },
+        { id: 70, values: [13] },
+        { id: 80, values: [15] },
+        { id: 90, values: [16] },
+        { id: 100, values: [17] },
+        { id: 110, values: [19] },
+        { id: 120, values: [20] },
+        { id: 130, values: [21] },
+        { id: 140, values: [23] },
+        { id: 150, values: [24] },
+        { id: 165, values: [26] },
+        { id: 180, values: [27] },
+        { id: 200, values: [28] },
+        { id: 225, values: [29] },
+        { id: 250, values: [32] },
+        { id: 300, values: [33] },
+        { id: 400, values: [34] },
+        { id: 500, values: [35] },
+        { id: 'RB50', values: [105] },
+        { id: 'RB75A', values: [106] },
+        { id: 'RB75B', values: [107] },
+        { id: 'RB75C', values: [108] },
+        { id: 'RB100', values: [109] },
+        { id: 'RB150', values: [110] },
+        { id: 'RB200', values: [111] },
+        { id: 'RB250', values: [112] },
+        { id: 'IW', name: 'ItemWorld', values: ['iw'] },
+        { id: 'GF', name: 'GrindFest', values: ['gr'] },
+        { id: 'TW', name: 'Tower', values: ['tw'] },
       ],
       equipSlot: [
         { id: '1', names: ['主手', '主手', 'Main Hand'] },
@@ -2820,13 +2839,19 @@
                 '<br>',
                 UI.text('idleArenaLevels', 'style="width:calc(100% - 20px);" disabled="true"'),
                 UI.text('idleArenaValue', 'style="width:98%;" type="hidden" disabled="true"'),
-                UI.div({
-                  args: 'class="hvAAArenaLevels"',
-                  inner: [
-                    UI.expendData(UIDatas.arena, (id, names, v) => `${UI.labeled(`arLevel_${id}`, `${names}${id === 'GF' ? UI.number('idleArenaGrTime', 1, 'number', `arLevel_GFInner`) : ''}`, `value="${id},${v}"`)}`),
-                    '',
-                  ]
-                }),
+                UI.hvAATable(UI.repeat(5)+';display:none;', 'hvAAArenaLevels', UI.expendData(UIDatas.arena, (id, names, v) => UI.hvAATable(
+                  '1fr 80px;width: 100%', '',
+                  UI.div({ args: 'style="border: unset"', inner: [
+                    UI.labeled(`arLevel_${id}`, UIDatas.arena.find(ar => ar.id === id).name ?? id, `value="${id},${v}"`),
+                    id === 'GF' ? UI.number('idleArenaGrTime', 1, 'number', `arLevel_GFInner`) : '',
+                    id === 'TW' ? UI.number('idleArenaTwTime', 0, 'number', `arLevel_TWInner`)+'<br>& Floor ≤ '+UI.number('idleArenaTwMax', 0, 'number', `arLevel_TWInner`) : '',
+                    UI.label(`arLevel_${id}`, `${UI.l(' 竞技场顺序', ' 閒置競順序', ' Arena Order')}`, 'hidden'),
+                  ]}),
+                  UI.div({ args: 'style="border: unset"', inner: [
+                    UI.labeled(`arLevelDisable_${v}`, UI.l('禁用', '禁用', 'Disable'), `class="arLevel_${id}Inner"`),
+                    UI.label(`arLevelDisable_${v}`, `${UI.l('闲置竞技场', '閒置競技場', 'Idle Arena')} ${id}`, 'hidden'),
+                  ]})
+                ))),
                 UI.div(`${UI.labeled(`skipUnclearedArena`, UI.l('跳过未通关过的', '跳過未通關過的', 'Skip not cleared Arena/RingOfBlood'), `placeholder="true"`)}`),
                 UI.div(`${UI.labeled(`obscureNotIdleArena`, UI.l('页面中置灰未设置且未完成的', '頁面中置灰未設置且未完成的', 'obscure not setted and not battled in Battle&gt;Arena/RingOfBlood'))}`),
                 UI.div(
@@ -2885,20 +2910,7 @@
                 '<br></span>',
                 ...getCheckSupplyOptionTable(),
               ),
-              UI.div({
-                args: { class: 'checkSupplyInner' },
-                inner: [
-                  UI.labeled(`checkSupplyIW`, UI.b('[C!!]', UI.l('道具界使用额外的库存检查', '道具界使用額外的庫存檢查', 'Extra supply check for Item World'), ';')),
-                  ...getCheckSupplyOptionTable('IW'),
-                ]
-              }),
-              UI.div({
-                args: { class: 'checkSupplyInner' },
-                inner: [
-                  UI.labeled(`checkSupplyGF`, UI.b('[C!!]', UI.l('压榨界使用额外的库存检查', '壓榨界使用額外的庫存檢查', 'Extra supply check for Grind Fest'), ';')),
-                  ...getCheckSupplyOptionTable('GF'),
-                ]
-              }),
+              UI.expendData(UIDatas.checkSupplyInnerExtra, (id, names, v) => UI.checkSupplyInnerExtra(id, names)),
             ),
             UI.hvAATab(
               'Recovery',
@@ -3621,7 +3633,7 @@
       gE('.hvAALevelsClear', optionBox).onclick = function () {
         gE('[name="idleArenaLevels"]', optionBox).value = '';
         gE('[name="idleArenaValue"]', optionBox).value = '';
-        gE('.hvAAArenaLevels>input', 'all', optionBox).forEach((input) => {
+        gE('.hvAAArenaLevels>input[id^="arLevel_"]', 'all', optionBox).forEach((input) => {
           input.checked = false;
           displayCheckBoxNotDefault(input);
         });
@@ -3665,6 +3677,7 @@
           }
           return;
         }
+        if (e.target.id.match(/^arLevelDisable_/)) return;
         if (e.target.tagName.toUpperCase() !== 'INPUT' && e.target.type !== 'checkbox') {
           return;
         }
@@ -3688,7 +3701,7 @@
         '.attackStatusOrder': ['name="attackStatusOrderName"', 'name="attackStatusOrderValue"'],
         '.battleOrder': 'name="battleOrderName"',
         // 标签页-战斗开启
-        '.hvAAArenaLevels': ['Name="idleArenaLevels"', 'name="idleArenaValue"'],
+        '.hvAAArenaLevels': ['name="idleArenaLevels"', 'name="idleArenaValue"'],
         // 标签页-恢复技能
         '.itemOrder': ['name="itemOrderName"', 'name="itemOrderValue"'],
 
@@ -4875,7 +4888,7 @@
         return currentGroup ? Object.keys(currentGroup).length : 0;
       },
       undefined: () => undefined,
-      null: () => null
+        null: () => null
     };
 
     function switchMaxMin(param, defaultResult, skipAliveCheck = false, targets = undefined) {
@@ -5583,6 +5596,7 @@
 
   function checkSupply(standalone) {
     const option = getOption(true);
+    if (standalone && !option[`checkSupply${standalone}`]) return true;
     standalone = {
       GF: {
         name: { 0: '压榨界', 1: '壓榨界', 2: 'Grindfest' },
@@ -5651,6 +5665,7 @@
 
   async function asyncCheckRepair(standalone) { try {
     const option = getOption(true);
+    if (standalone && !option[`repairValue${extra}`]) return true;
     if (!option.repair) {
       return true;
     }
@@ -6145,127 +6160,67 @@
     let id;
     let arena = getValue('arena', true);
     const option = getOption();
-    const writeArenaStart = function (equip) {
-      console.log('Arena Start', equip ? `e${equip.id} (${equip.world} => ${equip.world + 1}) / ${equip.max}\n${JSON.stringify(equip)}` : id);
-      switch (id) {
-        case 'iw':
-          break;
-        case 'gr':
-          arena.gr--;
-          break;
-        default:
-          arena.arrayDone.push(id);
-      }
-      arena.equip = { data: equip };
-      setValue('arena', arena);
-    }
     if (arena.array.length === 0) {
       autoSwitchIsekai();
       return false;
     }
     $async.logSwitch(arguments);
     const array = [...arena.array];
-    const RBundone = [];
     if (!arena.enabled?.length) {
       arena.enabled = (await updateArena(true)).enabled;
+      setValue('arena', arena);
     }
     while (array.length > 0) {
       id = array.pop();
-      if (id === 'iw') {
-        id = undefined;
-        const iw = await idleItemWorld(writeArenaStart, arena);
-        if (iw) {
-          $async.logSwitch(arguments);
-          return true;
-        } else {
-          continue;
-        }
-      }
-      if (arena.arrayDone?.includes(id)) {
+      if (arena.arrayDone?.includes(id) || option.arLevelDisable?.[id]) {
         id = undefined;
         continue;
       }
-      if (arena.enabled.includes(id)) {
-        break;
+
+      if (id === 'tw') {
+        id = undefined;
+        if (_server.persistent) continue;
+        const doc = $doc(await $ajax.insert('?s=Battle&ss=tw'));
+        let [_, floor, rounds, attempts, maxAttempts, clears, max] = gE('#towerstart', doc).innerText.match(/Current Floor: (\d+) \((\d+) Rounds\)\n\t.*\n\tDaily Attempts: (\d+) \/ (\d+)\n\tDaily Clears: (\d+) \/ (\d+)/).map(x => x * 1);
+        if (clears >= max || attempts >= maxAttempts) {
+          arena.arrayDone.push('tw');
+          setValue('arena', arena);
+          continue;
+        }
+        if (attempts >= option.idleArenaTwTime) continue;
+        if (floor >= option.idleArenaTwMax) continue;
+        if (await gotoBattle('tw', rounds)) {
+          $async.logSwitch(arguments);
+          return true;
+        }
       }
+      if (id === 'iw') {
+        id = undefined;
+        const iw = await idleItemWorld();
+        if (!iw) continue;
+        $async.logSwitch(arguments);
+        return true;
+      }
+      if (arena.enabled.includes(id)) break;
       if (id >= 105) {
         arena.enabled = (await updateArena(true)).enabled;
-        if (arena.enabled.includes(id)) {
-          break;
-        }
+        setValue('arena', arena);
+        if (arena.enabled.includes(id)) break;
       }
       id = undefined;
     }
     if (!id) {
       console.log('No Arena Id Available', arena);
-      setValue('arena', arena);
       await restorePersonaAndEquipSet();
       $async.logSwitch(arguments);
       return false;
     }
-    if (await changeArenaEquipSet(id) && !(await asyncCheckRepair())) {
-      await restorePersonaAndEquipSet();
-      $async.logSwitch(arguments);
-      return false;
-    }
-    let staminaCost = {
-      1: 2, 3: 4, 5: 6, 8: 8, 9: 10,
-      11: 12, 12: 15, 13: 20, 15: 25, 16: 30,
-      17: 35, 19: 40, 20: 45, 21: 50, 23: 55,
-      24: 60, 26: 65, 27: 70, 28: 75, 29: 80,
-      32: 85, 33: 90, 34: 95, 35: 100,
-      105: 1, 106: 1, 107: 1, 108: 1, 109: 1, 110: 1, 111: 1, 112: 1,
-      gr: 0
-    }
-    let stamina = getValue('stamina', true);
-    [stamina.current, stamina.punish] = await getCurrentStamina();
-    stamina.time = time(0);
-    for (let idx in staminaCost) {
-      staminaCost[idx] *= (_server.isekai ? 2 : 1) * (stamina.current >= 60 ? 0.03 : 0.02);
-    }
-
-    let query;
-    if (id !== 'gr') {
-      query = id >= 105 ? 'rb' : 'ar';
-    } else {
-      if (arena.gr <= 0) {
-        arena.arrayDone.push('gr');
-        setValue('arena', arena);
-        return await idleArena();
-      }
-      query = 'gr';
-    }
-    query = `?s=Battle&ss=${query}`;
-    if (id === 'gr' && ((option.checkSupplyGF && !checkSupply('GF')) || (option.repairValueGF && !await asyncCheckRepair('GF')))) {
-      console.log('Check gr Battle Ready Failed in supply/repair', 'id:', id, arena);
-      $async.logSwitch(arguments);
-      return false;
-    }
-    const cost = staminaCost[id];
-    if (!await checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: option.encounter, staminaLow: id === 'gr' ? option.staminaGrindFest : undefined })) {
-      console.log('Check Battle Ready Failed', 'id:', id, arena);
-      $async.logSwitch(arguments);
-      return false;
-    }
-    let token = `&postoken=${gE('#initform>input[name="postoken"]', $doc(await $ajax.insert(query))).value}`;
-    await waitPause();
-    writeArenaStart();
-    await until(async () => !option.checkURLBeforeNewRound || await $ajax.insert(option.checkURLBeforeNewRound), option.checkURLBeforeNewRoundRetry);
-    await until(async () => await $ajax.insert(query, `initid=${id === 'gr' ? 1 : id}${token}`), option.checkURLBeforeNewRoundRetry);
-    stamina.lastCost = id === 'gr' ? undefined : cost;
-    setValue('stamina', stamina);
-    if (option.altBattleFirst && await $ajax.insert(window.location.href.replace('://hentaiverse.org', '://alt.hentaiverse.org'))) {
-      console.log('Arena Fetch Done.', 'altBattleFirst:', option.altBattleFirst, 'Arena goto alt', arena);
-      gotoAlt(true);
-    } else {
-      console.log('Arena Fetch Done.', 'altBattleFirst:', option.altBattleFirst, 'Arena goto', arena);
-      goto();
-    }
+    const done = await gotoBattle(id);
     $async.logSwitch(arguments);
-    return true;
+    return done;
   } catch (err) { console.error(err); }}
 
-  async function idleItemWorld(writeArenaStart, arena) { try {
+  async function idleItemWorld(arena) { try {
     const option = getOption();
     if (!option.idleItemWorld) return;
     $async.logSwitch(arguments);
@@ -6308,41 +6263,94 @@
         continue;
       }
 
-      let query = `?s=Battle&ss=iw&filter=${equip.filter}`;
-      const id = 'iw';
-      if (((option.checkSupplyIW && !checkSupply('IW')) || (option.repairValueIW && !await asyncCheckRepair('IW')))) {
-        console.log('Check iw Battle Ready Failed in supply/repair', `id:e${eid}`, equip, arena);
-        continue;
+      if (await gotoBattle('iw', equip.round, equip)) {
+        $async.logSwitch(arguments);
+        return true;
       }
-
-      let stamina = getValue('stamina', true);
-      [stamina.current, stamina.punish] = await getCurrentStamina();
-      stamina.time = time(0);
-      const cost = equip.round * (_server.isekai ? 2 : 1) * (stamina.current >= 60 ? 0.03 : 0.02);
-      if (!await checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: option.encounter, staminaLow: option.staminaItemWorld })) {
-        console.log('Check Battle Ready Failed', `id:e${eid}`, equip, arena);
-        continue;
-      }
-
-      // switch to itemworld to get correct postoken
-      let token = `postoken=${gE('#equipform>input[name="postoken"]', $doc(await $ajax.insert(query))).value}&eqids%5B%5D=${eid}`;
-      await waitPause();
-      writeArenaStart(equip);
-      await until(async () => !option.checkURLBeforeNewRound || await $ajax.insert(option.checkURLBeforeNewRound), option.checkURLBeforeNewRoundRetry);
-      await until(async () => await $ajax.insert(query, token), option.checkURLBeforeNewRoundRetry);
-      stamina.lastCost = cost;
-      setValue('stamina', stamina);
-      if (option.altBattleFirst && await $ajax.insert(window.location.href.replace('://hentaiverse.org', '://alt.hentaiverse.org'))) {
-        console.log('Arena Fetch Done.', 'altBattleFirst:', option.altBattleFirst, 'Arena goto alt', arena);
-        gotoAlt(true);
-      } else {
-        console.log('Arena Fetch Done.', 'altBattleFirst:', option.altBattleFirst, 'Arena goto', arena);
-        goto();
-      }
-      $async.logSwitch(arguments);
-      return true;
     }
     $async.logSwitch(arguments);
+  } catch (err) { console.error(err); }}
+  
+  async function gotoBattle(id, rounds, equip) { try {
+    $async.logSwitch(arguments);
+    const option = getOption();
+    if (await changeArenaEquipSet(id) && !(await asyncCheckRepair())) {
+      await restorePersonaAndEquipSet();
+      $async.logSwitch(arguments);
+      return false;
+    }
+    let stamina = getValue('stamina', true);
+    let staminaCost = {
+      1: 2, 3: 4, 5: 6, 8: 8, 9: 10,
+      11: 12, 12: 15, 13: 20, 15: 25, 16: 30,
+      17: 35, 19: 40, 20: 45, 21: 50, 23: 55,
+      24: 60, 26: 65, 27: 70, 28: 75, 29: 80,
+      32: 85, 33: 90, 34: 95, 35: 100,
+      105: 1, 106: 1, 107: 1, 108: 1, 109: 1, 110: 1, 111: 1, 112: 1,
+      gr: 0
+    };
+    [stamina.current, stamina.punish] = await getCurrentStamina();
+    stamina.time = time(0);
+    rounds ??= staminaCost[id];
+    const cost = rounds * (_server.isekai ? 2 : 1) * (stamina.current >= 60 ? 0.03 : 0.02);
+
+    const arena = getValue('arena', true);
+    let query;
+    if (!['gr', 'iw', 'tw'].includes(id)) {
+      query = id >= 105 ? 'rb' : 'ar';
+    } else {
+      if (arena.gr <= 0) {
+        arena.arrayDone.push('gr');
+        setValue('arena', arena);
+        $async.logSwitch(arguments);
+        return await idleArena();
+      }
+      query = 'gr';
+    }
+    query = `?s=Battle&ss=${query}`;
+
+    let extra = { gr: 'GF', iw: 'IW', tw: 'TW' }[id];
+    if (extra && ((!checkSupply(extra)) || !await asyncCheckRepair(extra))) {
+      console.log('Check Extra Battle Ready Failed in supply/repair', 'id:', id, `eid:${equip.id}`, equip, arena);
+      $async.logSwitch(arguments);
+      return false;
+    }
+    extra = { gr: 'GrindFest', iw: 'ItemWorld', tw: 'Tower' }[id];
+    if (!await checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: option.encounter, staminaLow: extra ? option[`stamina${extra}`] : undefined })) {
+      console.log('Check Battle Ready Failed', 'id:', id, `eid:${equip.id}`, equip, arena);
+      $async.logSwitch(arguments);
+      return false;
+    }
+    await waitPause();
+    await until(async () => !option.checkURLBeforeNewRound || await $ajax.insert(option.checkURLBeforeNewRound), option.checkURLBeforeNewRoundRetry);
+    const queryDoc = $doc(await $ajax.insert(query));
+    const data = `${equip ? `eqids%5B%5D=${equip.id}` : `initid=${id === 'gr' ? 1 : id}`}&postoken=${gE('input[name="postoken"]', queryDoc).value}`;
+    await until(async () => await $ajax.insert(query, data), option.checkURLBeforeNewRoundRetry);
+    
+    console.log('Arena Start', equip ? `e${equip.id} (${equip.world} => ${equip.world + 1}) / ${equip.max}\n${JSON.stringify(equip)}` : id);
+    switch (id) {
+      case 'tw': case 'iw':
+        break;
+      case 'gr':
+        arena.gr--;
+        break;
+      default:
+        arena.arrayDone.push(id);
+    }
+    if (equip) arena.equip = { data: equip };
+    setValue('arena', arena);
+    
+    stamina.lastCost = id === 'gr' ? undefined : cost;
+    setValue('stamina', stamina);
+    if (option.altBattleFirst && await $ajax.insert(window.location.href.replace('://hentaiverse.org', '://alt.hentaiverse.org'))) {
+      console.log('Arena Fetch Done.', 'altBattleFirst:', option.altBattleFirst, 'Arena goto alt', arena);
+      gotoAlt(true);
+    } else {
+      console.log('Arena Fetch Done.', 'altBattleFirst:', option.altBattleFirst, 'Arena goto', arena);
+      goto();
+    }
+    $async.logSwitch(arguments);
+    return true;
   } catch (err) { console.error(err); }}
 
   function setBattleSkillParam(id, params) {
@@ -6658,12 +6666,12 @@
   }
 
   /**
-       * 按照技能范围，获取包含原目标且范围内最终权重(finweight)之和最低的范围的中心目标
-       * @param {int} id id from g().battle.monsterStatus.sortBy(x => x.finWeight);
-       * @param {int} rangeSize radius, 0 for single-target and all-targets, 1 for treble-targets, ..., n for (2n+1) targets
-       * @param {(target) => number} excludeWeightRatio target with id
-       * @returns
-       */
+* 按照技能范围，获取包含原目标且范围内最终权重(finweight)之和最低的范围的中心目标
+* @param {int} id id from g().battle.monsterStatus.sortBy(x => x.finWeight);
+* @param {int} rangeSize radius, 0 for single-target and all-targets, 1 for treble-targets, ..., n for (2n+1) targets
+* @param {(target) => number} excludeWeightRatio target with id
+* @returns
+*/
   function getRangeCenter(target, rangeSize, isWeaponAttack, excludeWeight, forceUseIndex) {
     let msTemp = JSON.parse(JSON.stringify(g().battle.monsterStatus));
     msTemp.sortBy(x => x.order);
@@ -6947,25 +6955,25 @@
         }, delay * (Math.random() * 50 + 50) / 100);
       }
     }.toString()};
-    // bool
-    let isDisplay = ${option.isDisplayAllDebuff};
-    let debuffAutoFill = ${option.debuffAutoFill?.toString() ?? 'undefined'};
-    let debuffAutoFillRec = ${option.debuffAutoFillRec?.toString() ?? 'undefined'};
-    let onIsekaiEncounter = ${onIsekaiEncounter ?? 'undefined'};
-    // object
-    let dataFlags = ${JSON.stringify(dataFlags)};
-    let _server = ${JSON.stringify(_server)};
-    let monsterStateKeys = ${JSON.stringify(monsterStateKeys)};
-    let ability = ${JSON.stringify(ability)};
-    let monsterBuffSkillLib = ${JSON.stringify(monsterBuffSkillLib)};
-    let hvVersion = Version(...${JSON.stringify(hvVersion.ver.split('.'))});
-    // funciton
-    ${[updateMonsterEffects, fixMonsterStatus,
-        getMonsterID, getMonster, getMonster, getBuff,
-        onRestoredBattleServer, getValue, setValue, delValue,
-        getLocal, setLocal, delLocal,
-        gE, cE, Version].map(f => f.toString()).join(';')};
-    `;
+// bool
+let isDisplay = ${option.isDisplayAllDebuff};
+let debuffAutoFill = ${option.debuffAutoFill?.toString() ?? 'undefined'};
+let debuffAutoFillRec = ${option.debuffAutoFillRec?.toString() ?? 'undefined'};
+let onIsekaiEncounter = ${onIsekaiEncounter ?? 'undefined'};
+// object
+let dataFlags = ${JSON.stringify(dataFlags)};
+let _server = ${JSON.stringify(_server)};
+let monsterStateKeys = ${JSON.stringify(monsterStateKeys)};
+let ability = ${JSON.stringify(ability)};
+let monsterBuffSkillLib = ${JSON.stringify(monsterBuffSkillLib)};
+let hvVersion = Version(...${JSON.stringify(hvVersion.ver.split('.'))});
+// funciton
+${[updateMonsterEffects, fixMonsterStatus,
+getMonsterID, getMonster, getMonster, getBuff,
+onRestoredBattleServer, getValue, setValue, delValue,
+getLocal, setLocal, delLocal,
+gE, cE, Version].map(f => f.toString()).join(';')};
+`;
     gE('head').appendChild(fakeApiCall);
     const fakeApiResponse = cE('script');
     fakeApiResponse.textContent = `api_response = ${function (b) {
@@ -7312,17 +7320,17 @@
           const skill = getBuffSkill(effect);
           if (!skill) continue;
           /* TODO
-          1. TBD stack from monsterBuffSkillLib etc.
-          2. 测试检查非 减益技能(deprecating) 的debuff持续时间是否正确 (monsterBuffSkillLib)
-          3. 确认v091不同buff的叠加规则（部分抵抗无法估算?）
-          4. 确认熟练度倍率公式，已知最大为4。推测：
-          计算方式为 (p-pmin)/(pmax-pmin) * 4
-          pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
-          和 https://ehwiki.org/wiki/Spells#Offensive_Magic
-          减益技能(deprecating) 统一按照减益的熟练度
-          元素攻击（应该包括Burning Soul/Ripened Soul?）带来的按各自的熟练度（推测是按T3的pmin/pmax）
-          至于取整方式则暂时无法确定
-          */
+1. TBD stack from monsterBuffSkillLib etc.
+2. 测试检查非 减益技能(deprecating) 的debuff持续时间是否正确 (monsterBuffSkillLib)
+3. 确认v091不同buff的叠加规则（部分抵抗无法估算?）
+4. 确认熟练度倍率公式，已知最大为4。推测：
+计算方式为 (p-pmin)/(pmax-pmin) * 4
+pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
+和 https://ehwiki.org/wiki/Spells#Offensive_Magic
+减益技能(deprecating) 统一按照减益的熟练度
+元素攻击（应该包括Burning Soul/Ripened Soul?）带来的按各自的熟练度（推测是按T3的pmin/pmax）
+至于取整方式则暂时无法确定
+*/
           let [duration, base, profRatio, prof, channelingRatio] = getDuration(skill, channeling);
           if (savedEffects[name]) savedEffects[name][effect].channeling ??= channelingRatio;
           if (effects.includes(effect)) continue; // updated directly above
@@ -7939,10 +7947,10 @@
   }
 
   /**
-       * INNAT / WEAPON SKILLS
-       *
-       * 优先释放先天和武器技能
-       */
+* INNAT / WEAPON SKILLS
+*
+* 优先释放先天和武器技能
+*/
   function autoSkill() {
     const option = getOption();
     if (!option.skillSwitch) return false;
@@ -8362,18 +8370,18 @@
     const percentages = [barHP, barMP, barSP, barOC].filter(bar => bar).map((bar, i) => Math.floor((gE('div>img', bar).offsetWidth / barWidth[i]) * 100));
     [textHP, textMP, textSP, textOC].filter(bar => bar).forEach((text, i) => {
       text.style.cssText += textOC ? `
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      width: 120px;
-    `: "";
+display: grid;
+grid-template-columns: 1fr 1fr;
+width: 120px;
+`: "";
       const percentageDiv = gE('div', text);
       const style = `
-      position: relative;
-      top: ${textOC ? 0 : text === textHP ? -16.67 : -16}px;
-      right: ${textOC ? -10 : text === textMP ? -60 : text === textSP ? 40 : -100}px;
-      filter: brightness(0.2);
-      text-align: left;
-    `
+position: relative;
+top: ${textOC ? 0 : text === textHP ? -16.67 : -16}px;
+right: ${textOC ? -10 : text === textMP ? -60 : text === textSP ? 40 : -100}px;
+filter: brightness(0.2);
+text-align: left;
+`
       const inner = `[${percentages[i].toString()}%]`;
       if (percentageDiv) {
         percentageDiv.innerHTML = inner;
@@ -8696,4 +8704,4 @@
 } catch (err) {
   console.error(err);
   document.title = err;
-} })();
+}})();
