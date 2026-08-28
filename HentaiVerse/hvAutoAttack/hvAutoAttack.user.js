@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.139
+// @version      2.91.140
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -485,19 +485,20 @@
       return mapped.reduce((acc, cur) => (acc ?? '') + (cur ?? ''), '');
     },
     label: function (ids, inner, ...extra) {
-      return `<label ${Array.isArray(ids) ? `for="${[...ids, ''].join(',')}"` : `for="${ids}"`} ${extra?.join('') ?? ''}>${inner ?? ''}</label>`
+      const forTarget = Array.isArray(ids) ? [...ids, ''].join(',') : ids;
+      return `<label for="${forTarget}" title="${forTarget}" ${extra?.join('') ?? ''}>${inner ?? ''}</label>`
     },
     labeled: function (id, names, ...extra) {
-      return `<input id="${id}" type="checkbox" ${extra?.join(' ') ?? ''}>${UI.label(id, names)}`;
+      return `<input id="${id}" title="${id}" type="checkbox" ${extra?.join(' ') ?? ''}>${UI.label(id, names)}`;
     },
     orderValue: function (id, hidden) {
       return UI.text(id, 'style="width:80%;" disabled="true"', hidden ? 'type="hidden"' : '') + (hidden ? '' : '<br>');
     },
     text: function (id, ...extra) {
-      return `<input name="${id}" ${extra.find(e => e.match('type="hidden"')) ? '' : 'type="text"'} ${extra.join(' ')}></input>`;
+      return `<input name="${id}" title="${id}" ${extra.find(e => e.match('type="hidden"')) ? '' : 'type="text"'} ${extra.join(' ')}></input>`;
     },
     number: function (id, placeholder = 0, type = 'number', classExtra, ...extra) {
-      return `<input class="hvAANumber ${classExtra ? classExtra : ''}" name="${id}" ${placeholder !== undefined ? `placeholder=${placeholder}` : ''} type="${type}" ${extra?.join(' ') ?? ''}>`;
+      return `<input class="hvAANumber ${classExtra ? classExtra : ''}" name="${id}" title="${id}" ${placeholder !== undefined ? `placeholder=${placeholder}` : ''} type="${type}" ${extra?.join(' ') ?? ''}>`;
     },
     b: function (...inner) {
       return `<b>${inner.join('')}</b>`;
@@ -2156,9 +2157,10 @@
       checkBoxOnly ? '' : `    <span class="checkSupply${suffix}Inner">${UI.l('库存', '庫存', 'Warn if supply')}&lt;max(100%,${UI.number(`checkSupplyWarn${suffix}`, 100)}%)${UI.label(`checkSupplyWarn${suffix}`, `${UI.l('提示库存', '提示庫存', 'Supply warn')} ${suffix} %`, 'hidden')}${UI.l('时提示', '時提示')};</span><br>`,
       UI.hvAATable(undefined, `hvAAcheckItems checkSupply${suffix}Inner`, ...items.map(item => {
         if (!item) return UI.div();
+        const names = itemMap[item].map((...args) => `<l${args[1]}>${args[0]}</l${args[1]}>`).join('');
         return UI.div(UI.labeled(
           `isCheck${suffix}_${item}`,
-          `${!checkBoxOnly ? UI.number(`checkItem${suffix}_${item}`) : ''}${itemMap[item].map((...args) => `<l${args[1]}>${args[0]}</l${args[1]}>`).join('')}`
+          `${!checkBoxOnly ? UI.number(`checkItem${suffix}_${item}`) : ''}${UI.label(`checkItem${suffix}_${item}`, suffix, 'hidden')}${UI.label(`checkItem${suffix}_${item}`, names)}`
         ))
       }))
     ];
@@ -2326,9 +2328,9 @@
     for (const equip of equips) {
       const eid = equip.id;
       if (equip.world >= equip.max) continue;
-      appendInput(container, option.ItemWorldOrder?.[eid], UI.number(`ItemWorldOrder_${eid}`));
+      appendInput(container, option.ItemWorldOrder?.[eid], UI.label(`ItemWorldOrder_${eid}`, UI.l('道具界优先级 ', '道具界優先級 ', 'Item World Order ')+eid, 'hidden')+UI.number(`ItemWorldOrder_${eid}`));
       appendInput(container, option.enableItemWorld?.[eid], UI.labeled(`enableItemWorld_${equip.id}`, `[${eid}]${equip.name} (${equip.level}/${equip.world}/${equip.max})`));
-      appendInput(container, option.levelItemWorld?.[eid], UI.number(`levelItemWorld_${eid}`));
+      appendInput(container, option.levelItemWorld?.[eid], UI.label(`levelItemWorld_${eid}`, UI.l('道具界等级 ', '道具界等級 ', 'Item World Level ')+eid, 'hidden')+UI.number(`levelItemWorld_${eid}`));
       const persona = appendSelection(container, `itemWorldPersona_${eid}`, option.itemWorldPersona?.[eid], personas, (id, list) => list[id]);
       const equipSet = appendSelection(container, `itemWorldEquipSet_${eid}`, option.itemWorldEquipSet?.[eid], equipSets, (id, list) => { return { name: '', selected: list[id] }; });
       bindPersonaEquipSetSelection(persona, equipSet, personas, equipSets);
@@ -2686,7 +2688,7 @@
           inner: [
             UI.div({
               args: { class: 'hvAATabmenu' },
-              inner: UI.expendData(UIDatas.tablist, (id, names, v) => `<span name="${id}">${v ? `<input id="${v}" type="checkbox">` : ''}${names}</span>`),
+              inner: UI.expendData(UIDatas.tablist, (id, names, v) => `<span name="${id}">${v ? `<input id="${v}" type="checkbox">${UI.label(v, names, 'hidden')}` : ''}${names}</span>`),
             }),
             UI.hvAATab(
               'Main',
@@ -2707,7 +2709,7 @@
                     UI.l('距离开始计算闲置 ', '距離開始計算閒置', 'Time before recording idle '),
                     ' <span class="onIdleRemain"></span></a>',
                     '<br>',
-                    `${UI.l('自动切换冷却时间', '自動切換冷卻時間', 'Cool down for auto switch')}: ${UI.number('isekaiCD')}${UI.l('秒. 两个世界分别计算冷却', '秒. 兩個世界分別計算冷卻', ' (s). Isekai and Persistent cooldown separately')}. <span class="isekaiCDRemain"></span>`
+                    `${UI.label('isekaiCD', UI.l('自动切换冷却时间', '自動切換冷卻時間', 'Cool down for auto switch'))}: ${UI.number('isekaiCD')}${UI.l('秒. 两个世界分别计算冷却', '秒. 兩個世界分別計算冷卻', ' (s). Isekai and Persistent cooldown separately')}. <span class="isekaiCDRemain"></span>`
                   ],
                 }),
               ),
@@ -2717,6 +2719,8 @@
                 UI.labeled(`riddlePopup`, `${UI.l('弹窗答题', '弹窗答题', 'POPUP a window to answer')}`),
                 `${UI.l('(Firefox中可能导致报错)', '(Firefox中可能導致報錯)', '(Might cause in Firefox)')}; `,
                 UI.button.class('testPopup', UI.l('预处理', '預處理', 'Pretreat')),
+                UI.label(`riddleAnswerTime`, UI.l('随机答题时间', '隨機答題時間', 'Random Riddle Time'), 'hidden'),
+                UI.label(`riddleAnswerChoose`, UI.l('随机答题数量', '隨機答題數量', 'Random Riddle Count'), 'hidden'),
                 UI.div(
                   `${UI.l('时间', '時間', 'If ETR')} ≤ ${UI.number('riddleAnswerTime', 3)}${UI.l('秒，提交当前选中答案 或 为空时随机选中', '秒，提交當前選中答案 或 為空時隨機選中', 's submit chosen answers or random ')} ${UI.number('riddleAnswerChoose')}${UI.l(
                     '个答案并提交<br><a style="color:red;" href="https://ehwiki.org/wiki/RiddleMaster/Chinese#.E6.AD.A3.E7.A2.BA.E6.88.96.E9.8C.AF.E8.AA.A4">注意：错选小马比漏选小马的错误计数更多 - 所以有疑问时，最好不要猜测，留空就好</a>',
@@ -2728,7 +2732,7 @@
               UI.div(
                 UI.b(UI.l('脚本行为', '腳本行為', 'Script Activity')),
                 UI.expendData(UIDatas.hotkeys, (id, names, v) => UI.div(
-                  `${UI.labeled(`${id}Button`, `${names}${UI.l('按钮', '按鈕', ' Button')}`)}; ${UI.labeled(`${id}Hotkey`, `${names}${UI.l('热键', '熱鍵', ' Hotkey')}${UI.text(`${id}HotkeyStr`)}`)}: `,
+                  `${UI.labeled(`${id}Button`, `${names}${UI.l('按钮', '按鈕', ' Button')}`)}; ${UI.labeled(`${id}Hotkey`, `${names}${UI.l('热键', '熱鍵', ' Hotkey')}${UI.text(`${id}HotkeyStr`)}`)}${UI.label(`${id}HotkeyStr`, `${names}${UI.l('热键', '熱鍵', ' Hotkey')}`, 'hidden')}: `,
                   `${UI.number(`${id}HotkeyCode`, 'undefined', 'hidden', '', 'disabled="true"')}`)),
                 UI.div(
                   `${UI.l('警告相关', '警告相關', ' To Warn')}`,
@@ -2747,10 +2751,12 @@
                     'Record each battle separately (It is recommended to use portable mode to prevent exceeding the localStorage quota, but note that this may significantly increase disk read/write activity.)'
                   ))}`),
                 UI.div(
-                  `${UI.l('延迟', '延遲', 'Delay')}: 1. ${UI.l('Buff/Debuff/其他技能', 'Buff/Debuff/其他技能', 'Skills&BUFF/DEBUFF Spells')}: ${UI.number('delay', 200)}ms 2. ${UI.l('其他', '其他', 'Other')}: ${UI.number('delay2', 30)}ms (`,
+                  `${UI.label(['delay', 'delay2'], UI.l('延迟', '延遲', 'Delay'))}: 1. ${UI.label('delay', UI.l('Buff/Debuff/其他技能', 'Buff/Debuff/其他技能', 'Skills&BUFF/DEBUFF Spells'))}: ${UI.number('delay', 200)}ms 2. ${UI.label('delay2', UI.l('其他', '其他', 'Other'))}: ${UI.number('delay2', 30)}ms (`,
                   UI.l('说明: 单位毫秒，且在设定值基础上取其的50%-150%进行延迟，0表示不延迟', '說明: 單位毫秒，且在設定值基礎上取其的50%-150%進行延遲，0表示不延遲', 'Note: unit milliseconds, and based on the set value multiply 50% -150% to delay, 0 means no delay'),
                 ),
                 UI.div(UI.l('频率指示符号', '頻率指示符號', 'Frequency Signal'), ': ', UI.text('frequencySign1'), ' & ', UI.text('frequencySign2')),
+                UI.label('frequencySign1,', UI.l('频率指示符号 1', '頻率指示符號 1', 'Frequency Signal 1'), 'hidden'),
+                UI.label('frequencySign2,', UI.l('频率指示符号 2', '頻率指示符號 2', 'Frequency Signal 2'), 'hidden'),
               ),
               UI.div({
                 args: { id: 'attackStatus', style: 'color:red;' },
@@ -2762,6 +2768,7 @@
               UI.div(
                 UI.b(UI.l('战斗执行顺序(未配置的按照下面的顺序)', '戰鬥執行順序(未配置的按照下面的順序)', 'Battal Order(Using order below as default if not configed)')),
                 ': ',
+                UI.label(`battleOrderName`, UI.l('战斗执行顺序', '戰鬥執行順序', 'Battal Order')),
                 UI.labeled('battleOrderDefaultOnly', UI.l('只使用默认顺序', '只使用默認順序', 'Default order only')),
                 UI.div({
                   args: { class: 'battleOrder battleOrderDefaultOnlyInnerReverted' },
@@ -2792,16 +2799,16 @@
               UI.div(`${UI.labeled(`autoSkipDefeated`, UI.b(UI.l('战败自动退出战斗', '戰敗自動退出戰鬥', 'Exit battle when defeated.')))}`),
               UI.div(`${UI.labeled(`nativeNewRound`, UI.b(UI.l('使用原生方式进入新回合', '使用原生方式進入新回合', 'Native new round')))}`),
               UI.div(
-                UI.l('新回合前检查链接：', '新回合前檢查連接：', 'Check url before new round: '),
+                UI.label('checkURLBeforeNewRound,checkURLBeforeNewRoundRetry,', UI.l('新回合前检查链接：', '新回合前檢查連接：', 'Check url before new round: ')),
                 UI.text('checkURLBeforeNewRound'),
                 UI.number('checkURLBeforeNewRoundRetry', 5),
-                UI.l('秒后重试', '秒後重試', '(s) to retry')
+                UI.label('checkURLBeforeNewRoundRetry', UI.l('秒后重试', '秒後重試', '(s) to retry'))
               ),
               UI.div(UI.hvAATable(
                 UI.repeat(3), '',
                 UI.div(UI.b(UI.l('延时', '延時', 'Wait time for'))),
                 UI.expendData(UIDatas.battleExitDelay, (id, names, v) => UI.div(
-                  names,
+                  UI.label(`${id}WaitTime`, names),
                   ': ',
                   UI.number(`${id}WaitTime`, v),
                   UI.l('(秒)', '(秒)', '(s)')
@@ -2810,7 +2817,11 @@
               UI.div(UI.hvAATable(
                 '1fr 1fr 1.5fr 2fr', '',
                 UI.div(UI.b(UI.l('战斗页面停留 ', '戰鬥頁面停留 ', 'If not active for '))),
-                UI.expendData(UIDatas.battleUnresponsive, (id, names, v) => UI.div(UI.labeled(`battleUnresponsive_${id}`, `${UI.number(`battleUnresponsiveTime_${id}`, 1)} ${UI.l('秒，', '秒，', '(s), ')} ${names}`)))
+                UI.expendData(UIDatas.battleUnresponsive, (id, names, v) => UI.div(
+                  UI.label(`battleUnresponsive_${id}`, UI.l('战斗页面停留 ', '戰鬥頁面停留 ', 'If not active for ')),
+                  UI.label(`battleUnresponsiveTime_${id}`, `${UI.l('战斗页面停留 ', '戰鬥頁面停留 ', 'If not active for ')} ${names}`),
+                  UI.labeled(`battleUnresponsive_${id}`, `${UI.number(`battleUnresponsiveTime_${id}`, 1)} ${UI.l('秒，', '秒，', '(s), ')} ${names}`)
+                ))
               ))
             ),
             UI.hvAATab(
@@ -2822,8 +2833,10 @@
                 '<br>',
                 `${UI.labeled(`encounter`, UI.l('自动遭遇', '自動遭遇', 'Auto Engage'))}`,
                 '<span class="encounterInner">',
+                `${UI.label(`encounterWaitCD`, UI.l('自动遭遇优先等待', '自動遭遇優先等待', 'Encounter Engage Wait First'), 'hidden')}`,
                 `${UI.l('倒计时', '倒計時', 'Wait first while count down')} ≤ ${UI.number('encounterWaitCD')}s ${UI.l('时优先等待', '時優先等待', '.')}; `,
                 '<br>',
+                `${UI.label(`encounterDelay`, UI.l('自动遭遇额外等待', '自動遭遇額外等待', 'Encounter Engage Extra Delay'), 'hidden')}`,
                 UI.l('进入前额外等待', '進入前額外等待', 'Extra delay '),UI.number('encounterDelay', 5),UI.l(' 秒，避免时间偏差导致需要等多一轮', ' 秒，避免時間偏差導致需要等多一輪', ' (s) before engage to fit potential time bias which might cause extra waiting round.'),
                 '; <span class="encounterDelayRemain"></span>',
                 '</span>',
@@ -2834,12 +2847,14 @@
               ),
               UI.div(
                 UI.div(UI.labeled(`idleArena`, UI.b(UI.l('闲置竞技场: ', '閒置競技場: ', 'Idle Arena: ')))),
+                UI.label(`idleArenaLevels`, `${UI.l('闲置竞技场', '閒置競技場', 'Idle Arena')}`, 'hidden'),
                 '<span class="idleArenaInner">',
                 '<a class="hvAAGoto" name="hvAATab-BattleStarter">',
+                `${UI.label(`onIdleDelay`, UI.l('闲置前等待', '閒置前等待', 'Time before Idle'), 'hidden')}`,
                 UI.l('等待', '等待', 'Wait '),UI.number('onIdleDelay', 5),UI.l(' 秒后计算闲置时间', ' 秒後計算閒置時間', ' (s) before start recording idled duration.'),
                 '; <span class="onIdleRemain"></span><br>',
                 '</a> ',
-                UI.l('在任意页面闲置: ', '在任意頁面閒置: ', 'Idle in any page for '),
+                UI.label(`idleArenaTime`, UI.l('在任意页面闲置: ', '在任意頁面閒置: ', 'Idle in any page for ')),
                 UI.number('idleArenaTime'),
                 UI.l('秒后，开始竞技场', '秒後，開始競技場', ' (s), start Arena'),
                 UI.button.class('idleArenaReset', UI.button.reset),
@@ -2851,6 +2866,9 @@
                 '<br>',
                 UI.text('idleArenaLevels', 'style="width:calc(100% - 20px);" disabled="true"'),
                 UI.text('idleArenaValue', 'style="width:98%;" type="hidden" disabled="true"'),
+                UI.label(`idleArenaGrTime`, `${UI.l('闲置竞技场 GF次数', '閒置競技場 GF次數', 'Idle Arena Gr Time')}`, 'hidden'),
+                UI.label(`idleArenaTwTime`, `${UI.l('闲置竞技场 TW次数', '閒置競技場 TW次數', 'Idle Arena Tw Time')}`, 'hidden'),
+                UI.label(`idleArenaTwMax`, `${UI.l('闲置竞技场 TW层数', '閒置競技場 TW層數', 'Idle Arena Tw Floor')}`, 'hidden'),
                 UI.hvAATable(UI.repeat(5)+';display:none;', 'hvAAArenaLevels', UI.expendData(UIDatas.arena, (id, names, v) => UI.hvAATable(
                   '1fr 80px;width: 100%', '',
                   UI.div({ args: 'style="border: unset"', inner: [
@@ -2879,7 +2897,7 @@
               UI.div(
                 UI.b('[S!]', UI.l('精力: 进入战斗的最低精力', '精力: 戰鬥的最低精力', 'Stamina: Minimum stamina to auto start battles')),
                 ': <br>',
-                UI.expendData(UIDatas.staminaCheck, (id, names, v) => `${id === 'LowWithReNat' ? UI.b('<br>[S!!]') : ''}${names}: ${id === 'Low' ? 'Min(85, ' : ''}${UI.number(`stamina${id}`, v)}${id === 'Low' ? ')' : ''};`),
+                UI.expendData(UIDatas.staminaCheck, (id, names, v) => `${UI.label(`stamina${id}`, names, 'hidden')}${id === 'LowWithReNat' ? UI.b('<br>[S!!]') : ''}${names}: ${id === 'Low' ? 'Min(85, ' : ''}${UI.number(`stamina${id}`, v)}${id === 'Low' ? ')' : ''};`),
                 '<br>',
                 `${UI.labeled(`restoreStamina`, UI.l('战前恢复', '戰前恢復', 'Restore stamina'))}`,
                 `${UI.labeled(`staminaRatio`, UI.l('检查惩罚倍率', '檢查懲罰倍率', 'Check Punishment Ratio'))}`,
@@ -2887,7 +2905,7 @@
               UI.div(
                 UI.labeled('repair', UI.b('[R!]', UI.l('修复装备', '修復裝備', 'Repair Equipment'))),
                 '<span class="repairInner">: ',
-                UI.expendData(UIDatas.repair, (id, names) => `${names}${UI.l('耐久度', '耐久度', ' Durability')} ≤ ${UI.number(`repairValue${id}`)}% `),
+                UI.expendData(UIDatas.repair, (id, names) => `${UI.label(`repairValue${id}`, `${names}${UI.l('耐久度', '耐久度', ' Durability')}`, 'hidden')} ≤ ${UI.number(`repairValue${id}`)}% `),
                 UI.expendData(UIDatas.repairCharm, (id, names) => `<br>${UI.labeled(`repairCharm${id}`, `${UI.l('', '', 'Repair charm before ')}${names}${UI.l('前修复护石', '前修復護石')}`)};`),
                 '<br>',
                 UI.labeled('encounterRepair', UI.l('遭遇战前检查', '遭遇戰前檢查', 'Check before encounter')),
@@ -2901,6 +2919,7 @@
               UI.div(
                 UI.labeled(`equStorage`, UI.b('[E!]', UI.l('装备库存', '裝備庫存', 'Equipment Storage'))),
                 ' ≤ ',
+                UI.label('equStorageValue', UI.l('装备库存', '裝備庫存', 'Equipment Storage'), 'hidden'),
                 UI.number('equStorageValue', 150, 'number', '', 'style="width: 32px;"'),
                 `; <span class="equStorageInner">${UI.labeled(`encounterEquStorage`, UI.l('遭遇战前检查', '遭遇戰前檢查', 'Check before encounter'))}</span>`),
               UI.div(
@@ -2931,6 +2950,7 @@
                 inner: [
                   UI.b(UI.l('施放顺序(未配置的按照下面的顺序)', '施放順序(未配置的按照下面的順序)', 'Cast Order(Using order below as default if not configed)')),
                   ': ',
+                  UI.label(`itemOrderName`, UI.l('道具施放顺序', '道具施放順序', 'Item Cast Order')),
                   UI.text('itemOrderName', 'style="width:80%;"', 'disabled="true"'),
                   '<input name="itemOrderValue" style="width:80%;" type="hidden" disabled="true"><br>',
                   UI.hvAATable(UI.repeat(5), '', UI.expendData(UIDatas.cure, (id, names, v) => UI.div(UI.labeled(`itemOrder_${id}`, names, `value="${id},${v}"`)))),
@@ -2974,7 +2994,7 @@
                 UI.div({
                   args: { class: 'channelSkill2Order channelSkill2Inner', style:'grid-template-columns:repeat(5, 1fr);'},
                   inner: [
-                    UI.l('施放顺序', '施放順序', 'Cast Order'),
+                    UI.label('channelSkill2OrderName', UI.l('施放顺序', '施放順序', 'Cast Order')),
                     ': ',
                     UI.text('channelSkill2OrderName', 'style="width:80%;"', 'disabled="true"'),
                     UI.text('channelSkill2OrderValue', 'style="width:80%;"', 'disabled="true"', 'hidden'),
@@ -3001,25 +3021,30 @@
                   UI.expendData(UIDatas.buff, (id, names, v) => v ? '' : UI.labeled(`buffSkillOrder_${id}`, names)),
                 ],
               }),
-              UI.div(UI.l('Buff释放条件', 'Buff釋放條件', 'Cast spells Condition'), '{{buffSkillCondition}}'),
-              UI.expendData(UIDatas.buff, (id, names, v) => UI.div(`${UI.labeled(`buffSkill_${id}`, `${names} <= ${UI.number(`buffSkillThreshold_${id}`)} (${UI.l('阈值 &lt; 0 则不限制', '閾值 &lt; 0 則不限制', ' Threshold &lt; 0 as unlimited')})`)}{{buffSkill${id}Condition}}`)),
+              UI.div(UI.label('buffSkillCondition', UI.l('Buff释放条件', 'Buff釋放條件', 'Cast buff spells Condition')), '{{buffSkillCondition}}'),
+              UI.expendData(UIDatas.buff, (id, names, v) => UI.div(
+                UI.label(`buffSkillThreshold_${id}`, `${names}${UI.l('阈值', '閾值', ' Threshold')}`, 'hidden'),
+                `${UI.labeled(`buffSkill_${id}`, `${names} <= ${UI.number(`buffSkillThreshold_${id}`)} (${UI.l('阈值 &lt; 0 则不限制', '閾值 &lt; 0 則不限制', ' Threshold &lt; 0 as unlimited')})`)}{{buffSkill${id}Condition}}`)),
             ),
             UI.hvAATab(
               'Debuff',
-              UI.div(UI.l('Debuff释放条件', 'Debuff釋放條件', 'Cast debuff spells Condition'), '{{debuffSkillCondition}}'),
+              UI.div(UI.label('debuffSkillCondition', UI.l('Debuff释放条件', 'Debuff釋放條件', 'Cast debuff spells Condition')), '{{debuffSkillCondition}}'),
               UI.div(`${UI.labeled('debuffAutoFill', UI.l('[!!实验性]补全因超过默认显示上限未显示的怪物buff', '[!!實驗性]補全因超過默認顯示上限未顯示的怪物buff', '[!!Experimental]Auto fill hidden monster buffs due to display limitation'))}<span class="debuffAutoFillInner">${UI.labeled('debuffAutoFillRec', 'DEBUG RECORD')}</span>`),
               UI.div(
                 UI.l('超出6个debuff的默认显示上限时（例如同时使用jpx时可忽略上限）：', '超出6個debuff的默認顯示上限時（例如同時使用jpx時可忽略上限）：', 'When debuff count overflows 6 as the default maximum display count (such as ignore limitation while using jpx): '),
                 '<select class="hvAANumber" name="debuffSkillTurnAlert"><option value="0" selected>跳过 / Skip</option><option value="1">警报 / Alert</option><option value="2">忽略 / Ignore</option></select><br>',
                 UI.l('剩余Turns低于阈值时警报', '剩餘Turns低於閾值時警報', 'Alert when remain expire turns less than threshold'),
                 '<br>',
-                UI.hvAATable(UI.repeat(9), '', UI.expendData(UIDatas.debuff, (id, names) => UI.div(names, UI.number(`debuffSkillTurn_${id}`)))),
+                UI.hvAATable(UI.repeat(9), '', UI.expendData(UIDatas.debuff, (id, names) => UI.div(
+                  UI.label(`debuffSkillTurn_${id}`, `${names}${UI.l('警报', '警報', 'Alert')}`, 'hidden'),
+                  names, UI.number(`debuffSkillTurn_${id}`)
+                ))),
               ),
               UI.div({
                 args: { class: 'debuffSkillOrderAll' },
                 inner: [
                   '1. ',
-                  UI.l('特殊先给全体施放的顺序(未配置的按照下面的顺序)', '特殊先給全體施放的順序(未配置的按照下面的順序)', 'Cast Order for Special Debuff all enemies first(Using order below as default if not configed)'),
+                  UI.label('debuffSkillOrderAllValue', UI.l('特殊先给全体施放的顺序(未配置的按照下面的顺序)', '特殊先給全體施放的順序(未配置的按照下面的順序)', 'Cast Order for Special Debuff all enemies first(Using order below as default if not configed)')),
                   ':',
                   UI.text('debuffSkillOrderAllValue', 'style="width:80%;" disabled="true"'),
                   '<br>',
@@ -3032,6 +3057,7 @@
               ),
 
               '<div class="debuffSkillOrder">2. <l0>单体施放顺序(未配置的按照下面的顺序)</l0><l1>單體施放順序(未配置的按照下面的順序)</l1><l2>Cast Order for each enemy(Using order below as default if not configed)</l2>:',
+              UI.label(`debuffSkillOrderValue`, UI.l('单体Debuff施放顺序', '單體Debuff技能施放順序', 'Debuff for each Cast Order')),
               UI.text('debuffSkillOrderValue', 'style="width:80%;" disabled="true"'),
               '<br>',
               UI.hvAATable(UI.repeat(7) + ' 1.5fr 1fr;', '', UI.expendData(UIDatas.debuff, (id, names) => UI.div(UI.labeled(`debuffSkillOrder_${id}`, names)))),
@@ -3047,9 +3073,11 @@
                 UI.expendData(UIDatas.debuff, (id, names) => [
                   UI.div(
                     UI.labeled(`debuffSkill_${id}`, names),
-                    UI.l('阈值: ', '閾值: ', ' Threshold: '),
+                    UI.label(`debuffSkillThreshold_${id}`, `${names}${UI.l('阈值', '閾值', ' Threshold')}`, 'hidden'),
                     UI.number(`debuffSkillThreshold_${id}`),
-                    '; EWF: ',
+                    '; ',
+                    UI.label(`excludedWeightFormula_${id}`, `${names} EWF`),
+                    ': ',
                     UI.number(`excludedWeightFormula_${id}`, 900),
                     `{{debuffSkill${id}Condition}}`
                   ),
@@ -3070,6 +3098,7 @@
               ),
 
               '<div class="skillOrder"><l0>施放顺序(未配置的按照下面的顺序)</l0><l1>施放順序(未配置的按照下面的順序)</l1><l2>Cast Order(Using order below as default if not configed)</l2>: ',
+              UI.label(`skillOrderValue`, UI.l('技能施放顺序', '技能施放順序', 'Skill Cast Order')),
               UI.text('skillOrderValue', 'style="width:80%;" disabled="true"'),
               '<br>',
               UI.expendData(UIDatas.skill, (id, names) => UI.labeled(`skillOrder_${id}`, names)),
@@ -3080,9 +3109,11 @@
               'Infusion',
               UI.l('战役模式', '戰役模式', 'Battle type'), ': ',
               UI.expendData(UIDatas.roundType, (id, names) => UI.labeled(`infusionRoundType_${id}`, names, 'placeholder="true"')),
-              UI.div('<l0>魔药使用条件</l0><l1>魔藥使用條件</l1><l2>Infusion Use Condition</l2>{{infusionCondition}}'),
+              UI.div(UI.label('infusionCondition', UI.l('魔药使用条件', '魔藥使用條件', 'Infusion Use Condition')),'{{infusionCondition}}'),
               UI.div(UI.labeled('infusionDefaultOnly', '<b><l0>只使用与默认攻击模式相同的魔药</l0><l1>只使用與默認攻擊模式相同的魔藥</l1><l2>Use Infusion as same as default attack mode only.</l2></b>', 'placeholder="true"')),
-              '<div class="infusionOrder"><b><l0>施放顺序(未配置的按照下面的顺序)</l0><l1>施放順序(未配置的按照下面的順序)</l1><l2>Cast Order(Using order below as default if not configed)</l2></b>: ',
+              '<div class="infusionOrder"><b>',
+              '<l0>施放顺序(未配置的按照下面的顺序)</l0><l1>施放順序(未配置的按照下面的順序)</l1><l2>Cast Order(Using order below as default if not configed)</l2></b>: ',
+              UI.label(`infusionOrderName`, UI.l('魔药施放顺序', '魔藥技能施放順序', 'Infusion Cast Order')),
               UI.text('infusionOrderName', 'style="width:80%;" disabled="true"'),
               '<br>',
               UI.hvAATable(
@@ -3096,7 +3127,7 @@
               'Scroll',
               UI.l('战役模式', '戰役模式', 'Battle type'), ': ',
               UI.expendData(UIDatas.roundType, (id, names) => UI.labeled(`scrollRoundType_${id}`, names)),
-              UI.div(UI.l('卷轴使用条件', '捲軸使用條件', 'Scroll Use Condition'), '{{scrollCondition}}'),
+              UI.div(UI.label('scrollCondition', UI.l('卷轴使用条件', '捲軸使用條件', 'Scroll Use Condition')),'{{scrollCondition}}'),
               UI.labeled(`scrollFirst`, UI.l('存在技能生成的Buff时，仍然使用卷轴', '存在技能生成的Buff時，仍然使用捲軸', 'Use Scrolls even when there are effects from spells')),
               UI.expendData(UIDatas.scroll, (id, names) => UI.div(UI.labeled(`scroll_${id}`, names), `{{scroll${id}Condition}}`)),
             ),
@@ -3109,6 +3140,7 @@
               UI.div(UI.expendData(UIDatas.audio, (id, names, v) => UI.div(
                 UI.labeled(`audioEnable_${id}`, names),
                 ': ',
+                UI.label([`audioEnable_${id}`, `audio_${id}`], names+UI.l('音频', '音頻', 'Audio')),
                 UI.text(`audio_${id}`, `placeholder="https://github.com/dodying/UserJs/raw/master/HentaiVerse/hvAutoAttack/${v ?? id}.ogg"`),
                 UI.button.class('testAlarm', UI.l('测试', '測試', 'Test'))
               ))),
@@ -3124,21 +3156,24 @@
               UI.l('攻击规则', '攻擊規則', 'Attack Rule'),
               '</span> <l01><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README.md#攻击规则-示例" target="_blank">示例</a></l01><l2><a href="https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README_en.md#attack-rule-example" target="_blank">Example</a></l2>',
               UI.div(
-                '<b>1. <l0>初始血量权重=Log10(目标血量/场上最低血量)</l0><l1>初始血量權重=Log10(目標血量/場上最低血量)</l1><l2>BaseHpWeight = BaseHpRatio*Log10(TargetHP/MaxHPOnField)</l2></b><br>',
-                '<l0>初始权重系数(>0:低血量优先;<0:高血量优先)</l0><l1>初始權重係數(>0:低血量優先;<0:高血量優先)</l1><l2>BaseHpRatio(>0:low hp first;<0:high hp first)</l2>',
+                '<b>1. ',
+                '<l0>初始血量权重=Log10(目标血量/场上最低血量)</l0><l1>初始血量權重=Log10(目標血量/場上最低血量)</l1><l2>BaseHpWeight = BaseHpRatio*Log10(TargetHP/MaxHPOnField)</l2></b><br>',
+                UI.label('baseHpRatio', UI.l('初始权重系数(>0:低血量优先;<0:高血量优先)', '初始權重係數(>0:低血量優先;<0:高血量優先)', 'BaseHpRatio(>0:low hp first;<0:high hp first)')),
                 UI.number('baseHpRatio'),
                 '<br>',
+                UI.label('unreachableWeight', UI.l('不可命中目标的权重公式', '不可命中目標的權重公式', 'Unreachable Target Weight Formula')),
                 '<l0>不可命中目标的权重公式</l0><l1>不可命中目標的權重公式</l1><l2>Unreachable Target Weight Formula</l2>: ',
                 UI.text('unreachableWeight', 'placeholder="1000"'),
                 '<br>',
-                '<l0>BOSS:Yggdrasil额外权重</l0><l1>BOSS:Yggdrasil額外權重</l1><l2>BOSS:Yggdrasil Extra Weight</l2></b>',
+                UI.label('YggdrasilExtraWeight', UI.l('BOSS:Yggdrasil额外权重', 'BOSS:Yggdrasil额外权重', 'BOSS:Yggdrasil Extra Weight')),
+                '<l0>BOSS:Yggdrasil额外权重</l0><l1>BOSS:Yggdrasil额外权重</l1><l2>BOSS:Yggdrasil Extra Weight</l2></b>',
                 UI.number('YggdrasilExtraWeight', -1000),
                 '<br>',
                 UI.labeled('cacheMonsterHP', UI.l('启用HP缓存', '啟用HP緩存', 'Use HP Cache')),
                 UI.button.class('clearMonsterHPCache', UI.l('清空缓存', '清空緩存', 'Clear HP Cache')),
                 '<span class="cacheMonsterHPInner">',
                 UI.labeled('portable_monsterDB', '<l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2><l0>注意：便携数据模式可能会显著增加硬盘读写</l0><l1>注意：便攜數據模式可能會顯著增加硬盤讀寫</l1><l2>Notice：portable mode may significantly increase hard disk I/O</l2>'),
-                '<input id="portable_monsterMID" type="checkbox" style="display:none">'
+                '<input id="portable_monsterMID" type="checkbox" hidden>'
               ),
               '</span>',
               UI.div(
@@ -3147,32 +3182,49 @@
                   UI.l('初始权重与下述各Buff权重相加', '初始權重與下述各Buff權重相加', 'PW(X) = BaseHpWeight + Accumulated_Weight_of_Deprecating_Spells_In_Effect(X)')
                 ),
                 '<br>',
-                UI.hvAATable(UI.repeat(6), '', UI.expendData(UIDatas.weight1, (id, names, v) => UI.div(UI.number(`weight_${id}`, v), names))),
+                UI.hvAATable(UI.repeat(6), '', UI.expendData(UIDatas.weight1, (id, names, v) => UI.div(
+                  UI.label(`weight_${id}`, `${names} ${UI.l('权重', '權重', ' Weight')}`, 'hidden'),
+                  UI.number(`weight_${id}`, v),
+                  names
+                ))),
                 UI.b(
                   UI.l('降抗性和攻击模式属性', '降抗性和攻擊模式屬性', 'While elements between Resistance-lower-debuff and Attack-Mode matches'),
                   `  [${UI.attackStatusType[option.attackStatus ?? 0]}] `,
                   UI.l('相同时', '相同時')
                 ),
                 ': <br>',
-                UI.hvAATable(UI.repeat(4) + ' repeat(2, 1.25fr);', '', UI.expendData(UIDatas.weight1, (id, names, v) => UI.div(UI.number(`weight_${id}`, v), names))),
+                UI.hvAATable(UI.repeat(4) + ' repeat(2, 1.25fr);', '', UI.expendData(UIDatas.weight1, (id, names, v) => UI.div(
+                  UI.label(`weight_${id}`, `${names} ${UI.l('权重 (攻击模式属性相同时)', '權重 (攻擊模式屬性相同時)', ' Weight (Attack-Mode matches)')}`, 'hidden'),
+                  UI.number(`weight_${id}`, v),
+                  names
+                ))),
                 UI.b(
                   UI.l('降抗性和攻击模式属性', '降抗性和攻擊模式屬性', 'While elements between Resistance-lower-debuff and Attack-Mode NOT matches'),
                   `  [${UI.attackStatusType[option.attackStatus ?? 0]}] `,
                   UI.l('不相同时', '不相同時'),
                 ),
                 ': <br>',
-                UI.hvAATable(UI.repeat(4) + ' repeat(2, 1.25fr);', '', UI.expendData(UIDatas.weight2, (id, names, v, v2) => UI.div(UI.number(`weight_${id}1`, v2), names))),
+                UI.hvAATable(UI.repeat(4) + ' repeat(2, 1.25fr);', '', UI.expendData(UIDatas.weight2, (id, names, v, v2) => UI.div(
+                  UI.label(`weight_${id}1`, `${names} ${UI.l('权重 (攻击模式属性不相同时)', '權重 (攻擊模式屬性不相同時)', ' Weight (Attack-Mode NOT matches)')}`, 'hidden'),
+                  UI.number(`weight_${id}1`, v2),
+                  names
+                ))),
                 UI.b(UI.l('敌方增益，暂不清楚具体效果，默认按0权重计算', '敵方增益，暫不清楚具體效果，默認按0權重計算', 'Enemy Procs, Evvecf value unknown, weight default as 0 for now.')),
                 ': <br>',
-                UI.hvAATable('1fr 1.25fr 1fr 1fr 1fr', '', UI.expendData(UIDatas.weight3, (id, names, v) => UI.div(UI.number(`weight_${id}`, v), names))),
+                UI.hvAATable('1fr 1.25fr 1fr 1fr 1fr', '', UI.expendData(UIDatas.weight3, (id, names, v) => UI.div(
+                  UI.label(`weight_${id}`, `${names} ${UI.l('权重', '權重', ' Weight')}`, 'hidden'),
+                  UI.number(`weight_${id}`, v),
+                  names
+                ))),
               ),
               UI.div(
-                '<b>3. PW(X) -= Log10(1 + <l0>武器攻击中央目标伤害倍率(副手及冲击技能)</l0><l1>乘以武器攻擊中央目標傷害倍率(副手及衝擊技能)</l1><l2>Weapon Attack Central Target Damage Ratio (Offhand & Strike)</l2>)</b><br><l0>额外伤害比例：</l0><l1>額外傷害比例：</l1><l2>Extra DMG Ratio: </l2>',
+                '<b>3. PW(X) -= Log10(1 + <l0>武器攻击中央目标伤害倍率(副手及冲击技能)</l0><l1>乘以武器攻擊中央目標傷害倍率(副手及衝擊技能)</l1><l2>Weapon Attack Central Target Damage Ratio (Offhand & Strike)</l2>)</b><br>',
+                UI.label(`centralExtraRatio`, UI.l('额外伤害比例：', '額外傷害比例：', ' Extra DMG Ratio: ')),
                 UI.number('centralExtraRatio'),
                 '%'),
-              UI.div(UI.b('4. ', UI.l('额外权重公式', '額外權重公式', 'Extra weight formula'), ': '), UI.text('extraWeightFormula')),
+              UI.div(UI.b('4. ', UI.label('extraWeightFormula', UI.l('额外权重公式', '額外權重公式', 'Extra weight formula')), ': '), UI.text('extraWeightFormula')),
               UI.div(
-                UI.b('5. ', UI.l('技能额外权重公式', '技能額外權重公式', 'Extra weight formula for each skill'), ': '), UI.text('skillExtraWeight'),
+                UI.b('5. ', UI.label('skillExtraWeight', UI.l('技能额外权重公式', '技能額外權重公式', 'Extra weight formula for each skill')), ': '), UI.text('skillExtraWeight'),
                 '<br>',
                 UI.l('公式中可用的技能参数（包括条件判定）', '公式中可用的技能參數（包括條件判定）', 'Skill params available in formulas (for conditions as well)'),
                 UI.button.class('hvAASkillFormulaParams', UI.button.details()),
@@ -3237,7 +3289,7 @@
                 '<l0>CSS格式或可eval执行的公式（可用&lt;rank&gt;, &lt;all&gt;指代优先级和总优先级数量, &lt;style_x&gt;指代第x个的相同配置值），例如：</l0><l1>CSS格式或可eval執行的公式（可用&lt;rank&gt;, &lt;all&gt;指代優先級和總優先級數量, &lt;style_x&gt;指代第x個的相同配置值）：例如</l1><l2>CSS or eval executable formula(use &lt;rank&gt; and &lt;all&gt; to refer to priority rank and total rank count, &lt;style_x&gt; to refer to the same option value of option No.x)Such as: </l2><br>`hsl(${Math.round(240*&lt;rank&gt;/Math.max(1,&lt;all&gt;-1))}deg 50% 50%)`<br>',
                 UI.hvAATable(
                   '0.05fr 1fr;width:100%', '',
-                  ...range(0, 10).map(i => `${UI.div(`${i === 9 ? '' : `&nbsp;&nbsp;`}${i + 1}.`)}${UI.div(UI.text(`weightBackground_${i}`))}`),
+                  ...range(0, 10).map(i => `${UI.div(UI.label(`weightBackground_${i}`, UI.l('显示优先级背景色', '顯示優先級背景色', 'Display Priority Background Color')+`${i === 9 ? '' : `&nbsp;&nbsp;`}${i + 1}.`))}${UI.div(UI.text(`weightBackground_${i}`))}`),
                 ),
                 '</div>',
               ),
@@ -3251,7 +3303,7 @@
               UI.div(
                 UI.button.class('reDropMonitor', UI.l('重置掉落监测', '重置掉落監測', 'Reset Drops Tracking')),
                 UI.labeled('portable_drop', '<l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2><l0>注意：便携数据模式可能会显著增加硬盘读写</l0><l1>注意：便攜數據模式可能會顯著增加硬盤讀寫</l1><l2>Notice：portable mode may significantly increase hard disk I/O</l2>'),
-                '<input id="portable_dropOld" type="checkbox" style="display:none">',
+                '<input id="portable_dropOld" type="checkbox" hidden>',
               ),
               '<div class="hvAACenter"><l0>记录装备的最低品质</l0><l1>記錄裝備的最低品質</l1><l2>Minimum drop quality</l2>: <select name="dropQuality"><option value="0">Crude</option><option value="1">Fair</option><option value="2">Average</option><option value="3">Superior</option><option value="4">Exquisite</option><option value="5">Magnificent</option><option value="6">Legendary</option><option value="7">Peerless</option></select></div>',
               '<table class="hvAACenter"></table>',
@@ -3261,7 +3313,7 @@
               UI.div(
                 UI.button.class('reRecordUsage', UI.l('重置数据记录', '重置數據記錄', 'Reset Usage Tracking')),
                 UI.labeled('portable_stats', UI.l('使用便携数据模式（导出脚本数据时将包含）注意：便携数据模式可能会显著增加硬盘读写', '使用便攜數據模式（導出腳本數據時將包含）注意：便攜數據模式可能會顯著增加硬盤讀寫', 'Portable Mode (will be included while exporting script datas) Notice：portable mode may significantly increase hard disk I/O')),
-                '<input id="portable_statsOld" type="checkbox" style="display:none">'
+                '<input id="portable_statsOld" type="checkbox" hidden>'
               ),
               UI.div(
                 UI.b(UI.l('自身', '自身', 'Self')),
@@ -3849,6 +3901,11 @@
         loadOptionUIData({});
       };
       gE('.hvAAReset', optionBox).onclick = function () {
+        // // DEBUG
+        // gE('input', 'all', optionBox).forEach(i => { i.value = 1234567; i.checked = !i.checked });
+        // alertDiffs('','','');
+        // return;
+        // // DEBUG
         if (!alertDiffs('是否撤销未保存的更改? 更改数：', '是否撤銷未保存的更改?更改數：', 'Confirm to revert unsaved changes? Changes: ')) {
           return;
         }
@@ -3900,22 +3957,24 @@
       diffData.prototype.excludes = 'version';
       const diffs = diffData(options);
       const lang = g().lang;
-      console.log(lang)
       if (!diffs) return;
       let i = 1;
       return Object.keys(diffs).length + '\n' + Object.entries(diffs).map(([key, data]) => {
+        const input = gE(`[name="${key}"], [id="${key}"]`, optionBox);
+        if ((input?.type === 'hidden') || input?.hidden || input.classList.contains('hvAADebug')) return;
         let defaultStr = ['默认', '默認', 'Default'][lang];
-        switch (gE(`[name="${key}"], [id="${key}"]`, optionBox)?.type) {
-          case 'hidden': return;
-          case 'checkbox':
-            defaultStr = 'false';
-            break;
+        let labels = gE(`label[for="${key}"], label[for*="${key},"]`, 'all', optionBox);
+        let conditionGroup, group, inGroup;
+        if (!labels.length) {
+          inGroup = key.match(/_(\d+)$/)?.[1]??0;
+          conditionGroup = key.replace(/_(\d+)$/, '');
+          group = conditionGroup.match(/_(\d+)$/)?.[1]??0;
+          conditionGroup = conditionGroup.replace(/_(\d+)$/, '');
+          labels = gE(`label[for="${conditionGroup}"], label[for*="${conditionGroup},"]`, 'all', optionBox);
         }
-        return `[${i++}]${Array.from(gE(`label[for="${key}"], label[for*="${key},"]`, 'all', optionBox)).map(x => {
-          if (!x) return x;
-          return x ? UI.cutLang(x.innerHTML) : x;
-        }).reduce((acc, cur) => (acc ?? '') + (cur ?? ''), '') || key}: ${data.map(d => d ? String(d) : defaultStr)?.join(' -> ')}`;
-      }).filter(d => d !== undefined).join('\n');
+        // if (labels.length) return; // DEBUG
+        return UI.cutLang(`[${i++}]${Array.from(labels).map(x => x ? `${x.innerHTML}${conditionGroup ? ` ${UI.byLang('条件', '條件', 'Condition')} ${group}. ${inGroup}` : ''} [${key}]` : x).reduce((acc, cur) => (acc ?? '') + (cur ?? ''), '') || key}: ${data.map(d => d ? String(d) : `${defaultStr}(${input?.placeholder||'undefined'})`)?.join(' -> ')}`).replaceAll(new RegExp(`\\[${key}\\]((.|\s)+)\\[${key}\\]`, 'g'), (match, inner) => `${inner}[${key}]`);
+      }).filter(d => d !== undefined).join('\n').replaceAll(/<.*?>/g,'').replaceAll(/&lt;/g, '<').replaceAll(/&gt;/g, '>');
 
       function diffData(datas, parents) {
         let json = datas.map(JSON.stringify);
@@ -4127,7 +4186,25 @@
   }
 
   function customizeInputAutoFit(input, isLastCustomizeInput) {
+    const id = input.id || input.name;
+    input.title ||= id;
     if (input.type === 'select-one' || input.disabled && input.name !== 'version') return;
+    const label = gE(`label[for="${id}"], label[for*="${id},"]`);
+    if (!label) {
+      const customize = input.closest('.customize');
+      if (customize) {
+        const cusID = customize.id || customize.name;
+        const outter = customize.className.match(/([^\s]*)Inner/)?.[1];
+        const inputs = [...gE('input', 'all', customize)].map(i => (i.id||i.name).replace(/_\d+$/, ''));
+        const labels = gE(`label[for="${outter}"], label[for*="${outter}`, 'all');
+        // if (!labels.length) console.log(customize); // DEBUG
+        labels.forEach(label => {
+          const forContent = unique([...label.getAttribute('for').split(','), ...inputs].filter(s => s));
+          label.setAttribute('for', forContent.join(',')+',');
+        });
+      }
+    }
+
     customizerInpuFit(input, isLastCustomizeInput);
     input.addEventListener('input', _ => customizerInpuFit(input, true));
     input.addEventListener('keydown', function(event) {
