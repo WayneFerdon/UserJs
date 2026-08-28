@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.138
+// @version      2.91.139
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -441,14 +441,25 @@
       if (Array.isArray(args[0])) args = args[0];
       return args[g().lang];
     },
+    cutLang: function (str) {
+      const lang = g().lang;
+      return str.replaceAll(/<l(\d+)>(.*?)<\/l(\d+)>/g, (matched, lang1, inner, lang2) => {
+        switch (true) {
+          case lang1 !== lang2: return inner;
+          case lang1 !== lang: return '';
+          default: return inner;
+        }
+      });
+    },
     alert: (...args) => window.alert(UI.byLang(args)),
     confirm: (...args) => window.confirm(UI.byLang(args)),
     prompt: (...args) => window.prompt(UI.byLang(args.slice(0, UI.langs)), args[UI.langs]),
     l: function (...args) {
       if (!args.length) return '';
       if (typeof args[0] !== 'string') args = args[0];
-      const extra = args?.[UI.langs] ?? '';
-      return range(UI.langs).map(i => `<l${i} ${extra}>${args?.[i] ?? ''}</l${i}>`).join('');
+      let extra = args?.[UI.langs];
+      extra = extra ? ' ' + extra : '';
+      return range(UI.langs).map(i => `<l${i}${extra}>${args?.[i] ?? ''}</l${i}>`).join('');
     },
     button: {
       class: function (className, ...inner) {
@@ -2814,6 +2825,7 @@
                 `${UI.l('倒计时', '倒計時', 'Wait first while count down')} ≤ ${UI.number('encounterWaitCD')}s ${UI.l('时优先等待', '時優先等待', '.')}; `,
                 '<br>',
                 UI.l('进入前额外等待', '進入前額外等待', 'Extra delay '),UI.number('encounterDelay', 5),UI.l(' 秒，避免时间偏差导致需要等多一轮', ' 秒，避免時間偏差導致需要等多一輪', ' (s) before engage to fit potential time bias which might cause extra waiting round.'),
+                '; <span class="encounterDelayRemain"></span>',
                 '</span>',
                 '<br>',
                 UI.l('倒计时显示: ', '倒計時顯示: ', 'Count down display: '),
@@ -3901,13 +3913,7 @@
         }
         return `[${i++}]${Array.from(gE(`label[for="${key}"], label[for*="${key},"]`, 'all', optionBox)).map(x => {
           if (!x) return x;
-          return x.innerHTML.replaceAll(/<l(\d+)>(.*?)<\/l(\d+)>/g, (matched, lang1, inner, lang2) => {
-            switch (true) {
-              case lang1 !== lang2: return inner;
-              case lang1 !== lang: return '';
-              default: return inner;
-            }
-          });
+          return x ? UI.cutLang(x.innerHTML) : x;
         }).reduce((acc, cur) => (acc ?? '') + (cur ?? ''), '') || key}: ${data.map(d => d ? String(d) : defaultStr)?.join(' -> ')}`;
       }).filter(d => d !== undefined).join('\n');
 
@@ -5167,46 +5173,41 @@
     const digits = Math.max(2, r >= _1h ? 3 : 2);
     const detail = timeStr(r, digits);
     if (short) return detail;
-    return ` ${UI.l('剩余', '剩餘', 'Remain')}${Math.floor(r / _1s)} (${detail})`;
+    return ` ${UI.l('剩余', '剩餘', 'Remain')} ${Math.floor(r / _1s)} (${detail})`;
+  }
+
+  function appendEncounterUITitle(key, inner) {
+    const ui = gE('.encounterUI');
+    if (!ui) return;
+    const regExp = new RegExp(`\\n\\[${key}\\](.|\\n)*\\[${key}\\]`);
+    if (!ui.title.match(regExp)) ui.title += `\n[${key}][${key}]`;
+    ui.title = UI.cutLang(ui.title.replace(regExp, `\n[${key}]\n${inner}\n[${key}]`));
   }
 
   async function displayCDRemain() { try {
     const option = getOption();
     await until(() => {
-      let idleStarted;
+      const optionBox = gE('#hvAABox');
+      const ui = gE('.encounterUI');
+      if (optionBox.style.display === 'none' && !ui) return;
       const idleStart = g().idleStart;
-      const durations = {
-        onIdle: { start: g().beforeIdle, wait: option.onIdleDelay },
-        arena: { start: idleStart??time(0), wait: option.idleArenaTime },
-        switch: { start: idleStart??time(0), wait: option.isekaiTime },
-        switchCD: { start: (getValue('lastSwitch') ?? 0), wait: option.isekaiCD },
-      }
-      if (gE('#hvAABox').style.display === 'none') return;
       const now = time(0);
-      const remain = Object.fromEntries(Object.entries(durations).map(([k, {start, wait}]) => {
-        const v = start + (wait ?? 0) * _1s;
-        const r = Math.floor(Math.max(0, v - now) / _1s) * _1s;
-        if (k === 'onIdle') idleStarted = r <= 0;
-        return [k, remainTime2Str(r)];
-      }));
-      gE('.onIdleRemain', 'all').forEach(r => { r.innerHTML = remain.onIdle; });
-      if (!idleStarted) {
-        gE('.arenaRemain').innerHTML = remainTime2Str(durations.arena.wait * _1s);
-        gE('.isekaiSwitchRemain').innerHTML = remainTime2Str(durations.switch.wait * _1s);
-        gE('.isekaiCDRemain').innerHTML = remain.switchCD;
-        return false;
-      } else {
-        let done = (() => {
-          if (!option.idleArena) return true;
-          gE('.arenaRemain').innerHTML = remain.arena;
-        })();
-        done &= (() => {
-          if (!option.isekai) return true;
-          gE('.isekaiSwitchRemain').innerHTML = remain.switch;
-          gE('.isekaiCDRemain').innerHTML = remain.switchCD;
-        })();
-        return done;
+      const durations = {
+        onIdle: { name: UI.l('闲置延时', '閒置延時', 'Idle Delay'), selector: '.onIdleRemain', start: g().beforeIdle, wait: option.onIdleDelay },
+        encounter: { name: UI.l('遭遇延时', '遭遇延時', 'Encounter Delay'), selector: '.encounterDelayRemain', start: g().encounterStart ?? now, wait: option.encounterDelay },
+        arena: { name: UI.l('闲置竞技场', '閒置競技場', 'Idle Arena'), selector: '.arenaRemain', start: idleStart ?? now, wait: option.idleArenaTime },
+        switch: { name: UI.l('闲置异世界', '閒置異世界', 'Idle Isekai'), selector: '.isekaiSwitchRemain', start: idleStart ?? now, wait: option.isekaiTime },
+        switchCD: { name: UI.l('异世界CD', '異世界CD', 'Isekai CD'), selector: '.isekaiCDRemain', start: (getValue('lastSwitch') ?? 0), wait: option.isekaiCD },
       }
+      let idleStarted;
+      const remain = Object.fromEntries(Object.entries(durations).map(([k, data]) => {
+        const r = Math.floor(Math.max(0, data.start + (data.wait ?? 0) * _1s - now) / _1s) * _1s;
+        if (k === 'onIdle') idleStarted = r <= 0;
+        return [k, { ...data, time: r, str: remainTime2Str(r) }];
+      }));
+      if (optionBox.style.display !== 'none') Object.values(remain).forEach(r => gE(r.selector, 'all').forEach(ui => { ui.innerHTML = r.str }));
+      if (ui) appendEncounterUITitle('i', Object.values(remain).map(r => `${r.name}: ${r.str}`).join('\n'))
+      return idleStarted && Object.values(remain).every(r => !r.time);
     }, _1s);
   } catch (err) { console.error(err); }}
 
@@ -5935,10 +5936,13 @@
     const last = encounter[0]?.time ?? getValue('lastEH', true) ?? 0; // 上次遭遇 或 上次打开EH 或 0
     let now = time(0);
     let cd = getCD();
+    function setUITitle(ui) {
+      appendEncounterUITitle('e', `${time(3, last)}\n${UI.l('遭遇次数', '遭遇次數','Encounter Time')}: ${count}`);
+    }
     const ui = gE('.encounterUI') ?? (() => {
       const ui = (gE('.hvAAPauseUI') ?? gE('body')).appendChild(cE('a'));
       ui.className = 'encounterUI';
-      ui.title = `${time(3, last)}\nEncounter Time: ${count}`;
+      setUITitle(ui);
       if (!gE('#battle_main')) {
         ui.href = 'https://e-hentai.org/news.php?encounter';
       }
@@ -5958,6 +5962,7 @@
       uiTime = (Math.floor(cd / _1s) % 2) ? uiTime : uiTime.replace(':', '.');
     }
     ui.innerHTML = `${uiTime}[${encounter.length ? (count >= MAX ? `☯` : count) : `✪`}${missed ? `-${missed}` : ``}]`;
+    setUITitle(ui);
     if (document.title.includes(titlePause())) {
       document.title = ui.innerHTML + titlePause();
     }
@@ -6053,7 +6058,7 @@
   async function changeArenaEquipSet(id) { try {
     const target = getArenaEquipSet(id);
     const { persona, equipSet} = isSwitchEquipSet(target);
-    console.log(`changeArenaEquipSet for arena [${id}]:`, target, '=>', { persona, equipSet});
+    console.log(`changeArenaEquipSet for arena [${id}]:`, target, '=>', { ... persona ? { persona } : {}, ... equipSet ? { equipSet } : {} });
     return await ([persona, equipSet].every(c => c === undefined) ? restorePersonaAndEquipSet() : switchEquipSet(persona, equipSet));
   } catch (err) { console.error(err); }}
 
@@ -6086,6 +6091,7 @@
       $async.logSwitchStrict('updateEncounter', false);
       return;
     }
+    g('encounterStart', time(0));
     await pauseAsync(option.encounterDelay * _1s);
     setEncounter(getEncounter()); // 离开页面前保存
     if (!window.top.location.href.endsWith(`?s=Battle`)) {
@@ -6182,7 +6188,7 @@
         if (_server.persistent) continue;
         const doc = $doc(await $ajax.insert('?s=Battle&ss=tw'));
         let [_, floor, rounds, attempts, maxAttempts, clears, max] = gE('#towerstart', doc).innerText.match(/Current Floor: (\d+) \((\d+) Rounds\)\n\t.*\n\tDaily Attempts: (\d+) \/ (\d+)\n\tDaily Clears: (\d+) \/ (\d+)/).map(x => x * 1);
-        arena.tw = { data: attempts };
+        arena.tw = attempts;
         setValue('arena', arena);
         if (clears >= max || attempts >= maxAttempts) {
           arena.arrayDone.push('tw');
@@ -6198,7 +6204,8 @@
       }
       if (id === 'iw') {
         id = undefined;
-        if (!await idleItemWorld()) continue;
+        const iw = await idleItemWorld();
+        if (!iw) continue;
         $async.logSwitch(arguments);
         return true;
       }
@@ -6221,7 +6228,7 @@
     return done;
   } catch (err) { console.error(err); }}
 
-  async function idleItemWorld() { try {
+  async function idleItemWorld(arena) { try {
     const option = getOption();
     if (!option.idleItemWorld) return;
     $async.logSwitch(arguments);
@@ -6263,6 +6270,7 @@
         console.log('Idle Item World: Skip currently equiped', eid, equip);
         continue;
       }
+
       if (await gotoBattle('iw', equip.round, equip)) {
         $async.logSwitch(arguments);
         return true;
