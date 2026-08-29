@@ -4211,15 +4211,16 @@
     g().titleQueue.push(input);
     if (g().isProcessingTitleQueue) return;
     g().isProcessingTitleQueue = true;
-    await pauseAsync(_1s);
     processTitleQueue();
   } catch (err) { console.error(err); }}
 
   async function processTitleQueue(max = 10) { try {
     const box = gE('#hvAABox');
     await until(() => (box.style.display !== 'none') || !(max--), 1000);
+    if (box.style.display !== 'none') await pauseAsync(_1s);
     await until(() => {
       let input = g().titleQueue.shift();
+      if (!input) return;
       const id = input.id || input.name;
       input.title = getInputFriendlyName(input) || input.title || id;
       getLabelsFor(id).forEach(label => {
@@ -4250,7 +4251,7 @@
         });
       }
     }
-    setInputTitle(input, id);
+    if (!input.title) setInputTitle(input, id);
 
     customizerInpuFit(input, isLastCustomizeInput);
     input.addEventListener('input', _ => customizerInpuFit(input, true));
