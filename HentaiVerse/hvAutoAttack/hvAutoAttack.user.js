@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.142
+// @version      2.91.143
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -6384,42 +6384,40 @@
       return false;
     }
     await waitPause();
-    await until(async () => !option.checkURLBeforeNewRound || await $ajax.insert(option.checkURLBeforeNewRound), option.checkURLBeforeNewRoundRetry);
-    const queryDoc = $doc(await $ajax.insert(query));
-    const data = `${equip ? `eqids%5B%5D=${equip.id}` : `initid=${['gr', 'tw'].includes(id) ? 1 : id}`}&postoken=${gE('input[name="postoken"]', queryDoc).value}`;
-    console.log('Arena Start', equip ? `e${equip.id} (${equip.world} => ${equip.world + 1}) / ${equip.max}\n${JSON.stringify(equip)}` : id);
-    await until(async () => {
-      const fetchResult = await $ajax.insert(query, data);
-      if (!fetchResult) return console.log('Fetch failed, retrying...');
-      try {
-        const inBattle = isInBattle($doc(fetchResult));
-        console.log('Fetch result in Battle:', inBattle, inBattle ? 'Succeed.' : ', retrying...');
-        return inBattle;
-      } catch (err) {
-        console.log('Fetch result error, retrying...', err, fetchResult);
-      }
-    }, option.checkURLBeforeNewRoundRetry);
 
-    switch (id) {
-      case 'tw': case 'iw':
-        break;
-      case 'gr':
-        arena.gr--;
-        break;
-      default:
-        arena.arrayDone.push(id);
+    if (option.checkURLBeforeNewRound) {
+      await until(async () => {
+        if (await $ajax.insert(option.checkURLBeforeNewRound)) {
+          return true;
+        }
+        console.log('Failed arena wating url check before new round, retrying...\n', option.checkURLBeforeNewRound);
+      }, option.checkURLBeforeNewRoundRetry);
     }
-    if (equip) arena.equip = { data: equip };
+
+    console.log('Arena Start', equip ? `e${equip.id} (${equip.world} => ${equip.world + 1}) / ${equip.max}\n${JSON.stringify(equip)}` : id);
+    await until(async () => { try {
+      const queryFetch = await $ajax.insert(query);
+      if (!queryFetch) return console.log('Fetch postoken failed, retrying...');
+      const queryDoc = $doc(await $ajax.insert(query));
+      if (!queryDoc) return console.log('Fetch postoken failed, retrying...');
+      const data = `${equip ? `eqids%5B%5D=${equip.id}` : `initid=${['gr', 'tw'].includes(id) ? 1 : id}`}&postoken=${gE('input[name="postoken"]', queryDoc).value}`;
+      const fetchResult = await $ajax.insert(query, data);
+      if (!fetchResult) return console.log('Fetch battle failed, retrying...');
+      const doc = $doc(fetchResult);
+      const inBattle = isInBattle();
+      if (!inBattle) console.log('Fetch result in Battle failed, retrying...\n', fetchResult);
+      return inBattle;
+    } catch (err) { console.log('Fetch result error, retrying...', err); }}, option.checkURLBeforeNewRoundRetry);
+
+    if (id === 'gr') arena.gr--;
+    else if (!['tw', 'iw'].includes(id)) arena.arrayDone.push(id);
+    else if (equip) arena.equip = { data: equip };
     setValue('arena', arena);
     stamina.lastCost = id === 'gr' ? undefined : cost;
     setValue('stamina', stamina);
-    if (option.altBattleFirst && await $ajax.insert(window.location.href.replace('://hentaiverse.org', '://alt.hentaiverse.org'))) {
-      console.log('Arena Fetch Done.', 'altBattleFirst:', option.altBattleFirst, 'Arena goto alt', arena);
-      gotoAlt(true);
-    } else {
-      console.log('Arena Fetch Done.', 'altBattleFirst:', option.altBattleFirst, 'Arena goto', arena);
-      goto();
-    }
+    const alt = option.altBattleFirst && await $ajax.insert(window.location.href.replace('://hentaiverse.org', '://alt.hentaiverse.org'));
+    console.log('Arena Fetch Done.', 'altBattleFirst:', option.altBattleFirst, 'Arena goto', alt ? 'alt' : '', arena);
+    alt ? gotoAlt(true) : goto();
     $async.logSwitch(arguments);
     return true;
   } catch (err) { console.error(err); }}
