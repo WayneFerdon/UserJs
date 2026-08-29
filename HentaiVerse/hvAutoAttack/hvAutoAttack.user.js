@@ -3960,7 +3960,8 @@
         const input = getOptionInput(key, optionBox);
         if ((input?.type === 'hidden') || input?.hidden || input?.classList.contains('hvAADebug')) return;
         let defaultStr = UI.byLang('默认', '默認', 'Default');
-        return `[${i++}]${input.title}: ${data.map(d => d ? String(d) : `${defaultStr}(${input?.placeholder||'undefined'})`)?.join(' -> ')}`;
+        const tab = UI.cutLang(gE(`.hvAATabmenu [name="${input.closest('.hvAATab').id.match(/-(.*)/)[1]}"]`).innerHTML);
+        return `[${i++}]${tab} ${input.title}: ${data.map(d => d ? String(d) : `${defaultStr}(${input?.placeholder||'undefined'})`)?.join(' -> ')}`;
       }).filter(d => !!d).join('\n');
 
       function diffData(datas, parents) {
