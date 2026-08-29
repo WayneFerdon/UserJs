@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.141
+// @version      2.91.142
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -4211,6 +4211,7 @@
     g().titleQueue.push(input);
     if (g().isProcessingTitleQueue) return;
     g().isProcessingTitleQueue = true;
+    await pauseAsync(_1s);
     processTitleQueue();
   } catch (err) { console.error(err); }}
 
@@ -6385,9 +6386,19 @@
     await until(async () => !option.checkURLBeforeNewRound || await $ajax.insert(option.checkURLBeforeNewRound), option.checkURLBeforeNewRoundRetry);
     const queryDoc = $doc(await $ajax.insert(query));
     const data = `${equip ? `eqids%5B%5D=${equip.id}` : `initid=${['gr', 'tw'].includes(id) ? 1 : id}`}&postoken=${gE('input[name="postoken"]', queryDoc).value}`;
-    await until(async () => await $ajax.insert(query, data), option.checkURLBeforeNewRoundRetry);
-
     console.log('Arena Start', equip ? `e${equip.id} (${equip.world} => ${equip.world + 1}) / ${equip.max}\n${JSON.stringify(equip)}` : id);
+    await until(async () => {
+      const fetchResult = await $ajax.insert(query, data);
+      if (!fetchResult) return console.log('Fetch failed, retrying...');
+      try {
+        const inBattle = isInBattle($doc(fetchResult));
+        console.log('Fetch result in Battle:', inBattle, inBattle ? 'Succeed.' : ', retrying...');
+        return inBattle;
+      } catch (err) {
+        console.log('Fetch result error, retrying...', err, fetchResult);
+      }
+    }, option.checkURLBeforeNewRoundRetry);
+
     switch (id) {
       case 'tw': case 'iw':
         break;
@@ -6399,7 +6410,6 @@
     }
     if (equip) arena.equip = { data: equip };
     setValue('arena', arena);
-
     stamina.lastCost = id === 'gr' ? undefined : cost;
     setValue('stamina', stamina);
     if (option.altBattleFirst && await $ajax.insert(window.location.href.replace('://hentaiverse.org', '://alt.hentaiverse.org'))) {
