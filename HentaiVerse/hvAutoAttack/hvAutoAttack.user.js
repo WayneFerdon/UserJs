@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.147
+// @version      2.91.148
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -4238,20 +4238,27 @@
       setInputTitle(input, id);
       return;
     }
-    if (!getLabelsFor(id).length) {
-      const customize = input.closest('.customize');
-      if (customize) {
-        const cusID = customize.id || customize.name;
-        const outter = customize.className.match(/([^\s]*)Inner/)?.[1];
-        const inputs = [...gE('input', 'all', customize)].map(i => (i.id||i.name).replace(/_\d+$/, ''));
-        const labels = getLabelsFor(outter);
-        labels.forEach(label => {
-          const forContent = unique([...label.getAttribute('for').split(','), ...inputs].filter(s => s));
-          label.setAttribute('for', forContent.join(',')+',');
-        });
+    (async () => { try {
+      if (!getLabelsFor(id).length) {
+        const customize = input.closest('.customize');
+        if (customize) {
+          const inputs = [...gE('input', 'all', customize)].map(i => (i.id||i.name).replace(/_\d+$/, ''));
+          const forContent = unique(inputs.filter(s => s));
+          getLabelsFor(customize.className.match(/([^\s]*)Inner/)?.[1]).forEach(label => {
+            const parent = label.parentNode;
+            let sublabel = gE('[sublabel="true"]', parent);
+            if (!sublabel) {
+              parent.append(sublabel = cE('label'));
+              sublabel.innerHTML = label.innerHTML;
+              sublabel.setAttribute('sublabel', true);
+              sublabel.setAttribute('hidden', '');
+            }
+            sublabel.setAttribute('for', unique([...sublabel.getAttribute('for')?.split(',') ?? [], ...forContent]).join(',')+',');
+          });
+        }
       }
-    }
-    if (!input.title) setInputTitle(input, id);
+      if (!input.title) setInputTitle(input, id);
+    } catch (err) { console.error(err); }})();
 
     customizerInpuFit(input, isLastCustomizeInput);
     input.addEventListener('input', _ => customizerInpuFit(input, true));
