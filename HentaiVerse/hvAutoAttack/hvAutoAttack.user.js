@@ -2160,7 +2160,7 @@
         const names = itemMap[item].map((...args) => `<l${args[1]}>${args[0]}</l${args[1]}>`).join('');
         return UI.div(UI.labeled(
           `isCheck${suffix}_${item}`,
-          `${!checkBoxOnly ? UI.number(`checkItem${suffix}_${item}`) : ''}${UI.label(`checkItem${suffix}_${item}`, suffix, 'hidden')}${UI.label(`checkItem${suffix}_${item}`, names)}`
+          `${!checkBoxOnly ? UI.number(`checkItem${suffix}_${item}`) : ''}${UI.label(`checkItem${suffix}_${item}`, UI.l('库存', '庫存', 'Supply')+' '+suffix, 'hidden')}${UI.label(`checkItem${suffix}_${item}`, names)}`
         ))
       }))
     ];
@@ -2770,12 +2770,12 @@
                 UI.b(UI.l('战斗执行顺序(未配置的按照下面的顺序)', '戰鬥執行順序(未配置的按照下面的順序)', 'Battal Order(Using order below as default if not configed)')),
                 ': ',
                 UI.label(`battleOrderName`, UI.l('战斗执行顺序', '戰鬥執行順序', 'Battal Order')),
-                UI.labeled('battleOrderDefaultOnly', UI.l('只使用默认顺序', '只使用默認順序', 'Default order only')),
+                UI.labeled('battleOrderDefaultOnly', UI.l('只使用默认顺序', '只使用默認順序', 'Default order only'), 'class="battleOrderNameInner"'),
                 UI.div({
                   args: { class: 'battleOrder battleOrderDefaultOnlyInnerReverted' },
                   inner: [
                     UI.orderValue('battleOrderName'),
-                    UI.hvAATable(UI.repeat(7), '', UI.expendData(UIDatas.battleOrder, (id, names, v) => UI.div(`${UI.labeled(`battleOrder_${id}`, names, `value="${v}"`)}`)))
+                    UI.hvAATable(UI.repeat(7), '', UI.expendData(UIDatas.battleOrder, (id, names, v) => UI.div(`${UI.labeled(`battleOrder_${id}`, names, `value="${v}"`, 'class="battleOrderNameInner"')}`)))
                   ]}),
               ),
               UI.div(
@@ -2898,7 +2898,7 @@
               UI.div(
                 UI.b('[S!]', UI.l('精力: 进入战斗的最低精力', '精力: 戰鬥的最低精力', 'Stamina: Minimum stamina to auto start battles')),
                 ': <br>',
-                UI.expendData(UIDatas.staminaCheck, (id, names, v) => `${UI.label(`stamina${id}`, names, 'hidden')}${id === 'LowWithReNat' ? UI.b('<br>[S!!]') : ''}${names}: ${id === 'Low' ? 'Min(85, ' : ''}${UI.number(`stamina${id}`, v)}${id === 'Low' ? ')' : ''};`),
+                UI.expendData(UIDatas.staminaCheck, (id, names, v) => `${UI.label(`stamina${id}`, UI.l('精力: ', '精力: ', 'Stamina: ')+names, 'hidden')}${id === 'LowWithReNat' ? UI.b('<br>[S!!]') : ''}${names}: ${id === 'Low' ? 'Min(85, ' : ''}${UI.number(`stamina${id}`, v)}${id === 'Low' ? ')' : ''};`),
                 '<br>',
                 `${UI.labeled(`restoreStamina`, UI.l('战前恢复', '戰前恢復', 'Restore stamina'))}`,
                 `${UI.labeled(`staminaRatio`, UI.l('检查惩罚倍率', '檢查懲罰倍率', 'Check Punishment Ratio'))}`,
@@ -2909,11 +2909,11 @@
                 UI.expendData(UIDatas.repair, (id, names) => `${UI.label(`repairValue${id}`, `${names}${UI.l('耐久度', '耐久度', ' Durability')}`, 'hidden')} ≤ ${UI.number(`repairValue${id}`)}% `),
                 UI.expendData(UIDatas.repairCharm, (id, names) => `<br>${UI.labeled(`repairCharm${id}`, `${UI.l('', '', 'Repair charm before ')}${names}${UI.l('前修复护石', '前修復護石')}`)};`),
                 '<br>',
-                UI.labeled('encounterRepair', UI.l('遭遇战前检查', '遭遇戰前檢查', 'Check before encounter')),
+                UI.labeled('encounterRepair', UI.l('遭遇战前检查', '遭遇戰前檢查', 'Check before encounter'), 'class="repairInner"'),
                 UI.div(UI.l('检查非空装备槽位时忽略: ', '檢查非空裝備槽位時忽略: ', 'Skip when checking unslotted equipments: ')),
                 UI.hvAATable(
                   UI.repeat(7), 'hvAAcheckItems',
-                  UI.expendData(UIDatas.equipSlot, (id, names) => UI.div(UI.labeled(`equipCheckSkip_${id}`, names)))
+                  UI.expendData(UIDatas.equipSlot, (id, names) => UI.div(UI.labeled(`equipCheckSkip_${id}`, `<span hidden>${UI.l('检查非空装备槽位时忽略: ', '檢查非空裝備槽位時忽略: ', 'Skip when checking unslotted equipments: ')} </span>`+names)))
                 ),
                 '</span>',
               ),
@@ -2922,7 +2922,7 @@
                 ' ≤ ',
                 UI.label('equStorageValue', UI.l('装备库存', '裝備庫存', 'Equipment Storage'), 'hidden'),
                 UI.number('equStorageValue', 150, 'number', '', 'style="width: 32px;"'),
-                `; <span class="equStorageInner">${UI.labeled(`encounterEquStorage`, UI.l('遭遇战前检查', '遭遇戰前檢查', 'Check before encounter'))}</span>`),
+                `; <span class="equStorageInner">${UI.labeled(`encounterEquStorage`, UI.l('遭遇战前检查', '遭遇戰前檢查', 'Check before encounter'), 'class="equStorageInner"')}</span>`),
               UI.div(
                 UI.labeled(`changeEquipSet`, UI.b(UI.l('[!!实验性]切换套装', '[!!實驗性]切換套裝', '[!!Experimental]Switch Equip Set'))),
                 `<span class="changeEquipSetInner">`,
@@ -2951,10 +2951,10 @@
                 inner: [
                   UI.b(UI.l('施放顺序(未配置的按照下面的顺序)', '施放順序(未配置的按照下面的順序)', 'Cast Order(Using order below as default if not configed)')),
                   ': ',
-                  UI.label(`itemOrderName`, UI.l('道具施放顺序', '道具施放順序', 'Item Cast Order'), 'hidden'),
+                  UI.label(`itemOrderName`, UI.l('恢复技能/道具施放顺序', '恢復技能/道具施放順序', 'Cure Skill / Item Cast Order'), 'hidden'),
                   UI.text('itemOrderName', 'style="width:80%;"', 'disabled="true"'),
                   '<input name="itemOrderValue" style="width:80%;" type="hidden" disabled="true"><br>',
-                  UI.hvAATable(UI.repeat(5), '', UI.expendData(UIDatas.cure, (id, names, v) => UI.div(UI.labeled(`itemOrder_${id}`, names, `value="${id},${v}"`)))),
+                  UI.hvAATable(UI.repeat(5), '', UI.expendData(UIDatas.cure, (id, names, v) => UI.div(UI.labeled(`itemOrder_${id}`, names, `value="${id},${v}"`, 'class="itemOrderNameInner"')))),
                 ]
               }),
               UI.expendData(UIDatas.cure, (id, names, v) => UI.div(`${UI.labeled(`item_${id}`, names)}: {{item${id}Condition}}`)),
@@ -2967,14 +2967,14 @@
               UI.div(
                 UI.b(
                   UI.l('超过时不释放', '超過時不釋放', 'Not cast if remain turns above'),
-                  '  (',
+                  ' (',
                   UI.l('阈值 &lt; 0 则不限制', '閾值 &lt; 0 則不限制', ' Threshold &lt; 0 as unlimited'),
                 ),
-                ': ',
+                ') : ',
                 UI.hvAATable(
                   UI.repeat(5), '',
                   UI.expendData(UIDatas.buff, (id, names, v) => v ? '' : UI.div(
-                    `<label for="channelThreshold_${id}">${names} >= `,
+                    `<label for="channelThreshold_${id}"><span hidden>${UI.l('引导', '引導', 'Channeling')}</span>${names} >= `,
                     UI.number(`channelThreshold_${id}`)
                     , `</label>`))
                 ),
@@ -2988,7 +2988,7 @@
                 '</a>',
                 UI.l('里的相同', '裡的相同'),
                 '<br>',
-                UI.hvAATable(UI.repeat(9), '', UI.expendData(UIDatas.buff, (id, names, v) => v ? '' : UI.div(UI.labeled(`channelSkill_${id}`, names)))),
+                UI.hvAATable(UI.repeat(9), '', UI.expendData(UIDatas.buff, (id, names, v) => v ? '' : UI.div(UI.labeled(`channelSkill_${id}`, `<span hidden>${UI.l('先施放引导技能', '先施放引導技能', 'First cast')} </span>`+names)))),
               ),
               UI.div(
                 UI.labeled('channelSkill2', UI.b(UI.l('再使用技能', '再使用技能', 'Then use Skill'))),
@@ -3002,7 +3002,7 @@
                     '<br>',
                     UI.div({
                       args: { class: 'hvAATable', style: 'grid-template-columns: repeat(6, 1fr);' },
-                      inner: UI.expendData(UIDatas.channel, (id, names, v) => UI.div(UI.labeled(`channelSkill2Order_${id}`, names, `value="${id},${v}"`))),
+                      inner: UI.expendData(UIDatas.channel, (id, names, v) => UI.div(UI.labeled(`channelSkill2Order_${id}`, `<span hidden>${UI.l('再使用技能', '再使用技能', 'Then use Skill')} </span>`+names, `value="${id},${v}"`))),
                     }),
                   ]
                 }),
@@ -3016,10 +3016,10 @@
                 inner: [
                   UI.l('施放顺序(未配置的按照下面的顺序)', '施放順序(未配置的按照下面的順序)', 'Cast Order(Using order below as default if not configed)</l2>'),
                   ': ',
-                  UI.label(['buffSkillOrderValue', ...UIDatas.buff.map(buff => `buffSkillOrder_${buff.id}`)], UI.l('Buff 施放顺序', 'Buff 施放順序', 'Buff Cast Order'), 'hidden'),
+                  UI.label('buffSkillOrderValue', UI.l('Buff 施放顺序', 'Buff 施放順序', 'Buff Cast Order'), 'hidden'),
                   UI.text('buffSkillOrderValue', 'style="width:80%;" disabled="true"'),
                   '<br>',
-                  UI.expendData(UIDatas.buff, (id, names, v) => v ? '' : UI.labeled(`buffSkillOrder_${id}`, names)),
+                  UI.expendData(UIDatas.buff, (id, names, v) => v ? '' : UI.labeled(`buffSkillOrder_${id}`, names, 'class="buffSkillOrderValueInner"')),
                 ],
               }),
               UI.div(UI.label('buffSkillCondition', UI.l('Buff释放条件', 'Buff釋放條件', 'Cast buff spells Condition')), '{{buffSkillCondition}}'),
@@ -3049,19 +3049,19 @@
                   ':',
                   UI.text('debuffSkillOrderAllValue', 'style="width:80%;" disabled="true"'),
                   '<br>',
-                  UI.hvAATable(UI.repeat(7) + ' 1.5fr 1fr;', '', UI.expendData(UIDatas.debuff, (id, names) => UI.div(UI.labeled(`debuffSkillOrderAll_${id}`, names)))),
+                  UI.hvAATable(UI.repeat(7) + ' 1.5fr 1fr;', '', UI.expendData(UIDatas.debuff, (id, names) => UI.div(UI.labeled(`debuffSkillOrderAll_${id}`, names, 'class="debuffSkillOrderAllValueInner"')))),
                 ]
               }),
               UI.div(
                 '1.a. <l0>特殊先给全体施放时，视作覆盖的互斥Debuff</l0><l1>特殊特殊先給全體施放時，視作覆蓋的互斥Debuff</l1><l2>Exclusive debuffs during \'Cast Order for Special Debuff all enemies first\'</l2>:',
-                UI.hvAATable(UI.repeat(7) + ' 1.5fr 1fr;', '', UI.expendData(UIDatas.debuff, (id, names) => UI.div(UI.labeled(`debuffAllExclusive_${id}`, names)))),
+                UI.hvAATable(UI.repeat(7) + ' 1.5fr 1fr;', '', UI.expendData(UIDatas.debuff, (id, names) => UI.div(UI.labeled(`debuffAllExclusive_${id}`, names+UI.label(`debuffSkillTurn_${id}`, UI.l('互斥', '互斥', 'Exclusive'), 'hidden'))))),
               ),
 
               '<div class="debuffSkillOrder">2. <l0>单体施放顺序(未配置的按照下面的顺序)</l0><l1>單體施放順序(未配置的按照下面的順序)</l1><l2>Cast Order for each enemy(Using order below as default if not configed)</l2>:',
               UI.label(`debuffSkillOrderValue`, UI.l('单体Debuff施放顺序', '單體Debuff技能施放順序', 'Debuff for each Cast Order')),
               UI.text('debuffSkillOrderValue', 'style="width:80%;" disabled="true"'),
               '<br>',
-              UI.hvAATable(UI.repeat(7) + ' 1.5fr 1fr;', '', UI.expendData(UIDatas.debuff, (id, names) => UI.div(UI.labeled(`debuffSkillOrder_${id}`, names)))),
+              UI.hvAATable(UI.repeat(7) + ' 1.5fr 1fr;', '', UI.expendData(UIDatas.debuff, (id, names) => UI.div(UI.labeled(`debuffSkillOrder_${id}`, names, 'class="debuffSkillOrderValueInner"')))),
               '</div>',
 
               UI.div(
@@ -3086,7 +3086,7 @@
                     UI.l('特殊 ', '特殊 ', ' Special '),
                     UI.labeled(`debuffSkill${id}All`, `${UI.l('先给全体上', '先給全體上')}${names}${UI.l('', '', ' all enemies first.')}`),
                     `<span class="debuffSkill${id}AllInner">`,
-                    `${UI.labeled(`debuffSkill${id}AllByIndex`, UI.l('按照顺序而非权重', '按照順序而非權重', 'By index instead of weight'))}`,
+                    `${UI.labeled(`debuffSkill${id}AllByIndex`, UI.l('按照顺序而非权重', '按照順序而非權重', 'By index instead of weight'), `class="debuffSkill${id}AllInner"`)}`,
                     `</span>{{debuffSkill${id}AllCondition}}`)
                 ]),
               ),
@@ -3672,6 +3672,7 @@
       let inners = unique([...gE('[class$="Inner"]', 'all', optionBox)].map(inner => [...inner.classList].find(className => className.includes('Inner'))));
       inners.forEach(innerName => {
         const outter = gE(`#${innerName.replace(/Inner$/, '')}`, optionBox);
+        if (!outter) return;
         outter.onchange = function () {
           [...gE(`.${innerName}`, 'all', optionBox)].forEach(inner => { inner.style.filter = outter.checked ? 'opacity(1)' : 'opacity(0.3)'; });
         };
@@ -4194,13 +4195,6 @@
     const id = input.id || input.name;
     let labels = getLabelsFor(id);
     let inGroup, conditionDetail = '', prefix = '';
-    const customize = input.closest('.customize');
-    if (customize) {
-      const inputs = [...gE('input', 'all', customize)].map(i => (i.id||i.name).replace(/_\d+$/, ''));
-      const forContent = unique(inputs.filter(s => s));
-      const outter = getLabelsFor(customize.className.match(/([^\s]*)Inner/)?.[1]);
-      labels = [...outter, ...labels];
-    }
     if (!labels.length) {
       const regExp = /_(\d+)$/;
       inGroup = [...input.parentNode.childNodes].indexOf(input);
@@ -4209,6 +4203,15 @@
       labels = getLabelsFor(conditionGroup, optionBox ?? gE('#hvAABox'));
       conditionDetail = ` ${UI.byLang('条件', '條件', 'Condition')} ${group+1}. ${inGroup}`;
     }
+    const customize = input.closest('.customize');
+    if (customize) {
+      const inputs = [...gE('input', 'all', customize)].map(i => (i.id||i.name).replace(/_\d+$/, ''));
+      const forContent = unique(inputs.filter(s => s));
+      const outter = getLabelsFor(customize.className.match(/([^\s]*)Inner/)?.[1]);
+      labels = [...outter, ...labels];
+    }
+    const outter = getLabelsFor(input.className.match(/([^\s]*)Inner/)?.[1]);
+    labels = [...outter, ...labels];
 
     return UI.cutLang(`${Array.from(labels).map(x => x ? `${x.innerHTML}${conditionDetail} [${id}${conditionDetail ? `_${inGroup-1}` : ''}]` : x).reduce((acc, cur) => (acc ?? '') + (cur ?? ''), '') || id}`.replaceAll(new RegExp(`\\[${id}\\]((.|\s)+)\\[${id}\\]`, 'g'), (match, inner) => `${inner}[${id}]`)).replaceAll(/<.*?>/g,'').replaceAll(/&lt;/g, '<').replaceAll(/&gt;/g, '>');
   }
@@ -4216,28 +4219,32 @@
   async function setInputTitle(input) { try {
     const id = input.id || input.name;
     input.title ||= `Loading Name ... [${id}]`;
-    // getLabelsFor(id).forEach(l => { l.title ||= `Loading Name ...`; });
     g().titleQueue ??= [];
     if (g().titleQueue.includes(input)) return;
     g().titleQueue.push(input);
+    applyLabelTitle(input);
     if (g().isProcessingTitleQueue) return;
     g().isProcessingTitleQueue = true;
     processTitleQueue();
   } catch (err) { console.error(err); }}
 
+  function applyLabelTitle(input) {
+    getLabelsFor(input.id || input.name).forEach(label => {
+      if (label.getAttribute('for')?.split(',').length !== 1) return;
+      label.title = input.title;
+    });
+    const tab = input.closest('.hvAATabmenu>span');
+    if (tab) tab.title = input.title;
+  }
+
   async function processTitleQueue(max = 10) { try {
     const box = gE('#hvAABox');
-    await until(() => (box.style.display !== 'none') || !(max--), 1000);
-    if (box.style.display !== 'none') await pauseAsync(_1s);
+    await until(() => max-- <= (box.style.display !== 'none' ? 9 : 0), 1000);
     await until(() => {
       let input = g().titleQueue.shift();
       if (!input) return;
-      const id = input.id || input.name;
       input.title = getInputFriendlyName(input);
-      getLabelsFor(id).forEach(label => {
-        if (label.getAttribute('for').split(',').length !== 1) return;
-        label.title = input.title;
-      });
+      applyLabelTitle(input);
       return !g().titleQueue.length;
     });
     g().isProcessingTitleQueue = false;
