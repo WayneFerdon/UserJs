@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.145
+// @version      2.91.146
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -6401,12 +6401,13 @@
       result = { query, retryCD: option.checkURLBeforeNewRoundRetry, tried: (result?.tried ?? -1)+1 };
       if (!(result.queryFetch = await $ajax.insert(query))) return onTryFailed('postoken');
       if (!(result.queryDoc = $doc(await $ajax.insert(query)))) return onTryFailed('postoken doc');
+      if (isInBattle(result.queryDoc)) return true; // early return caused by battle direct enter;
       if (!(result.postoken = gE('input[name="postoken"]', result.queryDoc))) return onTryFailed('postoken obj');
       result.data = `${equip ? `eqids%5B%5D=${equip.id}` : `initid=${['gr', 'tw'].includes(id) ? 1 : id}`}&postoken=${result.postoken.value}`;
       if (!(result.fetchResult = await $ajax.insert(query, result.data))) return onTryFailed('battle');
       if (!(result.fetchDoc = $doc(result.fetchResult))) return onTryFailed('battle doc');
-      if (!(result.inBattle = isInBattle())) return onTryFailed('in Battle');
-      return result.inBattle;
+      if (!(result.inBattle = isInBattle(result.fetchDoc))) return onTryFailed('in Battle');
+      return true;
     } catch (err) { onTryFailed('result erroring', err); }}, option.checkURLBeforeNewRoundRetry);
 
     if (id === 'gr') arena.gr--;
