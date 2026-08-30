@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.148
+// @version      2.91.149
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -486,19 +486,19 @@
     },
     label: function (ids, inner, ...extra) {
       const forTarget = Array.isArray(ids) ? [...ids, ''].join(',') : ids;
-      return `<label for="${forTarget}" title="${forTarget}" ${extra?.join('') ?? ''}>${inner ?? ''}</label>`
+      return `<label for="${forTarget}" ${extra?.join('') ?? ''}>${inner ?? ''}</label>`
     },
     labeled: function (id, names, ...extra) {
-      return `<input id="${id}" title="${id}" type="checkbox" ${extra?.join(' ') ?? ''}>${UI.label(id, names)}`;
+      return `<input id="${id}" type="checkbox" ${extra?.join(' ') ?? ''}>${UI.label(id, names)}`;
     },
     orderValue: function (id, hidden) {
       return UI.text(id, 'style="width:80%;" disabled="true"', hidden ? 'type="hidden"' : '') + (hidden ? '' : '<br>');
     },
     text: function (id, ...extra) {
-      return `<input name="${id}" title="${id}" ${extra.find(e => e.match('type="hidden"')) ? '' : 'type="text"'} ${extra.join(' ')}></input>`;
+      return `<input name="${id}" ${extra.find(e => e.match('type="hidden"')) ? '' : 'type="text"'} ${extra.join(' ')}></input>`;
     },
     number: function (id, placeholder = 0, type = 'number', classExtra, ...extra) {
-      return `<input class="hvAANumber ${classExtra ? classExtra : ''}" name="${id}" title="${id}" ${placeholder !== undefined ? `placeholder=${placeholder}` : ''} type="${type}" ${extra?.join(' ') ?? ''}>`;
+      return `<input class="hvAANumber ${classExtra ? classExtra : ''}" name="${id}" ${placeholder !== undefined ? `placeholder=${placeholder}` : ''} type="${type}" ${extra?.join(' ') ?? ''}>`;
     },
     b: function (...inner) {
       return `<b>${inner.join('')}</b>`;
@@ -2339,7 +2339,6 @@
 
   function displayCheckBoxNotDefault(input) {
     const id = input.id;
-    setInputTitle(input, id);
     if (!gE(`label[for="${id}"]`) || input.placeholder === undefined) {
       return;
     }
@@ -2761,9 +2760,9 @@
                 UI.label('frequencySign2,', UI.l('频率指示符号 2', '頻率指示符號 2', 'Frequency Signal 2'), 'hidden'),
               ),
               UI.div({
-                args: { id: 'attackStatus', style: 'color:red;' },
+                args: { style: 'color:red;' },
                 inner: [
-                  UI.b(UI.l('*默认攻击模式', '*默認攻擊模式', '*Default Attack Mode')),
+                  UI.b(UI.label('attackStatus', UI.l('*默认攻击模式', '*默認攻擊模式', '*Default Attack Mode'))),
                   ': ',
                   '<select class="hvAANumber" name="attackStatus"><option value="-1"></option><option value="0">物理 / Physical</option><option value="1">火 / Fire</option><option value="2">冰 / Cold</option><option value="3">雷 / Elec</option><option value="4">风 / 風 / Wind</option><option value="5">圣 / 聖 / Divine</option><option value="6">暗 / Forbidden</option></select>']
               }),
@@ -3436,6 +3435,9 @@
     updateItemWorldListUI();
     changeSelectOptionText();
     loadOptionUIData();
+
+    gE('input, select', 'all', optionBox).forEach(setInputTitle);
+
     [...gE('select:not([name="lang"])', 'all', optionBox)].forEach(s => { s.onchange ??= () => selectFit(s); });
     unique([...gE('[class$="Inner"]', 'all', optionBox)].map(inner => [...inner.classList].find(className => className.includes('Inner')))).forEach(innerName => {
       const onchange = gE(`#${innerName.replace(/Inner$/, '')}`, optionBox)?.onchange;
@@ -4081,7 +4083,6 @@
 
       for (const input of inputs) {
         [name, type, placeholder] = [input.name || input.id, input.type, input.placeholder];
-        setInputTitle(input, name);
         switch(input.className) {
           case 'hvAADebug': continue;
           case 'hvAANumber': type = 'number';
@@ -4192,7 +4193,14 @@
   function getInputFriendlyName(input, optionBox) {
     const id = input.id || input.name;
     let labels = getLabelsFor(id);
-    let inGroup, conditionDetail = '';
+    let inGroup, conditionDetail = '', prefix = '';
+    const customize = input.closest('.customize');
+    if (customize) {
+      const inputs = [...gE('input', 'all', customize)].map(i => (i.id||i.name).replace(/_\d+$/, ''));
+      const forContent = unique(inputs.filter(s => s));
+      const outter = getLabelsFor(customize.className.match(/([^\s]*)Inner/)?.[1]);
+      labels = [...outter, ...labels];
+    }
     if (!labels.length) {
       const regExp = /_(\d+)$/;
       inGroup = [...input.parentNode.childNodes].indexOf(input);
@@ -4201,11 +4209,14 @@
       labels = getLabelsFor(conditionGroup, optionBox ?? gE('#hvAABox'));
       conditionDetail = ` ${UI.byLang('条件', '條件', 'Condition')} ${group+1}. ${inGroup}`;
     }
+
     return UI.cutLang(`${Array.from(labels).map(x => x ? `${x.innerHTML}${conditionDetail} [${id}${conditionDetail ? `_${inGroup-1}` : ''}]` : x).reduce((acc, cur) => (acc ?? '') + (cur ?? ''), '') || id}`.replaceAll(new RegExp(`\\[${id}\\]((.|\s)+)\\[${id}\\]`, 'g'), (match, inner) => `${inner}[${id}]`)).replaceAll(/<.*?>/g,'').replaceAll(/&lt;/g, '<').replaceAll(/&gt;/g, '>');
   }
 
-  async function setInputTitle(input, id) { try {
+  async function setInputTitle(input) { try {
+    const id = input.id || input.name;
     input.title ||= `Loading Name ... [${id}]`;
+    // getLabelsFor(id).forEach(l => { l.title ||= `Loading Name ...`; });
     g().titleQueue ??= [];
     if (g().titleQueue.includes(input)) return;
     g().titleQueue.push(input);
@@ -4222,7 +4233,7 @@
       let input = g().titleQueue.shift();
       if (!input) return;
       const id = input.id || input.name;
-      input.title = getInputFriendlyName(input) || input.title || id;
+      input.title = getInputFriendlyName(input);
       getLabelsFor(id).forEach(label => {
         if (label.getAttribute('for').split(',').length !== 1) return;
         label.title = input.title;
@@ -4235,30 +4246,10 @@
   function customizeInputAutoFit(input, isLastCustomizeInput) {
     const id = input.id || input.name;
     if (input.type === 'select-one' || input.disabled && input.name !== 'version') {
-      setInputTitle(input, id);
+      setInputTitle(input);
       return;
     }
-    (async () => { try {
-      if (!getLabelsFor(id).length) {
-        const customize = input.closest('.customize');
-        if (customize) {
-          const inputs = [...gE('input', 'all', customize)].map(i => (i.id||i.name).replace(/_\d+$/, ''));
-          const forContent = unique(inputs.filter(s => s));
-          getLabelsFor(customize.className.match(/([^\s]*)Inner/)?.[1]).forEach(label => {
-            const parent = label.parentNode;
-            let sublabel = gE('[sublabel="true"]', parent);
-            if (!sublabel) {
-              parent.append(sublabel = cE('label'));
-              sublabel.innerHTML = label.innerHTML;
-              sublabel.setAttribute('sublabel', true);
-              sublabel.setAttribute('hidden', '');
-            }
-            sublabel.setAttribute('for', unique([...sublabel.getAttribute('for')?.split(',') ?? [], ...forContent]).join(',')+',');
-          });
-        }
-      }
-      if (!input.title) setInputTitle(input, id);
-    } catch (err) { console.error(err); }})();
+    if (!input.title) setInputTitle(input);
 
     customizerInpuFit(input, isLastCustomizeInput);
     input.addEventListener('input', _ => customizerInpuFit(input, true));
