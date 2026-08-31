@@ -2724,9 +2724,9 @@
                 UI.label(`riddleAnswerChoose`, UI.l('随机答题数量', '隨機答題數量', 'Random Riddle Count'), 'hidden'),
                 UI.div(
                   `${UI.l('时间', '時間', 'If ETR')} ≤ ${UI.number('riddleAnswerTime', 3)}${UI.l('秒，提交当前选中答案 或 为空时随机选中', '秒，提交當前選中答案 或 為空時隨機選中', 's submit chosen answers or random ')} ${UI.number('riddleAnswerChoose')}${UI.l(
-                    '个答案并提交<br><a style="color:red;" href="https://ehwiki.org/wiki/RiddleMaster/Chinese#.E6.AD.A3.E7.A2.BA.E6.88.96.E9.8C.AF.E8.AA.A4">注意：错选小马比漏选小马的错误计数更多 - 所以有疑问时，最好不要猜测，留空就好</a>',
-                    '个答案並提交<br><a style="color:red;" href="https://ehwiki.org/wiki/RiddleMaster/Chinese#.E6.AD.A3.E7.A2.BA.E6.88.96.E9.8C.AF.E8.AA.A4">注意：錯選小馬比漏選小馬的錯誤計數更多 - 所以有疑問時，最好不要猜測，留空就好</a>',
-                    'answers if none is chosen.<br><a style="color:red;" href="https://ehwiki.org/wiki/RiddleMaster#Correct_or_Incorrect">Notice: Selecting a pony that is not in the picture will count more severe towards a penalty than missing one pony - so when in doubt, best not to guess but leave one blank</a>'
+                    '个答案并提交<br><a target="_blank" style="color:red;" href="https://ehwiki.org/wiki/RiddleMaster/Chinese#.E6.AD.A3.E7.A2.BA.E6.88.96.E9.8C.AF.E8.AA.A4">注意：错选小马比漏选小马的错误计数更多 - 所以有疑问时，最好不要猜测，留空就好</a>',
+                    '个答案並提交<br><a target="_blank" style="color:red;" href="https://ehwiki.org/wiki/RiddleMaster/Chinese#.E6.AD.A3.E7.A2.BA.E6.88.96.E9.8C.AF.E8.AA.A4">注意：錯選小馬比漏選小馬的錯誤計數更多 - 所以有疑問時，最好不要猜測，留空就好</a>',
+                    'answers if none is chosen.<br><a target="_blank" style="color:red;" href="https://ehwiki.org/wiki/RiddleMaster#Correct_or_Incorrect">Notice: Selecting a pony that is not in the picture will count more severe towards a penalty than missing one pony - so when in doubt, best not to guess but leave one blank</a>'
                   )}`
                 ),
               ),
@@ -6419,7 +6419,6 @@
       if (!(result.inBattle = !!isInBattle(result.fetchDoc))) return onTryFailed('in Battle');
       return true;
     } catch (err) { onTryFailed('result erroring', err); }}, option.checkURLBeforeNewRoundRetry);
-    // console.log(JSON.stringify(result));
 
     if (id === 'gr') arena.gr--;
     else if (!['tw', 'iw'].includes(id)) arena.arrayDone.push(id);
