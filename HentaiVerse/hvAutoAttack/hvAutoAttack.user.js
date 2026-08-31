@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.151
+// @version      2.91.152
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2452,6 +2452,7 @@
       battleBreaks: [
         { id: 'autoPause', names: ['自动暂停', '自動暫停', 'Pause'], values: ['pause'] },
         { id: 'autoFlee', names: ['自动逃跑', '自動逃跑', 'Flee'], values: ['flee'] },
+        { id: 'autoSkipDefeated', names: ['战败自动退出战斗', '戰敗自動退出戰鬥', 'Exit battle when defeated.'], values: ['exit'] },
       ],
       arena: [
         { id: 1, values: [1] },
@@ -2659,6 +2660,7 @@
         { id: 'Flee', names: ['逃跑', '逃跑', 'Flee'], values: ['Common'] },
         { id: 'Error', names: ['错误', '錯誤', 'Error'] },
         { id: 'Defeat', names: ['失败', '失敗', 'Defeat'] },
+        { id: 'Exit', names: ['失败自动退出', '失敗自動退出', 'Defeat Auto Exit'] },
         { id: 'Riddle', names: ['答题', '答題', 'Riddle'] },
         { id: 'Victory', names: ['胜利', '勝利', 'Victory'] },
       ],
@@ -2796,7 +2798,6 @@
               UI.expendData(UIDatas.attackStatus.map(x => x).sortBy(x => x.id), (id, names) => UI.div(`${UI.labeled(`attackStatusSwitch_${id}`, UI.b(`${UI.l('攻击模式', '攻擊模式', 'Attack Mode')}: ${names}`))}: {{attackStatusSwitchCondition${id}}}`)),
               UI.expendData(UIDatas.battleCommons, (id, names, v) => UI.div(`${UI.labeled(id, `<b>${names}</b>`, v !== undefined ? `placeholder="${v}"`:'')}: {{${id}Condition}}`)),
               UI.expendData(UIDatas.battleBreaks, (id, names, v) => UI.div(`${UI.labeled(id, `<b>${names}</b>`)}${UI.labeled(`${v}Alarm`, UI.l('警报', '警報', 'Alert'))}: {{${v}Condition}}`)),
-              UI.div(`${UI.labeled(`autoSkipDefeated`, UI.b(UI.l('战败自动退出战斗', '戰敗自動退出戰鬥', 'Exit battle when defeated.')))}`),
               UI.div(`${UI.labeled(`nativeNewRound`, UI.b(UI.l('使用原生方式进入新回合', '使用原生方式進入新回合', 'Native new round')))}`),
               UI.div(
                 UI.label('checkURLBeforeNewRound,checkURLBeforeNewRoundRetry,', UI.l('新回合前检查链接：', '新回合前檢查連接：', 'Check url before new round: ')),
@@ -4595,6 +4596,10 @@
         text: UI.byLang('游戏失败\n玩家可自行查看战斗Log寻找失败原因', '遊戲失敗\n玩家可自行查看戰鬥Log尋找失敗原因', 'You have been defeated.\nYou can check the battle log.'),
         time: 5,
       },
+      Exit: {
+        text: UI.byLang('游戏失败自动退出', '遊戲失敗自動退出', 'You have been defeated. Battle auto exited.'),
+        time: 5,
+      },
       Riddle: {
         text: UI.byLang('小马答题\n紧急！\n紧急！\n紧急！', '小馬答題\n緊急！\n緊急！\n緊急！', 'Riddle\nURGENT\nURGENT\nURGENT'),
         time: 30,
@@ -6192,11 +6197,11 @@
     if (!isToday) {
       arena.date = time(0);
       arena.gr = option.idleArenaGrTime;
-      arena.tw = undefined;
       arena.arrayDone = [];
     }
     arena.arrayDone = arena.arrayDone.filter(id => id && (id === 'gr' || !arena.enabled?.includes(id.toString())));
     delete arena.equip;
+    delete arena.tw;
     $async.logSwitch(arguments);
     return setValue('arena', arena);
   } catch (err) { console.error(err); }}
@@ -6231,7 +6236,7 @@
         if (_server.persistent) continue;
         const doc = $doc(await $ajax.insert('?s=Battle&ss=tw'));
         let [_, floor, rounds, attempts, maxAttempts, clears, max] = gE('#towerstart', doc).innerText.match(/Current Floor: (\d+) \((\d+) Rounds\)\n\t.*\n\tDaily Attempts: (\d+) \/ (\d+)\n\tDaily Clears: (\d+) \/ (\d+)/).map(x => x * 1);
-        arena.tw = attempts;
+        arena.tw = { data: attempts };
         setValue('arena', arena);
         if (clears >= max || attempts >= maxAttempts) {
           arena.arrayDone.push('tw');
@@ -6455,7 +6460,7 @@
       div.className = 'hvAALog';
     }
 
-    function getBattleTypeDisplay(isTitle) {
+    function getBattleTypeDisplay() {
       const battleInfoList = getBattleTypeDisplay.prototype.battleInfoList ??= {
         'gr': {
           name: ['压榨', '壓榨', 'Grindfest'],
@@ -6494,8 +6499,8 @@
             ['额外游戏内容', '額外游戲内容', 'Post Game Content', 400, 95],
             ['神秘小马领域', '神秘小馬領域', 'Secret Pony Level', 500, 100],
           ],
-          condition: (bt) => bt[4] === battle.roundAll,
-          content: (bt) => bt[3],
+          condition: sub => sub[4] === battle.roundAll,
+          content: sub => sub[3],
         },
         'rb': {
           name: ['浴血', '浴血', 'Ring of Blood'],
@@ -6510,13 +6515,13 @@
             ['朝比奈实玖瑠', '朝比奈實玖瑠', 'Mikuru Asahina', 75],
             ['泉此方', '泉此方', 'Konata', 75],
           ],
-          condition: (bt) => monsterNames.indexOf(bt[4] ?? bt[2]) !== -1,
-          content: (bt) => bt[3],
+          condition: sub => monsterNames.indexOf(sub[4] ?? sub[2]) !== -1,
+          content: sub => sub[3],
         },
         'ba': {
           name: ['遭遇', '遭遇', 'Random Encounter'],
           title: 'BA',
-          content: (_) => getEncounter().filter(e => e.encountered).length,
+          content: _ => getEncounter().filter(e => e.encountered).length,
         },
         'tw': {
           name: ['塔楼', '塔樓', 'The Tower'],
@@ -6529,71 +6534,76 @@
             ['噩梦×4', '噩夢×4', 'Nightmare×4', 14],
             ['困难×2', '困難×2', 'Hard×2', 7],
             ['普通×1', '普通×1', 'Normal×1', 1],
-          ].map(arr => arr.map(s => isNaN(+s) ? `<div style="font-size: 9pt!important">${s}` : s)),
-          condition: (bt) => bt[3] && bt[3] <= battle.tower,
-          content: (_) => battle.tower,
-          end: `${battle.tower > 40 ? `+${(battle.tower - 40) * 5}%DMG&HP` : ''}</div>`,
+          ],//.map(arr => arr.map(s => isNaN(+s) ? `<div style="font-size: 9pt!important">${s}` : s)),
+          condition: sub => sub[3] && sub[3] <= battle.tower,
+          content: _ => battle.tower,
+          format: formatted => `<div style="font-size: 9pt!important">${formatted}<br>${battle.tower > 40 ? `+${(battle.tower - 40) * 5}%DMG&HP` : ''}</div>`,
         }
       }
       const type = battle.roundType;
-      let subtype, title;
       const monsterNames = Array.from(gE(`${monsterStateKeys.name}>div>div`, 'all')).map(monster => monster.innerHTML);
       const lang = g().lang * 1;
       const info = battleInfoList[type];
       const arena = getValue('arena', true);
-      const equip = arena?.equip;
       battle.postoken ??= arena.postoken;
-      if (equip && type !== 'iw') {
-        delete arena.equip;
+
+      [{ t: 'iw', k: 'equip'}, { t: 'tw', k: 'tw' }].forEach(({t, k}) => {
+        if (!arena?.[k] || type === t) return;
+        delete arena[k];
+        setValue('arena', arena);
+      });
+
+      let subtype = '', title = `${info.title}`;
+
+      const setNormalSub = function () {
+        for (let sub of (info.list ?? [[]])) {
+          if (info.condition && !info.condition(sub)) continue;
+          title += info.content(sub);
+          let formatted = UI.byLang(sub);
+          if (info.format) formatted = info.format(formatted);
+          subtype = formatted ? `<br>${formatted}` : '';
+          return;
+        }
+      }
+
+      const setDataSub = function (dataName, titleGetter, subtypeGetter) {
+        const obj = arena[dataName];
+        if (!obj) return;
+        if (Object.keys(obj.tokens ?? {}).map(k => obj.tokens[k] === battle[k]).some(s => !s)) {
+          // 有旧token，移除
+          delete arena[dataName];
+          setValue('arena', arena);
+          return;
+        }
+        // 没有token或是当前token，正常显示
+        obj.tokens = { token: battle.token, postoken: battle.postoken };
+        const data = obj.data;
+        title += titleGetter(data);
+        subtype += subtypeGetter(data);
         setValue('arena', arena);
       }
+
       switch (type) {
-        case 'ar':
-        case 'rb':
+        case 'ar': case 'rb': case 'ba':
+          setNormalSub();
+          break;
         case 'tw':
-        case 'ba':
-          for (let sub of (info.list ?? [[]])) {
-            if (info.condition && !info.condition(sub)) {
-              continue;
-            }
-            title = `${info.title}${info.content(sub)}`;
-            if (!UI.byLang(sub)) {
-              break;
-            }
-            subtype = `${UI.byLang(sub) ? `<br>${UI.byLang(sub)}` : ``}${info.end ? `<br>${info.end}` : ``}`;
-            break;
-          }
+          setNormalSub();
+          setDataSub('tw', d => `[${d}]`, d => `<div style="font-size: 9pt!important">Attempt ${d}</div>`);
           break;
         case 'iw':
-          title = `${info.title}`;
-          if (equip) {
-            if (Object.keys(equip.tokens ?? {}).map(k => equip.tokens[k] === battle[k]).some(s => !s)) {
-              // 有旧token，移除
-              delete arena.equip;
-            } else {
-              // 没有token或是当前token，正常显示
-              equip.tokens = { token: battle.token, postoken: battle.postoken };
-              title += `${equip.data.world + 1}/${equip.data.max}`;
-              subtype = `<div style="font-size: 9pt!important">[${equip.data.id}]${equip.data.name}</div>`;
-            }
-            setValue('arena', arena);
-          }
-          break;
-        case 'gr':
-          title = `${info.title}`;
-          break;
-        default:
-          break;
+          setDataSub('equip', d => `${d.world + 1}/${d.max}`, d => `<div style="font-size: 9pt!important">[${d.id}]${d.name}</div>`);
       }
-      return isTitle ? title : `${UI.byLang(info?.name ?? ['未知', '未知', 'Unknown'])}:[${title}]${subtype ?? ''}`;
+      return { title, full: `${UI.byLang(info?.name ?? ['未知', '未知', 'Unknown'])}:[${title}]${subtype}` };
     }
 
-    const currentTurn = (battle.turn ?? 0) + 1;
-
+    let currentTurn = (battle.turn ?? 0);
+    if (battle.turnLog !== battle.prevLog) currentTurn++;
+    const display = getBattleTypeDisplay();
     gE('.hvAALog').innerHTML = [
       `${UI.l('攻击模式', '攻擊模式', 'Attack Mode')}: ${UI.attackStatusType[g().attackStatus]}`,
       `${(_server.isekai || onIsekaiEncounter) ? UI.l('异世界', '異世界', 'Isekai') : UI.l('恒定世界', '恆定世界', 'Persistent')}`, // 战役模式显示
-      `${getBattleTypeDisplay()}`, // 战役模式显示
+      `${display.full}`, // 战役模式显示
       `R${battle.roundNow}/${battle.roundAll}:T${currentTurn}`,
       `TPS: ${g().runSpeed}`,
       `${UI.l('敌人', '敵人', 'Monsters')}: ${g().monsterAlive}/${g().monsterAll}`,
@@ -6603,7 +6613,7 @@
       $debug.shiftLog();
     }
     const option = getOption();
-    document.title = `${currentTurn % 2 ? option.frequencySign1 ?? '' : option.frequencySign2 ?? ''}${getBattleTypeDisplay(true)}:R${battle.roundNow}/${battle.roundAll}:T${currentTurn}@${g().runSpeed}tps,${g().monsterAlive}/${g().monsterAll}`;
+    document.title = `${currentTurn % 2 ? option.frequencySign1 ?? '' : option.frequencySign2 ?? ''}${display.title}:R${battle.roundNow}/${battle.roundAll}:T${currentTurn}@${g().runSpeed}tps,${g().monsterAlive}/${g().monsterAll}`;
     setValue('battle', battle);
     if (!battle.monsterStatus || battle.monsterStatus.length !== g().monsterAll) {
       fixMonsterStatus();
@@ -6618,9 +6628,6 @@
       pauseChange.innerHTML = UI.button.continue();
       return;
     }
-    battle = getValue('battle', true);
-    battle.turn = g().battle.turn = currentTurn;
-    setValue('battle', battle);
     killBug(); // 解决 HentaiVerse 可能出现的 bug
     setBattleSkillParam(1001, { flee: 1, skill: 'flee' });
     if (option.autoFlee && checkCondition(option.fleeCondition)) {
@@ -6629,38 +6636,50 @@
       setExitBattleTimeout('Flee');
       return;
     }
+    const noturn = 1;
     const taskList = {
-      'Cure': () => autoRecover(true),
-      'Pause': autoPause,
-      'SSDisable': () => autoSS(true),
-      'Rec': () => autoRecover(false),
-      'Scroll': useScroll,
-      'Infus': useInfusions,
-      'Def': autoDefend,
-      'Channel': useChannelSkill,
-      'Buff': useBuffSkill,
-      'Debuff': useDeSkill,
-      'Focus': autoFocus,
-      'SS': () => autoSS(false),
-      'Skill': autoSkill,
-      'Atk': attack,
+      'Cure': { action: () => autoRecover(true), noturn },
+      'Pause': { action: autoPause, noturn },
+      'SSDisable': { action: () => autoSS(true) },
+      'Rec': { action: () => autoRecover(false), noturn },
+      'Scroll': { action: useScroll, noturn },
+      'Infus': { action: useInfusions, noturn },
+      'Def': { action: autoDefend },
+      'Channel': { action: useChannelSkill },
+      'Buff': { action: useBuffSkill, noturn },
+      'Debuff': { action: useDeSkill },
+      'Focus': { action: autoFocus },
+      'SS': { action: () => autoSS(false) },
+      'Skill': { action: autoSkill },
+      'Atk': { action: attack },
     };
-    const names = option.battleOrderDefaultOnly ? [] : splitOrders(option.battleOrderName);
+    const order = option.battleOrderDefaultOnly ? [] : splitOrders(option.battleOrderName);
     if (option.debugCheckCondition) {
       checkCondition(option.debugCondition);
     }
-    for (const i of range(names)) {
-      if (taskList[names[i]]()) {
-        onStepInDone();
-        return;
+    const prevActionTime = battle.prevActionTime ?? 0;
+    const now = time(0);
+    if (now <= prevActionTime + option.delay) return onStepInDone();
+    const onTask = task => {
+      const result = task.action();
+      if (!result) return;
+      if (!task.noturn || result === 1) {
+        battle = getValue('battle', true);
+        battle.turn = g().battle.turn = currentTurn;
+        battle.prevLog = battle.turnLog;
+        battle.prevActionTime = now;
+        g('battle', battle);
+        setValue('battle', battle);
       }
-      delete taskList[names[i]];
+      onStepInDone();
+      return true;
+    }
+    for (const name of range(order).map(i => order[i])) {
+      if (onTask(taskList[name])) return;
+      delete taskList[name];
     }
     for (let name in taskList) {
-      if (taskList[name]()) {
-        onStepInDone();
-        return;
-      }
+      if (onTask(taskList[name])) return;
     }
   }
 
@@ -6829,9 +6848,10 @@
     g('battleExit', true);
     setAlarm(alarm);
     const option = getOption();
-    if (alarm === 'Defeat' && !option.autoSkipDefeated) {
+    if (alarm === 'Defeat' && (!option.autoSkipDefeated || !checkCondition(option.exitCondition))) {
       return;
     }
+    if (option.exitAlarm) setAlarm('Exit');
     delValue(1);
     setTimeoutOrExecute(() => backFromBattle(), option.ExitBattleWaitTime * _1s);
   }
@@ -7669,22 +7689,18 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
 
   function autoRecover(isCureOnly) { // 自动回血回魔
     const option = getOption();
-    if (!option.item) {
-      return false;
-    }
+    if (!option.item) return false;
     const name = splitOrders(option.itemOrderName, getDefaultOrder('itemOrder'));
     const order = splitOrders(option.itemOrderValue, getDefaultOrder('itemOrder', ord => ord.value.match(/,(.*)/)[1] * 1));
     const cures = [313, 11199, 11501, 10005, 11195, 311];
     for (const i of range(name)) {
       let id = order[i];
-      if (isCureOnly && !cures.includes(id)) {
-        continue;
-      }
+      if (isCureOnly && !cures.includes(id)) continue;
       setBattleSkillParam(id);
       if (option.item[name[i]] && checkCondition(option[`item${name[i]}Condition`]) && isOn(id)) {
         updateSkillOTOS(id);
         (gE(`.bti3>div[onmouseover*="(${id})"]`) ?? gE(id)).click();
-        return true;
+        return id > 10000 ? -1 : 1;
       }
     }
     return false;
@@ -7868,7 +7884,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       setBattleSkillParam(id, { buff: 1});
       if (checkCondition(option[`buffSkill${buff}Condition`])) {
         onClickBuff(id);
-        return true;
+        return 1;
       }
     }
 
@@ -7900,7 +7916,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       if (!getBuff(draughtPack[i].img) && option.buffSkill && option.buffSkill[i] && checkCondition(option[`buffSkill${i}Condition`]) && gE(`.bti3>div[onmouseover*="(${id})"]`)) {
         updateSkillOTOS(id);
         gE(`.bti3>div[onmouseover*="(${id})"]`).click();
-        return true;
+        return id > 10000 ? -1 : 1;
       }
     }
     return false;
