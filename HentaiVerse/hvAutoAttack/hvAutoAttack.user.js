@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.150
+// @version      2.91.151
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -579,7 +579,7 @@
   const [$RPN, $async, $debug, $ajax] = [initRPN(), initAsync(), initDebug(), window.top.$ajax ??= unsafeWindow.window.top.$ajax ??= initAjax()];
 
   // 初始化结束，开始实际流程
-  for (let check of [checkIsHV, checkIsWindowTop, checkOption]) {
+  for (let check of [checkIsHV, checkIsWindowTop]) {
     if (!check()) return;
   }
   for (let step of [onRiddle, onIdle, onBattle]) {
@@ -1188,8 +1188,8 @@
 
   function checkIsWindowTop() {
     const currentUrl = window.self.location.href;
+    checkOption();
     if (!isFrame) {
-      checkOption();
       if (!getOption().riddlePopup || gE('#riddlecounter')) { // 未开启使用弹窗或仍处于答题
         return true;
       }
@@ -1227,7 +1227,6 @@
       return false;
     }
     if (currentUrl.match(/\?s=Battle&ss=(ar|rb)/)) {
-      checkOption();
       setArenaDisplay();
     }
     return false;
@@ -3435,8 +3434,8 @@
     updateItemWorldListUI();
     changeSelectOptionText();
     loadOptionUIData();
-
-    gE('input, select', 'all', optionBox).forEach(setInputTitle);
+    g().optionLoaded = true;
+    (async () => { gE('input, select', 'all', optionBox).forEach(setInputTitle); })();
 
     [...gE('select:not([name="lang"])', 'all', optionBox)].forEach(s => { s.onchange ??= () => selectFit(s); });
     unique([...gE('[class$="Inner"]', 'all', optionBox)].map(inner => [...inner.classList].find(className => className.includes('Inner')))).forEach(innerName => {
@@ -4132,24 +4131,16 @@
           const group = customize.appendChild(cE('div'));
           group.className = 'customizeGroup';
           group.innerHTML = `1. `;
-          const input = group.appendChild(cE('input'));
-          input.type = 'text';
-          input.className = 'customizeInput';
-          input.name = `${name}_0`;
-          customizeInputAutoFit(input, true);
+          setCustomizeInput(group.appendChild(cE('input')), `${name}_0`, undefined, true);
           continue;
         }
+
         for (const groupIndex in uiOption[name]) {
           const group = customize.appendChild(cE('div'));
           group.className = 'customizeGroup';
           group.innerHTML = `${groupIndex * 1 + 1}. `;
           for (const index of range(uiOption[name][groupIndex])) {
-            const input = group.appendChild(cE('input'));
-            input.type = 'text';
-            input.className = 'customizeInput';
-            input.name = `${name}_${groupIndex}`;
-            input.value = uiOption[name][groupIndex][index];
-            customizeInputAutoFit(input, index === uiOption[name][groupIndex].length-1);
+            setCustomizeInput(group.appendChild(cE('input')), `${name}_${groupIndex}`, uiOption[name][groupIndex][index], index === uiOption[name][groupIndex].length-1);
           }
         }
       }
@@ -4222,6 +4213,7 @@
     g().titleQueue ??= [];
     if (g().titleQueue.includes(input)) return;
     g().titleQueue.push(input);
+    await pauseAsync(100);
     applyLabelTitle(input);
     if (g().isProcessingTitleQueue) return;
     g().isProcessingTitleQueue = true;
@@ -4250,13 +4242,18 @@
     g().isProcessingTitleQueue = false;
   } catch (err) { console.error(err); }}
 
+  function setCustomizeInput(input, name, value, isLastCustomizeInput) {
+    input.type = 'text';
+    input.className = 'customizeInput';
+    input.name = name;
+    input.value = value ?? input.value;
+    customizeInputAutoFit(input, isLastCustomizeInput);
+    if(g().optionLoaded) setInputTitle(input);
+  }
+
   function customizeInputAutoFit(input, isLastCustomizeInput) {
     const id = input.id || input.name;
-    if (input.type === 'select-one' || input.disabled && input.name !== 'version') {
-      setInputTitle(input);
-      return;
-    }
-    if (!input.title) setInputTitle(input);
+    if (input.type === 'select-one' || input.disabled && input.name !== 'version') return;
 
     customizerInpuFit(input, isLastCustomizeInput);
     input.addEventListener('input', _ => customizerInpuFit(input, true));
@@ -4270,12 +4267,7 @@
         nextGroup = input.closest('.customize').appendChild(cE('div'));
         nextGroup.className = 'customizeGroup';
         nextGroup.innerHTML = `${nextGroupIndex + 1}. `
-
-        const newInput = nextGroup.appendChild(cE('input'));
-        newInput.type = 'text';
-        newInput.className = 'customizeInput';
-        newInput.name = input.name.replace(/_(\d+)$/, _ => `_${nextGroupIndex}`);
-        customizeInputAutoFit(newInput, true);
+        setCustomizeInput(nextGroup.appendChild(cE('input')), input.name.replace(/_(\d+)$/, _ => `_${nextGroupIndex}`), undefined, true);
 
         const select = gE('.customizeBox select[name="groupChoose"]');
         if (select) {
@@ -4310,11 +4302,7 @@
     autoResizeInput(input);
     if (!input.classList.contains('customizeInput') || !dynamic) return;
     if (input.nextElementSibling || !input.value) return;
-    const newInput = input.parentNode.appendChild(cE('input'));
-    newInput.type = 'text';
-    newInput.className = 'customizeInput';
-    newInput.name = input.getAttribute('name');
-    customizeInputAutoFit(newInput);
+    setCustomizeInput(input.parentNode.appendChild(cE('input')), input.getAttribute('name'));
   }
 
   function autoResizeInput(input) {
@@ -4489,12 +4477,7 @@
         if (items[i-1].value) break;
         input = items[i-1];
       }
-      input ??= group.appendChild(cE('input'));
-      input.type = 'text';
-      input.className = 'customizeInput';
-      input.name = `${target.getAttribute('name')}_${groupChoose - 1}`;
-      input.value = `${selects[1].value} ${selects[2].value} ${selects[3].value}`;
-      customizeInputAutoFit(input, true);
+      setCustomizeInput(input ??= group.appendChild(cE('input')), `${target.getAttribute('name')}_${groupChoose - 1}`, `${selects[1].value} ${selects[2].value} ${selects[3].value}`, true);
       updateGroup(true);
     };
     return customizeBox;
