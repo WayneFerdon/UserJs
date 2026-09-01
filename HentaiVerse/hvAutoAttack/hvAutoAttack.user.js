@@ -6605,7 +6605,7 @@
       `${(_server.isekai || onIsekaiEncounter) ? UI.l('异世界', '異世界', 'Isekai') : UI.l('恒定世界', '恆定世界', 'Persistent')}`, // 战役模式显示
       `${display.full}`, // 战役模式显示
       `R${battle.roundNow}/${battle.roundAll}:T${currentTurn}`,
-      `<span style="font-size: 9pt!important">TPS: ${g().runSpeed}${g().runTimeGap??''}</span>`,
+      `<div style="font-size: 9pt!important">TPS: ${g().runSpeed}<br>${g().runTimeGap??''}</div>`,
       `${UI.l('敌人', '敵人', 'Monsters')}: ${g().monsterAlive}/${g().monsterAll}`,
     ].join(`<br>`).replace(`</div><br>`, `</div>`);
     if (!battle.roundAll) {
