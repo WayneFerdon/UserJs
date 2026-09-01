@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.152
+// @version      2.91.153
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -6534,7 +6534,7 @@
             ['噩梦×4', '噩夢×4', 'Nightmare×4', 14],
             ['困难×2', '困難×2', 'Hard×2', 7],
             ['普通×1', '普通×1', 'Normal×1', 1],
-          ],//.map(arr => arr.map(s => isNaN(+s) ? `<div style="font-size: 9pt!important">${s}` : s)),
+          ],
           condition: sub => sub[3] && sub[3] <= battle.tower,
           content: _ => battle.tower,
           format: formatted => `<div style="font-size: 9pt!important">${formatted}<br>${battle.tower > 40 ? `+${(battle.tower - 40) * 5}%DMG&HP` : ''}</div>`,
@@ -6553,7 +6553,7 @@
         setValue('arena', arena);
       });
 
-      let subtype = '', title = `${info.title}`;
+      let subtype = '', title = `${info?.title??''}`;
 
       const setNormalSub = function () {
         for (let sub of (info.list ?? [[]])) {
@@ -6605,7 +6605,7 @@
       `${(_server.isekai || onIsekaiEncounter) ? UI.l('异世界', '異世界', 'Isekai') : UI.l('恒定世界', '恆定世界', 'Persistent')}`, // 战役模式显示
       `${display.full}`, // 战役模式显示
       `R${battle.roundNow}/${battle.roundAll}:T${currentTurn}`,
-      `TPS: ${g().runSpeed}`,
+      `TPS: ${g().runSpeed}${g().runTimeGap??''}`,
       `${UI.l('敌人', '敵人', 'Monsters')}: ${g().monsterAlive}/${g().monsterAll}`,
     ].join(`<br>`).replace(`</div><br>`, `</div>`);
     if (!battle.roundAll) {
@@ -6917,7 +6917,10 @@
 
       const option = getOption();
       const timeNow = time(0);
-      g('runSpeed', (_1s / (timeNow - g().timeNow)).toFixed(2));
+      const timeDelta = timeNow - g().timeNow;
+      const timeDelay = Math.max(0, option.delay - unsafeWindow.response);
+      g('runSpeed', (_1s / timeDelta).toFixed(2));
+      g('runTimeGap', `<br><span style="font-size: 9pt!important">(${Math.max(0,timeDelta-unsafeWindow.response-timeDelay)}+network:${unsafeWindow.response}${timeDelay ? `+delay:${timeDelay}`: ''}ms)</span>`);
       g('timeNow', timeNow);
       const monsterDead = gE('img[src*="nbardead"]', 'all').length;
       g('monsterAlive', g().monsterAll - monsterDead);
@@ -7018,11 +7021,13 @@
       const delay2 = window.sessionStorage.delay2 * 1;
       window.info = a;
       unsafeWindow = typeof unsafeWindow === 'undefined' ? window : unsafeWindow;
+      unsafeWindow.send = new Date();
       b.open('POST', `${unsafeWindow.MAIN_URL}json`);
       b.setRequestHeader('Content-Type', 'application/json');
       b.withCredentials = true;
       b.onreadystatechange = d;
       b.onload = function () {
+        unsafeWindow.response = new Date() - unsafeWindow.send;
         updateMonsterEffects();
         document.getElementById('eventEnd').click();
       };
