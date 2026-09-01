@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.155
+// @version      2.91.156
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -8080,13 +8080,14 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       if (option.skillOTOS && option.skillOTOS[skill] && skillOTOS[skill] >= 1) {
         continue;
       }
-      setBattleSkillParam(id, { skill: skill });
+      const skillRange = skillInfos[id]?.range ?? 1;
+      setBattleSkillParam(id, { skill: skill, range: skillRange });
       let target = checkCondition(option[`skill${skill}Condition`], monsterStatus);
       if (!target) continue;
       updateSkillOTOS(i, skillOTOS);
       updateSkillOTOS(skill, skillOTOS);
       gE(id).click();
-      clickMonster(getRangeCenter(target, skillInfos[id]?.range ?? 1).id);
+      clickMonster(getRangeCenter(target, skillRange).id);
       return true;
     }
     return false;
@@ -8185,7 +8186,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
     let id;
     let minWeight = Number.MAX_SAFE_INTEGER;
     const condition = option[`debuffSkill${buff}${isAll ? 'All' : ''}Condition`];
-    setBattleSkillParam(skill.id, { debuff: buff, ...isAll ? { all: skill.id, debuffAll: buff }: { }});
+    setBattleSkillParam(skill.id, { debuff: buff, ...isAll ? { all: skill.id, debuffAll: buff, range: skillRange }: { }});
     const excludeCondition = target => checkCondition(condition, [target]) ? isDebuffed(target) : excludedWeight(target);
     for (const i of range(max)) {
       let target = buff === 'Dr' ? monsterStatus[max - i - 1] : monsterStatus[i];
@@ -8307,6 +8308,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
     // 1. physical
     if (attackStatus === 0) {
       skillRange = fightingStyle === 1 ? 3 : 1;
+      setBattleSkillParam('attack', { range: skillRange });
       return tryAttack();
     }
     // 2. etherTap
@@ -8357,8 +8359,8 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
         updateSkillOTOS(`attackTier${attackTier}`);
         gE(skill).click();
       }
-      setBattleSkillParam(skill, { attackTier });
-      clickMonster(getRangeCenter(target, skillRange ?? 1, !attackStatus).id);
+      setBattleSkillParam(skill, { attackTier, range: skillRange });
+      clickMonster(getRangeCenter(target, skillRange, !attackStatus).id);
       return true;
     };
   }
