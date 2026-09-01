@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.154
+// @version      2.91.155
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -443,13 +443,13 @@
     },
     cutLang: function (str) {
       const lang = g().lang;
-      return str.replaceAll(/<l(\d+)>(.*?)<\/l(\d+)>/g, (matched, lang1, inner, lang2) => {
+      return str?.replaceAll(/<l(\d+)>(.*?)<\/l(\d+)>/g, (matched, lang1, inner, lang2) => {
         switch (true) {
           case lang1 !== lang2: return inner;
           case lang1 !== lang: return '';
           default: return inner;
         }
-      });
+      }) ?? str;
     },
     alert: (...args) => window.alert(UI.byLang(args)),
     confirm: (...args) => window.confirm(UI.byLang(args)),
@@ -531,7 +531,7 @@
       return UI.div({
         args: { class: 'checkSupplyInner' },
         inner: [
-          UI.labeled(`checkSupply${key}`, UI.b('[C!!]', UI.l(['[name]使用额外的库存检查', '[name]使用額外的庫存檢查', 'Extra supply check for [name]'].map(t => t.replace('[name]', UI.cutLang(UI.byLang(names))))), ';')),
+          UI.labeled(`checkSupply${key}`, UI.b('[C!!]', UI.l(['[name]使用额外的库存检查', '[name]使用額外的庫存檢查', 'Extra supply check for [name]'].map(t => t.replace('[name]', names))), ';')),
           ...getCheckSupplyOptionTable(key),
         ]
       });
