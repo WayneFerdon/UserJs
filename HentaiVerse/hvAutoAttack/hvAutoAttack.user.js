@@ -5258,13 +5258,13 @@
         const remain = beforeIdle + delay - time(0);
         if (remain <= 0) return true;
         await waitPause();
-        displayProcess(`${remainTime2Str(remain, true)}${UI.byLang('等待进入闲置', '等待進入閒置', 'Wait for enter idle')}`);
+        displayProcess(`[-${remainTime2Str(remain, true)}]${UI.byLang('等待进入闲置', '等待進入閒置', 'Wait for enter idle')}`);
       }, 250);
       await pauseAsync(option.onIdleDelay * _1s);
     }
     const idleStart = g('idleStart', time(0));
     await waitPause();
-    displayProcess(UI.byLang('人物套装检查', '人物套裝檢查', 'Persona/EquipSet check'));
+    displayUntil(() => `[TIMER]${UI.byLang('人物套装检查', '人物套裝檢查', 'Persona/EquipSet check')}`);
     if (onIsekaiEncounter) {
       const persistent = await $ajax.fetch(window.location.href.replace('/isekai', ''));
       if (!persistent || isInBattle($doc(persistent))) {
@@ -5292,7 +5292,7 @@
     const ready = { isChecked: () => ready.encounter && !steps.find(group => group.find(step => step.check && !ready[step.step]))};
     let battleStarted;
     if (_server.isekai) {
-      displayProcess(UI.byLang('异世界遭遇', '異世界遭遇', 'Isekai encounter'));
+      displayUntil(() => `[TIMER]${UI.byLang('异世界遭遇', '異世界遭遇', 'Isekai encounter')}`);
       await setReady('encounter');
       if (!ready.encounter) {
         $async.logSwitch(arguments);
@@ -5300,22 +5300,22 @@
         return;
       }
     }
-    let done = -1;
-    displayProcess(`[${++done}/${steps.length}] ${UI.byLang('检查闲置', '檢查閒置', 'Idle check')}`);
+    let done = 0;
+    displayUntil(() => `[${done}/${steps.length}][TIMER]${UI.byLang('检查闲置', '檢查閒置', 'Idle check')}`, () => done >= steps.length);
     await Promise.all([...steps.map(group => (async () => { try {
       for (const step of group) {
         await setReady(step.step, await step.method() || !step.check);
       }
-      displayProcess(`[${++done}/${steps.length}] ${UI.byLang('检查闲置', '檢查閒置', 'Idle check')}`);
+      done++;
     } catch (err) { console.error(err); }})()), onIsekaiEncounter ? undefined : updateArena()]);
 
     if (!onIsekaiEncounter) {
       if (ready.isChecked() && option.idleArena && option.idleArenaValue) {
-        displayProcess(UI.byLang('竞技场更新', '競技場更新', 'Arena update'));
+        displayUntil(() => `[TIMER]${UI.byLang('竞技场更新', '競技場更新', 'Arena update')}`);
         battleStarted = await startUpdateArena(idleStart);
       }
       if (!battleStarted) {
-        displayProcess(UI.byLang('切换世界', '切換世界', 'World Switching'));
+        displayUntil(() => `[TIMER]${UI.byLang('切换世界', '切換世界', 'World Switching')}`);
         autoSwitchIsekai();
       }
     }
@@ -5323,10 +5323,26 @@
     $async.logSwitch(arguments);
     return ready.encounter;
 
+    function displayUntil(info, condition) {
+      const start = displayUntil.prototype.start = time(0);
+      until(async () => {
+        if (condition && condition()) return true;
+        if (displayUntil.prototype.start !== start) return true;
+        const formated = ['undefined', 'string'].includes(typeof info) ? info : info?.();
+        displayProcess(formated.replace('[TIMER]', `[+${remainTime2Str(time(0) - start, true)}]`));
+      });
+    }
+
     function displayProcess(info) {
-      document.title = document.title.replace(/\[AR\].*\[AR\]/, '');
-      if (!info) return;
-      document.title = `[AR]${info}[AR]` + document.title;
+      const cleaned = document.title.replace(/\[AR\].*\[AR\]/, '');
+      if (!info) {
+        document.title = cleaned;
+        displayUntil.prototype.start = undefined;
+        return;
+      }
+      const updated = `[AR]${info}[AR]` + cleaned;
+      if (updated === document.title) return;
+      document.title = updated;
     }
 
     async function setReady(step, value) { try {
