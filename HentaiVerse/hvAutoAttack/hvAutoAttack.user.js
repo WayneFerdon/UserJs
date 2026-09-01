@@ -6605,7 +6605,7 @@
       `${(_server.isekai || onIsekaiEncounter) ? UI.l('异世界', '異世界', 'Isekai') : UI.l('恒定世界', '恆定世界', 'Persistent')}`, // 战役模式显示
       `${display.full}`, // 战役模式显示
       `R${battle.roundNow}/${battle.roundAll}:T${currentTurn}`,
-      `TPS: ${g().runSpeed}${g().runTimeGap??''}`,
+      `<span style="font-size: 9pt!important">TPS: ${g().runSpeed}${g().runTimeGap??''}</span>`,
       `${UI.l('敌人', '敵人', 'Monsters')}: ${g().monsterAlive}/${g().monsterAll}`,
     ].join(`<br>`).replace(`</div><br>`, `</div>`);
     if (!battle.roundAll) {
@@ -6920,7 +6920,7 @@
       const timeDelta = timeNow - g().timeNow;
       const timeDelay = Math.max(0, option.delay - unsafeWindow.response);
       g('runSpeed', (_1s / timeDelta).toFixed(2));
-      g('runTimeGap', `<br><span style="font-size: 9pt!important">(${Math.max(0,timeDelta-unsafeWindow.response-timeDelay)}+network:${unsafeWindow.response}${timeDelay ? `+delay:${timeDelay}`: ''}ms)</span>`);
+      g('runTimeGap', `(${Math.max(0,timeDelta-unsafeWindow.response-timeDelay)}+network:${unsafeWindow.response}${timeDelay ? `+delay:${timeDelay}`: ''}ms)`);
       g('timeNow', timeNow);
       const monsterDead = gE('img[src*="nbardead"]', 'all').length;
       g('monsterAlive', g().monsterAll - monsterDead);
