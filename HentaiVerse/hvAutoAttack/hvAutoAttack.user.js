@@ -1475,55 +1475,58 @@
     return true;
   }
 
-  function pauseAsync(ms) {
-    // ----------------------
-    return new Promise(resolve => setTimeout(resolve, ms));
-    // ----------------------
+  function pauseAsync(ms, isForBattle) {
+    if (ms <= 0) return;
+    if (!isForBattle || ms >= 1) new Promise(resolve => setTimeout(resolve, ms));
+    // // ----------------------
+    // return new Promise(resolve => setTimeout(resolve, ms));
+    // // ----------------------
 
-//     pauseAsync.prototype.timerWorker ??= creatWorker();
-//     return pauseAsync.prototype.timerWorker(ms);
+    pauseAsync.prototype.timerWorker ??= creatWorker();
+    return pauseAsync.prototype.timerWorker(ms);
+    ms = Math.max(ms, 50);
 
-//     // 在blob worker内部进行setTimeout以避免浏览器限制
-//     function creatWorker() {
-//       const code = `
-//       let timerMap = {};
-//       self.onmessage = (e) => {
-//         const { id, ms } = e.data;
-//         timerMap[id] = setTimeout(() => {
-//           self.postMessage({ id });
-//           delete timerMap[id];
-//         }, ms);
-//       };
-//       `
+    // 在blob worker内部进行setTimeout以避免浏览器限制
+    function creatWorker() {
+      const code = `
+      let timerMap = {};
+      self.onmessage = (e) => {
+        const { id, ms } = e.data;
+        timerMap[id] = setTimeout(() => {
+          self.postMessage({ id });
+          delete timerMap[id];
+        }, ms);
+      };
+      `
 
-//       const blob = new Blob([code], { type: 'application/javascript' });
-//       const url = URL.createObjectURL(blob);
-//       const worker = new Worker(url);
+      const blob = new Blob([code], { type: 'application/javascript' });
+      const url = URL.createObjectURL(blob);
+      const worker = new Worker(url);
 
-//       const callbacks = new Map();
-//       let idCounter = 0;
+      const callbacks = new Map();
+      let idCounter = 0;
 
-//       worker.onmessage = (e) => {
-//         const { id } = e.data;
-//         const resolve = callbacks.get(id);
-//         if (!resolve) return;
-//         resolve();
-//         callbacks.delete(id);
-//       };
+      worker.onmessage = (e) => {
+        const { id } = e.data;
+        const resolve = callbacks.get(id);
+        if (!resolve) return;
+        resolve();
+        callbacks.delete(id);
+      };
 
-//       return (ms) => {
-//         return new Promise((resolve) => {
-//           const id = idCounter++;
-//           callbacks.set(id, resolve);
-//           worker.postMessage({ id, ms });
-//         });
-//       };
-//     }
+      return (ms) => {
+        return new Promise((resolve) => {
+          const id = idCounter++;
+          callbacks.set(id, resolve);
+          worker.postMessage({ id, ms });
+        });
+      };
+    }
   }
 
-  async function until(condition, delay){ try {
+  async function until(condition, delay, isForBattle){ try {
     let result;
-    while (!(result = await condition())) await pauseAsync(delay);
+    while (!(result = await condition())) await pauseAsync(delay, isForBattle);
     return result;
   } catch (err) { console.error(err); }}
 
@@ -6710,7 +6713,7 @@
       const prevActionTime = battle.prevActionTime ?? 0;
       const remainDelay = prevActionTime + option.delay - time(0);
       if (remainDelay > 0) {
-        await pauseAsync(remainDelay);
+        await pauseAsync(remainDelay, true);
       }
       const onTask = task => {
         const result = task.action();
@@ -7091,7 +7094,7 @@
         b.send(JSON.stringify(a));
       } else {
         (async () => {
-          await pauseAsync(delay * (Math.random() * 50 + 50) / 100);
+          await pauseAsync(delay * (Math.random() * 50 + 50) / 100, true);
           b.send(JSON.stringify(a));
         })();
         // setTimeout(() => {
@@ -7513,7 +7516,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
   }
 
   async function loadUnsafeWindowBattle() { try {
-    unsafeWindow.battle = await until(() => gE('#vbd') ? true : new unsafeWindow.Battle(), 300);
+    unsafeWindow.battle = await until(() => gE('#vbd') ? true : new unsafeWindow.Battle(), 300, true);
     if (!unsafeWindow.battle && gE('#vbd')) {
       console.log('Initialization of unsafeWindow.battle stoped due to defeated.');
       return false;
