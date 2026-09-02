@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.159
+// @version      2.91.160
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1565,7 +1565,7 @@
       return;
     }
     getStartBattleButtons().forEach(btn => {
-      if (ar.includes(btn.id) && btn.cleared && !option.arLevelDisable[btn.id]) {
+      if (ar.includes(btn.id) && btn.cleared && !option.arLevelDisable?.[btn.id]) {
         return;
       }
       gE('div', 'all', btn.closest('#arena_list tr')).forEach(div => { div.style.cssText += `color:${btn.cleared?'grey':'red'}!important;` });
@@ -6680,12 +6680,10 @@
         return true;
       }
       for (const name of range(order).map(i => order[i])) {
-        console.log(name)
         if (onTask(taskList[name])) return;
         delete taskList[name];
       }
       for (let name in taskList) {
-        console.log(name)
         if (onTask(taskList[name])) return;
       }
     }
@@ -7661,10 +7659,10 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
         }
         known[skill.img] = skill;
         if (skill.elem && skill.elem !== g().attackStatus) {
-          weight += option.weight[`${j}1`] ?? 0;
+          weight += option.weight?.[`${j}1`] ?? 0;
           continue;
         }
-        weight += option.weight[j] ?? 0;
+        weight += option.weight?.[j] ?? 0;
       }
 
       let unknown = gE(`img`, 'all', monsterBuff[i]);
