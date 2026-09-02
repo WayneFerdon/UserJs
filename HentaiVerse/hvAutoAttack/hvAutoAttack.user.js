@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.162
+// @version      2.91.163
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1480,45 +1480,45 @@
     return new Promise(resolve => setTimeout(resolve, ms));
     // ----------------------
 
-    pauseAsync.prototype.timerWorker ??= creatWorker();
-    return pauseAsync.prototype.timerWorker(ms);
+//     pauseAsync.prototype.timerWorker ??= creatWorker();
+//     return pauseAsync.prototype.timerWorker(ms);
 
-    // 在blob worker内部进行setTimeout以避免浏览器限制
-    function creatWorker() {
-      const code = `
-      let timerMap = {};
-      self.onmessage = (e) => {
-        const { id, ms } = e.data;
-        timerMap[id] = setTimeout(() => {
-          self.postMessage({ id });
-          delete timerMap[id];
-        }, ms);
-      };
-      `
+//     // 在blob worker内部进行setTimeout以避免浏览器限制
+//     function creatWorker() {
+//       const code = `
+//       let timerMap = {};
+//       self.onmessage = (e) => {
+//         const { id, ms } = e.data;
+//         timerMap[id] = setTimeout(() => {
+//           self.postMessage({ id });
+//           delete timerMap[id];
+//         }, ms);
+//       };
+//       `
 
-      const blob = new Blob([code], { type: 'application/javascript' });
-      const url = URL.createObjectURL(blob);
-      const worker = new Worker(url);
+//       const blob = new Blob([code], { type: 'application/javascript' });
+//       const url = URL.createObjectURL(blob);
+//       const worker = new Worker(url);
 
-      const callbacks = new Map();
-      let idCounter = 0;
+//       const callbacks = new Map();
+//       let idCounter = 0;
 
-      worker.onmessage = (e) => {
-        const { id } = e.data;
-        const resolve = callbacks.get(id);
-        if (!resolve) return;
-        resolve();
-        callbacks.delete(id);
-      };
+//       worker.onmessage = (e) => {
+//         const { id } = e.data;
+//         const resolve = callbacks.get(id);
+//         if (!resolve) return;
+//         resolve();
+//         callbacks.delete(id);
+//       };
 
-      return (ms) => {
-        return new Promise((resolve) => {
-          const id = idCounter++;
-          callbacks.set(id, resolve);
-          worker.postMessage({ id, ms });
-        });
-      };
-    }
+//       return (ms) => {
+//         return new Promise((resolve) => {
+//           const id = idCounter++;
+//           callbacks.set(id, resolve);
+//           worker.postMessage({ id, ms });
+//         });
+//       };
+//     }
   }
 
   async function until(condition, delay){ try {
