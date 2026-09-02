@@ -1477,7 +1477,7 @@
 
   function pauseAsync(ms, isForBattle) {
     if (ms <= 0) return;
-    if (!isForBattle || ms >= 1) new Promise(resolve => setTimeout(resolve, ms));
+    if (!isForBattle || ms >= _1s) new Promise(resolve => setTimeout(resolve, ms));
     // // ----------------------
     // return new Promise(resolve => setTimeout(resolve, ms));
     // // ----------------------
