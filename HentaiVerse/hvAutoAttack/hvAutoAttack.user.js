@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.161
+// @version      2.91.162
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1476,7 +1476,49 @@
   }
 
   function pauseAsync(ms) {
+    // ----------------------
     return new Promise(resolve => setTimeout(resolve, ms));
+    // ----------------------
+
+    pauseAsync.prototype.timerWorker ??= creatWorker();
+    return pauseAsync.prototype.timerWorker(ms);
+
+    // 在blob worker内部进行setTimeout以避免浏览器限制
+    function creatWorker() {
+      const code = `
+      let timerMap = {};
+      self.onmessage = (e) => {
+        const { id, ms } = e.data;
+        timerMap[id] = setTimeout(() => {
+          self.postMessage({ id });
+          delete timerMap[id];
+        }, ms);
+      };
+      `
+
+      const blob = new Blob([code], { type: 'application/javascript' });
+      const url = URL.createObjectURL(blob);
+      const worker = new Worker(url);
+
+      const callbacks = new Map();
+      let idCounter = 0;
+
+      worker.onmessage = (e) => {
+        const { id } = e.data;
+        const resolve = callbacks.get(id);
+        if (!resolve) return;
+        resolve();
+        callbacks.delete(id);
+      };
+
+      return (ms) => {
+        return new Promise((resolve) => {
+          const id = idCounter++;
+          callbacks.set(id, resolve);
+          worker.postMessage({ id, ms });
+        });
+      };
+    }
   }
 
   async function until(condition, delay){ try {
@@ -1491,7 +1533,10 @@
 
   function setTimeoutOrExecute(resolve, ms) {
     if (ms > 0) {
-      setTimeout(resolve, ms);
+      (async () => {
+        await pauseAsync(ms);
+        resolve();
+      })();
       return;
     }
     resolve();
@@ -6663,8 +6708,7 @@
 
     async function onTasks() {
       const prevActionTime = battle.prevActionTime ?? 0;
-      const now = time(0);
-      const remainDelay = prevActionTime + option.delay - now;
+      const remainDelay = prevActionTime + option.delay - time(0);
       if (remainDelay > 0) {
         await pauseAsync(remainDelay);
       }
@@ -6675,7 +6719,7 @@
           battle = getValue('battle', true);
           battle.turn = g().battle.turn = currentTurn;
           battle.prevLog = battle.turnLog;
-          battle.prevActionTime = now;
+          battle.prevActionTime = time(0);
           g('battle', battle);
           setValue('battle', battle);
         }
@@ -7046,9 +7090,13 @@
       if (delay <= 0) {
         b.send(JSON.stringify(a));
       } else {
-        setTimeout(() => {
+        (async () => {
+          await pauseAsync(delay * (Math.random() * 50 + 50) / 100);
           b.send(JSON.stringify(a));
-        }, delay * (Math.random() * 50 + 50) / 100);
+        })();
+        // setTimeout(() => {
+        //   b.send(JSON.stringify(a));
+        // }, delay * (Math.random() * 50 + 50) / 100);
       }
     }.toString()};
 // bool
@@ -7068,7 +7116,7 @@ ${[updateMonsterEffects, fixMonsterStatus,
 getMonsterID, getMonster, getMonster, getBuff,
 onRestoredBattleServer, getValue, setValue, delValue,
 getLocal, setLocal, delLocal,
-gE, cE, Version].map(f => f.toString()).join(';')};
+gE, cE, Version, pauseAsync].map(f => f.toString()).join(';')};
 `;
     gE('head').appendChild(fakeApiCall);
     const fakeApiResponse = cE('script');
