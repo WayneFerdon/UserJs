@@ -6666,7 +6666,7 @@
       const now = time(0);
       const remainDelay = prevActionTime + option.delay - now;
       if (remainDelay > 0) {
-        await pauseAsync(prevActionTime + option.delay - now);
+        await pauseAsync(remainDelay);
       }
       const onTask = task => {
         const result = task.action();
