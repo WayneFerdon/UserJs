@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.163
+// @version      2.91.164
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1475,11 +1475,11 @@
     return true;
   }
 
-  function pauseAsync(ms) {
-    // ----------------------
+  function pauseAsync(ms, isForBattle) {
     return new Promise(resolve => setTimeout(resolve, ms));
-    // ----------------------
-
+//     if (ms <= 0) return;
+//     if (!isForBattle || ms >= 1000) return new Promise(resolve => setTimeout(resolve, ms));
+//     ms = Math.max(ms, 50);
 //     pauseAsync.prototype.timerWorker ??= creatWorker();
 //     return pauseAsync.prototype.timerWorker(ms);
 
@@ -1521,9 +1521,9 @@
 //     }
   }
 
-  async function until(condition, delay){ try {
+  async function until(condition, delay, isForBattle){ try {
     let result;
-    while (!(result = await condition())) await pauseAsync(delay);
+    while (!(result = await condition())) await pauseAsync(delay, isForBattle);
     return result;
   } catch (err) { console.error(err); }}
 
@@ -3601,7 +3601,7 @@
             }
             for (i in stats) {
               if (['itemsNames', 'magicNames'].includes(i)) continue;
-              _html = `${_html}<tr class="hvAATh"><td>${translation[i]}</td><td>${UI.l('值', '值', 'Value')}</td></tr>`;
+              _html = `${_html}<tr class="hvAATh"><td>${translation[i]??i}</td><td>${UI.l('值', '值', 'Value')}</td></tr>`;
               stats[i] = objSort(stats[i]);
               let names = stats[`${i}Names`];
               for (const j in stats[i]) {
@@ -3621,12 +3621,11 @@
             _html = `${_html}</tr>`;
             Object.keys(translation).forEach((i) => {
               if (['itemsNames', 'magicNames'].includes(i)) return;
-              if (i === '__name') {
-                return;
-              }
-              _html = `${_html}<tr class="hvAATh"><td colspan="${statsOld.length + 1}">${translation[i]}</td></tr>`;
+              if (i === '__name') return;
+
+              _html = `${_html}<tr class="hvAATh"><td colspan="${statsOld.length + 1}">${translation[i]??i}</td></tr>`;
               getKeys(statsOld, i).forEach((key) => {
-                let names = stats[`${key}Names`];
+                let names = stats[`${i}Names`];
                 _html = `${_html}<tr><td>${key} ${names?.[key] ?? ''}</td>`;
                 statsOld.forEach((_statsOld) => {
                   if (_statsOld[i] && (key in _statsOld[i])) {
@@ -6012,7 +6011,7 @@
       if (!items[id]) continue;
       const recover = recoverItems[id] ? isPerk ? 20 : 10 : 5;
       if (current + recover >= 100) continue; // check if overflow by (20 or 10) -> (5)
-      // const recovered = gE('#stamina_readout .fc4.far>div', $doc(await $ajax.insert(window.location.href, 'recover=stamina'))).textContent.match(/\d+/)[0] * 1;
+      const recovered = gE('#stamina_readout .fc4.far>div', $doc(await $ajax.insert(window.location.href, 'recover=stamina'))).textContent.match(/\d+/)[0] * 1;
       goto();
       break;
     }
@@ -6710,7 +6709,7 @@
       const prevActionTime = battle.prevActionTime ?? 0;
       const remainDelay = prevActionTime + option.delay - time(0);
       if (remainDelay > 0) {
-        await pauseAsync(remainDelay);
+        await pauseAsync(remainDelay, true);
       }
       const onTask = task => {
         const result = task.action();
@@ -7091,12 +7090,9 @@
         b.send(JSON.stringify(a));
       } else {
         (async () => {
-          await pauseAsync(delay * (Math.random() * 50 + 50) / 100);
+          await pauseAsync(delay * (Math.random() * 50 + 50) / 100, true);
           b.send(JSON.stringify(a));
         })();
-        // setTimeout(() => {
-        //   b.send(JSON.stringify(a));
-        // }, delay * (Math.random() * 50 + 50) / 100);
       }
     }.toString()};
 // bool
@@ -7168,92 +7164,54 @@ gE, cE, Version, pauseAsync].map(f => f.toString()).join(';')};
       effectWearConfused: /([^<>]+) got knocked out of confuse\./g,
       oc: /div/g,
       ocHalf: /vcr/g,
-      /*isekai911*/
       spellMatch: /\('(?<name>[\w\s-]+)(?:\s\(x(?<stack>\d+)\))?',\s?(?<description>.*),\s?'?(?<turns>[\w\s-]+)'?\)/,
-      /*isekai912*/
       //battleRecorder
       turnLog: /([^]+?)<tr><td class="tls">/,
       //timeRecorder
       action: />([^<>]+)<\/td><\/tr>(<tr><td class="tlb">Spirit Stance Exhausted<\/td><\/tr>)*<tr><td class="tls"/,
-      /*isekai911*/
       action2: />([^<>]+)<\/td><\/tr><tr><td class="tlb?">[^<>]+<\/td><\/tr>(<tr><td class="tlb">Spirit Stance Exhausted<\/td><\/tr>)*<tr><td class="tls"/,
-      /*isekai912*/
       zeroturn: /You use\s*(\w* (?:Gem|Draught|Potion|Elixir|Drink|Candy|Infusion|Scroll|Vase|Bubble))/,
       use: /You (cast|use) ([\w\s-]+)/,
       //combatRecorder
-      damage: /[^<>]+damage( \([^<>]+\))*(<\/td><\/tr><tr><td class="tlb">Your spirit shield absorbs \d+ |<|\.)/g,
-      damageType: /for (\d+) (\w+) damage/,
+      damage: /[^<>]+damage/g,
+      damageTaken1: /(?<v>glances|hits|crits) you.*?(?<n>\d+).*?(?<t>\w+) damage/,
+      damageTaken2: /which (?<v>glances|hits|crits).*?(?<n>\d+).*?(?<t>\w+) damage/,
       spiritShield: /absorbs (\d+)/,
-      crit: /(You crit| crits | blasts )/,
-      strike: /(Fire|Cold|Wind|Elec|Holy|Dark|Void) Strike hits/,
+      damageDealt1: /(?:You|Your offhand attack|Arcane Blow) (?:(?<s>\d)x-)*(?<v>glance|hit|crit).*?(?<n>\d+).*?(?<t>\w+) damage/,
+      damageDealt2: /(?:(?<s>\d)x-)*(?<v>glanced|hit|crit|eviscerated) for (?<n>\d+) (?<t>\w+) damage/,
+      strike: /(Fire|Cold|Wind|Elec|Holy|Dark|Void) Strike hits.*?(\d+).*?(\w+) damage/,
+      explode: /explodes for (\d+) (\w+) damage/,
       damagePlus: /for (\d+) damage/,
       damagePhysicalPlus: /(Bleeding Wound|Spreading Poison)/,
       damagePoints: /for (\d+) points of (\w+) damage/,
+      debuffLog: /(?:<tr><td class="tlb?">[^<>]+(?: gains the effect | partially resists the effects of your spell\.| shrugs off the effects of your spell\.)+[^<>]*<\/td><\/tr>)+<tr><td class="tl">You cast [a-zA-Z]+\.<\/td><\/tr>/,
+      debuffResist0: / gains the effect (?!Coalesced Mana)/g,
+      debuffResist1: / partially resists the effects of your spell\./g,
+      debuffResist3: / shrugs off the effects of your spell\./g,
       counter: />You counter/g,
       //    dealt magical
-      magicalDealtMiss: /to connect\./g,
-      magicalDealtEvade: /evades your spell\./g,
-      magicalDealtResist50: / (?:hits|blasts) [^y][^<>]+50%/g,
-      magicalDealtResist75: / (?:hits|blasts) [^y][^<>]+75%/g,
-      magicalDealtResist90: / (?:hits|blasts) [^y][^<>]+90%/g,
-      magicalDealtResist: /resists your spell\./g,
+      magicalDealtMiss: / to connect\./g,
+      magicalDealtEvade: / evades your spell\./g,
+      magicalDealtResistPartially: / resists, and was/g,
+      magicalDealtResist: / resists your spell\./g,
       //    dealt physical
-      physicalDealtMiss: /its mark\./g,
-      physicalDealtEvade: /(?: dodges your attack\.|evades your offhand attack\.)/g,
-      physicalDealtParry: /parries your attack\./g,
+      physicalDealtMiss: / its mark\./g,
+      physicalDealtEvade: / dodges your attack\./g,
+      physicalDealtParryPartially: / parries[^<>]+?(\d+)[^<>]+?(\w+) damage/g,
+      physicalDealtParry: / parries your attack\./g,
       //    taken magical
-      magicalTakenEvade: / casts [^<>]+evade the attack\./g,
-      magicalTakenBlock: / casts [^<>]+block the attack\./g,
-      magicalTakenResist50: / (?:hits|blasts) y[^<>]+50%/g,
-      magicalTakenResist75: / (?:hits|blasts) y[^<>]+75%/g,
-      magicalTakenResist90: / (?:hits|blasts) y[^<>]+90%/g,
+      magicalTakenMiss: /(?:casts[^<>]+, but misses the attack\.|casts[^<>]+, missing you completely\.)/g,
+      magicalTakenEvade: />You evade the attack\./g,
+      magicalTakenResistPartially: / resist the attack/g,
+      magicalTakenBlockPartially: /casts[^<>]+partially block (?:and|resist| )*the attack/g,
+      magicalTakenBlock: /(?<!partially )block (?:and|resist| )*the attack\./g,
       //    taken physical
-      physicalTakenMiss: /misses the attack against you\./g,
-      physicalTakenEvade: /(>You evade| uses [^<>]+evade the attack\.)/g,
-      physicalTakenParry: /(>You parry| uses [^<>]+parry the attack\.)/g,
-      physicalTakenBlock: /(>You block| uses [^<>]+block the attack\.)/g,
-      /*isekai911*/
-      //combatRecorder_isekai
-      damage_isekai: /[^<>]+damage/g,
-      damageTaken1_isekai: /(?<v>glances|hits|crits) you.*?(?<n>\d+).*?(?<t>\w+) damage/,
-      damageTaken2_isekai: /which (?<v>glances|hits|crits).*?(?<n>\d+).*?(?<t>\w+) damage/,
-      spiritShield_isekai: /absorbs (\d+)/,
-      damageDealt1_isekai: /(?:You|Your offhand attack|Arcane Blow) (?:(?<s>\d)x-)*(?<v>glance|hit|crit).*?(?<n>\d+).*?(?<t>\w+) damage/,
-      damageDealt2_isekai: /(?:(?<s>\d)x-)*(?<v>glanced|hit|crit|eviscerated) for (?<n>\d+) (?<t>\w+) damage/,
-      strike_isekai: /(Fire|Cold|Wind|Elec|Holy|Dark|Void) Strike hits.*?(\d+).*?(\w+) damage/,
-      explode_isekai: /explodes for (\d+) (\w+) damage/,
-      damagePlus_isekai: /for (\d+) damage/,
-      damagePhysicalPlus_isekai: /(Bleeding Wound|Spreading Poison)/,
-      damagePoints_isekai: /for (\d+) points of (\w+) damage/,
-      debuffLog_isekai: /(?:<tr><td class="tlb?">[^<>]+(?: gains the effect | partially resists the effects of your spell\.| shrugs off the effects of your spell\.)+[^<>]*<\/td><\/tr>)+<tr><td class="tl">You cast [a-zA-Z]+\.<\/td><\/tr>/,
-      debuffResist0_isekai: / gains the effect /g,
-      debuffResist1_isekai: / partially resists the effects of your spell\./g,
-      debuffResist3_isekai: / shrugs off the effects of your spell\./g,
-      counter_isekai: />You counter/g,
-      //    dealt magical
-      magicalDealtMiss_isekai: / to connect\./g,
-      magicalDealtEvade_isekai: / evades your spell\./g,
-      magicalDealtResistPartially_isekai: / resists, and was/g,
-      magicalDealtResist_isekai: / resists your spell\./g,
-      //    dealt physical
-      physicalDealtMiss_isekai: / its mark\./g,
-      physicalDealtEvade_isekai: / dodges your attack\./g,
-      physicalDealtParryPartially_isekai: / parries[^<>]+?(\d+)[^<>]+?(\w+) damage/g,
-      physicalDealtParry_isekai: / parries your attack\./g,
-      //    taken magical
-      magicalTakenMiss_isekai: /(?:casts[^<>]+, but misses the attack\.|casts[^<>]+, missing you completely\.)/g,
-      magicalTakenEvade_isekai: />You evade the attack\./g,
-      magicalTakenResistPartially_isekai: / resist the attack/g,
-      magicalTakenBlockPartially_isekai: /casts[^<>]+partially block (?:and|resist| )*the attack/g,
-      magicalTakenBlock_isekai: /(?<!partially )block (?:and|resist| )*the attack\./g,
-      //    taken physical
-      physicalTakenMiss_isekai: /(?:uses[^<>]+, but misses the attack\.|(?:vigorously whiffs at a shadow|uses[^<>]+), missing you completely\.)/g,
-      physicalTakenEvade_isekai: />You evade the attack from/g,
-      physicalTakenParryPartially_isekai: /partially parry the attack/g,
-      physicalTakenParry_isekai: /(?<!partially )parry the attack/g,
-      physicalTakenBlockPartially_isekai: /(?:(?:uses[^<>]+|>)You|you) partially block (?:and|partially|parry| )*the attack/g,
-      physicalTakenBlock_isekai: /(?<!partially )block (?:and|partially|parry| )*the attack/g,
-      /*isekai912*/
+      physicalTakenMiss: /(?:uses[^<>]+, but misses the attack\.|(?:vigorously whiffs at a shadow|uses[^<>]+), missing you completely\.)/g,
+      physicalTakenEvade: />You evade the attack from/g,
+      physicalTakenParryPartially: /partially parry the attack/g,
+      physicalTakenParry: /(?<!partially )parry the attack/g,
+      physicalTakenBlockPartially: /(?:(?:uses[^<>]+|>)You|you) partially block (?:and|partially|parry| )*the attack/g,
+      physicalTakenBlock: /(?<!partially )block (?:and|partially|parry| )*the attack/g,
       //revenueRecorder
       gainExp: /gain (\d+) EXP/,
       gainCredit: /gain (\d+) Credit/,
@@ -7264,7 +7222,7 @@ gE, cE, Version, pauseAsync].map(f => f.toString()).join(';')};
       quality: /(Crude|Fair|Average|Superior|Exquisite|Magnificent|Legendary|Peerless)/,
       credit: /(\d+) Credit/,
       crystal: /(?:(\d+)x )?(Crystal of \w+)/,
-    }
+    };
 
     function getDuration(skill, channeling) {
       let [base, profRatio, prof] = [skill.duration, 1, 0];
@@ -7375,7 +7333,7 @@ gE, cE, Version, pauseAsync].map(f => f.toString()).join(';')};
       let jpxObj = {};
       let monster_btm6 = gE('.btm6', monster);
       const abs = ability;
-      monster_btm6.querySelectorAll('img').forEach((effect) => {
+      monster_btm6.querySelectorAll('img').forEach(effect => {
         let tooltip = effect.getAttribute('onmouseover');
         if (!tooltip) return;
 
@@ -7513,7 +7471,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
   }
 
   async function loadUnsafeWindowBattle() { try {
-    unsafeWindow.battle = await until(() => gE('#vbd') ? true : new unsafeWindow.Battle(), 300);
+    unsafeWindow.battle = await until(() => gE('#vbd') ? true : new unsafeWindow.Battle(), 300, true);
     if (!unsafeWindow.battle && gE('#vbd')) {
       console.log('Initialization of unsafeWindow.battle stoped due to defeated.');
       return false;
@@ -8617,7 +8575,7 @@ text-align: left;
     const battle = g().battle;
     stats.self ??= { _startTime: time(3) };
     stats.tokens ??= { token: battle.token, postoken: battle.postoken };
-    stats.self._turn = filter.turn ? stats.self._turn ?? 0 : undefined;
+    stats.self._turn = filter.turn ? battle.turn ?? 0 : undefined;
     stats.self._round = filter.round ? stats.self._round ?? 0 : undefined;
     stats.self._battle = filter.battle ? stats.self._battle ?? 0 : undefined;
     stats.self._monster = filter.monster ? stats.self._monster ?? 0 : undefined;
@@ -8827,7 +8785,7 @@ text-align: left;
     const battle = g().battle;
     if (option.recordEach && (different || battle.roundNow === battle.roundAll)) {
       const old = getValue('statsOld', true) || [];
-      stats.__name = getValue('battleCode', true)?.name;
+      stats.__name = getValue('battleCode', true)?.name ?? stats.__name;
       stats.self._endTime = time(3);
       old.push(stats);
       setValue('statsOld', old);
