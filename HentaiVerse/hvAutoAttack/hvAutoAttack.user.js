@@ -1481,10 +1481,10 @@
     // // ----------------------
     // return new Promise(resolve => setTimeout(resolve, ms));
     // // ----------------------
+    ms = Math.max(ms, 50);
 
     pauseAsync.prototype.timerWorker ??= creatWorker();
     return pauseAsync.prototype.timerWorker(ms);
-    ms = Math.max(ms, 50);
 
     // 在blob worker内部进行setTimeout以避免浏览器限制
     function creatWorker() {
