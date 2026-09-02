@@ -6609,7 +6609,7 @@
       `R${battle.roundNow}/${battle.roundAll}:T${currentTurn}`,
       `<div style="font-size: 9pt!important">TPS: ${g().runSpeed}<br>${g().runTimeGap??''}</div>`,
       `${UI.l('敌人', '敵人', 'Monsters')}: ${g().monsterAlive}/${g().monsterAll}`,
-    ].join(`<br>`).replace(`</div><br>`, `</div>`);
+    ].join(`<br>`).replaceAll(`</div><br>`, `</div>`);
     if (!battle.roundAll) {
       pauseChange();
       $debug.shiftLog();
