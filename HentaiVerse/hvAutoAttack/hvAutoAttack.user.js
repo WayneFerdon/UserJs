@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.158
+// @version      2.91.159
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -6661,27 +6661,33 @@
     }
     const prevActionTime = battle.prevActionTime ?? 0;
     const now = time(0);
-    if (now <= prevActionTime + option.delay) return onStepInDone();
-    const onTask = task => {
-      const result = task.action();
-      if (!result) return;
-      if (!task.noturn || result === 1) {
-        battle = getValue('battle', true);
-        battle.turn = g().battle.turn = currentTurn;
-        battle.prevLog = battle.turnLog;
-        battle.prevActionTime = now;
-        g('battle', battle);
-        setValue('battle', battle);
+    onTasks();
+
+    async function onTasks() {
+      await pauseAsync(prevActionTime + option.delay - now);
+      const onTask = task => {
+        const result = task.action();
+        if (!result) return;
+        if (!task.noturn || result === 1) {
+          battle = getValue('battle', true);
+          battle.turn = g().battle.turn = currentTurn;
+          battle.prevLog = battle.turnLog;
+          battle.prevActionTime = now;
+          g('battle', battle);
+          setValue('battle', battle);
+        }
+        onStepInDone();
+        return true;
       }
-      onStepInDone();
-      return true;
-    }
-    for (const name of range(order).map(i => order[i])) {
-      if (onTask(taskList[name])) return;
-      delete taskList[name];
-    }
-    for (let name in taskList) {
-      if (onTask(taskList[name])) return;
+      for (const name of range(order).map(i => order[i])) {
+        console.log(name)
+        if (onTask(taskList[name])) return;
+        delete taskList[name];
+      }
+      for (let name in taskList) {
+        console.log(name)
+        if (onTask(taskList[name])) return;
+      }
     }
   }
 
@@ -6916,7 +6922,6 @@
     const eventEnd = cE('a');
     eventEnd.id = 'eventEnd';
     eventEnd.onclick = function () {
-
       const option = getOption();
       const timeNow = time(0);
       const timeDelta = timeNow - g().timeNow;
