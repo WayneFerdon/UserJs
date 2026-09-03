@@ -1370,7 +1370,7 @@
   }
 
   function onBattle() {
-    if (!gE('#battle_left #textlog')) {
+    if (!gE('#textlog')) {
       return false;
     }
     checkResponsive();
@@ -7023,7 +7023,7 @@
       g('monsterAlive', g().monsterAll - monsterDead);
       const bossDead = gE(`${monsterStateKeys.obj}[style*="opacity"] ${monsterStateKeys.lv}[style*="background"]`, 'all').length;
       g('bossAlive', g().bossAll - bossDead);
-      const battleLog = gE('#battle_left #textlog>tbody>tr>td', 'all');
+      const battleLog = gE('#textlog>tbody>tr>td', 'all');
 
       let stats = getValue('stats', true) || {};
       const battle = g().battle;
@@ -7331,7 +7331,7 @@ gE, cE, Version, sleep].map(f => f.toString()).join(';')};
       }
     }
 
-    const turnLog = gE('#battle_left #textlog').innerHTML.match(/([^]+?)((<tr><td class="tls">)|(<\/tbody>))/)[0];
+    const turnLog = gE('#textlog').innerHTML.match(/([^]+?)((<tr><td class="tls">)|(<\/tbody>))/)[0];
     isNewTurn &&= turnLog !== battle.turnLog;
     if (turnLog.match(regExp.battleTypeLog)) return; // skip if is new round
 
@@ -7565,7 +7565,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       tw: { reg: /^Initializing The Tower/ },
       ba: { reg: /^Initializing random encounter/ },
     }
-    const battleLog = gE('#battle_left #textlog>tbody>tr>td', 'all');
+    const battleLog = gE('#textlog>tbody>tr>td', 'all');
     const firstLog = battleLog[battleLog.length - 1].textContent;
     if (!battle.roundType || firstLog.match(/^Initializing/)) {
       battle.tower = (firstLog.match(/\(Floor (\d+)\)/) ?? [null])[1] * 1;
@@ -7650,7 +7650,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
   }
 
   function killBug() { // 在 HentaiVerse 发生导致 turn 损失的 bug 时发出警告并移除问题元素: https://ehwiki.org/wiki/HentaiVerse_Bugs_%26_Errors#Combat
-    const bugLog = gE('#battle_left #textlog > tbody > tr > td[class="tlb"]', 'all');
+    const bugLog = gE('#textlog > tbody > tr > td[class="tlb"]', 'all');
     const isBug = /(Slot is currently not usable)|(Item does not exist)|(Inventory slot is empty)|(You do not have a powerup gem)/;
     for (const i of range(bugLog)) {
       if (bugLog[i].textContent.match(isBug)) {
