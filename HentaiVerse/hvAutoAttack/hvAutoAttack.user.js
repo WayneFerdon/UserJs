@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.164
+// @version      2.91.165
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -583,7 +583,7 @@
   }
 
   const [$RPN, $async, $debug, $ajax] = [initRPN(), initAsync(), initDebug(), window.top.$ajax ??= unsafeWindow.window.top.$ajax ??= initAjax()];
-  
+
   // 初始化结束，开始实际流程
   for (let check of [checkIsHV, checkIsWindowTop]) {
     if (!check()) return;
@@ -1166,7 +1166,7 @@
     const timeDiv = gE('#riddlecounter>div>div', 'all');
     while (time === undefined || time > answerTime) {
       if (timeDiv.length === 0) {
-        await pauseAsync(_1s);
+        await sleep(_1s);
         continue;
       }
       time = undefined;
@@ -1175,7 +1175,7 @@
       }
       time *= 1;
       document.title = time;
-      await pauseAsync(_1s);
+      await sleep(_1s);
     }
     for (let ans of gE('#riddler1>*', 'all').children) {
       if (!ans.children[0].children[0].checked) continue;
@@ -1239,12 +1239,12 @@
 
   async function safeClose(delay) {
     try { window.close() } catch (err) { /* console.log(err) */ }
-    await pauseAsync(delay);
+    await sleep(delay);
     return !window || window.closed;
   }
 
   async function tryClose(attempts, delay) { try {
-    await pauseAsync(delay);
+    await sleep(delay);
     window.opener = null;
     window.open('', '_self');
     if (await safeClose(delay)) return;
@@ -1292,7 +1292,7 @@
     // }
 
     if (gE('[class^="c5"], [class^="c4"]') && UI.confirm('请设置字体\n使用默认字体可能使某些功能失效\n是否查看相关说明？', '請設置字體\n使用默認字體可能使某些功能失效\n是否查看相關說明？', 'Please set the font\nThe default font may make some functions fail to work\nDo you want to see instructions?')) {
-      $ajax.openNoFetch(`https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README${g().lang === '2' ? '_en.md#about-font' : '.md#关于字体的说明'}`, true);
+      $ajax.openNoFetch(`https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README${UI.l('.md#关于字体的说明', '.md#关于字体的说明', '_en.md#about-font')}`, true);
       return false;
     }
     return true;
@@ -1475,55 +1475,54 @@
     return true;
   }
 
-  function pauseAsync(ms, isForBattle) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-//     if (ms <= 0) return;
-//     if (!isForBattle || ms >= 1000) return new Promise(resolve => setTimeout(resolve, ms));
-//     ms = Math.max(ms, 50);
-//     pauseAsync.prototype.timerWorker ??= creatWorker();
-//     return pauseAsync.prototype.timerWorker(ms);
+  function sleep(ms, isForBattle) {
+    if (ms <= 0) return;
+    if (!isForBattle || ms >= 1000) return new Promise(resolve => setTimeout(resolve, ms));
+    ms = Math.max(ms, 50);
+    sleep.prototype.timerWorker ??= creatWorker();
+    return sleep.prototype.timerWorker(ms);
 
-//     // 在blob worker内部进行setTimeout以避免浏览器限制
-//     function creatWorker() {
-//       const code = `
-//       let timerMap = {};
-//       self.onmessage = (e) => {
-//         const { id, ms } = e.data;
-//         timerMap[id] = setTimeout(() => {
-//           self.postMessage({ id });
-//           delete timerMap[id];
-//         }, ms);
-//       };
-//       `
+    // 在blob worker内部进行setTimeout以避免浏览器限制
+    function creatWorker() {
+      const code = `
+      let timerMap = {};
+      self.onmessage = (e) => {
+        const { id, ms } = e.data;
+        timerMap[id] = setTimeout(() => {
+          self.postMessage({ id });
+          delete timerMap[id];
+        }, ms);
+      };
+      `
 
-//       const blob = new Blob([code], { type: 'application/javascript' });
-//       const url = URL.createObjectURL(blob);
-//       const worker = new Worker(url);
+      const blob = new Blob([code], { type: 'application/javascript' });
+      const url = URL.createObjectURL(blob);
+      const worker = new Worker(url);
 
-//       const callbacks = new Map();
-//       let idCounter = 0;
+      const callbacks = new Map();
+      let idCounter = 0;
 
-//       worker.onmessage = (e) => {
-//         const { id } = e.data;
-//         const resolve = callbacks.get(id);
-//         if (!resolve) return;
-//         resolve();
-//         callbacks.delete(id);
-//       };
+      worker.onmessage = (e) => {
+        const { id } = e.data;
+        const resolve = callbacks.get(id);
+        if (!resolve) return;
+        resolve();
+        callbacks.delete(id);
+      };
 
-//       return (ms) => {
-//         return new Promise((resolve) => {
-//           const id = idCounter++;
-//           callbacks.set(id, resolve);
-//           worker.postMessage({ id, ms });
-//         });
-//       };
-//     }
+      return (ms) => {
+        return new Promise((resolve) => {
+          const id = idCounter++;
+          callbacks.set(id, resolve);
+          worker.postMessage({ id, ms });
+        });
+      };
+    }
   }
 
   async function until(condition, delay, isForBattle){ try {
     let result;
-    while (!(result = await condition())) await pauseAsync(delay, isForBattle);
+    while (!(result = await condition())) await sleep(delay, isForBattle);
     return result;
   } catch (err) { console.error(err); }}
 
@@ -1534,7 +1533,7 @@
   function setTimeoutOrExecute(resolve, ms) {
     if (ms > 0) {
       (async () => {
-        await pauseAsync(ms);
+        await sleep(ms);
         resolve();
       })();
       return;
@@ -3351,6 +3350,7 @@
             UI.hvAATab(
               'Drop',
               UI.div(
+                UI.div(UI.b(`<span style="color:red;">`,UI.l('本功能将不再及时更新，可能过时', '本功能將不再及時更新，可能過時', 'This function is no longer being updated in time and might be out of date.'),`</span>`)),
                 UI.button.class('reDropMonitor', UI.l('重置掉落监测', '重置掉落監測', 'Reset Drops Tracking')),
                 UI.labeled('portable_drop', UI.hidden(UI.l('掉落监测', '掉落監測', 'Drops Tracking'),' ')+'<l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2><l0>注意：便携数据模式可能会显著增加硬盘读写</l0><l1>注意：便攜數據模式可能會顯著增加硬盤讀寫</l1><l2>Notice：portable mode may significantly increase hard disk I/O</l2>'),
                 '<input id="portable_dropOld" type="checkbox" hidden>',
@@ -3363,6 +3363,7 @@
             UI.hvAATab(
               'Usage',
               UI.div(
+                UI.div(UI.b(`<span style="color:red;">`,UI.l('本功能将不再及时更新，可能过时', '本功能將不再及時更新，可能過時', 'This function is no longer being updated in time and might be out of date.'),`</span>`)),
                 UI.button.class('reRecordUsage', UI.l('重置数据记录', '重置數據記錄', 'Reset Usage Tracking')),
                 UI.labeled('portable_stats', UI.hidden(UI.l('数据记录', '數據記錄', 'Usage Tracking'),' ')+UI.l('使用便携数据模式（导出脚本数据时将包含）注意：便携数据模式可能会显著增加硬盘读写', '使用便攜數據模式（導出腳本數據時將包含）注意：便攜數據模式可能會顯著增加硬盤讀寫', 'Portable Mode (will be included while exporting script datas) Notice：portable mode may significantly increase hard disk I/O')),
                 '<input id="portable_statsOld" type="checkbox" hidden>'
@@ -4254,7 +4255,7 @@
     g().titleQueue ??= [];
     if (g().titleQueue.includes(input)) return;
     g().titleQueue.push(input);
-    await pauseAsync(100);
+    await sleep(100);
     applyLabelTitle(input);
     if (g().isProcessingTitleQueue) return;
     g().isProcessingTitleQueue = true;
@@ -4901,6 +4902,12 @@
       targetIsAlive(param) {
         return switchMaxMin(param, t => t.isDead ? 0 : 1);
       },
+      targetHPRaw(param) {
+        return switchMaxMin(param, t => t.hpNow);
+      },
+      targetHPFull(param) {
+        return switchMaxMin(param, t => t.hp);
+      },
       targetHp(param) {
         return switchMaxMin(param, t => Math.floor(func.targetHpDecimal() * 100));
       },
@@ -4979,16 +4986,50 @@
     };
 
     function switchMaxMin(param, defaultResult, skipAliveCheck = false, targets = undefined) {
-      if (['gacount', 'gasum', 'gamax', 'gamin', 'gcount', 'gsum', 'gmax', 'gmin'].includes(param)) {
+      const paramForSort = ['rank', 'tier', 'maxtier', 'sumtier', 'counttier', ...range(10).map(n => `counttier${n}`)];
+      const params = ['count', 'sum', 'max', 'min', ...paramForSort];
+      if ([ ...params.map(n => `ga${n}`), ...params.map(n => `g${n}`)].includes(param)) {
         return switchMaxMin(param.replace(/^g/, ''), defaultResult, skipAliveCheck, currentGroup);
       }
-      if (['acount', 'asum', 'amax', 'amin', 'agcount', 'agsum', 'agmax', 'agmin'].includes(param)) {
+      if ([ ...params.map(n => `a${n}`), ...params.map(n => `ag${n}`)].includes(param)) {
         return switchMaxMin(param.replace(/^a/, ''), defaultResult, true, targets);
       }
       if (targets === undefined) targets = g().battle.monsterStatus; // 只处理 undefined，null 是空 group
       if (!targets) return 0;
       if (!skipAliveCheck) targets = targets.filter(t => !t.isDead);
+
+      let results, target, counter;
+      if (paramForSort.includes(param)) {
+        results = targets.map(t => { return { target: t, value: defaultResult(t) }; }).sortBy(r => r.value);
+        target = targetGetter();
+        if (param.includes('tier')) {
+          let last, tier = -1;
+          for (const result of results) {
+            if (result.value !== last) {
+              last = result.value;
+              tier++;
+            }
+            result.tier = tier;
+          }
+          counter = param.match(/counttier(.*)/)?.[1] * 1;
+          if (!isNaN(counter)) param = 'counttier';
+        }
+      }
+
       switch (param) {
+        case 'counttier':
+          {
+            const targetTier = !isNaN(counter) ? counter : results.find(r => r.target.order === target.order).tier;
+            return results.filter(r => r.tier === targetTier).length;
+          }
+        case 'sumtier':
+          return Math.max(...results.map(r => r.tier));
+        case 'maxtier':
+          return Math.max(...results.map(r => r.tier));
+        case 'tier':
+          return results.find(r => r.target.order === target.order).tier;
+        case 'rank':
+          return results.findIndex(r => r.target.order === target.order);
         case 'count':
           return targets.map(defaultResult).reduce((acc, cur) => acc + Math.sign(cur), 0);
         case 'sum':
@@ -5207,13 +5248,13 @@
 
   async function autoSwitchIsekai() {
     const option = getOption();
-    await pauseAsync(option.isekaiTime * _1s - (time(0) - g().idleStart));
+    await sleep(option.isekaiTime * _1s - (time(0) - g().idleStart));
     await waitPause();
     $async.logSwitch(arguments);
     if (!option.isekai) return; // 若不启用自动跳转
     const now = time(0);
     const remain = (getValue('lastSwitch') ?? 0) * 1 + (option.isekaiCD ?? 0) * _1s - now;
-    await pauseAsync(remain);
+    await sleep(remain);
     await waitPause();
     setValue('lastSwitch', now);
     $ajax.openNoFetch(`${window.location.href.slice(0, window.location.href.indexOf('.org') + 4)}/${_server.isekai ? '' : 'isekai/'}`);
@@ -5304,7 +5345,7 @@
         await waitPause();
         displayProcess(`[-${remainTime2Str(remain, true)}]${UI.byLang('等待进入闲置', '等待進入閒置', 'Wait for enter idle')}`);
       }, 250);
-      await pauseAsync(option.onIdleDelay * _1s);
+      await sleep(option.onIdleDelay * _1s);
     }
     const idleStart = g('idleStart', time(0));
     await waitPause();
@@ -6190,7 +6231,7 @@
       return;
     }
     g('encounterStart', time(0));
-    await pauseAsync(option.encounterDelay * _1s);
+    await sleep(option.encounterDelay * _1s);
     setEncounter(getEncounter()); // 离开页面前保存
     if (!window.top.location.href.endsWith(`?s=Battle`)) {
       setValue('beforeEncounter', setValue('lastUrl', window.top.location.href));
@@ -6206,7 +6247,7 @@
     if (!idleStart) await updateArena(); // new day
     let timeout = getOption().idleArenaTime * _1s;
     if (idleStart) timeout -= time(0) - idleStart;
-    if (timeout > 0) await pauseAsync(timeout);
+    if (timeout > 0) await sleep(timeout);
     const started = await idleArena();
     const last = getValue('arena', true)?.date ?? now;
     const nextDay = Math.max(0, Math.floor(last / _1d + 1) * _1d - now);
@@ -6709,7 +6750,7 @@
       const prevActionTime = battle.prevActionTime ?? 0;
       const remainDelay = prevActionTime + option.delay - time(0);
       if (remainDelay > 0) {
-        await pauseAsync(remainDelay, true);
+        await sleep(remainDelay, true);
       }
       const onTask = task => {
         const result = task.action();
@@ -6934,7 +6975,7 @@
         isBreak ||= battleUnresponsive[t].method();
       }
       if (g().battleExit || isBreak) break;
-      await pauseAsync(min - waited);
+      await sleep(min - waited);
     }
   }
 
@@ -7014,7 +7055,7 @@
         }
 
         if (option.NewRoundWaitTime) { // Next Round
-          await pauseAsync(option.NewRoundWaitTime * _1s);
+          await sleep(option.NewRoundWaitTime * _1s);
           await waitPause();
         }
         if (gE('#btcp')?.innerHTML.includes("finishbattle.png")) return console.error(`gE('#btcp')?.innerHTML.includes("finishbattle.png")`);
@@ -7090,7 +7131,7 @@
         b.send(JSON.stringify(a));
       } else {
         (async () => {
-          await pauseAsync(delay * (Math.random() * 50 + 50) / 100, true);
+          await sleep(delay * (Math.random() * 50 + 50) / 100, true);
           b.send(JSON.stringify(a));
         })();
       }
@@ -7112,7 +7153,7 @@ ${[updateMonsterEffects, fixMonsterStatus,
 getMonsterID, getMonster, getMonster, getBuff,
 onRestoredBattleServer, getValue, setValue, delValue,
 getLocal, setLocal, delLocal,
-gE, cE, Version, pauseAsync].map(f => f.toString()).join(';')};
+gE, cE, Version, sleep].map(f => f.toString()).join(';')};
 `;
     gE('head').appendChild(fakeApiCall);
     const fakeApiResponse = cE('script');
