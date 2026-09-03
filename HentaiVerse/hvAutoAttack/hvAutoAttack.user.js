@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.168
+// @version      2.91.169
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1476,7 +1476,7 @@
   }
 
   function sleep(ms, isForBattle) {
-    if (ms <= 0) return;
+    if (!ms || ms <= 0) return;
     if (!isForBattle || ms >= 1000) return new Promise(resolve => setTimeout(resolve, ms));
     ms = Math.max(ms, 50);
     sleep.prototype.timerWorker ??= creatWorker();
@@ -1522,12 +1522,13 @@
 
   async function until(condition, delay, isForBattle){ try {
     let result;
+    delay = Math.max(50, delay??50);
     while (!(result = await condition())) await sleep(delay, isForBattle);
     return result;
   } catch (err) { console.error(err); }}
 
-  async function waitPause(ms) { try {
-    return await until(() => !getValue('disabled'), ms);
+  async function waitPause(isForBattle, ms) { try {
+    return await until(() => !getValue('disabled'), ms, isForBattle);
   } catch (err) { console.error(err); }}
 
   function setTimeoutOrExecute(resolve, ms) {
@@ -7048,7 +7049,7 @@
       }
       onRoundEnd();
       async function onRoundEnd() { try {
-        await waitPause();
+        await waitPause(true);
         $async.logSwitch(arguments);
         switch (true) {
           case gE('#btcp')?.innerHTML.includes("You have run away!"): return setExitBattleTimeout('Flee');
@@ -7057,17 +7058,17 @@
         }
 
         if (option.NewRoundWaitTime) { // Next Round
-          await sleep(option.NewRoundWaitTime * _1s);
-          await waitPause();
+          await sleep(option.NewRoundWaitTime * _1s, true);
+          await waitPause(true);
         }
         if (gE('#btcp')?.innerHTML.includes("finishbattle.png")) return console.error(`gE('#btcp')?.innerHTML.includes("finishbattle.png")`);
         let url = option.checkURLBeforeNewRound;
         if (url) {
           lastResponsive = Infinity;
           await until(async () => { try {
-            await waitPause();
+            await waitPause(true);
             return await $ajax.insert(url, undefined, undefined, {}, {}, true);
-          } catch (err) { console.error('Connect failed:', url) }}, option.checkURLBeforeNewRoundRetry * _1s);
+          } catch (err) { console.error('Connect failed:', url) }}, option.checkURLBeforeNewRoundRetry * _1s, true);
           lastResponsive = time(0);
         }
         const doc = $doc(await $ajax.insert(window.location.href));
@@ -7518,7 +7519,6 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
     unsafeWindow.battle = await until(() => {
       if (gE('#vbd')) return true;
       const battle = new unsafeWindow.Battle();
-      // document.dispatchEvent(new Event('DOMContentLoaded'));
       return battle;
     }, 300, true);
     if (!unsafeWindow.battle && gE('#vbd')) {
