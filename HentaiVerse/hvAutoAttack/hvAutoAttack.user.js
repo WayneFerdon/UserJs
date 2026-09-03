@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.167
+// @version      2.91.168
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -6950,7 +6950,7 @@
       const waitTime = option.ExitBattleWaitTime * _1s;
       const maxWaited = time(0) + 10 * waitTime; // 等jpx最多等10倍时间
       if (gE('#ctrl-widget')) await until(() => (time(0) >= maxWaited) || (gE('#time-records-div') && gE('#revenue-records-table'))); // wait jpx
-      setTimeoutOrExecute(() => backFromBattle(),);
+      setTimeoutOrExecute(() => backFromBattle(), waitTime);
     })();
   }
 
@@ -7515,7 +7515,12 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
   }
 
   async function loadUnsafeWindowBattle() { try {
-    unsafeWindow.battle = await until(() => gE('#vbd') ? true : new unsafeWindow.Battle(), 300, true);
+    unsafeWindow.battle = await until(() => {
+      if (gE('#vbd')) return true;
+      const battle = new unsafeWindow.Battle();
+      // document.dispatchEvent(new Event('DOMContentLoaded'));
+      return battle;
+    }, 300, true);
     if (!unsafeWindow.battle && gE('#vbd')) {
       console.log('Initialization of unsafeWindow.battle stoped due to defeated.');
       return false;
