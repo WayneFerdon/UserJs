@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.169
+// @version      2.91.170
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -883,16 +883,16 @@
       conn: 0,
       queue: [],
 
-      insert: function (url, data, method, context = {}, headers = {}) {
-        return $ajax.fetch(url, data, method, context, headers, true);
+      insert: function (url, data, method, context = {}, headers = {}, isForBattle) {
+        return $ajax.fetch(url, data, method, context, headers, true, isForBattle);
       },
-      fetch: function (url, data, method, context = {}, headers = {}, isInsert = false) {
+      fetch: function (url, data, method, context = {}, headers = {}, isInsert = false, isForBattle) {
         return new Promise((resolve, reject) => {
-          $ajax.add(method, url, data, resolve, reject, context, headers, isInsert);
+          $ajax.add(method, url, data, resolve, reject, context, headers, isInsert, isForBattle);
         });
       },
-      open: function (url, data, method, context = {}, headers = {}) {
-        $ajax.fetch(url, data, method, context, headers).then(goto).catch( err => { console.error(err); });
+      open: function (url, data, method, context = {}, headers = {}, isForBattle) {
+        $ajax.fetch(url, data, method, context, headers, false, isForBattle).then(goto).catch( err => { console.error(err); });
       },
       openNoFetch: function (url, newTab) {
         const newWindow = window.open(url, newTab ? '_blank' : '_self');
@@ -905,7 +905,7 @@
         range(count).forEach(_ => list.push(func(...args)));
         return list;
       },
-      add: function (method, url, data, onload, onerror, context = {}, headers = {}, isInsert = false) {
+      add: function (method, url, data, onload, onerror, context = {}, headers = {}, isInsert = false, isForBattle) {
         method = !data ? 'GET' : method ?? 'POST';
         if (method === 'POST') {
           headers['Content-Type'] ??= 'application/x-www-form-urlencoded';
@@ -922,50 +922,32 @@
         context.onload = onload;
         context.onerror = onerror;
         if (isInsert) {
-          $ajax.queue.unshift({ method, url, data, headers, context, onload: $ajax.onload, onerror: $ajax.onerror });
+          $ajax.queue.unshift({ method, url, data, headers, context, onload: $ajax.onload, onerror: $ajax.onerror, isForBattle });
         } else {
-          $ajax.queue.push({ method, url, data, headers, context, onload: $ajax.onload, onerror: $ajax.onerror });
+          $ajax.queue.push({ method, url, data, headers, context, onload: $ajax.onload, onerror: $ajax.onerror, isForBattle });
         }
         $ajax.next();
       },
-      next: function () {
-        if (!$ajax.queue.length) {
-          return;
-        }
-        if ($ajax.tid) {
-          if (!$ajax.conn) {
-            clearTimeout($ajax.tid);
-            $ajax.tid = null;
-            $ajax.timer();
-            $ajax.send();
-          }
-        } else {
-          if ($ajax.conn < $ajax.max) {
-            $ajax.timer();
-            $ajax.send();
-          }
-        }
+      next: async function () {
+        let last, now = new Date().getTime();;
+        await until(() => {
+          if (!$ajax.queue.length || $ajax.conn >= $ajax.max) return true;
+          now = new Date().getTime();
+          last = $ajax.getLast();
+          if (!last) return true;
+          return now - last >= $ajax.interval;
+        }, 0, $ajax.queue[0]?.isForBattle);
+
+        if (!$ajax.queue.length || $ajax.conn >= $ajax.max) return;
+        $ajax.setLast(now);
+        $ajax.send();
       },
       getLast: function () {
         const v = window.localStorage.getItem(_server.utils + '_last_post');
-        return v === null ? undefined : JSON.parse(v);
+        return !v ? undefined : JSON.parse(v);
       },
       setLast: function (last) {
         window.localStorage.setItem(_server.utils + '_last_post', JSON.stringify(last));
-      },
-      timer: function () {
-        function ontimer() {
-          const now = new Date().getTime();
-          const last = $ajax.getLast();
-          if (!last || now - last >= $ajax.interval) {
-            $ajax.next();
-            $ajax.setLast(now);
-            return;
-          }
-          $ajax.tid = null;
-          $ajax.next();
-        };
-        $ajax.tid = setTimeout(ontimer, $ajax.interval);
       },
       simplify: function (r) {
         const info = {};
@@ -978,6 +960,7 @@
       },
       send: function () {
         const current = $ajax.queue.shift();
+        delete current.isForBattle;
         GM_xmlhttpRequest(current);
         $ajax.conn++;
         if (!$ajax.debug) return;
@@ -6686,7 +6669,6 @@
     }
 
     let currentTurn = (battle.turn ?? 0);
-    if (battle.turnLog !== battle.prevLog) currentTurn++;
     const display = getBattleTypeDisplay();
     gE('.hvAALog').innerHTML = [
       `${UI.l('攻击模式', '攻擊模式', 'Attack Mode')}: ${UI.attackStatusType[g().attackStatus]}`,
@@ -6758,7 +6740,7 @@
         if (!result) return;
         if (!task.noturn || result === 1) {
           battle = getValue('battle', true);
-          battle.turn = g().battle.turn = currentTurn;
+          battle.turn = g().battle.turn = currentTurn + 1;
           battle.prevLog = battle.turnLog;
           battle.prevActionTime = time(0);
           g('battle', battle);
@@ -7071,7 +7053,7 @@
           } catch (err) { console.error('Connect failed:', url) }}, option.checkURLBeforeNewRoundRetry * _1s, true);
           lastResponsive = time(0);
         }
-        const doc = $doc(await $ajax.insert(window.location.href));
+        const doc = $doc(await $ajax.insert(window.location.href, undefined, undefined, {}, {}, true));
         if (gE('#riddlecounter', doc)) {
           lastResponsive = Infinity;
           if (option.riddlePopup && !window.opener) {
