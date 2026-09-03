@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.163
+// @version      2.91.169
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -583,7 +583,7 @@
   }
 
   const [$RPN, $async, $debug, $ajax] = [initRPN(), initAsync(), initDebug(), window.top.$ajax ??= unsafeWindow.window.top.$ajax ??= initAjax()];
-  
+
   // 初始化结束，开始实际流程
   for (let check of [checkIsHV, checkIsWindowTop]) {
     if (!check()) return;
@@ -1166,7 +1166,7 @@
     const timeDiv = gE('#riddlecounter>div>div', 'all');
     while (time === undefined || time > answerTime) {
       if (timeDiv.length === 0) {
-        await pauseAsync(_1s);
+        await sleep(_1s);
         continue;
       }
       time = undefined;
@@ -1175,7 +1175,7 @@
       }
       time *= 1;
       document.title = time;
-      await pauseAsync(_1s);
+      await sleep(_1s);
     }
     for (let ans of gE('#riddler1>*', 'all').children) {
       if (!ans.children[0].children[0].checked) continue;
@@ -1239,12 +1239,12 @@
 
   async function safeClose(delay) {
     try { window.close() } catch (err) { /* console.log(err) */ }
-    await pauseAsync(delay);
+    await sleep(delay);
     return !window || window.closed;
   }
 
   async function tryClose(attempts, delay) { try {
-    await pauseAsync(delay);
+    await sleep(delay);
     window.opener = null;
     window.open('', '_self');
     if (await safeClose(delay)) return;
@@ -1292,7 +1292,7 @@
     // }
 
     if (gE('[class^="c5"], [class^="c4"]') && UI.confirm('请设置字体\n使用默认字体可能使某些功能失效\n是否查看相关说明？', '請設置字體\n使用默認字體可能使某些功能失效\n是否查看相關說明？', 'Please set the font\nThe default font may make some functions fail to work\nDo you want to see instructions?')) {
-      $ajax.openNoFetch(`https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README${g().lang === '2' ? '_en.md#about-font' : '.md#关于字体的说明'}`, true);
+      $ajax.openNoFetch(`https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README${UI.l('.md#关于字体的说明', '.md#关于字体的说明', '_en.md#about-font')}`, true);
       return false;
     }
     return true;
@@ -1475,16 +1475,12 @@
     return true;
   }
 
-  function pauseAsync(ms, isForBattle) {
-    if (ms <= 0) return;
+  function sleep(ms, isForBattle) {
+    if (!ms || ms <= 0) return;
     if (!isForBattle || ms >= 1000) return new Promise(resolve => setTimeout(resolve, ms));
-    // // ----------------------
-    // return new Promise(resolve => setTimeout(resolve, ms));
-    // // ----------------------
     ms = Math.max(ms, 50);
-
-    pauseAsync.prototype.timerWorker ??= creatWorker();
-    return pauseAsync.prototype.timerWorker(ms);
+    sleep.prototype.timerWorker ??= creatWorker();
+    return sleep.prototype.timerWorker(ms);
 
     // 在blob worker内部进行setTimeout以避免浏览器限制
     function creatWorker() {
@@ -1526,18 +1522,19 @@
 
   async function until(condition, delay, isForBattle){ try {
     let result;
-    while (!(result = await condition())) await pauseAsync(delay, isForBattle);
+    delay = Math.max(50, delay??50);
+    while (!(result = await condition())) await sleep(delay, isForBattle);
     return result;
   } catch (err) { console.error(err); }}
 
-  async function waitPause(ms) { try {
-    return await until(() => !getValue('disabled'), ms);
+  async function waitPause(isForBattle, ms) { try {
+    return await until(() => !getValue('disabled'), ms, isForBattle);
   } catch (err) { console.error(err); }}
 
   function setTimeoutOrExecute(resolve, ms) {
     if (ms > 0) {
       (async () => {
-        await pauseAsync(ms);
+        await sleep(ms);
         resolve();
       })();
       return;
@@ -3354,6 +3351,7 @@
             UI.hvAATab(
               'Drop',
               UI.div(
+                UI.div(UI.b(`<span style="color:red;">`,UI.l('本功能将不再及时更新，可能过时', '本功能將不再及時更新，可能過時', 'This function is no longer being updated in time and might be out of date.'),`</span>`)),
                 UI.button.class('reDropMonitor', UI.l('重置掉落监测', '重置掉落監測', 'Reset Drops Tracking')),
                 UI.labeled('portable_drop', UI.hidden(UI.l('掉落监测', '掉落監測', 'Drops Tracking'),' ')+'<l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2><l0>注意：便携数据模式可能会显著增加硬盘读写</l0><l1>注意：便攜數據模式可能會顯著增加硬盤讀寫</l1><l2>Notice：portable mode may significantly increase hard disk I/O</l2>'),
                 '<input id="portable_dropOld" type="checkbox" hidden>',
@@ -3366,6 +3364,7 @@
             UI.hvAATab(
               'Usage',
               UI.div(
+                UI.div(UI.b(`<span style="color:red;">`,UI.l('本功能将不再及时更新，可能过时', '本功能將不再及時更新，可能過時', 'This function is no longer being updated in time and might be out of date.'),`</span>`)),
                 UI.button.class('reRecordUsage', UI.l('重置数据记录', '重置數據記錄', 'Reset Usage Tracking')),
                 UI.labeled('portable_stats', UI.hidden(UI.l('数据记录', '數據記錄', 'Usage Tracking'),' ')+UI.l('使用便携数据模式（导出脚本数据时将包含）注意：便携数据模式可能会显著增加硬盘读写', '使用便攜數據模式（導出腳本數據時將包含）注意：便攜數據模式可能會顯著增加硬盤讀寫', 'Portable Mode (will be included while exporting script datas) Notice：portable mode may significantly increase hard disk I/O')),
                 '<input id="portable_statsOld" type="checkbox" hidden>'
@@ -3604,7 +3603,7 @@
             }
             for (i in stats) {
               if (['itemsNames', 'magicNames'].includes(i)) continue;
-              _html = `${_html}<tr class="hvAATh"><td>${translation[i]}</td><td>${UI.l('值', '值', 'Value')}</td></tr>`;
+              _html = `${_html}<tr class="hvAATh"><td>${translation[i]??i}</td><td>${UI.l('值', '值', 'Value')}</td></tr>`;
               stats[i] = objSort(stats[i]);
               let names = stats[`${i}Names`];
               for (const j in stats[i]) {
@@ -3624,12 +3623,11 @@
             _html = `${_html}</tr>`;
             Object.keys(translation).forEach((i) => {
               if (['itemsNames', 'magicNames'].includes(i)) return;
-              if (i === '__name') {
-                return;
-              }
-              _html = `${_html}<tr class="hvAATh"><td colspan="${statsOld.length + 1}">${translation[i]}</td></tr>`;
+              if (i === '__name') return;
+
+              _html = `${_html}<tr class="hvAATh"><td colspan="${statsOld.length + 1}">${translation[i]??i}</td></tr>`;
               getKeys(statsOld, i).forEach((key) => {
-                let names = stats[`${key}Names`];
+                let names = stats[`${i}Names`];
                 _html = `${_html}<tr><td>${key} ${names?.[key] ?? ''}</td>`;
                 statsOld.forEach((_statsOld) => {
                   if (_statsOld[i] && (key in _statsOld[i])) {
@@ -4258,7 +4256,7 @@
     g().titleQueue ??= [];
     if (g().titleQueue.includes(input)) return;
     g().titleQueue.push(input);
-    await pauseAsync(100);
+    await sleep(100);
     applyLabelTitle(input);
     if (g().isProcessingTitleQueue) return;
     g().isProcessingTitleQueue = true;
@@ -4905,6 +4903,12 @@
       targetIsAlive(param) {
         return switchMaxMin(param, t => t.isDead ? 0 : 1);
       },
+      targetHPRaw(param) {
+        return switchMaxMin(param, t => t.hpNow);
+      },
+      targetHPFull(param) {
+        return switchMaxMin(param, t => t.hp);
+      },
       targetHp(param) {
         return switchMaxMin(param, t => Math.floor(func.targetHpDecimal() * 100));
       },
@@ -4983,16 +4987,50 @@
     };
 
     function switchMaxMin(param, defaultResult, skipAliveCheck = false, targets = undefined) {
-      if (['gacount', 'gasum', 'gamax', 'gamin', 'gcount', 'gsum', 'gmax', 'gmin'].includes(param)) {
+      const paramForSort = ['rank', 'tier', 'maxtier', 'sumtier', 'counttier', ...range(10).map(n => `counttier${n}`)];
+      const params = ['count', 'sum', 'max', 'min', ...paramForSort];
+      if ([ ...params.map(n => `ga${n}`), ...params.map(n => `g${n}`)].includes(param)) {
         return switchMaxMin(param.replace(/^g/, ''), defaultResult, skipAliveCheck, currentGroup);
       }
-      if (['acount', 'asum', 'amax', 'amin', 'agcount', 'agsum', 'agmax', 'agmin'].includes(param)) {
+      if ([ ...params.map(n => `a${n}`), ...params.map(n => `ag${n}`)].includes(param)) {
         return switchMaxMin(param.replace(/^a/, ''), defaultResult, true, targets);
       }
       if (targets === undefined) targets = g().battle.monsterStatus; // 只处理 undefined，null 是空 group
       if (!targets) return 0;
       if (!skipAliveCheck) targets = targets.filter(t => !t.isDead);
+
+      let results, target, counter;
+      if (paramForSort.includes(param)) {
+        results = targets.map(t => { return { target: t, value: defaultResult(t) }; }).sortBy(r => r.value);
+        target = targetGetter();
+        if (param.includes('tier')) {
+          let last, tier = -1;
+          for (const result of results) {
+            if (result.value !== last) {
+              last = result.value;
+              tier++;
+            }
+            result.tier = tier;
+          }
+          counter = param.match(/counttier(.*)/)?.[1] * 1;
+          if (!isNaN(counter)) param = 'counttier';
+        }
+      }
+
       switch (param) {
+        case 'counttier':
+          {
+            const targetTier = !isNaN(counter) ? counter : results.find(r => r.target.order === target.order).tier;
+            return results.filter(r => r.tier === targetTier).length;
+          }
+        case 'sumtier':
+          return Math.max(...results.map(r => r.tier));
+        case 'maxtier':
+          return Math.max(...results.map(r => r.tier));
+        case 'tier':
+          return results.find(r => r.target.order === target.order).tier;
+        case 'rank':
+          return results.findIndex(r => r.target.order === target.order);
         case 'count':
           return targets.map(defaultResult).reduce((acc, cur) => acc + Math.sign(cur), 0);
         case 'sum':
@@ -5211,13 +5249,13 @@
 
   async function autoSwitchIsekai() {
     const option = getOption();
-    await pauseAsync(option.isekaiTime * _1s - (time(0) - g().idleStart));
+    await sleep(option.isekaiTime * _1s - (time(0) - g().idleStart));
     await waitPause();
     $async.logSwitch(arguments);
     if (!option.isekai) return; // 若不启用自动跳转
     const now = time(0);
     const remain = (getValue('lastSwitch') ?? 0) * 1 + (option.isekaiCD ?? 0) * _1s - now;
-    await pauseAsync(remain);
+    await sleep(remain);
     await waitPause();
     setValue('lastSwitch', now);
     $ajax.openNoFetch(`${window.location.href.slice(0, window.location.href.indexOf('.org') + 4)}/${_server.isekai ? '' : 'isekai/'}`);
@@ -5308,7 +5346,7 @@
         await waitPause();
         displayProcess(`[-${remainTime2Str(remain, true)}]${UI.byLang('等待进入闲置', '等待進入閒置', 'Wait for enter idle')}`);
       }, 250);
-      await pauseAsync(option.onIdleDelay * _1s);
+      await sleep(option.onIdleDelay * _1s);
     }
     const idleStart = g('idleStart', time(0));
     await waitPause();
@@ -6015,7 +6053,7 @@
       if (!items[id]) continue;
       const recover = recoverItems[id] ? isPerk ? 20 : 10 : 5;
       if (current + recover >= 100) continue; // check if overflow by (20 or 10) -> (5)
-      // const recovered = gE('#stamina_readout .fc4.far>div', $doc(await $ajax.insert(window.location.href, 'recover=stamina'))).textContent.match(/\d+/)[0] * 1;
+      const recovered = gE('#stamina_readout .fc4.far>div', $doc(await $ajax.insert(window.location.href, 'recover=stamina'))).textContent.match(/\d+/)[0] * 1;
       goto();
       break;
     }
@@ -6194,7 +6232,7 @@
       return;
     }
     g('encounterStart', time(0));
-    await pauseAsync(option.encounterDelay * _1s);
+    await sleep(option.encounterDelay * _1s);
     setEncounter(getEncounter()); // 离开页面前保存
     if (!window.top.location.href.endsWith(`?s=Battle`)) {
       setValue('beforeEncounter', setValue('lastUrl', window.top.location.href));
@@ -6210,7 +6248,7 @@
     if (!idleStart) await updateArena(); // new day
     let timeout = getOption().idleArenaTime * _1s;
     if (idleStart) timeout -= time(0) - idleStart;
-    if (timeout > 0) await pauseAsync(timeout);
+    if (timeout > 0) await sleep(timeout);
     const started = await idleArena();
     const last = getValue('arena', true)?.date ?? now;
     const nextDay = Math.max(0, Math.floor(last / _1d + 1) * _1d - now);
@@ -6713,7 +6751,7 @@
       const prevActionTime = battle.prevActionTime ?? 0;
       const remainDelay = prevActionTime + option.delay - time(0);
       if (remainDelay > 0) {
-        await pauseAsync(remainDelay, true);
+        await sleep(remainDelay, true);
       }
       const onTask = task => {
         const result = task.action();
@@ -6909,7 +6947,12 @@
     }
     if (option.exitAlarm) setAlarm('Exit');
     delValue(1);
-    setTimeoutOrExecute(() => backFromBattle(), option.ExitBattleWaitTime * _1s);
+    (async () => {
+      const waitTime = option.ExitBattleWaitTime * _1s;
+      const maxWaited = time(0) + 10 * waitTime; // 等jpx最多等10倍时间
+      if (gE('#ctrl-widget')) await until(() => (time(0) >= maxWaited) || (gE('#time-records-div') && gE('#revenue-records-table'))); // wait jpx
+      setTimeoutOrExecute(() => backFromBattle(), waitTime);
+    })();
   }
 
   async function checkResponsive() {
@@ -6938,7 +6981,7 @@
         isBreak ||= battleUnresponsive[t].method();
       }
       if (g().battleExit || isBreak) break;
-      await pauseAsync(min - waited);
+      await sleep(min - waited);
     }
   }
 
@@ -7006,29 +7049,26 @@
       }
       onRoundEnd();
       async function onRoundEnd() { try {
-        await waitPause();
+        await waitPause(true);
         $async.logSwitch(arguments);
-        if (g().monsterAlive > 0) { // Defeat
-          setExitBattleTimeout('Defeat');
-          return;
-        }
-        if (g().battle.roundNow === g().battle.roundAll) { // Victory
-          setExitBattleTimeout('Victory');
-          return;
+        switch (true) {
+          case gE('#btcp')?.innerHTML.includes("You have run away!"): return setExitBattleTimeout('Flee');
+          case g().monsterAlive > 0: return setExitBattleTimeout('Defeat');
+          case g().battle.roundNow === g().battle.roundAll: return setExitBattleTimeout('Victory');
         }
 
         if (option.NewRoundWaitTime) { // Next Round
-          await pauseAsync(option.NewRoundWaitTime * _1s);
-          await waitPause();
+          await sleep(option.NewRoundWaitTime * _1s, true);
+          await waitPause(true);
         }
         if (gE('#btcp')?.innerHTML.includes("finishbattle.png")) return console.error(`gE('#btcp')?.innerHTML.includes("finishbattle.png")`);
         let url = option.checkURLBeforeNewRound;
         if (url) {
           lastResponsive = Infinity;
           await until(async () => { try {
-            await waitPause();
+            await waitPause(true);
             return await $ajax.insert(url, undefined, undefined, {}, {}, true);
-          } catch (err) { console.error('Connect failed:', url) }}, option.checkURLBeforeNewRoundRetry * _1s);
+          } catch (err) { console.error('Connect failed:', url) }}, option.checkURLBeforeNewRoundRetry * _1s, true);
           lastResponsive = time(0);
         }
         const doc = $doc(await $ajax.insert(window.location.href));
@@ -7054,6 +7094,7 @@
           gE('#pane_completion').removeChild(gE('#btcp'));
         }
         ['#battle_right', '#battle_left'].forEach(selector => { gE('#battle_main').replaceChild(gE(selector, doc), gE(selector)); });
+        document.dispatchEvent(new Event('DOMContentLoaded'));
         unsafeWindow.battle = undefined;
         if (!await loadUnsafeWindowBattle()) {
           setExitBattleTimeout('Defeat');
@@ -7094,12 +7135,9 @@
         b.send(JSON.stringify(a));
       } else {
         (async () => {
-          await pauseAsync(delay * (Math.random() * 50 + 50) / 100, true);
+          await sleep(delay * (Math.random() * 50 + 50) / 100, true);
           b.send(JSON.stringify(a));
         })();
-        // setTimeout(() => {
-        //   b.send(JSON.stringify(a));
-        // }, delay * (Math.random() * 50 + 50) / 100);
       }
     }.toString()};
 // bool
@@ -7119,7 +7157,7 @@ ${[updateMonsterEffects, fixMonsterStatus,
 getMonsterID, getMonster, getMonster, getBuff,
 onRestoredBattleServer, getValue, setValue, delValue,
 getLocal, setLocal, delLocal,
-gE, cE, Version, pauseAsync].map(f => f.toString()).join(';')};
+gE, cE, Version, sleep].map(f => f.toString()).join(';')};
 `;
     gE('head').appendChild(fakeApiCall);
     const fakeApiResponse = cE('script');
@@ -7171,92 +7209,54 @@ gE, cE, Version, pauseAsync].map(f => f.toString()).join(';')};
       effectWearConfused: /([^<>]+) got knocked out of confuse\./g,
       oc: /div/g,
       ocHalf: /vcr/g,
-      /*isekai911*/
       spellMatch: /\('(?<name>[\w\s-]+)(?:\s\(x(?<stack>\d+)\))?',\s?(?<description>.*),\s?'?(?<turns>[\w\s-]+)'?\)/,
-      /*isekai912*/
       //battleRecorder
       turnLog: /([^]+?)<tr><td class="tls">/,
       //timeRecorder
       action: />([^<>]+)<\/td><\/tr>(<tr><td class="tlb">Spirit Stance Exhausted<\/td><\/tr>)*<tr><td class="tls"/,
-      /*isekai911*/
       action2: />([^<>]+)<\/td><\/tr><tr><td class="tlb?">[^<>]+<\/td><\/tr>(<tr><td class="tlb">Spirit Stance Exhausted<\/td><\/tr>)*<tr><td class="tls"/,
-      /*isekai912*/
       zeroturn: /You use\s*(\w* (?:Gem|Draught|Potion|Elixir|Drink|Candy|Infusion|Scroll|Vase|Bubble))/,
       use: /You (cast|use) ([\w\s-]+)/,
       //combatRecorder
-      damage: /[^<>]+damage( \([^<>]+\))*(<\/td><\/tr><tr><td class="tlb">Your spirit shield absorbs \d+ |<|\.)/g,
-      damageType: /for (\d+) (\w+) damage/,
+      damage: /[^<>]+damage/g,
+      damageTaken1: /(?<v>glances|hits|crits) you.*?(?<n>\d+).*?(?<t>\w+) damage/,
+      damageTaken2: /which (?<v>glances|hits|crits).*?(?<n>\d+).*?(?<t>\w+) damage/,
       spiritShield: /absorbs (\d+)/,
-      crit: /(You crit| crits | blasts )/,
-      strike: /(Fire|Cold|Wind|Elec|Holy|Dark|Void) Strike hits/,
+      damageDealt1: /(?:You|Your offhand attack|Arcane Blow) (?:(?<s>\d)x-)*(?<v>glance|hit|crit).*?(?<n>\d+).*?(?<t>\w+) damage/,
+      damageDealt2: /(?:(?<s>\d)x-)*(?<v>glanced|hit|crit|eviscerated) for (?<n>\d+) (?<t>\w+) damage/,
+      strike: /(Fire|Cold|Wind|Elec|Holy|Dark|Void) Strike hits.*?(\d+).*?(\w+) damage/,
+      explode: /explodes for (\d+) (\w+) damage/,
       damagePlus: /for (\d+) damage/,
       damagePhysicalPlus: /(Bleeding Wound|Spreading Poison)/,
       damagePoints: /for (\d+) points of (\w+) damage/,
+      debuffLog: /(?:<tr><td class="tlb?">[^<>]+(?: gains the effect | partially resists the effects of your spell\.| shrugs off the effects of your spell\.)+[^<>]*<\/td><\/tr>)+<tr><td class="tl">You cast [a-zA-Z]+\.<\/td><\/tr>/,
+      debuffResist0: / gains the effect (?!Coalesced Mana)/g,
+      debuffResist1: / partially resists the effects of your spell\./g,
+      debuffResist3: / shrugs off the effects of your spell\./g,
       counter: />You counter/g,
       //    dealt magical
-      magicalDealtMiss: /to connect\./g,
-      magicalDealtEvade: /evades your spell\./g,
-      magicalDealtResist50: / (?:hits|blasts) [^y][^<>]+50%/g,
-      magicalDealtResist75: / (?:hits|blasts) [^y][^<>]+75%/g,
-      magicalDealtResist90: / (?:hits|blasts) [^y][^<>]+90%/g,
-      magicalDealtResist: /resists your spell\./g,
+      magicalDealtMiss: / to connect\./g,
+      magicalDealtEvade: / evades your spell\./g,
+      magicalDealtResistPartially: / resists, and was/g,
+      magicalDealtResist: / resists your spell\./g,
       //    dealt physical
-      physicalDealtMiss: /its mark\./g,
-      physicalDealtEvade: /(?: dodges your attack\.|evades your offhand attack\.)/g,
-      physicalDealtParry: /parries your attack\./g,
+      physicalDealtMiss: / its mark\./g,
+      physicalDealtEvade: / dodges your attack\./g,
+      physicalDealtParryPartially: / parries[^<>]+?(\d+)[^<>]+?(\w+) damage/g,
+      physicalDealtParry: / parries your attack\./g,
       //    taken magical
-      magicalTakenEvade: / casts [^<>]+evade the attack\./g,
-      magicalTakenBlock: / casts [^<>]+block the attack\./g,
-      magicalTakenResist50: / (?:hits|blasts) y[^<>]+50%/g,
-      magicalTakenResist75: / (?:hits|blasts) y[^<>]+75%/g,
-      magicalTakenResist90: / (?:hits|blasts) y[^<>]+90%/g,
+      magicalTakenMiss: /(?:casts[^<>]+, but misses the attack\.|casts[^<>]+, missing you completely\.)/g,
+      magicalTakenEvade: />You evade the attack\./g,
+      magicalTakenResistPartially: / resist the attack/g,
+      magicalTakenBlockPartially: /casts[^<>]+partially block (?:and|resist| )*the attack/g,
+      magicalTakenBlock: /(?<!partially )block (?:and|resist| )*the attack\./g,
       //    taken physical
-      physicalTakenMiss: /misses the attack against you\./g,
-      physicalTakenEvade: /(>You evade| uses [^<>]+evade the attack\.)/g,
-      physicalTakenParry: /(>You parry| uses [^<>]+parry the attack\.)/g,
-      physicalTakenBlock: /(>You block| uses [^<>]+block the attack\.)/g,
-      /*isekai911*/
-      //combatRecorder_isekai
-      damage_isekai: /[^<>]+damage/g,
-      damageTaken1_isekai: /(?<v>glances|hits|crits) you.*?(?<n>\d+).*?(?<t>\w+) damage/,
-      damageTaken2_isekai: /which (?<v>glances|hits|crits).*?(?<n>\d+).*?(?<t>\w+) damage/,
-      spiritShield_isekai: /absorbs (\d+)/,
-      damageDealt1_isekai: /(?:You|Your offhand attack|Arcane Blow) (?:(?<s>\d)x-)*(?<v>glance|hit|crit).*?(?<n>\d+).*?(?<t>\w+) damage/,
-      damageDealt2_isekai: /(?:(?<s>\d)x-)*(?<v>glanced|hit|crit|eviscerated) for (?<n>\d+) (?<t>\w+) damage/,
-      strike_isekai: /(Fire|Cold|Wind|Elec|Holy|Dark|Void) Strike hits.*?(\d+).*?(\w+) damage/,
-      explode_isekai: /explodes for (\d+) (\w+) damage/,
-      damagePlus_isekai: /for (\d+) damage/,
-      damagePhysicalPlus_isekai: /(Bleeding Wound|Spreading Poison)/,
-      damagePoints_isekai: /for (\d+) points of (\w+) damage/,
-      debuffLog_isekai: /(?:<tr><td class="tlb?">[^<>]+(?: gains the effect | partially resists the effects of your spell\.| shrugs off the effects of your spell\.)+[^<>]*<\/td><\/tr>)+<tr><td class="tl">You cast [a-zA-Z]+\.<\/td><\/tr>/,
-      debuffResist0_isekai: / gains the effect /g,
-      debuffResist1_isekai: / partially resists the effects of your spell\./g,
-      debuffResist3_isekai: / shrugs off the effects of your spell\./g,
-      counter_isekai: />You counter/g,
-      //    dealt magical
-      magicalDealtMiss_isekai: / to connect\./g,
-      magicalDealtEvade_isekai: / evades your spell\./g,
-      magicalDealtResistPartially_isekai: / resists, and was/g,
-      magicalDealtResist_isekai: / resists your spell\./g,
-      //    dealt physical
-      physicalDealtMiss_isekai: / its mark\./g,
-      physicalDealtEvade_isekai: / dodges your attack\./g,
-      physicalDealtParryPartially_isekai: / parries[^<>]+?(\d+)[^<>]+?(\w+) damage/g,
-      physicalDealtParry_isekai: / parries your attack\./g,
-      //    taken magical
-      magicalTakenMiss_isekai: /(?:casts[^<>]+, but misses the attack\.|casts[^<>]+, missing you completely\.)/g,
-      magicalTakenEvade_isekai: />You evade the attack\./g,
-      magicalTakenResistPartially_isekai: / resist the attack/g,
-      magicalTakenBlockPartially_isekai: /casts[^<>]+partially block (?:and|resist| )*the attack/g,
-      magicalTakenBlock_isekai: /(?<!partially )block (?:and|resist| )*the attack\./g,
-      //    taken physical
-      physicalTakenMiss_isekai: /(?:uses[^<>]+, but misses the attack\.|(?:vigorously whiffs at a shadow|uses[^<>]+), missing you completely\.)/g,
-      physicalTakenEvade_isekai: />You evade the attack from/g,
-      physicalTakenParryPartially_isekai: /partially parry the attack/g,
-      physicalTakenParry_isekai: /(?<!partially )parry the attack/g,
-      physicalTakenBlockPartially_isekai: /(?:(?:uses[^<>]+|>)You|you) partially block (?:and|partially|parry| )*the attack/g,
-      physicalTakenBlock_isekai: /(?<!partially )block (?:and|partially|parry| )*the attack/g,
-      /*isekai912*/
+      physicalTakenMiss: /(?:uses[^<>]+, but misses the attack\.|(?:vigorously whiffs at a shadow|uses[^<>]+), missing you completely\.)/g,
+      physicalTakenEvade: />You evade the attack from/g,
+      physicalTakenParryPartially: /partially parry the attack/g,
+      physicalTakenParry: /(?<!partially )parry the attack/g,
+      physicalTakenBlockPartially: /(?:(?:uses[^<>]+|>)You|you) partially block (?:and|partially|parry| )*the attack/g,
+      physicalTakenBlock: /(?<!partially )block (?:and|partially|parry| )*the attack/g,
       //revenueRecorder
       gainExp: /gain (\d+) EXP/,
       gainCredit: /gain (\d+) Credit/,
@@ -7267,7 +7267,7 @@ gE, cE, Version, pauseAsync].map(f => f.toString()).join(';')};
       quality: /(Crude|Fair|Average|Superior|Exquisite|Magnificent|Legendary|Peerless)/,
       credit: /(\d+) Credit/,
       crystal: /(?:(\d+)x )?(Crystal of \w+)/,
-    }
+    };
 
     function getDuration(skill, channeling) {
       let [base, profRatio, prof] = [skill.duration, 1, 0];
@@ -7378,7 +7378,7 @@ gE, cE, Version, pauseAsync].map(f => f.toString()).join(';')};
       let jpxObj = {};
       let monster_btm6 = gE('.btm6', monster);
       const abs = ability;
-      monster_btm6.querySelectorAll('img').forEach((effect) => {
+      monster_btm6.querySelectorAll('img').forEach(effect => {
         let tooltip = effect.getAttribute('onmouseover');
         if (!tooltip) return;
 
@@ -7516,7 +7516,11 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
   }
 
   async function loadUnsafeWindowBattle() { try {
-    unsafeWindow.battle = await until(() => gE('#vbd') ? true : new unsafeWindow.Battle(), 300, true);
+    unsafeWindow.battle = await until(() => {
+      if (gE('#vbd')) return true;
+      const battle = new unsafeWindow.Battle();
+      return battle;
+    }, 300, true);
     if (!unsafeWindow.battle && gE('#vbd')) {
       console.log('Initialization of unsafeWindow.battle stoped due to defeated.');
       return false;
@@ -8620,7 +8624,7 @@ text-align: left;
     const battle = g().battle;
     stats.self ??= { _startTime: time(3) };
     stats.tokens ??= { token: battle.token, postoken: battle.postoken };
-    stats.self._turn = filter.turn ? stats.self._turn ?? 0 : undefined;
+    stats.self._turn = filter.turn ? battle.turn ?? 0 : undefined;
     stats.self._round = filter.round ? stats.self._round ?? 0 : undefined;
     stats.self._battle = filter.battle ? stats.self._battle ?? 0 : undefined;
     stats.self._monster = filter.monster ? stats.self._monster ?? 0 : undefined;
@@ -8830,7 +8834,7 @@ text-align: left;
     const battle = g().battle;
     if (option.recordEach && (different || battle.roundNow === battle.roundAll)) {
       const old = getValue('statsOld', true) || [];
-      stats.__name = getValue('battleCode', true)?.name;
+      stats.__name = getValue('battleCode', true)?.name ?? stats.__name;
       stats.self._endTime = time(3);
       old.push(stats);
       setValue('statsOld', old);
