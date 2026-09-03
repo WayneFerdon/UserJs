@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.171
+// @version      2.91.172
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -6669,12 +6669,13 @@
     }
 
     let currentTurn = (battle.turn ?? 0);
+    const currentActions = (battle.actions ?? currentTurn);
     const display = getBattleTypeDisplay();
     gE('.hvAALog').innerHTML = [
       `${UI.l('攻击模式', '攻擊模式', 'Attack Mode')}: ${UI.attackStatusType[g().attackStatus]}`,
       `${(_server.isekai || onIsekaiEncounter) ? UI.l('异世界', '異世界', 'Isekai') : UI.l('恒定世界', '恆定世界', 'Persistent')}`, // 战役模式显示
       `${display.full}`, // 战役模式显示
-      `R${battle.roundNow}/${battle.roundAll}:T${currentTurn}`,
+      `R${battle.roundNow}/${battle.roundAll}:T${currentTurn}<span style="font-size: 9pt!important">(+${currentActions-currentTurn}*0tic)</span>`,
       `<div style="font-size: 9pt!important">TPS: ${g().runSpeed}<br>${g().runTimeGap??''}</div>`,
       `${UI.l('敌人', '敵人', 'Monsters')}: ${g().monsterAlive}/${g().monsterAll}`,
     ].join(`<br>`).replaceAll(`</div><br>`, `</div>`);
@@ -6683,7 +6684,7 @@
       $debug.shiftLog();
     }
     const option = getOption();
-    document.title = `${currentTurn % 2 ? option.frequencySign1 ?? '' : option.frequencySign2 ?? ''}${display.title}:R${battle.roundNow}/${battle.roundAll}:T${currentTurn}@${g().runSpeed}tps,${g().monsterAlive}/${g().monsterAll}`;
+    document.title = `${currentActions % 2 ? option.frequencySign1 ?? '' : option.frequencySign2 ?? ''}${display.title}:R${battle.roundNow}/${battle.roundAll}:T${currentTurn}@${g().runSpeed}tps,${g().monsterAlive}/${g().monsterAll}`;
     setValue('battle', battle);
     if (!battle.monsterStatus || battle.monsterStatus.length !== g().monsterAll) {
       fixMonsterStatus();
@@ -6735,9 +6736,12 @@
       if (remainDelay > 0) {
         await sleep(remainDelay, true);
       }
-      const onTask = task => {
+      const onTask = name => {
+        const task = taskList[name];
         const result = task.action();
         if (!result) return;
+        if (name !== 'Pause') battle.actions = g().battle.actions = currentActions + 1;
+        setValue('battle', battle);
         if (!task.noturn || result === 1) {
           battle = getValue('battle', true);
           battle.turn = g().battle.turn = currentTurn + 1;
@@ -6750,11 +6754,11 @@
         return true;
       }
       for (const name of range(order).map(i => order[i])) {
-        if (onTask(taskList[name])) return;
+        if (onTask(name)) return;
         delete taskList[name];
       }
       for (let name in taskList) {
-        if (onTask(taskList[name])) return;
+        if (onTask(name)) return;
       }
     }
   }
@@ -8608,6 +8612,8 @@ text-align: left;
     stats.tokens ??= { token: battle.token, postoken: battle.postoken };
     stats.self._turn = filter.turn ? stats.self._turn ?? 0 : undefined;
     stats.self._prevBattleTurn = filter.turn ? stats.self._prevBattleTurn ?? 0 : undefined;
+    stats.self._actions = filter.turn ? stats.self._actions ?? 0 : undefined;
+    stats.self._prevBattleActions = filter.turn ? stats.self._prevBattleActions ?? 0 : undefined;
     stats.self._round = filter.round ? stats.self._round ?? 0 : undefined;
     stats.self._battle = filter.battle ? stats.self._battle ?? 0 : undefined;
     stats.self._monster = filter.monster ? stats.self._monster ?? 0 : undefined;
@@ -8637,12 +8643,20 @@ text-align: left;
     let text, magic, magicName, item, itemName, point, reg;
     if (filter.turn) {
       battle.turn ??= 0;
+      battle.actions ??= battle.turn;
       if (battle.turn >= stats.self._prevBattleTurn) {
         stats.self._turn += battle.turn - stats.self._prevBattleTurn;
       } else {
-        stats.self._turn += 1;
+        stats.self._turn += battle.turn + 1;
       }
       stats.self._prevBattleTurn = battle.turn;
+
+      if (battle.actions >= stats.self._prevBattleActions) {
+        stats.self._actions += battle.actions - stats.self._prevBattleActions;
+      } else {
+        stats.self._actions += battle.actions + 1;
+      }
+      stats.self._prevBattleActions = battle.actions;
     }
     if (g().monsterAlive === 0) {
       if (filter.round) {
