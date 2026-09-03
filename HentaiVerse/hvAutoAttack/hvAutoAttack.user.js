@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.170
+// @version      2.91.171
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -8606,7 +8606,8 @@ text-align: left;
     const battle = g().battle;
     stats.self ??= { _startTime: time(3) };
     stats.tokens ??= { token: battle.token, postoken: battle.postoken };
-    stats.self._turn = filter.turn ? battle.turn ?? 0 : undefined;
+    stats.self._turn = filter.turn ? stats.self._turn ?? 0 : undefined;
+    stats.self._prevBattleTurn = filter.turn ? stats.self._prevBattleTurn ?? 0 : undefined;
     stats.self._round = filter.round ? stats.self._round ?? 0 : undefined;
     stats.self._battle = filter.battle ? stats.self._battle ?? 0 : undefined;
     stats.self._monster = filter.monster ? stats.self._monster ?? 0 : undefined;
@@ -8634,10 +8635,16 @@ text-align: left;
       stats.hurt._ptotal = filter.hurtptotal ? stats.hurt._ptotal ?? 0 : undefined;
     }
     let text, magic, magicName, item, itemName, point, reg;
-    if (g().monsterAlive === 0) {
-      if (filter.turn) {
-        stats.self._turn += battle.turn;
+    if (filter.turn) {
+      battle.turn ??= 0;
+      if (battle.turn >= stats.self._prevBattleTurn) {
+        stats.self._turn += battle.turn - stats.self._prevBattleTurn;
+      } else {
+        stats.self._turn += 1;
       }
+      stats.self._prevBattleTurn = battle.turn;
+    }
+    if (g().monsterAlive === 0) {
       if (filter.round) {
         stats.self._round += 1;
       }
