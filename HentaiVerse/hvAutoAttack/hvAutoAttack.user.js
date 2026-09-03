@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.165
+// @version      2.91.166
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -6946,7 +6946,12 @@
     }
     if (option.exitAlarm) setAlarm('Exit');
     delValue(1);
-    setTimeoutOrExecute(() => backFromBattle(), option.ExitBattleWaitTime * _1s);
+    (async () => {
+      const waitTime = option.ExitBattleWaitTime * _1s;
+      const maxWaited = time(0) + 10 * waitTime; // 等jpx最多等10倍时间
+      if (gE('#ctrl-widget')) await until(() => (time(0) >= maxWaited) || (gE('#time-records-div') && gE('#revenue-records-table'))); // wait jpx
+      setTimeoutOrExecute(() => backFromBattle(),);
+    })();
   }
 
   async function checkResponsive() {
@@ -7045,13 +7050,10 @@
       async function onRoundEnd() { try {
         await waitPause();
         $async.logSwitch(arguments);
-        if (g().monsterAlive > 0) { // Defeat
-          setExitBattleTimeout('Defeat');
-          return;
-        }
-        if (g().battle.roundNow === g().battle.roundAll) { // Victory
-          setExitBattleTimeout('Victory');
-          return;
+        switch (true) {
+          case gE('#btcp')?.innerHTML.includes("You have run away!"): return setExitBattleTimeout('Flee');
+          case g().monsterAlive > 0: return setExitBattleTimeout('Defeat');
+          case g().battle.roundNow === g().battle.roundAll: return setExitBattleTimeout('Victory');
         }
 
         if (option.NewRoundWaitTime) { // Next Round
