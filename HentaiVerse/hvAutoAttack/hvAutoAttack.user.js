@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.172
+// @version      2.91.173
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -3356,7 +3356,7 @@
                 UI.b(UI.l('自身', '自身', 'Self')),
                 UI.hvAATable(
                   UI.repeat(10), '',
-                  UI.expendData(UIDatas.record1, (id, names, v) => UI.div(UI.labeled(`record_${id}`, UI.hidden(UI.l('数据记录', '數據記錄', 'Usage Tracking'),':')+names))),
+                  UI.expendData(UIDatas.record1, (id, names, v) => UI.div(UI.labeled(`record_${id}`, UI.hidden(UI.l('数据记录', '數據記錄', 'Usage Tracking'), ':') + names))),
                 ),
               ),
               UI.div(
@@ -8588,8 +8588,11 @@ text-align: left;
     const regList = [
       /you for (\d+) (\w+) damage/,
       /and take (\d+) (\w+) damage/,
+      /and take (\d+) points of (\w+) damage/,
       /You take (\d+) (\w+) damage/,
-      /hits you, causing (\d+) points of (\w+) damage/
+      /hits you, causing (\d+) points of (\w+) damage/,
+      /glances you, causing (\d+) points of (\w+) damage/,
+      /crits you, causing (\d+) points of (\w+) damage/,
     ];
     for (let reg of regList) {
       let match = text.match(reg);
@@ -8702,16 +8705,11 @@ text-align: left;
       }
     }
 
-    const debug = false;
-    let log = false;
     for (const i of range(param.log)) {
       if (param.log[i].className === 'tls') {
         break;
       }
       text = param.log[i].textContent;
-      if (debug) {
-        console.log(text);
-      }
       if (reg = matchDamageInfoFromLogText(text)) {
         magic = reg[2].replace('ing', '');
         point = reg[1] * 1;
@@ -8751,45 +8749,77 @@ text-align: left;
         if (filter.evade && text.match(/You ((partially )*(evade|parry|block)( and )*)+ the attack/)) {
           stats.self.evade++;
         }
-      } else if (text.match(/^[\w ]+ [a-z]+s [\w+ -]+ for \d+( .*)? damage/) || text.match(/^You .* for \d+ .* damage/)) {
+      }
+      else if (
+        text.match(/^[\w ]+ [a-z]+s [\w+ -]+ for \d+( .*)? damage/) ||
+        text.match(/^You .* for \d+ .* damage/)
+      ) {
         if (filter.damage) {
           reg = text.match(/for (\d+)( .*)? damage/);
           magic = text.match(/^[\w ]+ [a-z]+s [\w+ -]+ for/) ? text.match(/^([\w ]+) [a-z]+s [\w+ -]+ for/)[1].replace(/^Your /, '') : text.match(/^You (\w+)/)[1];
           point = reg[1] * 1;
           stats.damage[magic] = (magic in stats.damage) ? stats.damage[magic] + point : point;
         }
-      } else if (text.match(/Vital Theft hits .*? for \d+ damage/)) {
+      }
+      else if (reg = text.match(/^([\w ]+) [a-z\-]+s [\w+ -\,]+, causing \d+( .*)? damage/) ||
+        text.match(/^(You) ((\d+x-)*crit|hit|glance) [\w+ -\,]+, causing (\d+)( additional)* points of (.+) damage/)
+      ) {
+        if (filter.damage) {
+          magic = reg[1];
+          if (magic === 'You') magic = 'attack'
+          reg = text.match(/causing (\d+)( additional)* points of (.+) damage/);
+          point = reg[1] * 1;
+          stats.damage[magic] = (magic in stats.damage) ? stats.damage[magic] + point : point;
+        }
+      }
+      else if (reg = text.match(/was hit for (\d+) (.+) damage/)) {
+        if (filter.damage) {
+          magic = reg[1];
+          if (magic === 'You') magic = 'attack'
+          reg = text.match(/causing (\d+)( additional)* points of (.+) damage/);
+          point = reg[1] * 1;
+          stats.damage[magic] = (magic in stats.damage) ? stats.damage[magic] + point : point;
+        }
+      }
+      else if (text.match(/Vital Theft hits .*? for \d+ damage/)) {
         if (filter.damage) {
           magic = 'Vital Theft';
           point = text.match(/Vital Theft hits .*? for (\d+) damage/)[1] * 1;
           stats.damage[magic] = (magic in stats.damage) ? stats.damage[magic] + point : point;
         }
-      } else if (text.match(/You (evade|parry|block) the attack|misses the attack against you|(casts|uses) .* misses the attack/)) {
+      }
+      else if (text.match(
+        /You ((partially )*(evade|parry|block)( and )*)+ the attack|misses the attack against you|(casts|uses) .* misses the attack/)) {
         if (filter.evade) {
           stats.self.evade++;
         }
-      } else if (text.match(/(resists your spell|Your spell is absorbed|(evades|parries) your (attack|spell))|Your attack misses its mark|Your spell fails to connect/)) {
+      }
+      else if (text.match(/(shrugs off|resists) the effects of your spell|(resists your spell|Your spell is absorbed|(evades|parries) your (attack|spell))|Your attack misses its mark|Your spell fails to connect/)) {
         if (filter.miss) {
           stats.self.miss++;
         }
-      } else if (text.match(/You gain the effect Focusing/)) {
+      }
+      else if (text.match(/You gain the effect Focusing/)) {
         if (filter.focus) {
           stats.self.focus++;
         }
-      } else if (text.match(/^Recovered \d+ points of/) || text.match(/You are healed for \d+ Health Points/) || text.match(/You drain \d+ HP from/)) {
+      }
+      else if (text.match(/^Recovered \d+ points of/) || text.match(/You are healed for \d+ Health Points/) || text.match(/You drain \d+ HP from/)) {
         if (filter.restore) {
           magic = (param.mode === 'defend') ? 'defend' : text.match(/You drain \d+ HP from/) ? 'drain' : param.magic || param.item;
           point = text.match(/\d+/)[0] * 1;
           stats.restore[magic] = (magic in stats.restore) ? stats.restore[magic] + point : point;
         }
-      } else if (text.match(/(restores|drain) \d+ points of/)) {
+      }
+      else if (text.match(/(restores|drain) \d+ points of/)) {
         if (filter.restore) {
           reg = text.match(/^(.*) restores (\d+) points of (\w+)/) || text.match(/^You (drain) (\d+) points of (\w+)/);
           magic = reg[1];
           point = reg[2] * 1;
           stats.restore[magic] = (magic in stats.restore) ? stats.restore[magic] + point : point;
         }
-      } else if (text.match(/absorbs \d+ points of damage from the attack into \d+ points of \w+ damage/)) {
+      }
+      else if (text.match(/absorbs \d+ points of damage from the attack into \d+ points of \w+ damage/)) {
         if (filter.hurt) {
           reg = text.match(/(.*) absorbs (\d+) points of damage from the attack into (\d+) points of (\w+) damage/);
           point = reg[2] * 1;
@@ -8799,7 +8829,8 @@ text-align: left;
           magic = `${reg[1].replace('Your ', '')}_${reg[4]}`;
           stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
         }
-      } else if (text.match(/You gain .* proficiency/)) {
+      }
+      else if (text.match(/You gain .* proficiency/)) {
         if (filter.proficiency) {
           reg = text.match(/You gain ([\d.]+) points of (.*?) proficiency/);
           magic = reg[2];
@@ -8807,17 +8838,18 @@ text-align: left;
           stats.proficiency[magic] = (magic in stats.proficiency) ? stats.proficiency[magic] + point : point;
           stats.proficiency[magic] = stats.proficiency[magic].toFixed(3) * 1;
         }
-      } else if (text.trim() === '' || text.match(/You (gain |cast |use |are Victorious|have reached Level|have obtained the title|do not have enough MP)/) || text.match(/Cooldown|has expired|Spirit Stance|gains the effect|insufficient Spirit|Stop beating dead ponies| defeat |Clear Bonus|brink of defeat|Stop \w+ing|Spawned Monster| drop(ped|s) |defeated/)) {
-        // nothing;
-      } else if (debug) {
-        log = true;
-        setAudioAlarm('Error');
-        console.log(text);
       }
-    }
-    if (debug && log) {
-      console.table(stats);
-      pauseChange();
+      else if (
+        text.trim() === '' ||
+        text.match(/You (gain |cast |use |are Victorious|have reached Level|have obtained the title|do not have enough MP)/) ||
+        text.match(/Cooldown|has expired|Spirit Stance|gains the effect|insufficient Spirit|Stop beating dead ponies| defeat |Clear Bonus|brink of defeat|The effect .* has worn off|Stop \w+ing|Spawned Monster| drop(ped|s) |defeated|has been roused from its sleep|The potential of your equipment has grown!|You received /) ||
+        text.match(' missing you completely')
+      ) {
+        // nothing;
+      }
+      else {
+        // console.warn('unknown log type:',text);
+      }
     }
     setValue('stats', stats);
     if (getComputedStyle(gE('#hvAATab-Usage')).display === 'block') {
