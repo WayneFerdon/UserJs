@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.173
+// @version      2.91.174
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -8709,146 +8709,150 @@ text-align: left;
       if (param.log[i].className === 'tls') {
         break;
       }
-      text = param.log[i].textContent;
-      if (reg = matchDamageInfoFromLogText(text)) {
-        magic = reg[2].replace('ing', '');
-        point = reg[1] * 1;
-        if (filter.hurt) {
-          stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
-          if (filter.hurtcount || filter.hurtavg) {
-            stats.hurt._count++;
-          }
-          if (filter.hurttotal || filter.hurtavg) {
-            stats.hurt._total += point;
-          }
-          if (filter.hurtavg) {
-            stats.hurt._avg = Math.round(stats.hurt._total / stats.hurt._count);
-          }
-          if (magic.match(/pierc|crush|slash/)) {
-            if (filter.hurtpcount || filter.hurtpavg) {
-              stats.hurt._pcount++;
-            }
-            if (filter.hurtptotal || filter.hurtpavg) {
-              stats.hurt._ptotal += point;
-            }
-            if (filter.hurtpavg) {
-              stats.hurt._pavg = Math.round(stats.hurt._ptotal / stats.hurt._pcount);
-            }
-          } else {
-            if (filter.hurtmcount || filter.hurtmavg) {
-              stats.hurt._mcount++;
-            }
-            if (filter.hurtmtotal || filter.hurtmavg) {
-              stats.hurt._mtotal += point;
-            }
-            if (filter.hurtmavg) {
-              stats.hurt._mavg = Math.round(stats.hurt._mtotal / stats.hurt._mcount);
-            }
-          }
-        }
-        if (filter.evade && text.match(/You ((partially )*(evade|parry|block)( and )*)+ the attack/)) {
-          stats.self.evade++;
-        }
-      }
-      else if (
-        text.match(/^[\w ]+ [a-z]+s [\w+ -]+ for \d+( .*)? damage/) ||
-        text.match(/^You .* for \d+ .* damage/)
-      ) {
-        if (filter.damage) {
-          reg = text.match(/for (\d+)( .*)? damage/);
-          magic = text.match(/^[\w ]+ [a-z]+s [\w+ -]+ for/) ? text.match(/^([\w ]+) [a-z]+s [\w+ -]+ for/)[1].replace(/^Your /, '') : text.match(/^You (\w+)/)[1];
+      try {
+        text = param.log[i].textContent;
+        if (reg = matchDamageInfoFromLogText(text)) {
+          magic = reg[2].replace('ing', '');
           point = reg[1] * 1;
-          stats.damage[magic] = (magic in stats.damage) ? stats.damage[magic] + point : point;
+          if (filter.hurt) {
+            stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
+            if (filter.hurtcount || filter.hurtavg) {
+              stats.hurt._count++;
+            }
+            if (filter.hurttotal || filter.hurtavg) {
+              stats.hurt._total += point;
+            }
+            if (filter.hurtavg) {
+              stats.hurt._avg = Math.round(stats.hurt._total / stats.hurt._count);
+            }
+            if (magic.match(/pierc|crush|slash/)) {
+              if (filter.hurtpcount || filter.hurtpavg) {
+                stats.hurt._pcount++;
+              }
+              if (filter.hurtptotal || filter.hurtpavg) {
+                stats.hurt._ptotal += point;
+              }
+              if (filter.hurtpavg) {
+                stats.hurt._pavg = Math.round(stats.hurt._ptotal / stats.hurt._pcount);
+              }
+            } else {
+              if (filter.hurtmcount || filter.hurtmavg) {
+                stats.hurt._mcount++;
+              }
+              if (filter.hurtmtotal || filter.hurtmavg) {
+                stats.hurt._mtotal += point;
+              }
+              if (filter.hurtmavg) {
+                stats.hurt._mavg = Math.round(stats.hurt._mtotal / stats.hurt._mcount);
+              }
+            }
+          }
+          if (filter.evade && text.match(/You ((partially )*(evade|parry|block)( and )*)+ the attack/)) {
+            stats.self.evade++;
+          }
         }
-      }
-      else if (reg = text.match(/^([\w ]+) [a-z\-]+s [\w+ -\,]+, causing \d+( .*)? damage/) ||
-        text.match(/^(You) ((\d+x-)*crit|hit|glance) [\w+ -\,]+, causing (\d+)( additional)* points of (.+) damage/)
-      ) {
-        if (filter.damage) {
-          magic = reg[1];
-          if (magic === 'You') magic = 'attack'
-          reg = text.match(/causing (\d+)( additional)* points of (.+) damage/);
-          point = reg[1] * 1;
-          stats.damage[magic] = (magic in stats.damage) ? stats.damage[magic] + point : point;
+        else if (
+          text.match(/^[\w ]+ [a-z]+s [\w+ -]+ for \d+( .*)? damage/) ||
+          text.match(/^You .* for \d+ .* damage/)
+        ) {
+          if (filter.damage) {
+            reg = text.match(/for (\d+)( .*)? damage/);
+            magic = text.match(/^[\w ]+ [a-z]+s [\w+ -]+ for/) ? text.match(/^([\w ]+) [a-z]+s [\w+ -]+ for/)[1].replace(/^Your /, '') : text.match(/^You (\w+)/)[1];
+            point = reg[1] * 1;
+            stats.damage[magic] = (magic in stats.damage) ? stats.damage[magic] + point : point;
+          }
         }
-      }
-      else if (reg = text.match(/was hit for (\d+) (.+) damage/)) {
-        if (filter.damage) {
-          magic = reg[1];
-          if (magic === 'You') magic = 'attack'
-          reg = text.match(/causing (\d+)( additional)* points of (.+) damage/);
-          point = reg[1] * 1;
-          stats.damage[magic] = (magic in stats.damage) ? stats.damage[magic] + point : point;
+        else if (reg = text.match(/^([\w ]+) [a-z\-]+s [\w+ -\,]+, causing \d+( .*)? damage/) ||
+                 text.match(/^(You) ((\d+x-)*crit|hit|glance) [\w+ -\,]+, causing (\d+)( additional)* points of (.+) damage/)
+                ) {
+          if (filter.damage) {
+            magic = reg[1];
+            if (magic === 'You') magic = 'attack'
+            reg = text.match(/causing (\d+)( additional)* points of (.+) damage/);
+            point = reg[1] * 1;
+            stats.damage[magic] = (magic in stats.damage) ? stats.damage[magic] + point : point;
+          }
         }
-      }
-      else if (text.match(/Vital Theft hits .*? for \d+ damage/)) {
-        if (filter.damage) {
-          magic = 'Vital Theft';
-          point = text.match(/Vital Theft hits .*? for (\d+) damage/)[1] * 1;
-          stats.damage[magic] = (magic in stats.damage) ? stats.damage[magic] + point : point;
+        else if (reg = text.match(/was hit for (\d+) (.+) damage/)) {
+          if (filter.damage) {
+            magic = reg[1];
+            if (magic === 'You') magic = 'attack'
+            reg = text.match(/causing (\d+)( additional)* points of (.+) damage/);
+            point = reg[1] * 1;
+            stats.damage[magic] = (magic in stats.damage) ? stats.damage[magic] + point : point;
+          }
         }
-      }
-      else if (text.match(
-        /You ((partially )*(evade|parry|block)( and )*)+ the attack|misses the attack against you|(casts|uses) .* misses the attack/)) {
-        if (filter.evade) {
-          stats.self.evade++;
+        else if (text.match(/Vital Theft hits .*? for \d+ damage/)) {
+          if (filter.damage) {
+            magic = 'Vital Theft';
+            point = text.match(/Vital Theft hits .*? for (\d+) damage/)[1] * 1;
+            stats.damage[magic] = (magic in stats.damage) ? stats.damage[magic] + point : point;
+          }
         }
-      }
-      else if (text.match(/(shrugs off|resists) the effects of your spell|(resists your spell|Your spell is absorbed|(evades|parries) your (attack|spell))|Your attack misses its mark|Your spell fails to connect/)) {
-        if (filter.miss) {
-          stats.self.miss++;
+        else if (text.match(
+          /You ((partially )*(evade|parry|block)( and )*)+ the attack|misses the attack against you|(casts|uses) .* misses the attack/)) {
+          if (filter.evade) {
+            stats.self.evade++;
+          }
         }
-      }
-      else if (text.match(/You gain the effect Focusing/)) {
-        if (filter.focus) {
-          stats.self.focus++;
+        else if (text.match(/(shrugs off|resists) the effects of your spell|(resists your spell|Your spell is absorbed|(evades|parries) your (attack|spell))|Your attack misses its mark|Your spell fails to connect/)) {
+          if (filter.miss) {
+            stats.self.miss++;
+          }
         }
-      }
-      else if (text.match(/^Recovered \d+ points of/) || text.match(/You are healed for \d+ Health Points/) || text.match(/You drain \d+ HP from/)) {
-        if (filter.restore) {
-          magic = (param.mode === 'defend') ? 'defend' : text.match(/You drain \d+ HP from/) ? 'drain' : param.magic || param.item;
-          point = text.match(/\d+/)[0] * 1;
-          stats.restore[magic] = (magic in stats.restore) ? stats.restore[magic] + point : point;
+        else if (text.match(/You gain the effect Focusing/)) {
+          if (filter.focus) {
+            stats.self.focus++;
+          }
         }
-      }
-      else if (text.match(/(restores|drain) \d+ points of/)) {
-        if (filter.restore) {
-          reg = text.match(/^(.*) restores (\d+) points of (\w+)/) || text.match(/^You (drain) (\d+) points of (\w+)/);
-          magic = reg[1];
-          point = reg[2] * 1;
-          stats.restore[magic] = (magic in stats.restore) ? stats.restore[magic] + point : point;
+        else if (text.match(/^Recovered \d+ points of/) || text.match(/You are healed for \d+ Health Points/) || text.match(/You drain \d+ HP from/)) {
+          if (filter.restore) {
+            magic = (param.mode === 'defend') ? 'defend' : text.match(/You drain \d+ HP from/) ? 'drain' : param.magic || param.item;
+            point = text.match(/\d+/)[0] * 1;
+            stats.restore[magic] = (magic in stats.restore) ? stats.restore[magic] + point : point;
+          }
         }
-      }
-      else if (text.match(/absorbs \d+ points of damage from the attack into \d+ points of \w+ damage/)) {
-        if (filter.hurt) {
-          reg = text.match(/(.*) absorbs (\d+) points of damage from the attack into (\d+) points of (\w+) damage/);
-          point = reg[2] * 1;
-          magic = matchDamageInfoFromLogText(param.log[i - 1].textContent, false)[2].replace('ing', '');
-          stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
-          point = reg[3] * 1;
-          magic = `${reg[1].replace('Your ', '')}_${reg[4]}`;
-          stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
+        else if (text.match(/(restores|drain) \d+ points of/)) {
+          if (filter.restore) {
+            reg = text.match(/^(.*) restores (\d+) points of (\w+)/) || text.match(/^You (drain) (\d+) points of (\w+)/);
+            magic = reg[1];
+            point = reg[2] * 1;
+            stats.restore[magic] = (magic in stats.restore) ? stats.restore[magic] + point : point;
+          }
         }
-      }
-      else if (text.match(/You gain .* proficiency/)) {
-        if (filter.proficiency) {
-          reg = text.match(/You gain ([\d.]+) points of (.*?) proficiency/);
-          magic = reg[2];
-          point = reg[1] * 1;
-          stats.proficiency[magic] = (magic in stats.proficiency) ? stats.proficiency[magic] + point : point;
-          stats.proficiency[magic] = stats.proficiency[magic].toFixed(3) * 1;
+        else if (text.match(/absorbs \d+ points of damage from the attack into \d+ points of \w+ damage/)) {
+          if (filter.hurt) {
+            reg = text.match(/(.*) absorbs (\d+) points of damage from the attack into (\d+) points of (\w+) damage/);
+            point = reg[2] * 1;
+            magic = matchDamageInfoFromLogText(param.log[i - 1].textContent, false)[2].replace('ing', '');
+            stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
+            point = reg[3] * 1;
+            magic = `${reg[1].replace('Your ', '')}_${reg[4]}`;
+            stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
+          }
         }
-      }
-      else if (
-        text.trim() === '' ||
-        text.match(/You (gain |cast |use |are Victorious|have reached Level|have obtained the title|do not have enough MP)/) ||
-        text.match(/Cooldown|has expired|Spirit Stance|gains the effect|insufficient Spirit|Stop beating dead ponies| defeat |Clear Bonus|brink of defeat|The effect .* has worn off|Stop \w+ing|Spawned Monster| drop(ped|s) |defeated|has been roused from its sleep|The potential of your equipment has grown!|You received /) ||
-        text.match(' missing you completely')
-      ) {
-        // nothing;
-      }
-      else {
-        // console.warn('unknown log type:',text);
+        else if (text.match(/You gain .* proficiency/)) {
+          if (filter.proficiency) {
+            reg = text.match(/You gain ([\d.]+) points of (.*?) proficiency/);
+            magic = reg[2];
+            point = reg[1] * 1;
+            stats.proficiency[magic] = (magic in stats.proficiency) ? stats.proficiency[magic] + point : point;
+            stats.proficiency[magic] = stats.proficiency[magic].toFixed(3) * 1;
+          }
+        }
+        else if (
+          text.trim() === '' ||
+          text.match(/You (gain |cast |use |are Victorious|have reached Level|have obtained the title|do not have enough MP)/) ||
+          text.match(/Cooldown|has expired|Spirit Stance|gains the effect|insufficient Spirit|Stop beating dead ponies| defeat |Clear Bonus|brink of defeat|The effect .* has worn off|Stop \w+ing|Spawned Monster| drop(ped|s) |defeated|has been roused from its sleep|The potential of your equipment has grown!|You received /) ||
+          text.match(' missing you completely')
+        ) {
+          // nothing;
+        }
+        else {
+          console.warn('unknown log type:',text);
+        }
+      } catch (err) {
+        console.warn('error log type:', text, err);
       }
     }
     setValue('stats', stats);
