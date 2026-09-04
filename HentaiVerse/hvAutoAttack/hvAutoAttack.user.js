@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.175
+// @version      2.91.176
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -8728,6 +8728,12 @@ text-align: left;
       Object.keys(logInfo).forEach(k => { if (infos[k] === undefined) delete infos[k]; });
       return infos;
     }
+    const monsterNames = battle.monsterStatus.map(m => gE(`.btm3>div>div`, getMonster(getMonsterID(m))).innerText);
+    const formatMonsterNames = t => { monsterNames.forEach(name => {
+      t = t.replaceAll(new RegExp(name, 'g'), match => {
+        return `MONSTER_${((monsterNames.findIndex(x => x === match)+1)||11)-1}`;
+      });
+    }); return t; }
 
     for (const i of range(param.log)) {
       if (param.log[i].className === 'tls') break;
@@ -8736,12 +8742,8 @@ text-align: left;
 
       let legacy;
       try {
-        const monsterNames = battle.monsterStatus.map(m => gE(`.btm3>div>div`, getMonster(getMonsterID(m))).innerText);
-        monsterNames.forEach(name => {
-          text = text.replaceAll(new RegExp(name, 'g'), match => {
-            return `MONSTER_${monsterNames.findIndex(x => x === match)}`;
-          });
-        });
+        text = formatMonsterNames(text);
+
         if (text.match('damage') && !text.match('absorbs') && (reg = logMatched(text))) {
           const { source, hit, target, block, damage, type } = reg;
           point = damage * 1;
@@ -8791,12 +8793,8 @@ text-align: left;
           if (filter.hurt) {
             point = reg[2] * 1;
             let prev = param.log[i - 1].textContent;
-            monsterNames.forEach(name => {
-              prev = prev.replaceAll(new RegExp(name, 'g'), match => {
-                return `MONSTER_${monsterNames.findIndex(x => x === match)}`;
-              });
-            });
-            const { source, hit, target, block, damage, type } = logMatched(text);
+            prev = formatMonsterNames(prev);
+            const { source, hit, target, block, damage, type } = logMatched(prev);
             magic = type?.replace('ing', '') ?? source;
             stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
             point = reg[3] * 1;
@@ -8881,16 +8879,18 @@ text-align: left;
           || text.match(/^Slot is currently not usable\.$/)
           || text.match(/^Cooldown is still pending for (.*)\.$/)
           || text.match(/^The potential of your equipment has grown!$/)
-          || text.match(/^Stop beating dead ponies!$/)
+          || text.match(/^Stop beating dead ponies\.$/)
           // 结算
           || text.match(/^You obtained \d+x \[.*]$/)
-          || text.match(/^You gain \d+ EXP!$/)
+          || text.match(/^You gain \d+ (Credits|EXP)!$/)
           || text.match(/^You (have reached Level|have obtained the title|do not have enough MP)/)
           || text.match(/^MONSTER_\d has been defeated\.$/)
           || text.match(/^You are Victorious!$/)
           || text.match(/^MONSTER_\d dropped \[.*\]$/)
           || text.match(/^MONSTER_\d drops a (.+) Gem powerup!$/)
           || text.match(/^Battle Clear Bonus! \[.*\]$/)
+          || text.match(/^Arena Extra Bonus! You obtained \dx \[.*\]$/)
+          || text.match(/^Arena Token Bonus! \[.*\]$/)
         ) {
           // nothing;
         }
