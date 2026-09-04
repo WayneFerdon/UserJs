@@ -8626,7 +8626,7 @@ text-align: left;
     }
 
     function matchDamage(text) {
-      const regExp = matchDamage.prototype.regExp ??= /^(MONSTER_\d|[yY]ou|[^\,\.]+)?((?:(?:uses|casts) .*, which)*(?:was|resists, and was)* ((?:\d+x-)*crit|hit|glance|counter|explode|is eviscerated)?(?:d|s|!)*) (MONSTER_\d|[yY]ou)*((?:; MONSTER_\d |; [yY]ou |, which )*((?: |partially|block|blocks|parry|parries|evade|resist|evades|and)+)+(?: the attack, and)?)?(?:, causing| ?for| ?takes*)+( \d+)?( additional)*( points of)*( [^0-9]+)? damage\.?\s*$/
+      const regExp = matchDamage.prototype.regExp ??= /^(MONSTER_\d|[yY]ou|[^\,\.]+)?((?:(?:uses|casts) .*, which)*(?:was|resists, and was)* ((?:\d+x-)*crit|hit|glance|counter|explode)?(?:d|s|!)*) (MONSTER_\d|[yY]ou)*((?:; MONSTER_\d |; [yY]ou |, which )*((?: |partially|block|blocks|parry|parries|evade|resist|evades|and)+)+(?: the attack, and)?)?(?:, causing| ?for| ?takes*)+( \d+)?( additional)*( points of)*( [^0-9]+)? damage\.?\s*$/
 
       const matched = text.match(regExp);
       let [_0, source, _2, hit, target, _5, block, damage, _additional, _points_of, type] = (matched??[]).map(t => t?.trim());
@@ -8658,6 +8658,13 @@ text-align: left;
               if (filter[`hurt${t}total`] || filter[`hurt${t}avg`]) stats.hurt[`_${t}total`] += point;
               if (filter[`hurt${t}avg`]) stats.hurt[`_${t}avg`] = Math.round(stats.hurt[`_${t}total`] / stats.hurt[`_${t}count`]);
             }
+          }
+        },
+        {
+          match: text => text.match(/^MONSTER_\d is eviscerated for (\d+) Slashing damage, putting it out of its misery/),
+          recorder: (match, stats, filter, prev, next, mode) => {
+            if (!filter.damage) return;
+            onhandle(stats, 'damage', 'Bleeding Wound', match[1] * 1);
           }
         },
         {
@@ -8853,7 +8860,7 @@ text-align: left;
       }
     }
 
-    const logCache = (getValue('logCache', true) ?? []).filter(x => !recordLog(x.text, stats, filter, x.prev, x.next, x.mode));
+    const logCache = (getValue('logCache', true) ?? []).filter(x => !recordLog(x.text.replaceAll('\\d', '1'), stats, filter, x.prev, x.next, x.mode));
     let logRange = [...param.log].findIndex(log => log.className === 'tls');
     if (logRange >= 0) param.log = [...param.log].slice(0, logRange);
     param.log = [...param.log].map(log => formatMonsterNames(log.textContent).trim()).filter(t => t);
