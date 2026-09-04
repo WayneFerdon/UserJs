@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.180
+// @version      2.91.181
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -37,7 +37,7 @@
   const dataFlags = { sharable: ['option'] };
   dataFlags.portable = ['drop', 'stats', 'dropOld', 'statsOld', 'monsterDB', 'monsterMID'];
   dataFlags.battleDatas = [...dataFlags.portable, 'battle', 'battleCode', 'disabled', 'stepIn', 'skillOTOS', 'onriddle', 'rec'];
-  dataFlags.local = [...dataFlags.battleDatas, 'stamina', 'logCache'];
+  dataFlags.local = [...dataFlags.battleDatas, 'stamina', 'logCache', 'statsStatic'];
   dataFlags.standalone = [...dataFlags.sharable, ...dataFlags.local, 'arena', 'lastUrl', 'ability', 'proficiency', 'lastSwitch', 'itemWorldDatas', 'lastPersona', 'lastEquipSet'];
   dataFlags.excludeStandalone = { 'option': ['optionStandalone', 'version', 'lang'] };
 
@@ -3569,6 +3569,7 @@
           gE('#hvAATab-Drop>table').innerHTML = _html;
         } else if (name === 'Usage') { // 数据记录
           let stats = getValue('stats', true) || {};
+          let statsStatic = getValue('statsStatic', true) || {};
           const statsOld = getValue('statsOld', true) || [];
           const translation = {
             self: UI.l('自身', '自身', 'Self'),
@@ -3585,10 +3586,10 @@
               stats = statsOld[0];
             }
             for (i in stats) {
-              if (['itemsNames', 'magicNames'].includes(i)) continue;
               _html = `${_html}<tr class="hvAATh"><td>${translation[i]??i}</td><td>${UI.l('值', '值', 'Value')}</td></tr>`;
               stats[i] = objSort(stats[i]);
-              let names = stats[`${i}Names`];
+              let names = statsStatic[`${i}Names`];
+              if (!names && i === 'restore') names = { ...statsStatic.magicNames, ...statsStatic.itemsNames };
               for (const j in stats[i]) {
                 _html = `${_html}<tr><td>${j} ${names?.[j] ?? ''}</td><td>${stats[i][j]}</td></tr>`;
               }
@@ -3605,12 +3606,11 @@
             });
             _html = `${_html}</tr>`;
             Object.keys(translation).forEach((i) => {
-              if (['itemsNames', 'magicNames'].includes(i)) return;
               if (i === '__name') return;
-
               _html = `${_html}<tr class="hvAATh"><td colspan="${statsOld.length + 1}">${translation[i]??i}</td></tr>`;
               getKeys(statsOld, i).forEach((key) => {
-                let names = stats[`${i}Names`];
+                let names = statsStatic[`${i}Names`];
+                if (!names && i === 'restore') names = { ...statsStatic.magicNames, ...statsStatic.itemsNames };
                 _html = `${_html}<tr><td>${key} ${names?.[key] ?? ''}</td>`;
                 statsOld.forEach((_statsOld) => {
                   if (_statsOld[i] && (key in _statsOld[i])) {
@@ -8607,6 +8607,7 @@ text-align: left;
     const filter = getOption().record;
     if (!filter) return;
     let stats = getValue('stats', true) || {};
+    let statsStatic = getValue('statsStatic', true) || {};
     const battle = g().battle;
     stats.self ??= { _startTime: time(3) };
     stats.tokens ??= { token: battle.token, postoken: battle.postoken };
@@ -8677,7 +8678,7 @@ text-align: left;
           delete stats.magic[magicName];
         }
         stats.magic[magic] = prev + 1;
-        (stats.magicNames ??= {})[magic] = magicName;
+        (statsStatic.magicNames ??= {})[magic] = magicName;
       }
       if (filter.mp) {
         stats.self.mp += param.mp;
@@ -8694,7 +8695,7 @@ text-align: left;
           delete stats.items[itemName];
         }
         stats.items[item] = prev + 1;
-        (stats.itemsNames ??= {})[item] = itemName;
+        (statsStatic.itemsNames ??= {})[item] = itemName;
       }
     } else {
       if (filter[param.mode]) {
@@ -8751,7 +8752,7 @@ text-align: left;
         if (text.match('damage') && !text.match('absorbs') && (reg = logMatched(text))) {
           const { source, hit, target, block, damage, type } = reg;
           point = damage * 1;
-          magic = type?.replace('ing', '') ?? source;
+          magic = type ?? source;
           if (target?.match(`[yY]ou`)) { // hurt
             if (filter.hurt) {
               stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
@@ -8799,7 +8800,7 @@ text-align: left;
             let prev = param.log[i - 1].textContent;
             prev = formatMonsterNames(prev);
             const { source, hit, target, block, damage, type } = logMatched(prev);
-            magic = type?.replace('ing', '') ?? source;
+            magic = type ?? source;
             stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
             point = reg[3] * 1;
             magic = `${reg[1]}_${reg[4]}`;
@@ -8821,15 +8822,15 @@ text-align: left;
         }
         else if (reg = text.match(/^MONSTER_\d casts .*, but it is absorbed. You gain (\d+) points of (mana)\.$/)) {
           if (filter.restore) {
-            magic = `absorbed ${reg[2]}`;
+            magic = `absorbed_to_${reg[2]}`;
             point = reg[1] * 1;
             stats.restore[magic] = (magic in stats.restore) ? stats.restore[magic] + point : point;
           }
         }
-        else if (reg = text.match(/^Recovered (\d+) points of (?:health|magic|spirit)\.$/)) {
+        else if (reg = text.match(/^(Recovered) (\d+) points of (?:health|magic|spirit)\.$/)) {
           if (filter.restore) {
-            magic = (param.mode === 'defend') ? 'defend' : param.magic || param.item;
-            point = reg[1] * 1;
+            magic = (param.mode === 'defend') ? 'defend' : `${reg[1]}_${reg[3]}`;
+            point = reg[2] * 1;
             stats.restore[magic] = (magic in stats.restore) ? stats.restore[magic] + point : point;
           }
         }
@@ -8839,8 +8840,20 @@ text-align: left;
           || text.match(/^You are (healed) for (\d+) (Health) Points\.$/)
         ) {
           if (filter.restore) {
-            magic = (param.mode === 'defend') ? 'defend' : param.magic || param.item || `${reg[1]}_${reg[3]}`;
+            const ids = {
+              healed: 311,
+              Cure: 311,
+              ['Full-Cure']: 313,
+              Regen: 312,
+              Regeneration: 11191,
+              Replenishment: 11291,
+              Refreshment: 11391,
+            }
+            magic = ids[reg[1]];
             point = reg[2] * 1;
+            if (magic === 311) {
+              magic = ids[param.log[i + 1].textContent.match(/^You cast (.+)\./)?.[1]];
+            }
             stats.restore[magic] = (magic in stats.restore) ? stats.restore[magic] + point : point;
           }
         }
@@ -8900,7 +8913,7 @@ text-align: left;
         }
         else if (legacy) {
           if (reg = matchDamageInfoFromLogText(text)) {
-            magic = reg[2].replace('ing', '');
+            magic = reg[2];
             point = reg[1] * 1;
             if (filter.hurt) {
               stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
@@ -9018,6 +9031,7 @@ text-align: left;
     }
     setValue('logCache', logCache.slice(0, Math.min(logCache.length, 50)));
     setValue('stats', stats);
+    setValue('statsStatic', statsStatic);
     if (getComputedStyle(gE('#hvAATab-Usage')).display === 'block') {
       gE(`.hvAATabmenu>span[name="Usage"]`).click();
     }
