@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.179
+// @version      2.91.180
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -37,7 +37,7 @@
   const dataFlags = { sharable: ['option'] };
   dataFlags.portable = ['drop', 'stats', 'dropOld', 'statsOld', 'monsterDB', 'monsterMID'];
   dataFlags.battleDatas = [...dataFlags.portable, 'battle', 'battleCode', 'disabled', 'stepIn', 'skillOTOS', 'onriddle', 'rec'];
-  dataFlags.local = [...dataFlags.battleDatas, 'stamina'];
+  dataFlags.local = [...dataFlags.battleDatas, 'stamina', 'logCache'];
   dataFlags.standalone = [...dataFlags.sharable, ...dataFlags.local, 'arena', 'lastUrl', 'ability', 'proficiency', 'lastSwitch', 'itemWorldDatas', 'lastPersona', 'lastEquipSet'];
   dataFlags.excludeStandalone = { 'option': ['optionStandalone', 'version', 'lang'] };
 
@@ -8737,6 +8737,8 @@ text-align: left;
       });
     }); return t; }
 
+    const logCache = getValue('logCache', true)??[];
+
     for (const i of range(param.log)) {
       if (param.log[i].className === 'tls') break;
       let text = param.log[i].textContent;
@@ -9000,22 +9002,21 @@ text-align: left;
           }
         }
         else {
-          g().errorLogCache??=[];
-          const toWarn = text.replaceAll(/MONSTER_\d/g, 'MONSTER_\\d')
-          if (!g().errorLogCache.includes(toWarn)) {
+          const toWarn = text.replaceAll(/MONSTER_\d/g, 'MONSTER_\\d').replaceAll(/\d+/g, '\\d');
+          if (!logCache.includes(toWarn)) {
             console.warn('unknown log type:', toWarn);
-            g().errorLogCache.push(toWarn);
+            logCache.unshift(toWarn);
           }
         }
       } catch (err) {
-        g().errorLogCache??=[];
-        const toWarn = text.replaceAll(/MONSTER_\d/g, 'MONSTER_\\d')
-        if (!g().errorLogCache.includes(toWarn)) {
+        const toWarn = text.replaceAll(/MONSTER_\d/g, 'MONSTER_\\d').replaceAll(/\d+/g, '\\d');
+        if (!logCache.includes(toWarn)) {
           console.warn('error log type:', text, err);
-          g().errorLogCache.push(toWarn);
+          logCache.unshift(toWarn);
         }
       }
     }
+    setValue('logCache', logCache.slice(0, Math.min(logCache.length, 50)));
     setValue('stats', stats);
     if (getComputedStyle(gE('#hvAATab-Usage')).display === 'block') {
       gE(`.hvAATabmenu>span[name="Usage"]`).click();
