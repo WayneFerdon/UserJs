@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.177
+// @version      2.91.178
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -6502,6 +6502,16 @@
     if (!gE('#battle_main')) return;
     lastResponsive = time(0);
     let battle = getValue('battle', true);
+
+    if (battle && battle.prevLog !== battle.turnLog) {
+      battle.prevLog = battle.turnLog;
+      const zeroturn = battle.turnLog.match(/>You use\s*(\w* (?:Gem|Draught|Potion|Elixir|Drink|Candy|Infusion|Scroll|Vase|Bubble)).*?</);
+      if (!zeroturn) {
+        battle.turn = (battle.turn??0) + 1;
+      }
+      battle.actions = (battle.actions??0) + 1;
+    }
+
     if (!battle || !battle.roundAll) { // 修复因多个页面/世界同时读写造成缓存数据异常的情况
       battle = JSON.parse(JSON.stringify(g().battle));
       battle.monsterStatus = battle.monsterStatus.map(ms => {
@@ -6707,29 +6717,28 @@
       setExitBattleTimeout('Flee');
       return;
     }
-    const noturn = 1;
     const taskList = {
-      'Cure': { action: () => autoRecover(true), noturn },
-      'Pause': { action: autoPause, noturn },
-      'SSDisable': { action: () => autoSS(true) },
-      'Rec': { action: () => autoRecover(false), noturn },
-      'Scroll': { action: useScroll, noturn },
-      'Infus': { action: useInfusions, noturn },
-      'Def': { action: autoDefend },
-      'Channel': { action: useChannelSkill },
-      'Buff': { action: useBuffSkill, noturn },
-      'Debuff': { action: useDeSkill },
-      'Focus': { action: autoFocus },
-      'SS': { action: () => autoSS(false) },
-      'Skill': { action: autoSkill },
-      'Atk': { action: attack },
+      'Cure': () => autoRecover(true),
+      'Pause': autoPause,
+      'SSDisable': () => autoSS(true),
+      'Rec': () => autoRecover(false),
+      'Scroll': useScroll,
+      'Infus': useInfusions,
+      'Def': autoDefend,
+      'Channel': useChannelSkill,
+      'Buff': useBuffSkill,
+      'Debuff': useDeSkill,
+      'Focus': autoFocus,
+      'SS': () => autoSS(false),
+      'Skill': autoSkill,
+      'Atk': attack,
     };
     const order = option.battleOrderDefaultOnly ? [] : splitOrders(option.battleOrderName);
     if (option.debugCheckCondition) {
       checkCondition(option.debugCondition);
     }
-    onTasks();
 
+    onTasks();
     async function onTasks() {
       const prevActionTime = battle.prevActionTime ?? 0;
       const remainDelay = prevActionTime + option.delay - time(0);
@@ -6737,19 +6746,8 @@
         await sleep(remainDelay, true);
       }
       const onTask = name => {
-        const task = taskList[name];
-        const result = task.action();
-        if (!result) return;
-        if (name !== 'Pause') battle.actions = g().battle.actions = currentActions + 1;
+        if (!taskList[name]()) return;
         setValue('battle', battle);
-        if (!task.noturn || result === 1) {
-          battle = getValue('battle', true);
-          battle.turn = g().battle.turn = currentTurn + 1;
-          battle.prevLog = battle.turnLog;
-          battle.prevActionTime = time(0);
-          g('battle', battle);
-          setValue('battle', battle);
-        }
         onStepInDone();
         return true;
       }
@@ -7752,7 +7750,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       if (option.item[name[i]] && checkCondition(option[`item${name[i]}Condition`]) && isOn(id)) {
         updateSkillOTOS(id);
         (gE(`.bti3>div[onmouseover*="(${id})"]`) ?? gE(id)).click();
-        return id > 10000 ? -1 : 1;
+        return true
       }
     }
     return false;
@@ -7936,7 +7934,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       setBattleSkillParam(id, { buff: 1});
       if (checkCondition(option[`buffSkill${buff}Condition`])) {
         onClickBuff(id);
-        return 1;
+        return true;
       }
     }
 
@@ -7968,7 +7966,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       if (!getBuff(draughtPack[i].img) && option.buffSkill && option.buffSkill[i] && checkCondition(option[`buffSkill${i}Condition`]) && gE(`.bti3>div[onmouseover*="(${id})"]`)) {
         updateSkillOTOS(id);
         gE(`.bti3>div[onmouseover*="(${id})"]`).click();
-        return id > 10000 ? -1 : 1;
+        return true;
       }
     }
     return false;
