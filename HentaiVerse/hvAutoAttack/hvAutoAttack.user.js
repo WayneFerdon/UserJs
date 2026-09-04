@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.181
+// @version      2.91.182
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2668,6 +2668,8 @@
         { id: 'evade', names: ['闪避', '閃避', 'Evade'] },
         { id: 'miss', names: ['未命中', '未命中', 'Miss'] },
         { id: 'focus', names: ['集中', '集中', 'Focus'] },
+        { id: 'attack', names: ['攻击', '攻擊', 'Attack'] },
+        { id: 'spirit', names: ['灵动架势', '靈動架勢', 'Spirit'] },
         { id: 'mp', names: ['MP 总消耗', 'MP 總消耗', 'MP Cost'] },
         { id: 'oc', names: ['OC 总消耗', 'OC 總消耗', 'OC Cost'] },
       ],
@@ -3589,7 +3591,7 @@
               _html = `${_html}<tr class="hvAATh"><td>${translation[i]??i}</td><td>${UI.l('值', '值', 'Value')}</td></tr>`;
               stats[i] = objSort(stats[i]);
               let names = statsStatic[`${i}Names`];
-              if (!names && i === 'restore') names = { ...statsStatic.magicNames, ...statsStatic.itemsNames };
+              if (!names && ['restore', 'damage'].includes(i)) names = { ...statsStatic.magicNames, ...statsStatic.itemsNames };
               for (const j in stats[i]) {
                 _html = `${_html}<tr><td>${j} ${names?.[j] ?? ''}</td><td>${stats[i][j]}</td></tr>`;
               }
@@ -8603,33 +8605,199 @@ text-align: left;
     }
   }
 
+  function formatMonsterNames(t) {
+    const monsterNames = g().battle.monsterStatus.map(m => gE(`.btm3>div>div`, getMonster(getMonsterID(m))).innerText);
+    monsterNames.forEach(name => {
+    t = t.replaceAll(new RegExp(name, 'g'), match => {
+      return `MONSTER_${((monsterNames.findIndex(x => x === match)+1)||11)-1}`;
+    });
+  }); return t; }
+
+  function recordLog(text, stats, filter, prev, next, mode) {
+    let match;
+    for (const type of recordLog.prototype.logType ??= initTypes()) {
+      if (!(match = type.match(text))) continue;
+      type.recorder(match, stats, filter, prev, next, mode);
+      return true;
+    }
+
+    function onhandle(stats, type, sub, point) {
+      stats[type][sub] = (stats[type][sub]??0) + point;
+    }
+
+    function matchDamage(text) {
+      const regExp = matchDamage.prototype.regExp ??= /^(MONSTER_\d|[yY]ou|[^\,\.]+)?((?:(?:uses|casts) .*, which)*(?:was|resists, and was)* ((?:\d+x-)*crit|hit|glance|counter|explode|is eviscerated)?(?:d|s|!)*) (MONSTER_\d|[yY]ou)*((?:; MONSTER_\d |; [yY]ou |, which )*((?: |partially|block|blocks|parry|parries|evade|resist|evades|and)+)+(?: the attack, and)?)?(?:, causing| ?for| ?takes*)+( \d+)?( additional)*( points of)*( [^0-9]+)? damage\.?\s*$/
+
+      const matched = text.match(regExp);
+      let [_0, source, _2, hit, target, _5, block, damage, _additional, _points_of, type] = (matched??[]).map(t => t?.trim());
+      block = block?.replaceAll('partially ', 'p-').replace('parries', 'parry').replace('blocks', 'block').replace('and', '&');
+      const infos = { source, hit, target, block, damage, type };
+      const logInfo = { _0, source, _2, hit, target, _5, block, damage, _additional, _points_of, type }
+      Object.keys(logInfo).forEach(k => { if (infos[k] === undefined) delete infos[k]; });
+      return matched ? infos : undefined;
+    }
+
+    function initTypes() {
+      return [
+        {
+          match: text => (text.match('damage') && !text.match('absorbs')) ? matchDamage(text) : undefined,
+          recorder: (match, stats, filter, prev, next, mode) => {
+            let { source, hit, target, block, damage, type } = match;
+            let point = damage * 1;
+            let magic = type ?? source;
+            if (!target?.match(`[yY]ou`)) return onhandle(stats, 'damage', magic, point);
+            if (filter.evade && text.match(/You ((partially )*(evade|parry|block)( and )*)+ the attack/)) stats.self.evade++;
+            if (!filter.hurt) return;
+            onhandle(stats, 'hurt', magic, point);
+            hurtSum();
+            hurtSum(magic.match(/[Pp]ierc|[Cc]rush|[Ss]lash/) ? 'p' : 'm');
+
+            function hurtSum(t) {
+              t ??= ''
+              if (filter[`hurt${t}count`] || filter[`hurt${t}avg`]) stats.hurt[`_${t}count`]++;
+              if (filter[`hurt${t}total`] || filter[`hurt${t}avg`]) stats.hurt[`_${t}total`] += point;
+              if (filter[`hurt${t}avg`]) stats.hurt[`_${t}avg`] = Math.round(stats.hurt[`_${t}total`] / stats.hurt[`_${t}count`]);
+            }
+          }
+        },
+        {
+          match: text => text.match(/^Your (spirit shield) absorbs (\d+) points of damage from the attack into (\d+) points of (spirit) damage/),
+          recorder: (match, stats, filter, prev, next, mode) => {
+            if (!filter.hurt) return;
+            const { source, hit, target, block, damage, type } = matchDamage(next);
+            onhandle(stats, 'hurt', type ?? source, match[2] * 1);
+            onhandle(stats, 'hurt', `${match[1]}_${match[4]}`, match[3] * 1);
+          }
+        },
+        {
+          match: text => text.match(/^(Refreshment|Replenishment|Regeneration|Regen) restores (\d+) points of (health|magic|spirit)\.$/)
+            || text.match(/^You are (healed) for (\d+) (Health) Points\.$/),
+          recorder: (match, stats, filter, prev, next, mode) => {
+            if (!filter.restore) return;
+            const ids = {
+              healed: 311,
+              Cure: 311,
+              ['Full-Cure']: 313,
+              Regen: 312,
+              Regeneration: 11191,
+              Replenishment: 11291,
+              Refreshment: 11391,
+            }
+            let magic = ids[match[1]];
+            if (magic === 311) {
+              magic = ids[prev.match(/^You cast (.+)\./)?.[1]];
+            }
+            onhandle(stats, 'restore', magic, match[2] * 1);
+          }
+        },
+        {
+          match: text => text.match(/^You drain (\d+) points of (health|magic|spirit) from MONSTER_\d\.$/),
+          recorder: (match, stats, filter, prev, next, mode) => {
+            let magic = `drain_${match[2]}`;
+            let point = match[1] * 1;
+            if (filter.restore) onhandle(stats, 'restore', magic, point);
+            if (filter.damage && match[2] === 'health') onhandle(stats, 'damage', '211', point);
+          }
+        },
+        {
+          match: text => text.match(/^You gain ([\d.]+) points of (.*?) proficiency.$/),
+          recorder: (match, stats, filter, prev, next, mode) => {
+            if (!filter.proficiency) return;
+            let magic = match[2];
+            let point = match[1] * 1;
+            stats.proficiency[magic] = ((stats.proficiency[magic] ?? 0) + point).toFixed(3) * 1;
+          }
+        },
+        {
+          match: text => text.match(/^MONSTER_\d casts .*, but it is absorbed. You gain (\d+) points of (mana)\.$/),
+          recorder: (match, stats, filter, prev, next, mode) => { if (filter.restore) return; onhandle(stats, 'restore', `absorbed_to_${match[2]}`, match[1] * 1); }
+        },
+        {
+          match: text => text.match(/^Recovered (\d+) points of (health|magic|spirit)\.$/),
+          recorder: (match, stats, filter, prev, next, mode) => { if (filter.restore) onhandle(stats, 'restore', mode ?? `Recovered_${match[2]}`, match[1] * 1); }
+        },
+        {
+          match: text => text.match(/^You (?:(?: |parry|and|block|resist|evade|partially)+)+ the attack( from MONSTER_\d)?\.$/),
+          recorder: (match, stats, filter, prev, next, mode) => { if (filter.evade) stats.self.evade++; }
+        },
+        {
+          match: text => text.match(/^MONSTER_\d (partially )*(?:resists|shrugs off) the effects of your spell\.$/)
+            || text.match(/^MONSTER_\d (?:(?: |deftly|parries|and|blocks|block|evades|evade|dodges|partially)+)+ your (offhand attack|attack|spell)\.$/),
+          recorder: (match, stats, filter, prev, next, mode) => { if (filter.miss) stats.self.miss++; }
+        },
+        {
+          match: text => // buff
+            text.match(/^You gain the effect (?:.| )+\.$/)
+            || text.match(/^MONSTER_\d gains the effect (?:.| )+\.$/)
+            || text.match(/^The effect (?:.| )+ (on MONSTER_\d)? has worn off\.$/)
+            || text.match(/^MONSTER_\d has been roused from its sleep\.$/)
+            || text.match(/^The effect (.*) was dispelled\.$/)
+            // 攻击防御、技能CD、道具
+            || text.match(/^MONSTER_\d got knocked out of confuse\.$/)
+            || text.match(/^MONSTER_\d (( |parries|blocks|evades|block|evade)+)+ the attack from MONSTER_\d\.$/)
+            || text.match(/^You block the attack from MONSTER_\d\.$/)
+            || text.match(/^MONSTER_\d  a shadow, missing you completely\.$/)
+            || text.match(/^MONSTER_\d (?:vigorously whiffs at|(?:uses|casts) (.| )+ in the general direction of)? a shadow, missing you completely\.$/)
+            || text.match(/^Cooldown expired for (?:.| )+$/)
+            || text.match(/^Spirit Stance (Disabled|Engaged|Exhausted)$/)
+            || text.match(/^You use (.+ (?:Elixir|Potion|Draught|Infusion|Gem)|Scroll of .*|Vital Strike|Shield Bash|Merciful Blow|Skyward Sword|.*)\.$/)
+            || text.match(/^Spark of Life saves you from the brink of defeat!$/)
+            || text.match(/^You cast .+\.$/)
+            || text.match(/^Insufficient overcharge to use (.*)\.$/)
+            || text.match(/^Insufficient overcharge or spirit for Spirit Stance\.$/)
+            || text.match(/^MONSTER_\d (uses|casts)+ (.| )+, but misses the attack\.$/)
+            || text.match(/^Slot is currently not usable\.$/)
+            || text.match(/^Cooldown is still pending for (.*)\.$/)
+            || text.match(/^The potential of your equipment has grown!$/)
+            || text.match(/^Stop beating dead ponies\.$/)
+            // 结算
+            || text.match(/^You obtained \d+x \[.*]$/)
+            || text.match(/^You gain \d+ (Credits|EXP)!$/)
+            || text.match(/^You (have reached Level|have obtained the title|do not have enough MP)/)
+            || text.match(/^MONSTER_\d has been defeated\.$/)
+            || text.match(/^You have been defeated\.$/)
+            || text.match(/^You have escaped from the battle\.$/)
+            || text.match(/^You are Victorious!$/)
+            || text.match(/^MONSTER_\d dropped \[.*\]$/)
+            || text.match(/^MONSTER_\d drops a (.+) Gem powerup!$/)
+            || text.match(/^Battle Clear Bonus! \[.*\]$/)
+            || text.match(/^Arena Extra Bonus! You obtained \dx \[.*\]$/)
+            || text.match(/^Arena Token Bonus! \[.*\]$/),
+          recorder: (match, stats, filter, prev, next, mode) => { }
+        },
+      ];
+    }
+  }
+
   function recordUsage(param) {
     const filter = getOption().record;
     if (!filter) return;
     let stats = getValue('stats', true) || {};
     let statsStatic = getValue('statsStatic', true) || {};
     const battle = g().battle;
-    stats.self ??= { _startTime: time(3) };
-    stats.tokens ??= { token: battle.token, postoken: battle.postoken };
-    stats.self._turn = filter.turn ? stats.self._turn ?? 0 : undefined;
-    stats.self._prevBattleTurn = filter.turn ? stats.self._prevBattleTurn ?? 0 : undefined;
-    stats.self._actions = filter.turn ? stats.self._actions ?? 0 : undefined;
-    stats.self._prevBattleActions = filter.turn ? stats.self._prevBattleActions ?? 0 : undefined;
-    stats.self._round = filter.round ? stats.self._round ?? 0 : undefined;
-    stats.self._battle = filter.battle ? stats.self._battle ?? 0 : undefined;
-    stats.self._monster = filter.monster ? stats.self._monster ?? 0 : undefined;
-    stats.self._boss = filter.boss ? stats.self._boss ?? 0 : undefined;
-    stats.self.evade = filter.evade ? stats.self.evade ?? 0 : undefined;
-    stats.self.miss = filter.miss ? stats.self.miss ?? 0 : undefined;
-    stats.self.focus = filter.focus ? stats.self.focus ?? 0 : undefined;
-    stats.self.mp = filter.mp ? stats.self.mp ?? 0 : undefined;
-    stats.self.oc = filter.oc ? stats.self.oc ?? 0 : undefined;
-    stats.restore = filter.restore ? stats.restore ?? {} : undefined; // 回复量
-    stats.items = filter.items ? stats.items ?? {} : undefined; // 物品使用次数
-    stats.magic = filter.magic ? stats.magic ?? {} : undefined; // 技能使用次数
-    stats.damage = filter.damage ? stats.damage ?? {} : undefined; // 技能攻击造成的伤害
-    stats.proficiency = filter.proficiency ? stats.proficiency ?? {} : undefined; // 熟练度
-    stats.hurt = filter.hurt ? stats.hurt ?? {} : undefined; // 受到攻击造成的伤害
+    (() => {
+      stats.self ??= { _startTime: time(3) };
+      stats.tokens ??= { token: battle.token, postoken: battle.postoken };
+      stats.self._turn = filter.turn ? stats.self._turn ?? 0 : undefined;
+      stats.self._prevBattleTurn = filter.turn ? stats.self._prevBattleTurn ?? 0 : undefined;
+      stats.self._actions = filter.turn ? stats.self._actions ?? 0 : undefined;
+      stats.self._prevBattleActions = filter.turn ? stats.self._prevBattleActions ?? 0 : undefined;
+      stats.self._round = filter.round ? stats.self._round ?? 0 : undefined;
+      stats.self._battle = filter.battle ? stats.self._battle ?? 0 : undefined;
+      stats.self._monster = filter.monster ? stats.self._monster ?? 0 : undefined;
+      stats.self._boss = filter.boss ? stats.self._boss ?? 0 : undefined;
+      stats.self.evade = filter.evade ? stats.self.evade ?? 0 : undefined;
+      stats.self.miss = filter.miss ? stats.self.miss ?? 0 : undefined;
+      stats.self.focus = filter.focus ? stats.self.focus ?? 0 : undefined;
+      stats.self.mp = filter.mp ? stats.self.mp ?? 0 : undefined;
+      stats.self.oc = filter.oc ? stats.self.oc ?? 0 : undefined;
+      stats.restore = filter.restore ? stats.restore ?? {} : undefined; // 回复量
+      stats.items = filter.items ? stats.items ?? {} : undefined; // 物品使用次数
+      stats.magic = filter.magic ? stats.magic ?? {} : undefined; // 技能使用次数
+      stats.damage = filter.damage ? stats.damage ?? {} : undefined; // 技能攻击造成的伤害
+      stats.proficiency = filter.proficiency ? stats.proficiency ?? {} : undefined; // 熟练度
+      stats.hurt = filter.hurt ? stats.hurt ?? {} : undefined; // 受到攻击造成的伤害
+    })();
     if (filter.hurt) {
       stats.hurt._avg = filter.hurtavg ? stats.hurt._avg ?? 0 : undefined;
       stats.hurt._count = filter.hurtcount ? stats.hurt._count ?? 0 : undefined;
@@ -8641,36 +8809,20 @@ text-align: left;
       stats.hurt._pcount = filter.hurtpcount ? stats.hurt._pcount ?? 0 : undefined;
       stats.hurt._ptotal = filter.hurtptotal ? stats.hurt._ptotal ?? 0 : undefined;
     }
-    let magic, magicName, item, itemName, point, reg;
     if (filter.turn) {
       battle.turn ??= 0;
       battle.actions ??= battle.turn;
-      if (battle.turn >= stats.self._prevBattleTurn) {
-        stats.self._turn += battle.turn - stats.self._prevBattleTurn;
-      } else {
-        stats.self._turn += battle.turn + 1;
-      }
+      stats.self._turn += battle.turn + ((battle.turn >= stats.self._prevBattleTurn) ? - stats.self._prevBattleTurn : 1);
       stats.self._prevBattleTurn = battle.turn;
-
-      if (battle.actions >= stats.self._prevBattleActions) {
-        stats.self._actions += battle.actions - stats.self._prevBattleActions;
-      } else {
-        stats.self._actions += battle.actions + 1;
-      }
+      stats.self._actions += battle.actions + ((battle.actions >= stats.self._prevBattleActions) ? - stats.self._prevBattleActions : 1);
       stats.self._prevBattleActions = battle.actions;
     }
     if (g().monsterAlive === 0) {
-      if (filter.round) {
-        stats.self._round += 1;
-      }
-      if (filter.battle) {
-        if (battle.roundNow === battle.roundAll) {
-          stats.self._battle += 1;
-        }
-      }
+      if (filter.round) stats.self._round++;
+      if (filter.battle && (battle.roundNow === battle.roundAll)) stats.self._battle++;
     }
     if (param.mode === 'magic') {
-      [magic, magicName] = [param.magic, param.magicName];
+      const [magic, magicName] = [param.magic, param.magicName];
       if (filter.magic) {
         let prev = stats.magic[magic] ?? 0;
         if (magicName in stats.magic) {
@@ -8680,15 +8832,12 @@ text-align: left;
         stats.magic[magic] = prev + 1;
         (statsStatic.magicNames ??= {})[magic] = magicName;
       }
-      if (filter.mp) {
-        stats.self.mp += param.mp;
-      }
-      if (filter.oc) {
-        stats.self.oc += param.oc;
-      }
-    } else if (param.mode === 'items') {
+      if (filter.mp) stats.self.mp += param.mp;
+      if (filter.oc) stats.self.oc += param.oc;
+    }
+    else if (param.mode === 'items') {
       if (filter.items) {
-        [item, itemName] = [param.item, param.itemName];
+        const[item, itemName] = [param.item, param.itemName];
         let prev = stats.items[item] ?? 0;
         if (itemName in stats.items) {
           prev += stats.items[itemName];
@@ -8697,343 +8846,53 @@ text-align: left;
         stats.items[item] = prev + 1;
         (statsStatic.itemsNames ??= {})[item] = itemName;
       }
-    } else {
+    }
+    else {
       if (filter[param.mode]) {
         stats.self[param.mode] = (param.mode in stats.self) ? stats.self[param.mode] + 1 : 1;
       }
     }
-    const regExp = /^(MONSTER_\d|[yY]ou|[^\,\.]+)?((?:(?:uses|casts) .*, which)*(?:was|resists, and was)* ((?:\d+x-)*crit|hit|glance|counter|explode)?(?:d|s|!)*) (MONSTER_\d|[yY]ou)*((?:; MONSTER_\d |; [yY]ou |, which )*((?: |partially|block|blocks|parry|parries|evade|resist|evades|and)+)+(?: the attack, and)?)?(?:, causing| ?for| ?takes*)+( \d+)?( additional)*( points of)*( [^0-9]+)? damage\.?\s*$/
-    const TEST_SET = [
-      { text: 'Bleeding Wound hits MONSTER_1 for 6643 damage. ', source: 'Bleeding Wound', target: 'MONSTER_1', hit: 'hit', block: '', damage: '6643', type: undefined },
-      { text: 'You hit MONSTER_4, which partially parries, causing 6041 points of Slashing damage.', source: 'You', target: 'MONSTER_4', hit: 'hit', block: 'p-parry', damage: '6041', type: 'Slashing' },
-      { text: 'MONSTER_4 hits you; you partially parry the attack, and take 701 points of Fire damage.', source: 'MONSTER_4', target: 'you', hit: 'hit', block: 'p-parry', damage: '701', type: 'Fire' },
-      { text: 'MONSTER_6 uses Honkey, which hits! You partially parry the attack, and take 4475 Piercing damage.', source: 'MONSTER_6', target: 'You', hit: 'hit', block: 'p-parry', damage: '4475', type: 'Piercing' },
-      { text: ' MONSTER_0 uses xxx2, which hits! You partially block and partially parry the attack, and take 3067 Crushing damage.', source: 'MONSTER_0', target: 'You', hit: 'hit', block: 'p-block & p-parry', damage: '3067', type: 'Crushing' },
-      { text: ' MONSTER_5 hits MONSTER_2; MONSTER_2 partially parries the attack, and takes 11399 points of Piercing damage.', source: 'MONSTER_5', target: 'MONSTER_2', hit: 'hit', block: 'p-parry', damage: '11399', type: 'Piercing' },
-    ];
-    // let debugLogged;
-    // TEST_SET.forEach(t => {
-    //   const infos = logMatched(t.text, '[TEST]\t');
-    //   if (infos) {
-    //     Object.entries(infos).forEach(([k, v]) => { if (v !== t[k]) { console.log('[TEST]\t', k, v, t[k], infos, t); debugLogged = true; } });
-    //   } else {
-    //     console.log(t, infos)
-    //   }
-    // });
-    // if (debugLogged) console.log('----------\n\n----------')
 
-    function logMatched(text, test='', isLog) {
-      const matched = text.match(regExp);
-      let [_0, source, _2, hit, target, _5, block, damage, _additional, _points_of, type] = (matched??[]).map(t => t?.trim());
-      block = block?.replaceAll('partially ', 'p-').replace('parries', 'parry').replace('blocks', 'block').replace('and', '&');
-      const infos = { source, hit, target, block, damage, type };
-      const logInfo = { _0, source, _2, hit, target, _5, block, damage, _additional, _points_of, type }
-      Object.keys(logInfo).forEach(k => { if (infos[k] === undefined) delete infos[k]; });
-      return matched ? infos : undefined;
-    }
-    const monsterNames = battle.monsterStatus.map(m => gE(`.btm3>div>div`, getMonster(getMonsterID(m))).innerText);
-    const formatMonsterNames = t => { monsterNames.forEach(name => {
-      t = t.replaceAll(new RegExp(name, 'g'), match => {
-        return `MONSTER_${((monsterNames.findIndex(x => x === match)+1)||11)-1}`;
-      });
-    }); return t; }
-
-    const logCache = getValue('logCache', true)??[];
-
-    for (const i of range(param.log)) {
-      if (param.log[i].className === 'tls') break;
-      let text = param.log[i].textContent;
-      if (text.trim() === '') continue;
-
-      let legacy;
+    const logCache = (getValue('logCache', true) ?? []).filter(x => !recordLog(x.text, stats, filter, x.prev, x.next, x.mode));
+    let logRange = [...param.log].findIndex(log => log.className === 'tls');
+    if (logRange >= 0) param.log = [...param.log].slice(0, logRange);
+    param.log = [...param.log].map(log => formatMonsterNames(log.textContent).trim()).filter(t => t);
+    let text, prev, next;
+    const mode = param.magic ?? param.item ?? param.mode;
+    // reverse track
+    while (prev || param.log.length) {
+      next = text;
+      text = prev;
+      prev = param.log.shift() ?? undefined;
+      if (!text) continue;
       try {
-        text = formatMonsterNames(text);
-
-        if (text.match('damage') && !text.match('absorbs') && (reg = logMatched(text))) {
-          const { source, hit, target, block, damage, type } = reg;
-          point = damage * 1;
-          magic = type ?? source;
-          if (target?.match(`[yY]ou`)) { // hurt
-            if (filter.hurt) {
-              stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
-              if (filter.hurtcount || filter.hurtavg) {
-                stats.hurt._count++;
-              }
-              if (filter.hurttotal || filter.hurtavg) {
-                stats.hurt._total += point;
-              }
-              if (filter.hurtavg) {
-                stats.hurt._avg = Math.round(stats.hurt._total / stats.hurt._count);
-              }
-              if (magic.match(/pierc|crush|slash/)) {
-                if (filter.hurtpcount || filter.hurtpavg) {
-                  stats.hurt._pcount++;
-                }
-                if (filter.hurtptotal || filter.hurtpavg) {
-                  stats.hurt._ptotal += point;
-                }
-                if (filter.hurtpavg) {
-                  stats.hurt._pavg = Math.round(stats.hurt._ptotal / stats.hurt._pcount);
-                }
-              } else {
-                if (filter.hurtmcount || filter.hurtmavg) {
-                  stats.hurt._mcount++;
-                }
-                if (filter.hurtmtotal || filter.hurtmavg) {
-                  stats.hurt._mtotal += point;
-                }
-                if (filter.hurtmavg) {
-                  stats.hurt._mavg = Math.round(stats.hurt._mtotal / stats.hurt._mcount);
-                }
-              }
-            }
-            if (filter.evade && text.match(/You ((partially )*(evade|parry|block)( and )*)+ the attack/)) {
-              stats.self.evade++;
-            }
-          } else { // damage
-            stats.damage[magic] = (magic in stats.damage) ? stats.damage[magic] + point : point;
-          }
-        }
-        else if (reg = text.match(/^Your (spirit shield) absorbs (\d+) points of damage from the attack into (\d+) points of (spirit) damage/)) {
-          if (filter.hurt) {
-            point = reg[2] * 1;
-            let prev = param.log[i - 1].textContent;
-            prev = formatMonsterNames(prev);
-            const { source, hit, target, block, damage, type } = logMatched(prev);
-            magic = type ?? source;
-            stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
-            point = reg[3] * 1;
-            magic = `${reg[1]}_${reg[4]}`;
-            stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
-          }
-        }
-        else if (text.match(/^You (?:(?: |parry|and|block|resist|evade|partially)+)+ the attack( from MONSTER_\d)?\.$/)) {
-          if (filter.evade) {
-            stats.self.evade++;
-          }
-        }
-        else if (
-          text.match(/^MONSTER_\d (partially )*(?:resists|shrugs off) the effects of your spell\.$/)
-          || text.match(/^MONSTER_\d (?:(?: |deftly|parries|and|blocks|block|evades|evade|dodges|partially)+)+ your (offhand attack|attack|spell)\.$/)
-        ) {
-          if (filter.miss) {
-            stats.self.miss++;
-          }
-        }
-        else if (reg = text.match(/^MONSTER_\d casts .*, but it is absorbed. You gain (\d+) points of (mana)\.$/)) {
-          if (filter.restore) {
-            magic = `absorbed_to_${reg[2]}`;
-            point = reg[1] * 1;
-            stats.restore[magic] = (magic in stats.restore) ? stats.restore[magic] + point : point;
-          }
-        }
-        else if (reg = text.match(/^(Recovered) (\d+) points of (?:health|magic|spirit)\.$/)) {
-          if (filter.restore) {
-            magic = (param.mode === 'defend') ? 'defend' : `${reg[1]}_${reg[3]}`;
-            point = reg[2] * 1;
-            stats.restore[magic] = (magic in stats.restore) ? stats.restore[magic] + point : point;
-          }
-        }
-        else if (
-          reg =
-          text.match(/^(Refreshment|Replenishment|Regeneration|Regen) restores (\d+) points of (health|magic|spirit)\.$/)
-          || text.match(/^You are (healed) for (\d+) (Health) Points\.$/)
-        ) {
-          if (filter.restore) {
-            const ids = {
-              healed: 311,
-              Cure: 311,
-              ['Full-Cure']: 313,
-              Regen: 312,
-              Regeneration: 11191,
-              Replenishment: 11291,
-              Refreshment: 11391,
-            }
-            magic = ids[reg[1]];
-            point = reg[2] * 1;
-            if (magic === 311) {
-              magic = ids[param.log[i + 1].textContent.match(/^You cast (.+)\./)?.[1]];
-            }
-            stats.restore[magic] = (magic in stats.restore) ? stats.restore[magic] + point : point;
-          }
-        }
-        else if (reg = text.match(/^You drain (\d+) points of (health|magic|spirit) from MONSTER_\d\.$/)) {
-          if (filter.restore) {
-            magic = `drain_${reg[2]}`;
-            point = reg[1] * 1;
-            stats.restore[magic] = (magic in stats.restore) ? stats.restore[magic] + point : point;
-          }
-        }
-        else if (reg = text.match(/^You gain ([\d.]+) points of (.*?) proficiency.$/)) {
-          if (filter.proficiency) {
-            magic = reg[2];
-            point = reg[1] * 1;
-            stats.proficiency[magic] = (magic in stats.proficiency) ? stats.proficiency[magic] + point : point;
-            stats.proficiency[magic] = stats.proficiency[magic].toFixed(3) * 1;
-          }
-        }
-        else if (
-          // buff
-          text.match(/^You gain the effect (?:.| )+\.$/)
-          || text.match(/^MONSTER_\d gains the effect (?:.| )+\.$/)
-          || text.match(/^The effect (?:.| )+ (on MONSTER_\d)? has worn off\.$/)
-          || text.match(/^MONSTER_\d has been roused from its sleep\.$/)
-          || text.match(/^The effect (.*) was dispelled\.$/)
-          // 攻击防御、技能CD、道具
-          || text.match(/^MONSTER_\d got knocked out of confuse\.$/)
-          || text.match(/^MONSTER_\d (( |parries|blocks|evades|block|evade)+)+ the attack from MONSTER_\d\.$/)
-          || text.match(/^You block the attack from MONSTER_\d\.$/)
-          || text.match(/^MONSTER_\d  a shadow, missing you completely\.$/)
-          || text.match(/^MONSTER_\d (?:vigorously whiffs at|(?:uses|casts) (.| )+ in the general direction of)? a shadow, missing you completely\.$/)
-          || text.match(/^Cooldown expired for (?:.| )+$/)
-          || text.match(/^Spirit Stance (Disabled|Engaged|Exhausted)$/)
-          || text.match(/^You use (.+ (?:Elixir|Potion|Draught|Infusion|Gem)|Scroll of .*|Vital Strike|Shield Bash|Merciful Blow|Skyward Sword|.*)\.$/)
-          || text.match(/^Spark of Life saves you from the brink of defeat!$/)
-          || text.match(/^You cast .+\.$/)
-          || text.match(/^Insufficient overcharge to use (.*)\.$/)
-          || text.match(/^Insufficient overcharge or spirit for Spirit Stance\.$/)
-          || text.match(/^MONSTER_\d (uses|casts)+ (.| )+, but misses the attack\.$/)
-          || text.match(/^Slot is currently not usable\.$/)
-          || text.match(/^Cooldown is still pending for (.*)\.$/)
-          || text.match(/^The potential of your equipment has grown!$/)
-          || text.match(/^Stop beating dead ponies\.$/)
-          // 结算
-          || text.match(/^You obtained \d+x \[.*]$/)
-          || text.match(/^You gain \d+ (Credits|EXP)!$/)
-          || text.match(/^You (have reached Level|have obtained the title|do not have enough MP)/)
-          || text.match(/^MONSTER_\d has been defeated\.$/)
-          || text.match(/^You are Victorious!$/)
-          || text.match(/^MONSTER_\d dropped \[.*\]$/)
-          || text.match(/^MONSTER_\d drops a (.+) Gem powerup!$/)
-          || text.match(/^Battle Clear Bonus! \[.*\]$/)
-          || text.match(/^Arena Extra Bonus! You obtained \dx \[.*\]$/)
-          || text.match(/^Arena Token Bonus! \[.*\]$/)
-        ) {
-          // nothing;
-        }
-        else if (legacy) {
-          if (reg = matchDamageInfoFromLogText(text)) {
-            magic = reg[2];
-            point = reg[1] * 1;
-            if (filter.hurt) {
-              stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
-              if (filter.hurtcount || filter.hurtavg) {
-                stats.hurt._count++;
-              }
-              if (filter.hurttotal || filter.hurtavg) {
-                stats.hurt._total += point;
-              }
-              if (filter.hurtavg) {
-                stats.hurt._avg = Math.round(stats.hurt._total / stats.hurt._count);
-              }
-              if (magic.match(/pierc|crush|slash/)) {
-                if (filter.hurtpcount || filter.hurtpavg) {
-                  stats.hurt._pcount++;
-                }
-                if (filter.hurtptotal || filter.hurtpavg) {
-                  stats.hurt._ptotal += point;
-                }
-                if (filter.hurtpavg) {
-                  stats.hurt._pavg = Math.round(stats.hurt._ptotal / stats.hurt._pcount);
-                }
-              } else {
-                if (filter.hurtmcount || filter.hurtmavg) {
-                  stats.hurt._mcount++;
-                }
-                if (filter.hurtmtotal || filter.hurtmavg) {
-                  stats.hurt._mtotal += point;
-                }
-                if (filter.hurtmavg) {
-                  stats.hurt._mavg = Math.round(stats.hurt._mtotal / stats.hurt._mcount);
-                }
-              }
-            }
-            if (filter.evade && text.match(/You ((partially )*(evade|parry|block)( and )*)+ the attack/)) {
-              stats.self.evade++;
-            }
-          }
-          else if (
-            text.match(/^[\w ]+ [a-z]+s [\w+ -]+ for \d+( .*)? damage/) ||
-            text.match(/^You .* for \d+ .* damage/)
-          ) {
-            if (filter.damage) {
-              reg = text.match(/for (\d+)( .*)? damage/);
-              magic = text.match(/^[\w ]+ [a-z]+s [\w+ -]+ for/) ? text.match(/^([\w ]+) [a-z]+s [\w+ -]+ for/)[1].replace(/^Your /, '') : text.match(/^You (\w+)/)[1];
-              point = reg[1] * 1;
-              stats.damage[magic] = (magic in stats.damage) ? stats.damage[magic] + point : point;
-            }
-          }
-          else if (
-            // Dark Strike hits Wani Comic X-eros, causing 1217 additional points of Dark damage.
-            reg = text.match(/^(You) ((\d+x-)*crit|hit|glance) [\w+ -\,]+, causing (\d+)( additional)* points of (.+) damage/) ||
-            text.match(/^(.+ Strike) hits [a-zA-Z0-9 \s\-\,]+, causing (\d+) additional points of (.+) damage/)
-          ) {
-            if (filter.damage) {
-              magic = reg[1];
-              if (magic === 'You') magic = 'attack'
-              reg = text.match(/causing (\d+)( additional)* points of (.+) damage/);
-              point = reg[1] * 1;
-              stats.damage[magic] = (magic in stats.damage) ? stats.damage[magic] + point : point;
-            }
-          }
-          else if (reg = text.match(/was hit for (\d+) (.+) damage/)) {
-            if (filter.damage) {
-              magic = reg[1];
-              if (magic === 'You') magic = 'attack'
-              reg = text.match(/causing (\d+)( additional)* points of (.+) damage/);
-              point = reg[1] * 1;
-              stats.damage[magic] = (magic in stats.damage) ? stats.damage[magic] + point : point;
-            }
-          }
-          else if (text.match(/Vital Theft hits .*? for \d+ damage/)) {
-            if (filter.damage) {
-              magic = 'Vital Theft';
-              point = text.match(/Vital Theft hits .*? for (\d+) damage/)[1] * 1;
-              stats.damage[magic] = (magic in stats.damage) ? stats.damage[magic] + point : point;
-            }
-          }
-          else if (text.match(/dodges your attack|(shrugs off|resists) the effects of your spell|(resists your spell|Your spell is absorbed|(evades|parries) your (attack|spell))|Your attack misses its mark|Your spell fails to connect/)) {
-          }
-          else if (text.match(/You gain the effect Focusing/)) {
-            if (filter.focus) {
-              stats.self.focus++;
-            }
-          }
-          else if (text.match(/(restores|drain) \d+ points of/)) {
-            if (filter.restore) {
-              reg = text.match(/^(.*) restores (\d+) points of (\w+)/) || text.match(/^You (drain) (\d+) points of (\w+)/);
-              magic = reg[1];
-              point = reg[2] * 1;
-              stats.restore[magic] = (magic in stats.restore) ? stats.restore[magic] + point : point;
-            }
-          }
-          else if (text.match(/has expired|insufficient Spirit|Spawned Monster|You received/)) {
-            // nothing;
-          }
-          else {
-            console.warn('unknown log type:', text.replaceAll(/MONSTER_\d/g, 'MONSTER_\\d'));
-          }
-        }
-        else {
-          const toWarn = text.replaceAll(/MONSTER_\d/g, 'MONSTER_\\d').replaceAll(/\d+/g, '\\d');
-          if (!logCache.includes(toWarn)) {
-            console.warn('unknown log type:', toWarn);
-            logCache.unshift(toWarn);
-          }
+        if (!recordLog(text, stats, filter, prev, next, mode)) {
+          logWarn('unknown log type', text, prev, next, mode);
         }
       } catch (err) {
-        const toWarn = text.replaceAll(/MONSTER_\d/g, 'MONSTER_\\d').replaceAll(/\d+/g, '\\d');
-        if (!logCache.includes(toWarn)) {
-          console.warn('error log type:', text, err);
-          logCache.unshift(toWarn);
-        }
+        logWarn('error log type'+err, text, prev, next, mode);
       }
     }
+
     setValue('logCache', logCache.slice(0, Math.min(logCache.length, 50)));
     setValue('stats', stats);
     setValue('statsStatic', statsStatic);
     if (getComputedStyle(gE('#hvAATab-Usage')).display === 'block') {
       gE(`.hvAATabmenu>span[name="Usage"]`).click();
+    }
+
+    function logWarn (info, text, prev, next, mode) {
+      const toWarn = t => t?.replaceAll(/MONSTER_\d/g, 'MONSTER_\\d').replaceAll(/\d+/g, '\\d');
+      const warn = {
+        prev: toWarn(prev),
+        text: toWarn(text),
+        next: toWarn(next),
+        mode
+      }
+      if (!logCache.some(w => JSON.stringify(w) === JSON.stringify(warn))) {
+        console.warn(info, ':', warn.text);
+        logCache.unshift(warn);
+      }
     }
   }
 
