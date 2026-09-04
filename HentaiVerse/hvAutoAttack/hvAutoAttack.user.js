@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.176
+// @version      2.91.177
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -8703,7 +8703,7 @@ text-align: left;
         stats.self[param.mode] = (param.mode in stats.self) ? stats.self[param.mode] + 1 : 1;
       }
     }
-    const regExp = /^(MONSTER_\d|[yY]ou|[^\,\.]+)?((?:(?:uses|casts) .*, which)* ((?:\d+x-)*crit|hit|glance|counter)?(?:s|!)*) (MONSTER_\d|[yY]ou)*((?:; MONSTER_\d |; [yY]ou |, which )*((?: |partially|block|blocks|parry|parries|evade|evades|and)+)+(?: the attack, and)*)?(?:, causing| ?for| ?takes*)?( \d+)?( additional)*( points of)*( [^0-9]+)? damage\.$/
+    const regExp = /^(MONSTER_\d|[yY]ou|[^\,\.]+)?((?:(?:uses|casts) .*, which)* ((?:\d+x-)*crit|hit|glance|counter)?(?:s|!)*) (MONSTER_\d|[yY]ou)*((?:; MONSTER_\d |; [yY]ou |, which )*((?: |partially|block|blocks|parry|parries|evade|resist|evades|and)+)+(?: the attack, and)?)?(?:, causing| ?for| ?takes*)+( \d+)?( additional)*( points of)*( [^0-9]+)? damage\.?\s*$/
     const TEST_SET = [
       { text: 'Bleeding Wound hits MONSTER_1 for 6643 damage. ', source: 'Bleeding Wound', target: 'MONSTER_1', hit: 'hit', block: '', damage: '6643', type: undefined },
       { text: 'You hit MONSTER_4, which partially parries, causing 6041 points of Slashing damage.', source: 'You', target: 'MONSTER_4', hit: 'hit', block: 'p-parry', damage: '6041', type: 'Slashing' },
@@ -8712,21 +8712,25 @@ text-align: left;
       { text: ' MONSTER_0 uses xxx2, which hits! You partially block and partially parry the attack, and take 3067 Crushing damage.', source: 'MONSTER_0', target: 'You', hit: 'hit', block: 'p-block & p-parry', damage: '3067', type: 'Crushing' },
       { text: ' MONSTER_5 hits MONSTER_2; MONSTER_2 partially parries the attack, and takes 11399 points of Piercing damage.', source: 'MONSTER_5', target: 'MONSTER_2', hit: 'hit', block: 'p-parry', damage: '11399', type: 'Piercing' },
     ];
-    let debugLogged;
-    TEST_SET.forEach(t => {
-      const infos = logMatched(t.text, '[TEST]\t');
-      Object.entries(infos).forEach(([k, v]) => { if (v !== t[k]) { console.log('[TEST]\t', k, v, t[k], infos, t); debugLogged = true; } });
-    });
-    if (debugLogged) console.log('----------\n\n----------')
+    // let debugLogged;
+    // TEST_SET.forEach(t => {
+    //   const infos = logMatched(t.text, '[TEST]\t');
+    //   if (infos) {
+    //     Object.entries(infos).forEach(([k, v]) => { if (v !== t[k]) { console.log('[TEST]\t', k, v, t[k], infos, t); debugLogged = true; } });
+    //   } else {
+    //     console.log(t, infos)
+    //   }
+    // });
+    // if (debugLogged) console.log('----------\n\n----------')
 
     function logMatched(text, test='', isLog) {
-      const matched = text.match(regExp)??[];
-      let [_0, source, _2, hit, target, _5, block, damage, _additional, _points_of, type] = matched.map(t => t?.trim());
+      const matched = text.match(regExp);
+      let [_0, source, _2, hit, target, _5, block, damage, _additional, _points_of, type] = (matched??[]).map(t => t?.trim());
       block = block?.replaceAll('partially ', 'p-').replace('parries', 'parry').replace('blocks', 'block').replace('and', '&');
       const infos = { source, hit, target, block, damage, type };
       const logInfo = { _0, source, _2, hit, target, _5, block, damage, _additional, _points_of, type }
       Object.keys(logInfo).forEach(k => { if (infos[k] === undefined) delete infos[k]; });
-      return infos;
+      return matched ? infos : undefined;
     }
     const monsterNames = battle.monsterStatus.map(m => gE(`.btm3>div>div`, getMonster(getMonsterID(m))).innerText);
     const formatMonsterNames = t => { monsterNames.forEach(name => {
@@ -8831,18 +8835,18 @@ text-align: left;
         }
         else if (
           reg =
-          text.match(/^(?:Refreshment|Replenishment|Regeneration|Regen) restores (\d+) points of (?:health|magic|spirit)\.$/)
-          || text.match(/^You are healed for (\d+) Health Points\.$/)
+          text.match(/^(Refreshment|Replenishment|Regeneration|Regen) restores (\d+) points of (health|magic|spirit)\.$/)
+          || text.match(/^You are (healed) for (\d+) (Health) Points\.$/)
         ) {
           if (filter.restore) {
-            magic = (param.mode === 'defend') ? 'defend' : param.magic || param.item;
-            point = reg[1] * 1;
+            magic = (param.mode === 'defend') ? 'defend' : param.magic || param.item || `${reg[1]}_${reg[3]}`;
+            point = reg[2] * 1;
             stats.restore[magic] = (magic in stats.restore) ? stats.restore[magic] + point : point;
           }
         }
         else if (reg = text.match(/^You drain (\d+) points of (health|magic|spirit) from MONSTER_\d\.$/)) {
           if (filter.restore) {
-            magic = `drain ${reg[2]}`;
+            magic = `drain_${reg[2]}`;
             point = reg[1] * 1;
             stats.restore[magic] = (magic in stats.restore) ? stats.restore[magic] + point : point;
           }
