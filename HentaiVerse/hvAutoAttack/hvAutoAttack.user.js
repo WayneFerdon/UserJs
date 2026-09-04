@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.178
+// @version      2.91.179
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -8701,7 +8701,7 @@ text-align: left;
         stats.self[param.mode] = (param.mode in stats.self) ? stats.self[param.mode] + 1 : 1;
       }
     }
-    const regExp = /^(MONSTER_\d|[yY]ou|[^\,\.]+)?((?:(?:uses|casts) .*, which)* ((?:\d+x-)*crit|hit|glance|counter)?(?:s|!)*) (MONSTER_\d|[yY]ou)*((?:; MONSTER_\d |; [yY]ou |, which )*((?: |partially|block|blocks|parry|parries|evade|resist|evades|and)+)+(?: the attack, and)?)?(?:, causing| ?for| ?takes*)+( \d+)?( additional)*( points of)*( [^0-9]+)? damage\.?\s*$/
+    const regExp = /^(MONSTER_\d|[yY]ou|[^\,\.]+)?((?:(?:uses|casts) .*, which)*(?:was|resists, and was)* ((?:\d+x-)*crit|hit|glance|counter|explode)?(?:d|s|!)*) (MONSTER_\d|[yY]ou)*((?:; MONSTER_\d |; [yY]ou |, which )*((?: |partially|block|blocks|parry|parries|evade|resist|evades|and)+)+(?: the attack, and)?)?(?:, causing| ?for| ?takes*)+( \d+)?( additional)*( points of)*( [^0-9]+)? damage\.?\s*$/
     const TEST_SET = [
       { text: 'Bleeding Wound hits MONSTER_1 for 6643 damage. ', source: 'Bleeding Wound', target: 'MONSTER_1', hit: 'hit', block: '', damage: '6643', type: undefined },
       { text: 'You hit MONSTER_4, which partially parries, causing 6041 points of Slashing damage.', source: 'You', target: 'MONSTER_4', hit: 'hit', block: 'p-parry', damage: '6041', type: 'Slashing' },
