@@ -4685,9 +4685,10 @@
   }
 
   function returnValueGetter(paramResultsGetter, targetGetter) {
-    let minmaxModes = returnValueGetter.prototype.minmaxModes ??= (() => {
-      const modes = ['min', 'max', 'count', 'sum'];
-      const flags = ['a', 'ag', 'g'];
+    const paramForSort = returnValueGetter.prototype.paramForSort ??= ['rank', 'tier', 'maxtier', 'sumtier', 'counttier', ...range(10).map(n => `counttier${n}`)];
+    const modes = returnValueGetter.prototype.modes ??= ['min', 'max', 'count', 'sum', ...paramForSort];
+    const minmaxModes = returnValueGetter.prototype.minmaxModes ??= (() => {
+      const flags = ['', 'a', 'ag', 'g'];
       return flags.reduce((result, f) => result.concat(modes.map(m => f + m)), []);
     })();
     returnValueGetter.prototype.func ??= {
@@ -4819,21 +4820,21 @@
       targetBuffStack(...img) {
         const getter = (t, i) => getBuffStackFromImg(getBuff(imgArray2img(i), getMonsterID(t)));
         let param = minmaxModes.includes(img[0]) ? img.shift() : undefined;
-        return switchMaxMin(param, t => getter(t, img));
+        return switchMinMax(param, t => getter(t, img));
       },
       targetBuffTurn(...img) {
         const getter = (t, i) => getBuffTurnFromImg(getBuff(imgArray2img(i), getMonsterID(t)));
         let param = minmaxModes.includes(img[0]) ? img.shift() : undefined;
-        return switchMaxMin(param, t => getter(t, img));
+        return switchMinMax(param, t => getter(t, img));
       },
       targetOrder(param) {
-        return switchMaxMin(param, t => t.order);
+        return switchMinMax(param, t => t.order);
       },
       targetWeight(param) {
-        return switchMaxMin(param, t => t.finWeight);
+        return switchMinMax(param, t => t.finWeight);
       },
       targetRank(param) {
-        return switchMaxMin(param, t => Object.entries(g().battle.monsterStatus).find(([k, v]) => v.order === t.order)[0] * 1);
+        return switchMinMax(param, t => Object.entries(g().battle.monsterStatus).find(([k, v]) => v.order === t.order)[0] * 1);
       },
       targetName(param) {
         param ??= targetGetter();
@@ -4841,7 +4842,7 @@
         return gE(`.btm3>div>div`, mon).innerText.replace(' ', '_');
       },
       targetBossType(param) {
-        return switchMaxMin(param, t => {
+        return switchMinMax(param, t => {
           const name = func.targetName(t);
           switch(name.replace('_', ' ')) {
             case 'Manbearpig':
@@ -4889,31 +4890,31 @@
           }});
       },
       targetIsAlive(param) {
-        return switchMaxMin(param, t => t.isDead ? 0 : 1);
+        return switchMinMax(param, t => t.isDead ? 0 : 1);
       },
       targetHPRaw(param) {
-        return switchMaxMin(param, t => t.hpNow);
+        return switchMinMax(param, t => t.hpNow);
       },
       targetHPFull(param) {
-        return switchMaxMin(param, t => t.hp);
+        return switchMinMax(param, t => t.hp);
       },
       targetHp(param) {
-        return switchMaxMin(param, t => Math.floor(func.targetHpDecimal() * 100));
+        return switchMinMax(param, t => Math.floor(func.targetHpDecimal() * 100));
       },
       targetMp(param) {
-        return switchMaxMin(param, t => Math.floor(func.targetMpDecimal() * 100));
+        return switchMinMax(param, t => Math.floor(func.targetMpDecimal() * 100));
       },
       targetSp(param) {
-        return switchMaxMin(param, t => Math.floor(func.targetSpDecimal() * 100));
+        return switchMinMax(param, t => Math.floor(func.targetSpDecimal() * 100));
       },
       targetHpDecimal(param) {
-        return switchMaxMin(param, t => t.hpNow / t.hp);
+        return switchMinMax(param, t => t.hpNow / t.hp);
       },
       targetMpDecimal(param) {
-        return switchMaxMin(param, t => t.mpNow);
+        return switchMinMax(param, t => t.mpNow);
       },
       targetSpDecimal(param) {
-        return switchMaxMin(param, t => t.spNow);
+        return switchMinMax(param, t => t.spNow);
       },
       targetGroup(...args) {
         const groupMode = args.shift();
@@ -4974,14 +4975,12 @@
         null: () => null
     };
 
-    function switchMaxMin(param, defaultResult, skipAliveCheck = false, targets = undefined) {
-      const paramForSort = ['rank', 'tier', 'maxtier', 'sumtier', 'counttier', ...range(10).map(n => `counttier${n}`)];
-      const params = ['count', 'sum', 'max', 'min', ...paramForSort];
-      if ([ ...params.map(n => `ga${n}`), ...params.map(n => `g${n}`)].includes(param)) {
-        return switchMaxMin(param.replace(/^g/, ''), defaultResult, skipAliveCheck, currentGroup);
+    function switchMinMax(param, defaultResult, skipAliveCheck = false, targets = undefined) {
+      if ([ ...modes.map(n => `ga${n}`), ...modes.map(n => `g${n}`)].includes(param)) {
+        return switchMinMax(param.replace(/^g/, ''), defaultResult, skipAliveCheck, currentGroup);
       }
-      if ([ ...params.map(n => `a${n}`), ...params.map(n => `ag${n}`)].includes(param)) {
-        return switchMaxMin(param.replace(/^a/, ''), defaultResult, true, targets);
+      if ([ ...modes.map(n => `a${n}`), ...modes.map(n => `ag${n}`)].includes(param)) {
+        return switchMinMax(param.replace(/^a/, ''), defaultResult, true, targets);
       }
       if (targets === undefined) targets = g().battle.monsterStatus; // 只处理 undefined，null 是空 group
       if (!targets) return 0;
@@ -5028,7 +5027,7 @@
         case 'min':
           return Math.min(...targets.map(defaultResult));
         default:
-          if (param !== undefined) console.warn(`Unknown param`, param, `for switchMaxMin, fallback to default.`);
+          if (param !== undefined) console.warn(`Unknown param`, param, `for switchMinMax, fallback to default.`);
           return defaultResult(targetGetter());
       }
     }
@@ -8610,11 +8609,15 @@ text-align: left;
     }
   }
 
+  function escapeRegExp(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
   function formatMonsterNames(t) {
     const monsterNames = g().battle.monsterStatus.map(m => gE(`.btm3>div>div`, getMonster(getMonsterID(m))).innerText);
     monsterNames.forEach(name => {
-    t = t.replaceAll(new RegExp(name, 'g'), match => {
-      return `MONSTER_${((monsterNames.findIndex(x => x === match)+1)||11)-1}`;
+    t = t.replaceAll(new RegExp(escapeRegExp(name), 'g'), match => {
+      return `MONSTER_${((monsterNames.findIndex(x => x === match)*1+1)||11)-1}`;
     });
   }); return t; }
 
