@@ -2961,7 +2961,7 @@
                 UI.number('equStorageValue', 150, 'number', '', 'style="width: 32px;"'),
                 `; <span class="equStorageInner">${UI.labeled(`encounterEquStorage`, UI.l('遭遇战前检查', '遭遇戰前檢查', 'Check before encounter'), 'class="equStorageInner"')}</span>`),
               UI.div(
-                UI.labeled(`changeEquipSet`, UI.b(UI.l('[!!实验性]切换套装', '[!!實驗性]切換套裝', '[!!Experimental]Switch Equip Set'))),
+                UI.labeled(`changeEquipSet`, UI.b(UI.l('切换套装', '切換套裝', 'Switch Equip Set'))),
                 `<span class="changeEquipSetInner">`,
                 UI.button.class('updateEquipSet', UI.button.update),
                 UI.button.class('hvAAShowEquipSet', UI.button.details()),
@@ -3064,7 +3064,10 @@
             UI.hvAATab(
               'Debuff',
               UI.div(UI.for('debuffSkillCondition', UI.l('Debuff释放条件', 'Debuff釋放條件', 'Cast debuff spells Condition')), '{{debuffSkillCondition}}'),
-              UI.div(`${UI.labeled('debuffAutoFill', UI.l('[!!实验性]补全因超过默认显示上限未显示的怪物buff', '[!!實驗性]補全因超過默認顯示上限未顯示的怪物buff', '[!!Experimental]Auto fill hidden monster buffs due to display limitation'))}<span class="debuffAutoFillInner">${UI.labeled('debuffAutoFillRec', 'DEBUG RECORD')}</span>`),
+              UI.div(
+                `${UI.labeled('debuffAutoFill', UI.l('补全因超过默认显示上限未显示的怪物buff', '補全因超過默認顯示上限未顯示的怪物buff', 'Auto fill hidden monster buffs due to display limitation'))}`,
+                // `<span class="debuffAutoFillInner">${UI.labeled('debuffAutoFillRec', 'DEBUG RECORD')}</span>`
+              ),
               UI.div(
                 UI.for('debuffSkillTurnAlert', UI.l('超出6个debuff的默认显示上限时（例如同时使用jpx时可忽略上限）：', '超出6個debuff的默認顯示上限時（例如同時使用jpx時可忽略上限）：', 'When debuff count overflows 6 as the default maximum display count (such as ignore limitation while using jpx): ')),
                 '<select class="hvAANumber" name="debuffSkillTurnAlert"><option value="0" selected>跳过 / Skip</option><option value="1">警报 / Alert</option><option value="2">忽略 / Ignore</option></select><br>',
@@ -7128,7 +7131,7 @@
 // bool
 let isDisplay = ${option.isDisplayAllDebuff};
 let debuffAutoFill = ${option.debuffAutoFill?.toString() ?? 'undefined'};
-let debuffAutoFillRec = ${option.debuffAutoFillRec?.toString() ?? 'undefined'};
+// let debuffAutoFillRec = ${option.debuffAutoFillRec?.toString() ?? 'undefined'};
 let onIsekaiEncounter = ${onIsekaiEncounter ?? 'undefined'};
 // object
 let dataFlags = ${JSON.stringify(dataFlags)};
@@ -7389,57 +7392,59 @@ gE, cE, Version, sleep].map(f => f.toString()).join(';')};
       let effects = Object.keys(effectObj);
 
       // DEBUG ---------------------
-      if (typeof GM_getValue === 'undefined' ? debuffAutoFillRec : option.debuffAutoFillRec) {
-        // 统计持续时间及熟练度相关数据，以便进行核验和测试
-        onRestoredBattleServer('rec', () => {
-          const rec = JSON.parse(localStorage.getItem(`hvAA-${_server.name}_rec`) ?? `{}`);
-          for (const effect of effects) {
-            const turns = effectObj[effect].turns * 1;
-            if (isNaN(turns)) continue;
-            const skill = getBuffSkill(effect);
-            if (!skill) continue;
+      localStorage.removeItem(`hvAA-${_server.name}_rec`);
 
-            rec[effect] ??= { t:0 };
-            // 获取新增时间（忽略非新增的情况）
-            let [delta, added] = [turns - rec[effect].t, rec[effect].d];
-            if (delta > 0) {
-              added = rec[effect].t ? delta : added;
-            }
-            // 获取基础、熟练度计算倍率、熟练度，设置及初始化主要数据
-            let [duration, base, profRatio, prof, channelingRatio] = getDuration(skill, channeling);
-            if (profRatio === 4) rec[effect].f = prof; // 比例刚好是4时的熟练度（推测是公式中的熟练度上限）
-            rec[effect].b = base; // 基础持续时间
-            rec[effect].c = profRatio; // 公式理论计算值
-            rec[effect].ch = rec[effect].t && added > 0 ? channelingRatio : rec[effect].ch; // 引导倍率
-            rec[effect].t = turns; // 当前剩余持续时间
-            rec[effect].d = added; // 新增时间
-            rec[effect].m = Math.max(rec[effect].m ?? 0, added); // 历史最大新增时间
-            rec[effect].a ??= [0, 0]; // 推测熟练度倍率 [ 历史最大值, 按照‘缺失引导信息导致变成1.5倍’的修正值(除以1.5)  ]
-            rec[effect].r ??= [0, 0, 0]; // 实际倍率 [ 0-4 应该正常, 4-6推测缺失引导信息, 6+ 异常]
-            rec.error ??= []; // 实际倍率异常时的相关信息
-            // 计算推测倍率
-            if (base <= added) {
-              const a = Math.max(base, added)/base/channelingRatio
-              rec[effect].a[0] = Math.max(a, rec[effect].a[0]).toFixed(4) * 1;
-              rec[effect].a[1] = Math.max(a / 1.5, rec[effect].a[1]).toFixed(4) * 1;
-            }
-            // 检查实际ratio
-            const ratio = Math.max(base, added)/duration;
-            if (ratio > 1.5) {
-              const e = `${effect}: ${Math.max(base, added).toFixed(4)}/(${base.toFixed(4)}*${channelingRatio.toFixed(4)}*${profRatio.toFixed(4)})=${ratio.toFixed(4)}`
-              if (!rec.error.includes(e)) rec.error.push(e);
-            }
-            if (ratio > 1.5 && ratio > rec[effect].r[2]) {
-              rec[effect].r[2] = ratio.toFixed(4) * 1;
-            } else if (ratio <= 1.5 && ratio > 1 && ratio > rec[effect].r[1]) {
-              rec[effect].r[1] = ratio.toFixed(4) * 1;
-            } else if (ratio <= 1 && ratio > rec[effect].r[0]) {
-              rec[effect].r[0] = ratio.toFixed(4) * 1;
-            }
-            localStorage.setItem(`hvAA-${_server.name}_rec`, JSON.stringify(rec));
-          }
-        });
-      }
+//       if (typeof GM_getValue === 'undefined' ? debuffAutoFillRec : option.debuffAutoFillRec) {
+//         // 统计持续时间及熟练度相关数据，以便进行核验和测试
+//         onRestoredBattleServer('rec', () => {
+//           const rec = JSON.parse(localStorage.getItem(`hvAA-${_server.name}_rec`) ?? `{}`);
+//           for (const effect of effects) {
+//             const turns = effectObj[effect].turns * 1;
+//             if (isNaN(turns)) continue;
+//             const skill = getBuffSkill(effect);
+//             if (!skill) continue;
+
+//             rec[effect] ??= { t:0 };
+//             // 获取新增时间（忽略非新增的情况）
+//             let [delta, added] = [turns - rec[effect].t, rec[effect].d];
+//             if (delta > 0) {
+//               added = rec[effect].t ? delta : added;
+//             }
+//             // 获取基础、熟练度计算倍率、熟练度，设置及初始化主要数据
+//             let [duration, base, profRatio, prof, channelingRatio] = getDuration(skill, channeling);
+//             if (profRatio === 4) rec[effect].f = prof; // 比例刚好是4时的熟练度（推测是公式中的熟练度上限）
+//             rec[effect].b = base; // 基础持续时间
+//             rec[effect].c = profRatio; // 公式理论计算值
+//             rec[effect].ch = rec[effect].t && added > 0 ? channelingRatio : rec[effect].ch; // 引导倍率
+//             rec[effect].t = turns; // 当前剩余持续时间
+//             rec[effect].d = added; // 新增时间
+//             rec[effect].m = Math.max(rec[effect].m ?? 0, added); // 历史最大新增时间
+//             rec[effect].a ??= [0, 0]; // 推测熟练度倍率 [ 历史最大值, 按照‘缺失引导信息导致变成1.5倍’的修正值(除以1.5)  ]
+//             rec[effect].r ??= [0, 0, 0]; // 实际倍率 [ 0-4 应该正常, 4-6推测缺失引导信息, 6+ 异常]
+//             rec.error ??= []; // 实际倍率异常时的相关信息
+//             // 计算推测倍率
+//             if (base <= added) {
+//               const a = Math.max(base, added)/base/channelingRatio
+//               rec[effect].a[0] = Math.max(a, rec[effect].a[0]).toFixed(4) * 1;
+//               rec[effect].a[1] = Math.max(a / 1.5, rec[effect].a[1]).toFixed(4) * 1;
+//             }
+//             // 检查实际ratio
+//             const ratio = Math.max(base, added)/duration;
+//             if (ratio > 1.5) {
+//               const e = `${effect}: ${Math.max(base, added).toFixed(4)}/(${base.toFixed(4)}*${channelingRatio.toFixed(4)}*${profRatio.toFixed(4)})=${ratio.toFixed(4)}`
+//               if (!rec.error.includes(e)) rec.error.push(e);
+//             }
+//             if (ratio > 1.5 && ratio > rec[effect].r[2]) {
+//               rec[effect].r[2] = ratio.toFixed(4) * 1;
+//             } else if (ratio <= 1.5 && ratio > 1 && ratio > rec[effect].r[1]) {
+//               rec[effect].r[1] = ratio.toFixed(4) * 1;
+//             } else if (ratio <= 1 && ratio > rec[effect].r[0]) {
+//               rec[effect].r[0] = ratio.toFixed(4) * 1;
+//             }
+//             localStorage.setItem(`hvAA-${_server.name}_rec`, JSON.stringify(rec));
+//           }
+//         });
+//       }
       // DEBUG END ---------------------
 
       let savedEffects = activeMonster.effectObj ??= {};
