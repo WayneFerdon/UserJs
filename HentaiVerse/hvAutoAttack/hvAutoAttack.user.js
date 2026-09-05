@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.184
+// @version      2.91.185
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -8634,7 +8634,7 @@ text-align: left;
 
   function formatMonsterNames(t) {
     const monsterNames = g().battle.monsterStatus.map(m => gE(`.btm3>div>div`, getMonster(getMonsterID(m))).innerText);
-    monsterNames.forEach(name => {
+    [...monsterNames].sortBy(x => x.length).reverse().forEach(name => {
     t = t.replaceAll(new RegExp(escapeRegExp(name), 'g'), match => {
       return `MONSTER_${((monsterNames.findIndex(x => x === match)*1+1)||11)-1}`;
     });
@@ -8786,6 +8786,7 @@ text-align: left;
           || text.match(/^Cooldown is still pending for (.*)\.$/)
           || text.match(/^The potential of your equipment has grown!$/)
           || text.match(/^Stop beating dead ponies\.$/)
+          || text.match(/fails due to insufficient Spirit!$/)
           // 结算
           || text.match(/^With the light of a new dawn, your experience in all things increases\.$/)
           || text.match(/^You obtained \d+x \[.*]$/)
