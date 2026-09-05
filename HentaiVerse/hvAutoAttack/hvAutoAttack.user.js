@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.188
+// @version      2.91.189
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -8749,21 +8749,10 @@ text-align: left;
       }
     }
 
-    function recordLog(text, stats, filter, prev, handled, mode) {
-      let match;
-      for (const type of recordLog.prototype.logType ??= initTypes()) {
-        if (!(match = type.match(text))) continue;
-        type.recorder(match, stats, filter, prev, handled, mode);
-        return true;
-      }
-
-      function onhandle(stats, type, sub, point) {
-        stats[type][sub] = (stats[type][sub]??0) + point;
-      }
-
-      function matchDamage(text) {
+    function recordLog(text, stats, filter, prev, handled, mode, match) {
+      function matchDamage(fromText) {
         const regExp = matchDamage.prototype.regExp ??= /^(MONSTER_\d|[yY]ou|[^\,\.]+)?(?:(?:(?:uses|casts) .*, which)*(?:was|resists, and was)* ((?:\d+x-)*crit|hit|glance|counter|explode)?(?:d|s|!)*) (MONSTER_\d|[yY]ou)*(?:(?:; MONSTER_\d |; [yY]ou |, which )*((?: |partially|block|blocks|parry|parries|evade|resist|evades|and)+)+(?: the attack, and)?)?(?:, causing| ?for| ?takes*)+( \d+)?(?: additional)*(?: points of)*( [^0-9]+)? damage\.?\s*$/
-        const matched = text.match(regExp);
+        const matched = fromText.match(regExp);
         let [_0, source, hit, target, block, damage, type] = (matched??[]).map(t => t?.trim());
         block = block?.replaceAll('partially ', 'p-').replace('parries', 'parry').replace('blocks', 'block').replace('and', '&');
         const infos = { source, hit, target, block, damage, type };
@@ -8771,57 +8760,69 @@ text-align: left;
         return matched ? infos : undefined;
       }
 
+      for (const type of initTypes()) {
+        if (match = type.match()) return type.recorder() || true;
+      }
+
+      function onhandle(type, sub, point) { stats[type][sub] = (stats[type][sub]??0) + point * 1; }
+
+      function handleDamage(magic, point) { onhandle('damage', magic.toLowerCase(), point); }
+      function handleRestore(magic, point) { onhandle('restore', magic, point); }
+
+      function handleHurt(magic, point) {
+        magic = magic.toLowerCase();
+        onhandle('hurt', magic, point);
+        const type = magic.match(/pierc|crush|slash/) ? 'p' : 'm';
+        // if (type === 'm' && !['void', 'elec', 'dark', 'holy', 'wind', 'cold', 'fire'].includes(magic)) console.warn('Not-basic element magic hurts:', text);
+        hurtSum();
+        hurtSum(type);
+      }
+
+      function hurtSum(t) {
+        t ??= ''
+        if (filter[`hurt${t}count`] || filter[`hurt${t}avg`]) stats.hurt[`_${t}count`]++;
+        if (filter[`hurt${t}total`] || filter[`hurt${t}avg`]) stats.hurt[`_${t}total`] += point * 1;
+        if (filter[`hurt${t}avg`]) stats.hurt[`_${t}avg`] = Math.round(stats.hurt[`_${t}total`] / stats.hurt[`_${t}count`]);
+      }
+
       function initTypes() {
         return [
           {
-            match: text => (text.match('damage') && !text.match('absorbs')) ? matchDamage(text) : undefined,
-            recorder: (match, stats, filter, prev, handled, mode) => {
-              let { source, hit, target, block, damage, type } = match;
-              let [magic, point] = [type ?? source, damage * 1];
-              if (!target?.match(`[yY]ou`)) return onhandle(stats, 'damage', magic, point);
+            match: () => (text.match('damage') && !text.match('absorbs')) ? matchDamage(text) : undefined,
+            recorder: () => {
+              let { source, hit, target, block, point, magic } = match;
+              magic ??= source;
+              if (!target?.match(`[yY]ou`)) return handleDamage(magic, point);
               if (filter.evade && text.match(/You ((partially )*(evade|parry|block)( and )*)+ the attack/)) stats.self.evade++;
               if (!filter.hurt) return;
-              onhandle(stats, 'hurt', magic, point);
-              hurtSum();
-              hurtSum(magic.match(/[Pp]ierc|[Cc]rush|[Ss]lash/) ? 'p' : 'm');
-
-              function hurtSum(t) {
-                t ??= ''
-                if (filter[`hurt${t}count`] || filter[`hurt${t}avg`]) stats.hurt[`_${t}count`]++;
-                if (filter[`hurt${t}total`] || filter[`hurt${t}avg`]) stats.hurt[`_${t}total`] += point;
-                if (filter[`hurt${t}avg`]) stats.hurt[`_${t}avg`] = Math.round(stats.hurt[`_${t}total`] / stats.hurt[`_${t}count`]);
-              }
+              handleHurt(magic, point);
             }
           },
           {
-            match: text => text.match(/^MONSTER_\d is eviscerated for (\d+) Slashing damage, putting it out of its misery/),
-            recorder: (match, stats, filter, prev, handled, mode) => {
-              if (!filter.damage) return;
-              onhandle(stats, 'damage', 'Bleeding Wound', match[1] * 1);
-            }
-          },
-          {
-            match: text => text.match(/^Your (spirit shield) absorbs (\d+) points of damage from the attack into (\d+) points of (spirit) damage/),
-            recorder: (match, stats, filter, prev, handled, mode) => {
+            match: () => text.match(/^Your (spirit shield) absorbs (\d+) points of damage from the attack into (\d+) points of (spirit) damage/),
+            recorder: () => {
               if (!filter.hurt) return;
-              let matched;
               for (const next of handled) {
-                if (!(matched = matchDamage(next))) continue;
-                const { source, hit, target, block, damage, type } = matched;
-                onhandle(stats, 'hurt', type ?? source, match[2] * 1);
-                onhandle(stats, 'hurt', `${match[1]}_${match[4]}`, match[3] * 1);
+                if (!(nextmatched = matchDamage(next))) continue;
+                const { source, hit, target, block, damage, type } = nextmatched;
+                handleHurt(type ?? source, match[2]);
+                handleHurt(match[4], match[3]);
                 return;
               }
-              logWarn('aaa', text, prev, handled, mode);
+              logWarn('unkown spirit shield origin damage type:', text, prev, handled, mode);
             }
           },
           {
-            match: text => text.match(/^(Refreshment|Replenishment|Regeneration|Regen) restores (\d+) points of (health|magic|spirit)\.$/)
+            match: () => text.match(/^MONSTER_\d is eviscerated for (\d+) Slashing damage, putting it out of its misery/),
+            recorder: () => filter.damage && handleDamage('Bleeding Wound', match[1])
+          },
+          {
+            match: () => text.match(/^(Refreshment|Replenishment|Regeneration|Regen) restores (\d+) points of (health|magic|spirit)\.$/)
             || text.match(/^You are (healed) for (\d+) (Health) Points\.$/),
-            recorder: (match, stats, filter, prev, handled, mode) => {
+            recorder: () => {
               if (!filter.restore) return;
               const ids = {
-                healed: 311,
+                // healed: 311,
                 Cure: 311,
                 ['Full-Cure']: 313,
                 Regen: 312,
@@ -8829,46 +8830,44 @@ text-align: left;
                 Replenishment: 11291,
                 Refreshment: 11391,
               }
-              let magic = ids[match[1]];
-              if (magic === 311) magic = ids[prev.match(/^You cast (.+)\./)?.[1]];
-              onhandle(stats, 'restore', magic, match[2] * 1);
+              handleRestore(ids[match[1]] ?? ids[prev?.match(/^You cast (.+)\./)?.[1]], match[2]);
             }
           },
           {
-            match: text => text.match(/^You drain (\d+) points of (health|magic|spirit) from MONSTER_\d\.$/),
-            recorder: (match, stats, filter, prev, handled, mode) => {
-              let [magic, point] = [`drain_${match[2]}`, match[1] * 1];
-              if (filter.restore) onhandle(stats, 'restore', magic, point);
-              if (filter.damage && match[2] === 'health') onhandle(stats, 'damage', '211', point);
+            match: () => text.match(/^You drain (\d+) points of (health|magic|spirit) from MONSTER_\d\.$/),
+            recorder: () => {
+              let [magic, point] = [`drain_${match[2]}`, match[1]];
+              if (filter.restore) handleRestore(magic, point);
+              if (filter.damage && match[2] === 'health') handleDamage('211', point);
             }
           },
           {
-            match: text => text.match(/^You gain ([\d.]+) points of (.*?) proficiency.$/),
-            recorder: (match, stats, filter, prev, handled, mode) => {
+            match: () => text.match(/^You gain ([\d.]+) points of (.*?) proficiency.$/),
+            recorder: () => {
               if (!filter.proficiency) return;
-              let [magic, point] = [match[2],match[1] * 1];
-              stats.proficiency[magic] = ((stats.proficiency[magic] ?? 0) + point).toFixed(3) * 1;
+              let [magic, point] = [match[2],match[1]];
+              stats.proficiency[magic] = ((stats.proficiency[magic] ?? 0) + point * 1).toFixed(3);
             }
           },
           {
-            match: text => text.match(/^MONSTER_\d casts .*, but it is absorbed. You gain (\d+) points of (mana)\.$/),
-            recorder: (match, stats, filter, prev, handled, mode) => filter.restore && onhandle(stats, 'restore', `absorbed_to_${match[2]}`, match[1] * 1)
+            match: () => text.match(/^MONSTER_\d casts .*, but it is absorbed. You gain (\d+) points of (mana)\.$/),
+            recorder: () => filter.restore && handleRestore(`absorbed_to_${match[2]}`, match[1])
           },
           {
-            match: text => text.match(/^Recovered (\d+) points of (health|magic|spirit)\.$/),
-            recorder: (match, stats, filter, prev, handled, mode) => filter.restore && onhandle(stats, 'restore', mode ?? `Recovered_${match[2]}`, match[1] * 1)
+            match: () => text.match(/^Recovered (\d+) points of (health|magic|spirit)\.$/),
+            recorder: () => filter.restore && handleRestore(mode ?? `Recovered_${match[2]}`, match[1])
           },
           {
-            match: text => text.match(/^You (?:(?: |parry|and|block|resist|evade|partially)+)+ the attack( from MONSTER_\d)?\.$/),
-            recorder: (match, stats, filter, prev, handled, mode) => filter.evade && stats.self.evade++
+            match: () => text.match(/^You (?:(?: |parry|and|block|resist|evade|partially)+)+ the attack( from MONSTER_\d)?\.$/),
+            recorder: () => filter.evade && stats.self.evade++
           },
           {
-            match: text => text.match(/^MONSTER_\d (partially )*(?:resists|shrugs off) the effects of your spell\.$/)
+            match: () => text.match(/^MONSTER_\d (partially )*(?:resists|shrugs off) the effects of your spell\.$/)
             || text.match(/^MONSTER_\d (?:(?: |deftly|parries|and|blocks|block|evades|evade|dodges|partially)+)+ your (offhand attack|attack|spell)\.$/),
-            recorder: (match, stats, filter, prev, handled, mode) => filter.miss && stats.self.miss++
+            recorder: () => filter.miss && stats.self.miss++
           },
           {
-            match: text =>
+            match: () =>
             0
             || text.match(/^The effect .* (on MONSTER_\d)? has worn off\.$/)
             || text.match(/^The effect .* was dispelled\.$/)
@@ -8908,7 +8907,7 @@ text-align: left;
             || text.match(/^Arena Token Bonus! \[.*\]$/)
             || text.match(/^Battle Clear Bonus! \[.*\]$/)
             || 0,
-            recorder: (match, stats, filter, prev, handled, mode) => { }
+            recorder: () => { }
           },
         ];
       }
