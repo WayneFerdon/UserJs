@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.189
+// @version      2.91.190
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -8766,23 +8766,23 @@ text-align: left;
 
       function onhandle(type, sub, point) { stats[type][sub] = (stats[type][sub]??0) + point * 1; }
 
-      function handleDamage(magic, point) { onhandle('damage', magic.toLowerCase(), point); }
+      function handleDamage(type, damage) { onhandle('damage', type.toLowerCase(), damage); }
       function handleRestore(magic, point) { onhandle('restore', magic, point); }
 
-      function handleHurt(magic, point) {
-        magic = magic.toLowerCase();
-        onhandle('hurt', magic, point);
-        const type = magic.match(/pierc|crush|slash/) ? 'p' : 'm';
+      function handleHurt(type, damage) {
+        type = type.toLowerCase();
+        onhandle('hurt', type, damage);
+        type = type.match(/pierc|crush|slash/) ? 'p' : 'm';
         // if (type === 'm' && !['void', 'elec', 'dark', 'holy', 'wind', 'cold', 'fire'].includes(magic)) console.warn('Not-basic element magic hurts:', text);
         hurtSum();
         hurtSum(type);
-      }
 
-      function hurtSum(t) {
-        t ??= ''
-        if (filter[`hurt${t}count`] || filter[`hurt${t}avg`]) stats.hurt[`_${t}count`]++;
-        if (filter[`hurt${t}total`] || filter[`hurt${t}avg`]) stats.hurt[`_${t}total`] += point * 1;
-        if (filter[`hurt${t}avg`]) stats.hurt[`_${t}avg`] = Math.round(stats.hurt[`_${t}total`] / stats.hurt[`_${t}count`]);
+        function hurtSum(t) {
+          t ??= '';
+          if (filter[`hurt${t}count`] || filter[`hurt${t}avg`]) stats.hurt[`_${t}count`]++;
+          if (filter[`hurt${t}total`] || filter[`hurt${t}avg`]) stats.hurt[`_${t}total`] += damage * 1;
+          if (filter[`hurt${t}avg`]) stats.hurt[`_${t}avg`] = Math.round(stats.hurt[`_${t}total`] / stats.hurt[`_${t}count`]);
+        }
       }
 
       function initTypes() {
@@ -8790,18 +8790,19 @@ text-align: left;
           {
             match: () => (text.match('damage') && !text.match('absorbs')) ? matchDamage(text) : undefined,
             recorder: () => {
-              let { source, hit, target, block, point, magic } = match;
-              magic ??= source;
-              if (!target?.match(`[yY]ou`)) return handleDamage(magic, point);
+              let { source, hit, target, block, damage, type } = match;
+              type ??= source;
+              if (!target?.match(`[yY]ou`)) return handleDamage(type, damage);
               if (filter.evade && text.match(/You ((partially )*(evade|parry|block)( and )*)+ the attack/)) stats.self.evade++;
               if (!filter.hurt) return;
-              handleHurt(magic, point);
+              handleHurt(type, damage);
             }
           },
           {
             match: () => text.match(/^Your (spirit shield) absorbs (\d+) points of damage from the attack into (\d+) points of (spirit) damage/),
             recorder: () => {
               if (!filter.hurt) return;
+              let nextmatched;
               for (const next of handled) {
                 if (!(nextmatched = matchDamage(next))) continue;
                 const { source, hit, target, block, damage, type } = nextmatched;
@@ -8822,7 +8823,6 @@ text-align: left;
             recorder: () => {
               if (!filter.restore) return;
               const ids = {
-                // healed: 311,
                 Cure: 311,
                 ['Full-Cure']: 313,
                 Regen: 312,
@@ -8836,17 +8836,17 @@ text-align: left;
           {
             match: () => text.match(/^You drain (\d+) points of (health|magic|spirit) from MONSTER_\d\.$/),
             recorder: () => {
-              let [magic, point] = [`drain_${match[2]}`, match[1]];
-              if (filter.restore) handleRestore(magic, point);
-              if (filter.damage && match[2] === 'health') handleDamage('211', point);
+              let [type, damage] = [`drain_${match[2]}`, match[1]];
+              if (filter.restore) handleRestore(type, damage);
+              if (filter.damage && match[2] === 'health') handleDamage('211', damage);
             }
           },
           {
             match: () => text.match(/^You gain ([\d.]+) points of (.*?) proficiency.$/),
             recorder: () => {
               if (!filter.proficiency) return;
-              let [magic, point] = [match[2],match[1]];
-              stats.proficiency[magic] = ((stats.proficiency[magic] ?? 0) + point * 1).toFixed(3);
+              let [elem, point] = [match[2],match[1]];
+              stats.proficiency[elem] = ((stats.proficiency[elem] ?? 0) + point * 1).toFixed(3);
             }
           },
           {
