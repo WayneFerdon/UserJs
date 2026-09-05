@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.185
+// @version      2.91.186
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -8635,10 +8635,10 @@ text-align: left;
   function formatMonsterNames(t) {
     const monsterNames = g().battle.monsterStatus.map(m => gE(`.btm3>div>div`, getMonster(getMonsterID(m))).innerText);
     [...monsterNames].sortBy(x => x.length).reverse().forEach(name => {
-    t = t.replaceAll(new RegExp(escapeRegExp(name), 'g'), match => {
-      return `MONSTER_${((monsterNames.findIndex(x => x === match)*1+1)||11)-1}`;
+      t = t.replaceAll(new RegExp(escapeRegExp(name), 'g'), match => `MONSTER_${((monsterNames.findIndex(x => x === match)*1+1)||11)-1}`);
     });
-  }); return t; }
+    return t;
+  }
 
   function recordLog(text, stats, filter, prev, next, mode) {
     let match;
@@ -8924,7 +8924,7 @@ text-align: left;
     }
 
     function logWarn (info, text, prev, next, mode) {
-      const toWarn = t => t?.replaceAll(/MONSTER_\d/g, 'MONSTER_\\d').replaceAll(/\d+/g, '\\d');
+      const toWarn = t => t?.replaceAll(/MONSTER_\d/g, 'MONSTER_\\d').replaceAll(/ \d+/g, ' \\d').replaceAll(/_\d+/g, '_\\d');
       const warn = {
         prev: toWarn(prev),
         text: toWarn(text),
