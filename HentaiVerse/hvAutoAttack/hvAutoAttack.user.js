@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.183
+// @version      2.91.184
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1352,7 +1352,7 @@
     return box;
   }
 
-  function onBattle() {
+  async function onBattle() {
     if (!gE('#textlog')) {
       return false;
     }
@@ -1372,7 +1372,7 @@
     g('runSpeed', 1);
     newRound(false);
     updateMonsterEffects(false);
-    onBattleRound();
+    await onBattleRound();
     const battle = g().battle;
     if (option.recordEach) {
       let code = getValue('battleCode', true);
@@ -2770,6 +2770,8 @@
               ),
               UI.div(
                 UI.b(UI.l('脚本行为', '腳本行為', 'Script Activity')),
+                '<br>',
+                UI.labeled('waitHVMonsterDB', UI.l('等待HVMonsterDB加载', '等待HVMonsterDB加載', 'Wait until HV Monster DB loaded')), `. ${UI.for('waitHVMonsterDBTime', UI.hidden(UI.l('等待HVMonsterDB加载', '等待HVMonsterDB加載', 'Wait until HV Monster DB loaded')) + UI.l('最多', '最多', 'Max'))}: ${UI.text('waitHVMonsterDBTime')}ms`,
                 UI.expendData(UIDatas.hotkeys, (id, names, v) => UI.div(
                   `${UI.labeled(`${id}Button`, `${names}${UI.l('按钮', '按鈕', ' Button')}`)}; ${UI.labeled(`${id}Hotkey`, `${names}${UI.l('热键', '熱鍵', ' Hotkey')}${UI.text(`${id}HotkeyStr`)}`)}${UI.hidden(UI.for(`${id}HotkeyStr`, `${names}${UI.l('热键', '熱鍵', ' Hotkey')}`))}: `,
                   `${UI.number(`${id}HotkeyCode`, 'undefined', 'hidden', '', 'disabled="true"')}`)),
@@ -4802,6 +4804,11 @@
     let currentGroup = null;
     const func = {
       ...returnValueGetter.prototype.func,
+      targetDB(...params) {
+        let param = minmaxModes.includes(params[0]) ? params.shift() : undefined;
+        const key = params.shift();
+        return switchMinMax(param, t => unsafeWindow.HVMonsterDB?.getCurrentMonstersInformation()[`mkey_${getMonsterID(t)}`]?.[key] ?? 0 );
+      },
       weighted(...params) {
         const funcName = params.shift();
         const battle = g().battle;
@@ -6502,9 +6509,17 @@
   }
 
   // 战斗中//
-  function onBattleRound() { // 主程序
-    if (!gE('#battle_main')) return;
+  async function onBattleRound() { // 主程序
+    if (!gE('#battle_main') || g().battleOngoing) return;
+    g().battleOngoing = true;
     lastResponsive = time(0);
+    const option = getOption();
+    await until(
+      () =>
+      !option.waitHVMonsterDB
+      || ((option.waitHVMonsterDBTime !== undefined) && ((1*option.waitHVMonsterDBTime+lastResponsive) <= time(0)))
+      || Object.keys(unsafeWindow.HVMonsterDB?.getCurrentMonstersInformation()??{}).length
+    );
     let battle = getValue('battle', true);
 
     if (battle && battle.prevLog !== battle.turnLog) {
@@ -6697,7 +6712,6 @@
       pauseChange();
       $debug.shiftLog();
     }
-    const option = getOption();
     document.title = `${currentActions % 2 ? option.frequencySign1 ?? '' : option.frequencySign2 ?? ''}${display.title}:R${battle.roundNow}/${battle.roundAll}:T${currentTurn}@${g().runSpeed}tps,${g().monsterAlive}/${g().monsterAll}`;
     setValue('battle', battle);
     if (!battle.monsterStatus || battle.monsterStatus.length !== g().monsterAll) {
@@ -6709,19 +6723,22 @@
     if (getValue('disabled')) { // 如果禁用
       document.title = titlePause();
       const pauseChange = gE('#hvAABox2>button.pauseChange');
-      if (!pauseChange) return;
-      pauseChange.innerHTML = UI.button.continue();
+      pauseChange ? pauseChange.innerHTML = UI.button.continue() : undefined;
+      g().battleOngoing = false;
       return;
     }
     killBug(); // 解决 HentaiVerse 可能出现的 bug
-    setBattleSkillParam(1001, { flee: 1, skill: 'flee' });
-    if (option.autoFlee && checkCondition(option.fleeCondition)) {
-      if (option.fleeAlarm) setAlarm('Flee');
-      gE('1001').click();
-      setExitBattleTimeout('Flee');
-      return;
-    }
+
     const taskList = {
+      'Flee': () => {
+        setBattleSkillParam(1001, { flee: 1, skill: 'flee' });
+        if (option.autoFlee && checkCondition(option.fleeCondition)) {
+          if (option.fleeAlarm) setAlarm('Flee');
+          gE('1001').click();
+          setExitBattleTimeout('Flee');
+          return true;
+        }
+      },
       'Cure': () => autoRecover(true),
       'Pause': autoPause,
       'SSDisable': () => autoSS(true),
@@ -6737,22 +6754,20 @@
       'Skill': autoSkill,
       'Atk': attack,
     };
-    const order = option.battleOrderDefaultOnly ? [] : splitOrders(option.battleOrderName);
-    if (option.debugCheckCondition) {
-      checkCondition(option.debugCondition);
-    }
-
+    const order = ['Flee', ...option.battleOrderDefaultOnly ? [] : splitOrders(option.battleOrderName)];
     onTasks();
     async function onTasks() {
+      if (option.debugCheckCondition) checkCondition(option.debugCondition);
+
       const prevActionTime = battle.prevActionTime ?? 0;
       const remainDelay = prevActionTime + option.delay - time(0);
-      if (remainDelay > 0) {
-        await sleep(remainDelay, true);
-      }
+      if (remainDelay > 0) await sleep(remainDelay, true);
+
       const onTask = name => {
         if (!taskList[name]()) return;
         setValue('battle', battle);
         onStepInDone();
+        g().battleOngoing = false;
         return true;
       }
       for (const name of range(order).map(i => order[i])) {
@@ -6762,6 +6777,7 @@
       for (let name in taskList) {
         if (onTask(name)) return;
       }
+      g().battleOngoing = false;
     }
   }
 
@@ -7089,7 +7105,7 @@
         }
         newRound(true);
         onStepInDone();
-        onBattleRound();
+        await onBattleRound();
         $async.logSwitch(arguments);
       } catch (err) { console.error(err); }}
     };
@@ -7730,7 +7746,10 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
     g('battle', battle);
     const extraWeightFormula = option.extraWeightFormula;
     // 额外权重公式
-    monsterStatus.forEach(t => { t.finWeight += resolveRPNFormula(extraWeightFormula, t); });
+    monsterStatus.forEach(t => {
+      const extra = resolveRPNFormula(extraWeightFormula, t);
+      t.finWeight += isNaN(+extra) ? 0 : extra;
+    });
     battle.monsterStatus = monsterStatus.sortBy(x => x.finWeight);
     g('battle', battle);
   }
@@ -8424,7 +8443,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
 
   // TODO TBD 根据lv模糊推测（一般数据都是等级逐渐提升的，可能可以直接用缓存而不需要推测，异世界新赛季时可以自动刷新缓存?）
   function getHPFromMonsterDB(mdb, name, lv) {
-    return mdb?.[name]?.[lv]
+    return mdb?.[name]?.[lv];
   }
 
   function fixMonsterStatus() { // 修复monsterStatus
@@ -8486,7 +8505,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       }
       gE(monsterStateKeys.name, getMonster(id)).style.cssText += 'display: flex; flex-direction: row;'
       if (option.displayWeight) {
-        gE(monsterStateKeys.name, getMonster(id)).innerHTML += `<div style='font-weight: bolder; right:0px; position: absolute;'>[${rank}|-${-rank + weights.length - 1}|${s.finWeight.toPrecision(s.finWeight >= 1 ? 5 : 4)}]</div>`;
+        getMonster(id).innerHTML += `<div style='font-weight: bolder; right:0px; position: absolute;'>[${rank}|-${-rank + weights.length - 1}|${s.finWeight.toPrecision(s.finWeight >= 1 ? 5 : 4)}]</div>`;
       }
     });
   }
