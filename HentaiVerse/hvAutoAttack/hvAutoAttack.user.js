@@ -8787,6 +8787,8 @@ text-align: left;
           || text.match(/^The potential of your equipment has grown!$/)
           || text.match(/^Stop beating dead ponies\.$/)
           || text.match(/fails due to insufficient Spirit!$/)
+          || text.match(/MONSTER_\d gets hit, but the spell is absorbed\.$/)
+          || text.match(/MONSTER_\d casts Healing Roots, healing MONSTER_\d for \d points of health\.$/)
           // 结算
           || text.match(/^With the light of a new dawn, your experience in all things increases\.$/)
           || text.match(/^You obtained \d+x \[.*]$/)
