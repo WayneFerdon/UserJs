@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.182
+// @version      2.91.183
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -8738,43 +8738,46 @@ text-align: left;
           recorder: (match, stats, filter, prev, next, mode) => { if (filter.miss) stats.self.miss++; }
         },
         {
-          match: text => // buff
-            text.match(/^You gain the effect (?:.| )+\.$/)
-            || text.match(/^MONSTER_\d gains the effect (?:.| )+\.$/)
-            || text.match(/^The effect (?:.| )+ (on MONSTER_\d)? has worn off\.$/)
-            || text.match(/^MONSTER_\d has been roused from its sleep\.$/)
-            || text.match(/^The effect (.*) was dispelled\.$/)
-            // 攻击防御、技能CD、道具
-            || text.match(/^MONSTER_\d got knocked out of confuse\.$/)
-            || text.match(/^MONSTER_\d (( |parries|blocks|evades|block|evade)+)+ the attack from MONSTER_\d\.$/)
-            || text.match(/^You block the attack from MONSTER_\d\.$/)
-            || text.match(/^MONSTER_\d  a shadow, missing you completely\.$/)
-            || text.match(/^MONSTER_\d (?:vigorously whiffs at|(?:uses|casts) (.| )+ in the general direction of)? a shadow, missing you completely\.$/)
-            || text.match(/^Cooldown expired for (?:.| )+$/)
-            || text.match(/^Spirit Stance (Disabled|Engaged|Exhausted)$/)
-            || text.match(/^You use (.+ (?:Elixir|Potion|Draught|Infusion|Gem)|Scroll of .*|Vital Strike|Shield Bash|Merciful Blow|Skyward Sword|.*)\.$/)
-            || text.match(/^Spark of Life saves you from the brink of defeat!$/)
-            || text.match(/^You cast .+\.$/)
-            || text.match(/^Insufficient overcharge to use (.*)\.$/)
-            || text.match(/^Insufficient overcharge or spirit for Spirit Stance\.$/)
-            || text.match(/^MONSTER_\d (uses|casts)+ (.| )+, but misses the attack\.$/)
-            || text.match(/^Slot is currently not usable\.$/)
-            || text.match(/^Cooldown is still pending for (.*)\.$/)
-            || text.match(/^The potential of your equipment has grown!$/)
-            || text.match(/^Stop beating dead ponies\.$/)
-            // 结算
-            || text.match(/^You obtained \d+x \[.*]$/)
-            || text.match(/^You gain \d+ (Credits|EXP)!$/)
-            || text.match(/^You (have reached Level|have obtained the title|do not have enough MP)/)
-            || text.match(/^MONSTER_\d has been defeated\.$/)
-            || text.match(/^You have been defeated\.$/)
-            || text.match(/^You have escaped from the battle\.$/)
-            || text.match(/^You are Victorious!$/)
-            || text.match(/^MONSTER_\d dropped \[.*\]$/)
-            || text.match(/^MONSTER_\d drops a (.+) Gem powerup!$/)
-            || text.match(/^Battle Clear Bonus! \[.*\]$/)
-            || text.match(/^Arena Extra Bonus! You obtained \dx \[.*\]$/)
-            || text.match(/^Arena Token Bonus! \[.*\]$/),
+          match: text =>
+          // buff
+          text.match(/^You gain the effect (?:.| )+\.$/)
+          || text.match(/^MONSTER_\d gains the effect (?:.| )+\.$/)
+          || text.match(/^The effect (?:.| )+ (on MONSTER_\d)? has worn off\.$/)
+          || text.match(/^MONSTER_\d has been roused from its sleep\.$/)
+          || text.match(/^The effect (.*) was dispelled\.$/)
+          // 攻击防御、技能CD、道具
+          || text.match(/^Scanning MONSTER_\d\.\.\./)
+          || text.match(/^MONSTER_\d got knocked out of confuse\.$/)
+          || text.match(/^MONSTER_\d (( |parries|blocks|evades|block|evade)+)+ the attack from MONSTER_\d\.$/)
+          || text.match(/^You block the attack from MONSTER_\d\.$/)
+          || text.match(/^MONSTER_\d  a shadow, missing you completely\.$/)
+          || text.match(/^MONSTER_\d (?:vigorously whiffs at|(?:uses|casts) (.| )+ in the general direction of)? a shadow, missing you completely\.$/)
+          || text.match(/^Cooldown expired for (?:.| )+$/)
+          || text.match(/^Spirit Stance (Disabled|Engaged|Exhausted)$/)
+          || text.match(/^You use (.+ (?:Elixir|Potion|Draught|Infusion|Gem)|Scroll of .*|Vital Strike|Shield Bash|Merciful Blow|Skyward Sword|.*)\.$/)
+          || text.match(/^Spark of Life saves you from the brink of defeat!$/)
+          || text.match(/^You cast .+\.$/)
+          || text.match(/^Insufficient overcharge to use (.*)\.$/)
+          || text.match(/^Insufficient overcharge or spirit for Spirit Stance\.$/)
+          || text.match(/^MONSTER_\d (uses|casts)+ (.| )+, but misses the attack\.$/)
+          || text.match(/^Slot is currently not usable\.$/)
+          || text.match(/^Cooldown is still pending for (.*)\.$/)
+          || text.match(/^The potential of your equipment has grown!$/)
+          || text.match(/^Stop beating dead ponies\.$/)
+          // 结算
+          || text.match(/^With the light of a new dawn, your experience in all things increases\.$/)
+          || text.match(/^You obtained \d+x \[.*]$/)
+          || text.match(/^You gain \d+ (Credits|EXP)!$/)
+          || text.match(/^You (have reached Level|have obtained the title|do not have enough MP)/)
+          || text.match(/^MONSTER_\d has been defeated\.$/)
+          || text.match(/^You have been defeated\.$/)
+          || text.match(/^You have escaped from the battle\.$/)
+          || text.match(/^You are Victorious!$/)
+          || text.match(/^MONSTER_\d dropped \[.*\]$/)
+          || text.match(/^MONSTER_\d drops a (.+) Gem powerup!$/)
+          || text.match(/^Battle Clear Bonus! \[.*\]$/)
+          || text.match(/^Arena Extra Bonus! You obtained \dx \[.*\]$/)
+          || text.match(/^Arena Token Bonus! \[.*\]$/),
           recorder: (match, stats, filter, prev, next, mode) => { }
         },
       ];
@@ -8865,7 +8868,9 @@ text-align: left;
       }
     }
 
-    const logCache = (getValue('logCache', true) ?? []).filter(x => !recordLog(x.text.replaceAll('\\d', '1'), stats, filter, x.prev, x.next, x.mode));
+    let logCache = getValue('logCache', true) ?? [];
+    try { logCache = logCache.filter(x => !recordLog(x.text.replaceAll('\\d', '1'), stats, filter, x.prev, x.next, x.mode)); }
+    catch (err) { console.error(err); };
     let logRange = [...param.log].findIndex(log => log.className === 'tls');
     if (logRange >= 0) param.log = [...param.log].slice(0, logRange);
     param.log = [...param.log].map(log => formatMonsterNames(log.textContent).trim()).filter(t => t);
