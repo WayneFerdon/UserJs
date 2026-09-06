@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.197
+// @version      2.91.198
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1309,8 +1309,7 @@
     let option = loadOption();
     g.option = (isFrame || onIsekaiEncounter) ? option : setValue('option', option);
     writePortables();
-    option = getOption(true);
-    g.lang = option.lang || '0';
+    g.lang = getOption(true).lang || '0';
     addStyle();
     if (onIsekaiEncounter) return;
     g.stableOption = getOption(true); // addStyle中更改了option，使用g.option重新赋值
@@ -1355,7 +1354,6 @@
       return false;
     }
     setValue('onriddle', true);
-    (window.opener ?? window).$debug.log('onriddle', { riddlePopup: getOption().riddlePopup, opener: window.opener });
     if (!getOption().riddlePopup || window.opener) {
       riddleAlert();
       return true;
