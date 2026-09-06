@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.194
+// @version      2.91.195
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2786,8 +2786,6 @@
                 UI.b(UI.l('脚本行为', '腳本行為', 'Script Activity')),
                 '<br>',
                 UI.labeled('waitHVMonsterDB', UI.l('等待HVMonsterDB加载', '等待HVMonsterDB加載', 'Wait until HV Monster DB loaded')), `. ${UI.for('waitHVMonsterDBTime', UI.hidden(UI.l('等待HVMonsterDB加载', '等待HVMonsterDB加載', 'Wait until HV Monster DB loaded')) + UI.l('最多', '最多', 'Max'))}: ${UI.text('waitHVMonsterDBTime')}ms`,
-                '<br>',
-                UI.labeled('keepAliveByAudio', UI.l('[实验性!!]使用静音音频脉冲避免浏览器节流', '[實驗性!!]使用靜音音頻脈衝避免瀏覽器節流', '[Experimental!!]Keep alive by slience audio pulse to avoid browser throttle')),
                 UI.expendData(UIDatas.hotkeys, (id, names, v) => UI.div(
                   `${UI.labeled(`${id}Button`, `${names}${UI.l('按钮', '按鈕', ' Button')}`)}; ${UI.labeled(`${id}Hotkey`, `${names}${UI.l('热键', '熱鍵', ' Hotkey')}${UI.text(`${id}HotkeyStr`)}`)}${UI.hidden(UI.for(`${id}HotkeyStr`, `${names}${UI.l('热键', '熱鍵', ' Hotkey')}`))}: `,
                   `${UI.number(`${id}HotkeyCode`, 'undefined', 'hidden', '', 'disabled="true"')}`)),
@@ -3409,6 +3407,7 @@
                 ' <l0>总回合</l0><l1>總回合</l1><l2>Total rounds</l2>: ',
                 UI.number('roundAll', undefined, 'number', 'hvAADebug'),
               ),
+              UI.div(UI.labeled('keepAliveByAudio', UI.l('[实验性!!]使用静音音频脉冲避免浏览器节流', '[實驗性!!]使用靜音音頻脈衝避免瀏覽器節流', '[Experimental!!]Keep alive by slience audio pulse to avoid browser throttle'))),
               '<div class="hvAAQuickSite">',
               UI.labeled('showQuickSite', `<span class="hvAATitle">${UI.l('快捷站点', '快捷站點', 'Quick Site')}</span>`),
               '<span class="showQuickSiteInner">',
