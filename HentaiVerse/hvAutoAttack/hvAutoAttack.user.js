@@ -1314,7 +1314,7 @@
     g.lang = option.lang || '0';
     addStyle();
     if (onIsekaiEncounter) return;
-    g.stableOption = getOption(true);
+    g.stableOption = getOption(true); // addStyle中更改了option，使用g.option重新赋值
 
     // README等合并到主分支后再取消掉注释
     // if (option.version.substr(0, 4) !== scriptVersion.ver.substr(0, 4)) {
