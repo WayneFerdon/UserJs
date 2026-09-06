@@ -6,14 +6,14 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.198
+// @version      2.91.199
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
 // @icon         https://github.com/dodying/UserJs/raw/master/Logo.png
 // @include      http*://hentaiverse.org/*
 // @include      http*://alt.hentaiverse.org/*
-// @include      http*://e-hentai.org/*
+// @include      http*://e-hentai.org/news.php?encounter
 // @exclude     http*://*hentaiverse.org/*/y/*
 // @exclude     http*://*hentaiverse.org/*/z/*
 // @connect        hentaiverse.org
