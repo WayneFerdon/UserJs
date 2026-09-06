@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.195
+// @version      2.91.196
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1314,7 +1314,7 @@
     g.lang = option.lang || '0';
     addStyle();
     if (onIsekaiEncounter) return;
-    g.stableOption = option;
+    g.stableOption = getOption(true);
 
     // README等合并到主分支后再取消掉注释
     // if (option.version.substr(0, 4) !== scriptVersion.ver.substr(0, 4)) {
@@ -3448,6 +3448,7 @@
                 ),
               ),
               UI.div(UI.labeled('debugCheckCondition', 'debugCheckCondition:<br>prefix@/# to log result in console, @for formula, #for param: '), '{{debugCondition}}'),
+              '<div id="hvAADebugConsoleDisplay"></div>'
             ),
           ]
         }),
@@ -7056,7 +7057,7 @@
       }
       return a;
     };
-    
+
     function onEventStart () {
       const option = getOption();
       if (!option.recordUsage) return;
@@ -8873,4 +8874,6 @@ text-align: left;
 } catch (err) {
   console.error(err);
   document.title = err;
+  const errorDisplay = document.getElementById('hvAADebugConsoleDisplay');
+  if (errorDisplay) errorDisplay.innerHTML = err;
 }})();
