@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.191
+// @version      2.91.192
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -37,8 +37,8 @@
   const dataFlags = { sharable: ['option'] };
   dataFlags.portable = ['drop', 'stats', 'dropOld', 'statsOld', 'monsterDB', 'monsterMID'];
   dataFlags.battleDatas = [...dataFlags.portable, 'battle', 'battleCode', 'disabled', 'stepIn', 'skillOTOS', 'onriddle', 'rec'];
-  dataFlags.local = [...dataFlags.battleDatas, 'stamina', 'logCache', 'statsStatic'];
-  dataFlags.standalone = [...dataFlags.sharable, ...dataFlags.local, 'arena', 'lastUrl', 'ability', 'proficiency', 'lastSwitch', 'itemWorldDatas', 'lastPersona', 'lastEquipSet'];
+  dataFlags.local = [...dataFlags.battleDatas, 'stamina', 'logCache', 'statsStatic', 'proficiency'];
+  dataFlags.standalone = [...dataFlags.sharable, ...dataFlags.local, 'arena', 'lastUrl', 'ability', 'lastSwitch', 'itemWorldDatas', 'lastPersona', 'lastEquipSet'];
   dataFlags.excludeStandalone = { 'option': ['optionStandalone', 'version', 'lang'] };
 
   const _1s = 1000;
@@ -404,7 +404,7 @@
   let hvVersion;
   let onIsekaiEncounter;
   let monsterBuffSkillLib;
-  let ability = getValue('ability', true) ?? {};
+  let ability = getValue('ability', true, true) ?? {};
   let lastResponsive = new Date().getTime();
 
   // util methods
@@ -1909,7 +1909,7 @@
     }
   }
 
-  function setValue(key, value, portable) { // 储存数据
+  function setValue(key, value, portable, forBattle) { // 储存数据
     const isLocalStorage = dataFlags.local.includes(key) && !portable;
     if (!dataFlags.standalone.includes(key)) {
       setLocal(key, value, isLocalStorage);
@@ -1919,7 +1919,7 @@
       setLocal(`${_server.name}_${key}`, value, isLocalStorage);
       if (!dataFlags.sharable.includes(key) || getValue('option').optionStandalone) return;
       setLocal(`${_server.other}_${key}`, value, isLocalStorage);
-    }, 'option');
+    }, 'option', forBattle ? key : undefined);
     return value;
   }
 
@@ -1950,7 +1950,7 @@
     }
   }
 
-  function getValue(key, toJSON) { // 读取数据
+  function getValue(key, toJSON, forBattle) { // 读取数据
     const isLocalStorage = dataFlags.local.includes(key);
     if (!dataFlags.standalone.includes(key)) {
       return getLocal(key, isLocalStorage, toJSON);
@@ -1977,7 +1977,7 @@
       }
       setLocal(`${_server.other}_${key}`, otherWorldItem);
       return getLocal(`${_server.name}_${key}`, isLocalStorage, toJSON);
-    });
+    }, forBattle ? key : undefined);
   }
 
   function delLocal(key, isLocalStorage) {
@@ -1991,12 +1991,12 @@
     GM_deleteValue(key);
   }
 
-  function delValue(key, portable) { // 删除数据
+  function delValue(key, portable, forBattle) { // 删除数据
     const isLocalStorage = portable ? false : dataFlags.local.includes(key);
     if (dataFlags.standalone.includes(key)) {
       onRestoredBattleServer(key, () => {
         key = `${_server.name}_${key}`;
-      }, 'option');
+      }, 'option', forBattle ? key : undefined);
     }
     if (typeof key === 'string') {
       delLocal(key, isLocalStorage);
@@ -5073,7 +5073,7 @@
             result = g(key);
           }
           if (typeof result === 'undefined' || result === null) {
-            result = getValue(key);
+            result = getValue(key, undefined, true);
           }
           if (typeof result === 'undefined' || result === null) {
             result = option[key];
@@ -5513,12 +5513,17 @@
     await waitPause();
     $async.logSwitch(arguments);
     const doc = $doc(await $ajax.insert(queryToPersistent('?s=Character')));
-    const proficiency = {};
+    const current = {};
     gE('#stats_scrollable table:last-child tr', 'all', doc).forEach((tr) => {
       const exec = tr.innerHTML.match(/<td>(.*)<\/td>.*<td>(.*)<\/td>/);
-      proficiency[exec[2]] = exec[1] * 1;
+      current[exec[2]] = exec[1] * 1;
     });
-    localStorage.setItem(`hvAA-${_server.name}_proficiency`, JSON.stringify(proficiency));
+    const proficiency = getValue('proficiency', true);
+    for (const key in current) {
+      const [p, c] = [proficiency[key] , current[key]];
+      if (!p || (c > p)) proficiency[key] = c;
+    }
+    setValue('proficiency', proficiency);
     $async.logSwitch(arguments);
   } catch (err) { console.error(err); }}
 
@@ -6644,13 +6649,13 @@
       const type = battle.roundType;
       const monsterNames = Array.from(gE(`${monsterStateKeys.name}>div>div`, 'all')).map(monster => monster.innerHTML);
       const info = battleInfoList[type];
-      const arena = getValue('arena', true)??{};
+      const arena = getValue('arena', true, true)??{};
       battle.postoken ??= arena.postoken;
 
       [{ t: 'iw', k: 'equip'}, { t: 'tw', k: 'tw' }].forEach(({t, k}) => {
         if (!arena?.[k] || type === t) return;
         delete arena[k];
-        setValue('arena', arena);
+        setValue('arena', arena, false, true);
       });
 
       let subtype = '', title = `${info?.title??''}`;
@@ -6912,7 +6917,7 @@
         count: 0,
         round: battle.roundNow,
         token: battle.token,
-        postoken: battle.postoken ??= (getValue('arena', true) ?? {}).postoken
+        postoken: battle.postoken ??= (getValue('arena', true, true) ?? {}).postoken
       };
       setValue('battle', battle);
     }
@@ -7360,6 +7365,7 @@ gE, cE, Version, sleep].map(f => f.toString()).join(';')};
       proficiency[ptypes[type]] += points * 1;
       proficiency[ptypes[type]] = proficiency[ptypes[type]].toFixed(3) * 1;
     }
+    setValue('proficiency', proficiency, undefined, true);
 
     // cache last turn channeling
     const channeling = battle.channeling || 1;
@@ -7539,9 +7545,9 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
     const option = getOption();
     const token = document.documentElement.outerHTML.match(/var battle_token = "(.*)";/)[1];
     let battle = getValue('battle', true);
-    const arena = getValue('arena', true) ?? {};
+    const arena = getValue('arena', true, true) ?? {};
     const same = battle?.token === token && arena?.postoken === battle?.postoken;
-    const prof = getValue('proficiency', true);
+    const prof = getValue('proficiency', true, true);
     if (isNew) {
       battle = { proficiency: same ? battle?.proficiency ?? prof : prof };
     }
@@ -8218,7 +8224,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
     // 获取范围
     let skillRange = 1;
     let ab;
-    const ability = getValue('ability', true);
+    const ability = getValue('ability', true, true);
     for (ab in skill.range) {
       const ranges = skill.range[ab];
       if (!ranges) {
@@ -8409,7 +8415,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
     for (let ab in updateAbility) {
       const ranges = updateAbility[ab][skill];
       if (!ranges) continue;
-      const ability = getValue('ability', true);
+      const ability = getValue('ability', true, true);
       skillRange = ranges[ability ? ability[ab] ?? 0 : 0];
       break;
     }
@@ -8891,7 +8897,7 @@ text-align: left;
             || text.match(/^Slot is currently not usable\.$/)
             || text.match(/^Cooldown is still pending for .*\.$/)
             || text.match(/^The potential of your equipment has grown!$/)
-            || text.match(/^Stop beating dead ponies\.$/)
+            || text.match(/^Stop (beating dead ponies|kicking the dead horse)\.$/)
             || text.match(/fails due to insufficient Spirit!$/)
             || text.match(/^With the light of a new dawn, your experience in all things increases\.$/)
             || text.match(/^You have been defeated\.$/)
