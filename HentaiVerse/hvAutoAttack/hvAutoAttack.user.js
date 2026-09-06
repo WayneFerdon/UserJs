@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.192
+// @version      2.91.193
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -33,6 +33,7 @@
 
 (function () { try {
   'use strict';
+  const g = window.hvAA ??= {};
   // constant
   const dataFlags = { sharable: ['option'] };
   dataFlags.portable = ['drop', 'stats', 'dropOld', 'statsOld', 'monsterDB', 'monsterMID'];
@@ -387,6 +388,20 @@
   // runtime
   const isFrame = window.self !== window.top;
   function $id(id, d) { return (d || document).getElementById(id); }
+  function $qs(q, d) { return (d || document).querySelector(q); }
+  function $qsa(q, d) { return Array.from((d || document).querySelectorAll(q)); }
+  function $doc(h) { const d = new DOMParser().parseFromString(h, 'text/html'); return d; }
+  function gE(query, mode, parent) { // 获取元素
+    switch (mode) {
+      case undefined:
+        return (isNaN(+query)) ? $qs(query, parent) : $id(query, parent);
+      case 'all':
+        return $qsa(query, parent);
+      default:
+        return $qs(query, mode);
+    }
+  }
+  function cE(name) { return document.createElement(name); }
   const _servername = location.pathname.includes('/isekai/') ? 'isekai' : 'persistent';
   const addition = {
     other: _servername === 'isekai' ? 'persistent' : 'isekai',
@@ -401,9 +416,7 @@
   const isEquipDetail = window.location.href.includes('/equip/');
   const isMaintaining = !gE('#csp') && !isEquipDetail;
   const scriptVersion = Version(GM_info ? GM_info.script.version : '2.91');
-  let hvVersion;
-  let onIsekaiEncounter;
-  let monsterBuffSkillLib;
+  let hvVersion, onIsekaiEncounter, monsterBuffSkillLib;
   let ability = getValue('ability', true, true) ?? {};
   let lastResponsive = new Date().getTime();
 
@@ -439,10 +452,10 @@
     langs: 3,
     byLang: function (...args) {
       if (Array.isArray(args[0])) args = args[0];
-      return args ? args[g().lang] : '';
+      return args ? args[g.lang] : '';
     },
     cutLang: function (str) {
-      const lang = g().lang;
+      const lang = g.lang;
       return str?.replaceAll(/<l(\d+)>(.*?)<\/l(\d+)>/g, (matched, lang1, inner, lang2) => {
         switch (true) {
           case lang1 !== lang2: return inner;
@@ -582,7 +595,7 @@
     }, enumerable: false });
   }
 
-  const [$RPN, $async, $debug, $ajax] = [initRPN(), initAsync(), initDebug(), window.top.$ajax ??= unsafeWindow.window.top.$ajax ??= initAjax()];
+  const [$RPN, $async, $debug, $ajax] = [initRPN(), initAsync(), initDebug(), window.top.$ajax ??= unsafeWindow.top.$ajax ??= initAjax()];
 
   // 初始化结束，开始实际流程
   for (let check of [checkIsHV, checkIsWindowTop]) {
@@ -831,7 +844,7 @@
   }
 
   function initDebug() {
-    const $debug = {
+    unsafeWindow.hvAA$debug = {
       Stack: class extends Error {
         constructor(...params) {
           super(...params);
@@ -856,21 +869,21 @@
           return;
         }
         $debug.logList.push({
-          args: arguments,
+          args: [...arguments],
           stack: (new $debug.Stack()).stack
         });
         if ($debug.logList.length > $debug.maxLogCache) {
           $debug.logList.shift();
         }
       },
-      shiftLog: function () {
+      shiftLog: function (stack) {
         while ($debug.logList.length) {
           const log = $debug.logList.shift();
-          console.log(...log.args, `\n`, log.stack);
+          console.log(...log.args, stack ? `\n`+log.stack : '');
         }
       }
     }
-    return $debug;
+    return unsafeWindow.hvAA$debug;
   }
 
   function initAjax() {
@@ -965,7 +978,7 @@
         $ajax.conn++;
         if (!$ajax.debug) return;
         const remain = $ajax.queue.map($ajax.simplify);
-        console.log('$ajax.send:', $ajax.simplify(current), ... remain?.length ? ['remain:', remain] : []);
+        $debug.log('$ajax.send:', $ajax.simplify(current), ... remain?.length ? ['remain:', remain] : []);
       },
       onload: function (r) {
         $ajax.conn--;
@@ -1242,13 +1255,13 @@
   } catch (err) { console.error('Opener reload or popup close failed:', err) } }
 
   function getOption(unstable) {
-    return typeof GM_getValue === 'undefine' ? {} : (unstable ? g().option : g().stableOption) ?? {};
+    return unstable ? g.option : g.stableOption ?? g.option;
   }
 
   function checkOption() {
-    g('version', scriptVersion);
+    g.version = scriptVersion;
     if (!getValue('option')) {
-      g('lang', window.prompt('请输入以下语言代码对应的数字\nPlease put in the number of your preferred language (0, 1 or 2)\n0.简体中文\n1.繁體中文\n2.English', 0) || 2);
+      g.lang = window.prompt('请输入以下语言代码对应的数字\nPlease put in the number of your preferred language (0, 1 or 2)\n0.简体中文\n1.繁體中文\n2.English', 0) || 2;
       addStyle();
       UI.alert('请设置hvAutoAttack', '請設置hvAutoAttack', 'Please config this script');
       gE('.hvAAButton').click();
@@ -1256,13 +1269,13 @@
     }
 
     let option = loadOption();
-    g('option', (isFrame || onIsekaiEncounter) ? option : setValue('option', option));
+    g.option = (isFrame || onIsekaiEncounter) ? option : setValue('option', option);
     writePortables();
     option = getOption(true);
-    g('lang', option.lang || '0');
+    g.lang = option.lang || '0';
     addStyle();
     if (onIsekaiEncounter) return;
-    g('stableOption', getOption(true));
+    g.stableOption = option;
 
     // README等合并到主分支后再取消掉注释
     // if (option.version.substr(0, 4) !== scriptVersion.ver.substr(0, 4)) {
@@ -1304,7 +1317,7 @@
       return false;
     }
     setValue('onriddle', true);
-    (window.opener ?? window).console.log('onriddle', { riddlePopup: getOption().riddlePopup, opener: window.opener });
+    (window.opener ?? window).$debug.log('onriddle', { riddlePopup: getOption().riddlePopup, opener: window.opener });
     if (!getOption().riddlePopup || window.opener) {
       riddleAlert();
       return true;
@@ -1365,15 +1378,15 @@
     onBattleBox();
     reloader();
     const option = getOption();
-    g('attackStatus', option.attackStatus);
+    g.attackStatus = option.attackStatus;
     // 1二天 2单手 3双手 4双持 5法杖
-    range(5).map(s => s + 1).filter(s => gE(`2${s}01`)).forEach(s => g('fightingStyle', s.toString()));
-    g('timeNow', time(0));
-    g('runSpeed', 1);
+    range(5).map(s => s + 1).filter(s => gE(`2${s}01`)).forEach(s => g.fightingStyle = s.toString());
+    g.timeNow = time(0);
+    g.runSpeed = 1;
     newRound(false);
     updateMonsterEffects(false);
     await onBattleRound();
-    const battle = g().battle;
+    const battle = g.battle;
     if (option.recordEach) {
       let code = getValue('battleCode', true);
       const tokens = { token: document.body.innerHTML.match(`var battle_token = \"(.*)\";`)[1], postoken: battle?.postoken };
@@ -1428,7 +1441,7 @@
   }
 
   function getDefaultOrder(idMatch, map) {
-    const defaultOrder = g().defaultOrder ??= {};
+    const defaultOrder = g.defaultOrder ??= {};
     const key = idMatch + (map?.toString() ?? '');
     return (defaultOrder[key] ??= [...gE(`[id^="${idMatch}_"]`, 'all')].map(map ?? (ord => ord.id.match(/_(.*)/)[1])));
   }
@@ -1460,7 +1473,7 @@
 
   function sleep(ms, isForBattle) {
     if (!ms || ms <= 0) return;
-    if (!isForBattle || ms >= 1000) return new Promise(resolve => setTimeout(resolve, ms));
+    if (!isForBattle || ms >= _1s) return new Promise(resolve => setTimeout(resolve, ms));
     ms = Math.max(ms, 50);
     sleep.prototype.timerWorker ??= creatWorker();
     return sleep.prototype.timerWorker(ms);
@@ -1527,28 +1540,6 @@
 
   function pad(num, pad = '0', total = 2) {
     return num.toString().padStart(total, pad);
-  }
-
-  function gE(ele, mode, parent) { // 获取元素
-    if (typeof ele === 'object') {
-      return ele;
-    } if (mode === undefined && parent === undefined) {
-      return (isNaN(ele * 1)) ? document.querySelector(ele) : document.getElementById(ele);
-    } if (mode === 'all') {
-      return (parent === undefined) ? document.querySelectorAll(ele) : parent.querySelectorAll(ele);
-    } if (typeof mode === 'object' && parent === undefined) {
-      return mode.querySelector(ele);
-    }
-  }
-
-  function cE(name) { // 创建元素
-    return document.createElement(name);
-  }
-
-  function $doc(h) {
-    const doc = document.implementation.createHTMLDocument('');
-    doc.documentElement.innerHTML = h;
-    return doc;
   }
 
   function popup(text) {
@@ -1701,7 +1692,7 @@
     if (!version.upto(2, 90, 162)) {
       option = JSON.parse(JSON.stringify(option).replace('targetHp', 'targetHpDecimal').replace('targetMp', 'targetMpDecimal').replace('targetSp', 'targetSpDecimal').replace('DecimalDecimal', 'Decimal'));
       option.version = scriptVersion.ver;
-      g('version', option.version);
+      g.version = option.version;
     }
     option = JSON.parse(JSON.stringify(option).replace('DecimalDecimal', 'Decimal'));
 
@@ -2014,18 +2005,6 @@
     }
   }
 
-  function g(key, value) { // 全局变量
-    const hvAA = window.hvAA || {};
-    if (key === undefined && value === undefined) {
-      return hvAA;
-    } if (value === undefined) {
-      return hvAA[key];
-    }
-    hvAA[key] = value;
-    window.hvAA = hvAA;
-    return window.hvAA[key];
-  }
-
   function objSort(obj) { // 对象排序
     const objNew = {};
     const arr = Object.keys(obj).sort();
@@ -2036,7 +2015,7 @@
   }
 
   function addStyle() { // CSS
-    const lang = g().lang;
+    const lang = g.lang;
     if (!gE('.hvAA-LangStyle')) {
       const langStyle = gE('head').appendChild(cE('style'));
       langStyle.className = 'hvAA-LangStyle';
@@ -2122,10 +2101,6 @@
       '#pane_log{height:403px;}',
       '.tlbQRA{text-align:left;font-weight:bold;}', // 标记已检测的日志行
       '.tlbWARN{text-align:left;font-weight:bold;color:red;font-size:20pt;}', // 标记检测出异常的日志行
-      // 怪物标号用数字替代字母，目前弃用
-      // '#pane_monster{counter-reset:order;}',
-      // `${monsterStateKeys.lv}>div:nth-child(1):before{font-size:23px;font-weight:bold;text-shadow:1px 1px 2px;content:counter(order);counter-increment:order;}`,
-      // `${monsterStateKeys.lv}>div:nth-child(1)>img{display:none;}`,
     ].join('');
     globalStyle.textContent = cssContent;
     optionBox();
@@ -3068,7 +3043,6 @@
               UI.div(UI.for('debuffSkillCondition', UI.l('Debuff释放条件', 'Debuff釋放條件', 'Cast debuff spells Condition')), '{{debuffSkillCondition}}'),
               UI.div(
                 `${UI.labeled('debuffAutoFill', UI.l('补全因超过默认显示上限未显示的怪物buff', '補全因超過默認顯示上限未顯示的怪物buff', 'Auto fill hidden monster buffs due to display limitation'))}`,
-                // `<span class="debuffAutoFillInner">${UI.labeled('debuffAutoFillRec', 'DEBUG RECORD')}</span>`
               ),
               UI.div(
                 UI.for('debuffSkillTurnAlert', UI.l('超出6个debuff的默认显示上限时（例如同时使用jpx时可忽略上限）：', '超出6個debuff的默認顯示上限時（例如同時使用jpx時可忽略上限）：', 'When debuff count overflows 6 as the default maximum display count (such as ignore limitation while using jpx): ')),
@@ -3470,7 +3444,7 @@
 
       gE('.hvAATab', 'all', optionBox).forEach(tab => { tab.style.zIndex = 1; });
       optionBox.style.display = 'none';
-      gE('select[name="lang"]', optionBox).value = g().lang;
+      gE('select[name="lang"]', optionBox).value = g.lang;
       bindEvents();
     }
     updateItemWorldList(true, document);
@@ -3478,7 +3452,7 @@
     updateItemWorldListUI();
     changeSelectOptionText();
     loadOptionUIData();
-    g().optionLoaded = true;
+    g.optionLoaded = true;
     (async () => { gE('input, select', 'all', optionBox).forEach(setInputTitle); })();
 
     [...gE('select:not([name="lang"])', 'all', optionBox)].forEach(s => { s.onchange ??= () => selectFit(s); });
@@ -3523,7 +3497,7 @@
         if (/^[01]$/.test(this.value)) {
           gE('.hvAA-LangStyle').textContent += 'l01{display:inline!important;}';
         }
-        g('lang', this.value);
+        g.lang = this.value;
         changeSelectOptionText();
       };
       gE('.hvAATabmenu', optionBox).onclick = function (e) { // 标签页事件
@@ -3669,7 +3643,7 @@
           return;
         }
         creatCustomizeBox();
-        g('customizeTarget', target);
+        g.customizeTarget = target;
         updateGroup();
       };
       // 标签页-主要选项
@@ -4187,7 +4161,7 @@
       }
 
       if (!isCache) return;
-      g('option', uiOption);
+      g.option = uiOption;
       let _html;
       if (option.quickSite) {
         _html = `<tr class="hvAATh"><td>${UI.l('图标', '圖標', 'ICON')}</td><td>${UI.l('名称', '名稱', 'Name')}</td><td>${UI.l('链接', '鏈接', 'Link')}</td></tr>`;
@@ -4243,13 +4217,13 @@
   async function setInputTitle(input) { try {
     const id = input.id || input.name;
     input.title ||= `Loading Name ... [${id}]`;
-    g().titleQueue ??= [];
-    if (g().titleQueue.includes(input)) return;
-    g().titleQueue.push(input);
+    g.titleQueue ??= [];
+    if (g.titleQueue.includes(input)) return;
+    g.titleQueue.push(input);
     await sleep(100);
     applyLabelTitle(input);
-    if (g().isProcessingTitleQueue) return;
-    g().isProcessingTitleQueue = true;
+    if (g.isProcessingTitleQueue) return;
+    g.isProcessingTitleQueue = true;
     processTitleQueue();
   } catch (err) { console.error(err); }}
 
@@ -4266,13 +4240,13 @@
     const box = gE('#hvAABox');
     await until(() => max-- <= (box.style.display !== 'none' ? 9 : 0), 1000);
     await until(() => {
-      let input = g().titleQueue.shift();
+      let input = g.titleQueue.shift();
       if (!input) return;
       input.title = getInputFriendlyName(input);
       applyLabelTitle(input);
-      return !g().titleQueue.length;
+      return !g.titleQueue.length;
     });
-    g().isProcessingTitleQueue = false;
+    g.isProcessingTitleQueue = false;
   } catch (err) { console.error(err); }}
 
   function setCustomizeInput(input, name, value, isLastCustomizeInput) {
@@ -4281,7 +4255,7 @@
     input.name = name;
     input.value = value ?? input.value;
     customizeInputAutoFit(input, isLastCustomizeInput);
-    if(g().optionLoaded) setInputTitle(input);
+    if(g.optionLoaded) setInputTitle(input);
   }
 
   function customizeInputAutoFit(input, isLastCustomizeInput) {
@@ -4482,7 +4456,7 @@
       }
     };
     gE('.groupAdd', customizeBox).onclick = function () {
-      const target = g().customizeTarget;
+      const target = g.customizeTarget;
       const selects = gE('select', 'all', customizeBox);
       let groupChoose = selects[0].value;
       let group;
@@ -4530,7 +4504,7 @@
   }
 
   function updateGroup(keepPosition) {
-    const target = g().customizeTarget;
+    const target = g.customizeTarget;
     const group = gE('.customizeGroup', 'all', target);
     const customizeBox = gE('.customizeBox');
     if (group.length + 1 === gE('select[name="groupChoose"]>option', 'all', customizeBox).length) {
@@ -4695,46 +4669,46 @@
     })();
     returnValueGetter.prototype.func ??= {
       ar() {
-        return g().battle.roundType === 'ar' ? 1 : 0;
+        return g.battle.roundType === 'ar' ? 1 : 0;
       },
       gr() {
-        return g().battle.roundType === 'gr' ? 1 : 0;
+        return g.battle.roundType === 'gr' ? 1 : 0;
       },
       tw() {
-        return g().battle.roundType === 'tw' ? 1 : 0;
+        return g.battle.roundType === 'tw' ? 1 : 0;
       },
       rb() {
-        return g().battle.roundType === 'rb' ? 1 : 0;
+        return g.battle.roundType === 'rb' ? 1 : 0;
       },
       iw() {
-        return g().battle.roundType === 'iw' ? 1 : 0;
+        return g.battle.roundType === 'iw' ? 1 : 0;
       },
       ba() {
-        return g().battle.roundType === 'ba' ? 1 : 0;
+        return g.battle.roundType === 'ba' ? 1 : 0;
       },
       isRoundType(t) {
-        return g().battle.roundType === t ? 1 : 0;
+        return g.battle.roundType === t ? 1 : 0;
       },
       phys() {
-        return g().attackStatus * 1 === 0 ? 1 : 0;
+        return g.attackStatus * 1 === 0 ? 1 : 0;
       },
       fire() {
-        return g().attackStatus * 1 === 1 ? 1 : 0;
+        return g.attackStatus * 1 === 1 ? 1 : 0;
       },
       cold() {
-        return g().attackStatus * 1 === 2 ? 1 : 0;
+        return g.attackStatus * 1 === 2 ? 1 : 0;
       },
       elec() {
-        return g().attackStatus * 1 === 3 ? 1 : 0;
+        return g.attackStatus * 1 === 3 ? 1 : 0;
       },
       wind() {
-        return g().attackStatus * 1 === 4 ? 1 : 0;
+        return g.attackStatus * 1 === 4 ? 1 : 0;
       },
       divi() {
-        return g().attackStatus * 1 === 5 ? 1 : 0;
+        return g.attackStatus * 1 === 5 ? 1 : 0;
       },
       forb() {
-        return g().attackStatus * 1 === 6 ? 1 : 0;
+        return g.attackStatus * 1 === 6 ? 1 : 0;
       },
       attackStatusCur() {
         return getCurrentAttackStatus() * 1;
@@ -4762,19 +4736,19 @@
       },
 
       nt() {
-        return g().fightingStyle * 1 === 1 ? 1 : 0;
+        return g.fightingStyle * 1 === 1 ? 1 : 0;
       },
       onehanded() {
-        return g().fightingStyle * 1 === 2 ? 1 : 0;
+        return g.fightingStyle * 1 === 2 ? 1 : 0;
       },
       twohanded() {
-        return g().fightingStyle * 1 === 3 ? 1 : 0;
+        return g.fightingStyle * 1 === 3 ? 1 : 0;
       },
       dw() {
-        return g().fightingStyle * 1 === 4 ? 1 : 0;
+        return g.fightingStyle * 1 === 4 ? 1 : 0;
       },
       staff() {
-        return g().fightingStyle * 1 === 5 ? 1 : 0;
+        return g.fightingStyle * 1 === 5 ? 1 : 0;
       },
       isCd(id) { // is cool down done
         return isOn(id) ? 1 : 0;
@@ -4789,16 +4763,16 @@
         return getBuffStackFromImg(getBuff(imgArray2img(...img)));
       },
       hpDecimal() {
-        return g().hp / 100;
+        return g.hp / 100;
       },
       mpDecimal() {
-        return g().mp / 100;
+        return g.mp / 100;
       },
       spDecimal() {
-        return g().sp / 100;
+        return g.sp / 100;
       },
       ocDecimal() {
-        return g().oc / 100;
+        return g.oc / 100;
       },
     };
     let currentGroup = null;
@@ -4811,10 +4785,10 @@
       },
       weighted(...params) {
         const funcName = params.shift();
-        const battle = g().battle;
+        const battle = g.battle;
         let result;
-        if (!g().inSkillExtraWeight) {
-          const origin = JSON.parse(JSON.stringify(g().battle.monsterStatus));
+        if (!g.inSkillExtraWeight) {
+          const origin = JSON.parse(JSON.stringify(g.battle.monsterStatus));
           battle.monsterStatus.forEach(t => { t.finWeight += resolveSkillExtraWeight(t); });
           battle.monsterStatus = battle.monsterStatus.sortBy(x => x.finWeight);
           result = func[funcName](...params);
@@ -4841,7 +4815,7 @@
         return switchMinMax(param, t => t.finWeight);
       },
       targetRank(param) {
-        return switchMinMax(param, t => Object.entries(g().battle.monsterStatus).find(([k, v]) => v.order === t.order)[0] * 1);
+        return switchMinMax(param, t => Object.entries(g.battle.monsterStatus).find(([k, v]) => v.order === t.order)[0] * 1);
       },
       targetName(param) {
         param ??= targetGetter();
@@ -4928,7 +4902,7 @@
         const numArgs = args.map(arg => arg === '' ? -1 : parseInt(arg));
         if (numArgs.some(isNaN)) throw new Error(`Error args for targetGroup, args: ${args}.`);
         const currentTarget = targetGetter();
-        const targets = g().battle.monsterStatus;
+        const targets = g.battle.monsterStatus;
         switch(groupMode) {
           case 'a': // all targets (as default if currentGroup is undefined)
             currentGroup = targets;
@@ -4989,7 +4963,7 @@
       if ([ ...modes.map(n => `a${n}`), ...modes.map(n => `ag${n}`)].includes(param)) {
         return switchMinMax(param.replace(/^a/, ''), defaultResult, true, targets);
       }
-      if (targets === undefined) targets = g().battle.monsterStatus; // 只处理 undefined，null 是空 group
+      if (targets === undefined) targets = g.battle.monsterStatus; // 只处理 undefined，null 是空 group
       if (!targets) return 0;
       if (!skipAliveCheck) targets = targets.filter(t => !t.isDead);
 
@@ -5061,27 +5035,26 @@
       const paramList = str.replace(/[^\d](\.)/g, match => match.replace('.', '_')).split('_');
       let result, isInData;
       const option = getOption();
-      const battle = g().battle ?? {};
+      const battle = g.battle ?? {};
+      const sourceGetters = [
+        key => battle[key],
+        key => getValue('battle', true)?.[key],
+        key => g[key],
+        key => getValue(key, undefined, true),
+        key => option[key],
+        key => func[key](...paramList)
+      ];
+      const nullOrUndefined = r => r === undefined || r === null;
       while (paramList.length) {
         const key = paramList.shift();
-        if (typeof result === 'undefined') { // 获取顶层数据
+        if (nullOrUndefined(result)) { // 获取顶层数据
           result = battle[key];
-          if (typeof result === 'undefined' || result === null) {
-            result = getValue('battle', true) ? getValue('battle', true)[key] : undefined;
-          }
-          if (typeof result === 'undefined' || result === null) {
-            result = g(key);
-          }
-          if (typeof result === 'undefined' || result === null) {
-            result = getValue(key, undefined, true);
-          }
-          if (typeof result === 'undefined' || result === null) {
-            result = option[key];
-          }
-          if ((typeof result === 'undefined' || result === null) && func[key]) {
-            result = func[key](...paramList);
-          }
-          if (typeof result === 'undefined' || result === null) break;
+          if (nullOrUndefined(result)) result = getValue('battle', true)?.[key];
+          if (nullOrUndefined(result)) result = g[key];
+          if (nullOrUndefined(result)) result = getValue(key, undefined, true);
+          if (nullOrUndefined(result)) result = option[key];
+          if (nullOrUndefined(result)) result = func[key] ? func[key](...paramList) : undefined;
+          if (nullOrUndefined(result)) break;
           isInData = true; // 存在顶层数据
           continue;
         }
@@ -5158,7 +5131,7 @@
 
   function checkCondition(params, targets = undefined) {
     let i, j, target, paramResults = {};
-    targets ??= [g().battle.monsterStatus[0]];
+    targets ??= [g.battle.monsterStatus[0]];
     if (!params || !Object.keys(params).length) {
       return targets[0];
     }
@@ -5201,7 +5174,7 @@
   function stepIn() {
     setValue('stepIn', true);
     if (getValue('disabled')) {
-      g('timeNow', time(0));
+      g.timeNow = time(0);
       pauseChange();
     }
   }
@@ -5243,7 +5216,7 @@
 
   async function autoSwitchIsekai() {
     const option = getOption();
-    await sleep(option.isekaiTime * _1s - (time(0) - g().idleStart));
+    await sleep(option.isekaiTime * _1s - (time(0) - g.idleStart));
     await waitPause();
     $async.logSwitch(arguments);
     if (!option.isekai) return; // 若不启用自动跳转
@@ -5264,7 +5237,7 @@
   }
 
   function isInBattle(doc) {
-    return gE('#riddlecounter, #battle_main', doc ?? document);
+    return gE('#riddlecounter, #battle_main', doc);
   }
 
   async function restorePersonaAndEquipSet() {
@@ -5305,11 +5278,11 @@
       const optionBox = gE('#hvAABox');
       const ui = gE('.encounterUI');
       if (optionBox.style.display === 'none' && !ui) return;
-      const idleStart = g().idleStart;
+      const idleStart = g.idleStart;
       const now = time(0);
       const durations = {
-        onIdle: { name: UI.l('闲置延时', '閒置延時', 'Idle Delay'), selector: '.onIdleRemain', start: g().beforeIdle, wait: option.onIdleDelay },
-        encounter: { name: UI.l('遭遇延时', '遭遇延時', 'Encounter Delay'), selector: '.encounterDelayRemain', start: g().encounterStart ?? now, wait: option.encounterDelay },
+        onIdle: { name: UI.l('闲置延时', '閒置延時', 'Idle Delay'), selector: '.onIdleRemain', start: g.beforeIdle, wait: option.onIdleDelay },
+        encounter: { name: UI.l('遭遇延时', '遭遇延時', 'Encounter Delay'), selector: '.encounterDelayRemain', start: g.encounterStart ?? now, wait: option.encounterDelay },
         arena: { name: UI.l('闲置竞技场', '閒置競技場', 'Idle Arena'), selector: '.arenaRemain', start: idleStart ?? now, wait: option.idleArenaTime },
         switch: { name: UI.l('闲置异世界', '閒置異世界', 'Idle Isekai'), selector: '.isekaiSwitchRemain', start: idleStart ?? now, wait: option.isekaiTime },
         switchCD: { name: UI.l('异世界CD', '異世界CD', 'Isekai CD'), selector: '.isekaiCDRemain', start: (getValue('lastSwitch') ?? 0), wait: option.isekaiCD },
@@ -5328,7 +5301,7 @@
 
   async function asyncOnIdle() { try {
     let option = getOption(true);
-    const beforeIdle = g('beforeIdle', time(0));
+    const beforeIdle = g.beforeIdle = time(0);
     displayCDRemain();
     $async.logSwitch(arguments);
     await updateEncounter(false);
@@ -5342,7 +5315,7 @@
       }, 250);
       await sleep(option.onIdleDelay * _1s);
     }
-    const idleStart = g('idleStart', time(0));
+    const idleStart = g.idleStart = time(0);
     await waitPause();
     displayUntil(() => `[TIMER]${UI.byLang('人物套装检查', '人物套裝檢查', 'Persona/EquipSet check')}`);
     if (onIsekaiEncounter) {
@@ -5464,11 +5437,12 @@
   function setEncounter(encounter) {
     encounter = getLocalEncounter(encounter);
     setLocal('encounter', encounter, true);
-    return g('encounter', setValue('encounter', encounter));
+    g.encounter = setValue('encounter', encounter);
+    return g.encounter;
   }
 
   function getEncounter() {
-    const current = g().encounter ?? [];
+    const current = g.encounter ?? [];
     let last = 0;
     current.forEach(e=> {
       if (e.encountered > last) last = e.encountered;
@@ -5638,7 +5612,7 @@
         if (!perk?.length) {
           perk = undefined;
         }
-        if (_server.isekai || !g().option?.restoreStamina) {
+        if (_server.isekai || !g.option?.restoreStamina) {
           return perk;
         }
         let currentID, html;
@@ -5714,7 +5688,7 @@
     const doc = $doc(html);
     if (isInBattle(doc)) {
       $async.logSwitch(arguments);
-      g('items', null);
+      g.items = null;
       return;
     }
     for (let each of gE('.nosel.itemlist>tbody', doc).children) {
@@ -5723,8 +5697,8 @@
       const count = each.children[1].innerText;
       items[id] = [name, count];
     }
-    g('items', items);
-    g('slotItems', Array.from(gE('[id*="item_"]', 'all', gE('#item_slots', doc))).map(slot => slot.id.match(/item_(\d+)/)[1]));
+    g.items = items;
+    g.slotItems = Array.from(gE('[id*="item_"]', 'all', gE('#item_slots', doc))).map(slot => slot.id.match(/item_(\d+)/)[1]);
     $async.logSwitch(arguments);
   } catch (err) { console.error(err); }}
 
@@ -5752,9 +5726,9 @@
       },
     }[extra];
     if (!option.checkSupply) return true;
-    const items = g().items;
+    const items = g.items;
     if (!items) return false;
-    const slotItems = g().slotItems;
+    const slotItems = g.slotItems;
     const slotedCheckList = option.checkSupplySlotted ? option.isCheckSlotted : undefined;
     const thresholdList = extra?.checkItem ?? option.checkItem;
     const checkList = extra?.isCheck ?? option.isCheck;
@@ -6043,7 +6017,7 @@
     const result = { checked: stmNRChecked ? (current - cost >= (low ?? option.staminaLow)) ? 1 : 0 : -1, stmNR: stmNR };
     $async.logSwitch(arguments);
     if (result.checked === 1 || _server.isekai || !option.restoreStamina) return result;
-    const items = g().items;
+    const items = g.items;
     $async.logSwitch(arguments);
     if (!items) return result;
     const recoverItems = { 11401: true, 11402: false }
@@ -6148,14 +6122,14 @@
 
   async function switchEquipSet(persona, equipSet, personas, equipSets) { try {
     $async.logSwitch(arguments);
-    if (personas !== undefined) g('personas', personas);
-    personas = g().personas;
-    if (equipSets !== undefined) g('equipSets', equipSets);
-    equipSets = g().equipSets;
+    if (personas !== undefined) g.personas = personas;
+    personas = g.personas;
+    if (equipSets !== undefined) g.equipSets = equipSets;
+    equipSets = g.equipSets;
     if ([personas, equipSets].includes(undefined)) {
       const { e, p, s } = getValue('itemWorldDatas', true) ?? {};
-      g('personas', personas ??= p);
-      g('equipSets', equipSets ??= s);
+      g.personas = personas ??= p;
+      g.equipSets = equipSets ??= s;
     }
 
     let changed = await onChangeEquipSet('lastPersona', persona, personas, id => [`?s=Character&ss=ch`, `persona_set=${id}`], true);
@@ -6216,7 +6190,7 @@
     }
     $async.logSwitchStrict('updateEncounter', true);
     // persistent in battle
-    if (isInBattle(await $ajax.insert(window.location.href.replace(/\/isekai/, '')))) {
+    if (isInBattle($doc(await $ajax.insert(window.location.href.replace(/\/isekai/, ''))))) {
       $async.logSwitchStrict('updateEncounter', false);
       return;
     }
@@ -6230,7 +6204,7 @@
       $async.logSwitchStrict('updateEncounter', false);
       return;
     }
-    g('encounterStart', time(0));
+    g.encounterStart = time(0);
     await sleep(option.encounterDelay * _1s);
     setEncounter(getEncounter()); // 离开页面前保存
     if (!window.top.location.href.endsWith(`?s=Battle`)) {
@@ -6510,13 +6484,13 @@
   } catch (err) { console.error(err); }}
 
   function setBattleSkillParam(id, params) {
-    g().battle.skill = { id, [id]: 1, ...params };
+    g.battle.skill = { id, [id]: 1, ...params };
   }
 
   // 战斗中//
   async function onBattleRound() { // 主程序
-    if (!gE('#battle_main') || g().battleOngoing) return;
-    g().battleOngoing = true;
+    if (!gE('#battle_main') || g.battleOngoing) return;
+    g.battleOngoing = true;
     lastResponsive = time(0);
     const option = getOption();
     await until(
@@ -6537,7 +6511,7 @@
     }
 
     if (!battle || !battle.roundAll) { // 修复因多个页面/世界同时读写造成缓存数据异常的情况
-      battle = JSON.parse(JSON.stringify(g().battle));
+      battle = JSON.parse(JSON.stringify(g.battle));
       battle.monsterStatus = battle.monsterStatus.map(ms => {
         return {
           order: ms.order,
@@ -6549,15 +6523,15 @@
     $debug.log('onBattle', `\n`, battle);
     //人物状态
     if (gE('#vbh')) {
-      g('hp', gE('#vbh>div>img').offsetWidth / 496 * 100);
-      g('mp', gE('#vbm>div>img').offsetWidth / 207 * 100);
-      g('sp', gE('#vbs>div>img').offsetWidth / 207 * 100);
-      g('oc', gE('#vcp>div>div') ? (gE('#vcp>div>div', 'all').length - gE('#vcp>div>div#vcr', 'all').length) * 25 : 0);
+      g.hp = gE('#vbh>div>img').offsetWidth / 496 * 100;
+      g.mp = gE('#vbm>div>img').offsetWidth / 207 * 100;
+      g.sp = gE('#vbs>div>img').offsetWidth / 207 * 100;
+      g.oc = gE('#vcp>div>div') ? (gE('#vcp>div>div', 'all').length - gE('#vcp>div>div#vcr', 'all').length) * 25 : 0;
     } else {
-      g('hp', gE('#dvbh>div>img').offsetWidth / 418 * 100);
-      g('mp', gE('#dvbm>div>img').offsetWidth / 418 * 100);
-      g('sp', gE('#dvbs>div>img').offsetWidth / 418 * 100);
-      g('oc', gE('#dvrc').childNodes[0].textContent * 1);
+      g.hp = gE('#dvbh>div>img').offsetWidth / 418 * 100;
+      g.mp = gE('#dvbm>div>img').offsetWidth / 418 * 100;
+      g.sp = gE('#dvbs>div>img').offsetWidth / 418 * 100;
+      g.oc = gE('#dvrc').childNodes[0].textContent * 1;
     }
 
     // 战斗战况
@@ -6706,20 +6680,20 @@
     const currentActions = (battle.actions ?? currentTurn);
     const display = getBattleTypeDisplay();
     gE('.hvAALog').innerHTML = [
-      `${UI.l('攻击模式', '攻擊模式', 'Attack Mode')}: ${UI.attackStatusType[g().attackStatus]}`,
+      `${UI.l('攻击模式', '攻擊模式', 'Attack Mode')}: ${UI.attackStatusType[g.attackStatus]}`,
       `${(_server.isekai || onIsekaiEncounter) ? UI.l('异世界', '異世界', 'Isekai') : UI.l('恒定世界', '恆定世界', 'Persistent')}`, // 战役模式显示
       `${display.full}`, // 战役模式显示
       `R${battle.roundNow}/${battle.roundAll}:T${currentTurn}<span style="font-size: 9pt!important">(+${currentActions-currentTurn}*0tic)</span>`,
-      `<div style="font-size: 9pt!important">TPS: ${g().runSpeed}<br>${g().runTimeGap??''}</div>`,
-      `${UI.l('敌人', '敵人', 'Monsters')}: ${g().monsterAlive}/${g().monsterAll}`,
+      `<div style="font-size: 9pt!important">TPS: ${g.runSpeed}<br>${g.runTimeGap??''}</div>`,
+      `${UI.l('敌人', '敵人', 'Monsters')}: ${g.monsterAlive}/${g.monsterAll}`,
     ].join(`<br>`).replaceAll(`</div><br>`, `</div>`);
     if (!battle.roundAll) {
       pauseChange();
       $debug.shiftLog();
     }
-    document.title = `${currentActions % 2 ? option.frequencySign1 ?? '' : option.frequencySign2 ?? ''}${display.title}:R${battle.roundNow}/${battle.roundAll}:T${currentTurn}@${g().runSpeed}tps,${g().monsterAlive}/${g().monsterAll}`;
+    document.title = `${currentActions % 2 ? option.frequencySign1 ?? '' : option.frequencySign2 ?? ''}${display.title}:R${battle.roundNow}/${battle.roundAll}:T${currentTurn}@${g.runSpeed}tps,${g.monsterAlive}/${g.monsterAll}`;
     setValue('battle', battle);
-    if (!battle.monsterStatus || battle.monsterStatus.length !== g().monsterAll) {
+    if (!battle.monsterStatus || battle.monsterStatus.length !== g.monsterAll) {
       fixMonsterStatus();
     }
     countMonsterHP();
@@ -6729,7 +6703,7 @@
       document.title = titlePause();
       const pauseChange = gE('#hvAABox2>button.pauseChange');
       pauseChange ? pauseChange.innerHTML = UI.button.continue() : undefined;
-      g().battleOngoing = false;
+      g.battleOngoing = false;
       return;
     }
     killBug(); // 解决 HentaiVerse 可能出现的 bug
@@ -6772,7 +6746,7 @@
         if (!taskList[name]()) return;
         setValue('battle', battle);
         onStepInDone();
-        g().battleOngoing = false;
+        g.battleOngoing = false;
         return true;
       }
       for (const name of range(order).map(i => order[i])) {
@@ -6782,7 +6756,7 @@
       for (let name in taskList) {
         if (onTask(name)) return;
       }
-      g().battleOngoing = false;
+      g.battleOngoing = false;
     }
   }
 
@@ -6858,7 +6832,7 @@
 * @returns
 */
   function getRangeCenter(target, rangeSize, isWeaponAttack, excludeWeight, forceUseIndex) {
-    let msTemp = JSON.parse(JSON.stringify(g().battle.monsterStatus));
+    let msTemp = JSON.parse(JSON.stringify(g.battle.monsterStatus));
     msTemp.sortBy(x => x.order);
     let minWeight = Number.MAX_SAFE_INTEGER;
     // 0. 范围大于等于全体时，直接释放全体
@@ -6948,7 +6922,7 @@
 
   function setExitBattleTimeout(alarm) {
     lastResponsive = Infinity;
-    g('battleExit', true);
+    g.battleExit = true;
     setAlarm(alarm);
     const option = getOption();
     if (alarm === 'Defeat' && (!option.autoSkipDefeated || !checkCondition(option.exitCondition))) {
@@ -6989,54 +6963,93 @@
         if (battleUnresponsive[t].time > waited) continue;
         isBreak ||= battleUnresponsive[t].method();
       }
-      if (g().battleExit || isBreak) break;
+      if (g.battleExit || isBreak) break;
       await sleep(min - waited);
     }
   }
 
   function reloader() {
-    let obj, a, cost;
-    const eventStart = cE('a');
-    eventStart.id = 'eventStart';
-    eventStart.onclick = function () {
+    let obj;
+    unsafeWindow.api_call = function (b, a, d) {
       const option = getOption();
-      a = unsafeWindow.info;
-      if (option.recordUsage) {
-        obj = {
-          mode: a.mode,
-        };
-        if (a.mode === 'items') {
-          obj.itemName = gE(`#pane_item div[id^="ikey"][onclick*="skill('${a.skill}')"]`).textContent;
-          obj.item = gE(`#pane_item div[id^="ikey"][onclick*="skill('${a.skill}')"]`).getAttribute('onmouseover').match(/(\d+)/)[1];
-        } else if (a.mode === 'magic') {
-          obj.magic = a.skill;
-          obj.magicName = gE(a.skill).textContent;
-          cost = gE(a.skill).getAttribute('onmouseover').match(/\('.*', '.*', '.*', (\d+), (\d+), \d+\)/);
-          obj.mp = cost[1] * 1;
-          obj.oc = cost[2] * 1;
-        }
+      let delay = option.delay * 1;
+      const delay2 = option.delay2 * 1;
+      unsafeWindow.info = a;
+      unsafeWindow.send = new Date();
+      b.open('POST', `${unsafeWindow.MAIN_URL}json`);
+      b.setRequestHeader('Content-Type', 'application/json');
+      b.withCredentials = true;
+      b.onreadystatechange = d;
+      b.onload = function () {
+        unsafeWindow.response = new Date() - unsafeWindow.send;
+        updateMonsterEffects();
+        onEventEnd();
+      };
+      onEventStart();
+      if (a.mode !== 'magic' || a.skill < 200) {
+        delay = delay2;
+      }
+      if (delay <= 0) {
+        b.send(JSON.stringify(a));
+      } else {
+        (async () => {
+          await sleep(delay * (Math.random() * 50 + 50) / 100, true);
+          b.send(JSON.stringify(a));
+        })();
       }
     };
-    gE('body').appendChild(eventStart);
+    unsafeWindow.api_response = function (b) {
+      if (b.readyState !== 4) {
+        return false;
+      }
+      if (b.status !== 200) {
+        window.location.href = window.location.search;
+        return false;
+      }
+      const a = JSON.parse(b.responseText);
+      if (a.login !== undefined) {
+        top.location.href = login_url;
+        return false;
+      }
+      if (a.error || a.reload) {
+        window.location.href = window.location.search;
+      }
+      return a;
+    };
+    
+    function onEventStart () {
+      const option = getOption();
+      if (!option.recordUsage) return;
+      const [mode, skill] = [unsafeWindow.info.mode, unsafeWindow.info.skill];
+      obj = { mode };
+      if (mode === 'items') {
+        obj.itemName = gE(`#pane_item div[id^="ikey"][onclick*="skill('${skill}')"]`).textContent;
+        obj.item = gE(`#pane_item div[id^="ikey"][onclick*="skill('${skill}')"]`).getAttribute('onmouseover').match(/(\d+)/)[1];
+      } else if (mode === 'magic') {
+        obj.magic = skill;
+        obj.magicName = gE(skill).textContent;
+        const cost = gE(skill).getAttribute('onmouseover').match(/\('.*', '.*', '.*', (\d+), (\d+), \d+\)/);
+        obj.mp = cost[1] * 1;
+        obj.oc = cost[2] * 1;
+      }
+    };
 
-    const eventEnd = cE('a');
-    eventEnd.id = 'eventEnd';
-    eventEnd.onclick = function () {
+    function onEventEnd () {
       const option = getOption();
       const timeNow = time(0);
-      const timeDelta = timeNow - g().timeNow;
+      const timeDelta = timeNow - g.timeNow;
       const timeDelay = Math.max(0, option.delay - unsafeWindow.response);
-      g('runSpeed', (_1s / timeDelta).toFixed(2));
-      g('runTimeGap', `(${Math.max(0,timeDelta-unsafeWindow.response-timeDelay)}+network:${unsafeWindow.response}${timeDelay ? `+delay:${timeDelay}`: ''}ms)`);
-      g('timeNow', timeNow);
+      g.runSpeed = (_1s / timeDelta).toFixed(2);
+      g.runTimeGap = `(${Math.max(0,timeDelta-unsafeWindow.response-timeDelay)}+network:${unsafeWindow.response}${timeDelay ? `+delay:${timeDelay}`: ''}ms)`;
+      g.timeNow = timeNow;
       const monsterDead = gE('img[src*="nbardead"]', 'all').length;
-      g('monsterAlive', g().monsterAll - monsterDead);
+      g.monsterAlive = g.monsterAll - monsterDead;
       const bossDead = gE(`${monsterStateKeys.obj}[style*="opacity"] ${monsterStateKeys.lv}[style*="background"]`, 'all').length;
-      g('bossAlive', g().bossAll - bossDead);
+      g.bossAlive = g.bossAll - bossDead;
       const battleLog = gE('#textlog>tbody>tr>td', 'all');
 
       let stats = getValue('stats', true) || {};
-      const battle = g().battle;
+      const battle = g.battle;
       if (Object.keys(stats.tokens ?? {}).map(k => battle[k] === stats.tokens?.[k]).some(s => !s)) {
         if (option.recordUsage) recordUsage2(true);
         if (option.dropMonitor) dropMonitor(battleLog, true);
@@ -7046,7 +7059,7 @@
         obj.log = battleLog;
         recordUsage(obj);
       }
-      if (g().monsterAlive && !gE('#btcp')) {
+      if (g.monsterAlive && !gE('#btcp')) {
         onBattleRound();
         return;
       }
@@ -7062,8 +7075,8 @@
         $async.logSwitch(arguments);
         switch (true) {
           case gE('#btcp')?.innerHTML.includes("You have run away!"): return setExitBattleTimeout('Flee');
-          case g().monsterAlive > 0: return setExitBattleTimeout('Defeat');
-          case g().battle.roundNow === g().battle.roundAll: return setExitBattleTimeout('Victory');
+          case g.monsterAlive > 0: return setExitBattleTimeout('Defeat');
+          case g.battle.roundNow === g.battle.roundAll: return setExitBattleTimeout('Victory');
         }
         if (option.NewRoundWaitTime) { // Next Round
           await sleep(option.NewRoundWaitTime * _1s, true);
@@ -7114,85 +7127,10 @@
         $async.logSwitch(arguments);
       } catch (err) { console.error(err); }}
     };
-    gE('body').appendChild(eventEnd);
-
-    const option = getOption();
-    window.sessionStorage.delay = option.delay;
-    window.sessionStorage.delay2 = option.delay2;
-    const fakeApiCall = cE('script');
-    fakeApiCall.textContent = `api_call = ${function (b, a, d) {
-      let delay = window.sessionStorage.delay * 1;
-      const delay2 = window.sessionStorage.delay2 * 1;
-      window.info = a;
-      unsafeWindow = typeof unsafeWindow === 'undefined' ? window : unsafeWindow;
-      unsafeWindow.send = new Date();
-      b.open('POST', `${unsafeWindow.MAIN_URL}json`);
-      b.setRequestHeader('Content-Type', 'application/json');
-      b.withCredentials = true;
-      b.onreadystatechange = d;
-      b.onload = function () {
-        unsafeWindow.response = new Date() - unsafeWindow.send;
-        updateMonsterEffects();
-        document.getElementById('eventEnd').click();
-      };
-      document.getElementById('eventStart').click();
-      if (a.mode !== 'magic' || a.skill < 200) {
-        delay = delay2;
-      }
-      if (delay <= 0) {
-        b.send(JSON.stringify(a));
-      } else {
-        (async () => {
-          await sleep(delay * (Math.random() * 50 + 50) / 100, true);
-          b.send(JSON.stringify(a));
-        })();
-      }
-    }.toString()};
-// bool
-let isDisplay = ${option.isDisplayAllDebuff};
-let debuffAutoFill = ${option.debuffAutoFill?.toString() ?? 'undefined'};
-// let debuffAutoFillRec = ${option.debuffAutoFillRec?.toString() ?? 'undefined'};
-let onIsekaiEncounter = ${onIsekaiEncounter ?? 'undefined'};
-// object
-let dataFlags = ${JSON.stringify(dataFlags)};
-let _server = ${JSON.stringify(_server)};
-let monsterStateKeys = ${JSON.stringify(monsterStateKeys)};
-let ability = ${JSON.stringify(ability)};
-let monsterBuffSkillLib = ${JSON.stringify(monsterBuffSkillLib)};
-let hvVersion = Version(...${JSON.stringify(hvVersion.ver.split('.'))});
-// funciton
-${[updateMonsterEffects, fixMonsterStatus,
-getMonsterID, getMonster, getMonster, getBuff,
-onRestoredBattleServer, getValue, setValue, delValue,
-getLocal, setLocal, delLocal,
-gE, cE, Version, sleep].map(f => f.toString()).join(';')};
-`;
-    gE('head').appendChild(fakeApiCall);
-    const fakeApiResponse = cE('script');
-    fakeApiResponse.textContent = `api_response = ${function (b) {
-      if (b.readyState !== 4) {
-        return false;
-      }
-      if (b.status !== 200) {
-        window.location.href = window.location.search;
-        return false;
-      }
-      const a = JSON.parse(b.responseText);
-      if (a.login !== undefined) {
-        top.window.location.href = login_url;
-        return false;
-      }
-      if (a.error || a.reload) {
-        window.location.href = window.location.search;
-      }
-      return a;
-    }.toString()}`;
-    gE('head').appendChild(fakeApiResponse);
   }
 
   function updateMonsterEffects(isNewTurn = true) {
-    const option = typeof GM_getValue === 'undefined' ? {} : getOption();
-    if (!(typeof GM_getValue === 'undefined' ? debuffAutoFill : option.debuffAutoFill)) return;
+    if (!(getOption().debuffAutoFill)) return;
     let battle = getValue('battle', true);
     if (!battle?.monsterStatus) return;
     if (battle.monsterStatus.map(m => getMonster(getMonsterID(m))).filter(mon => mon === null).length) {
@@ -7412,61 +7350,9 @@ gE, cE, Version, sleep].map(f => f.toString()).join(';')};
       });
       let effects = Object.keys(effectObj);
 
-      // DEBUG ---------------------
+      // DEBUG LEGACY ---------------------
       localStorage.removeItem(`hvAA-${_server.name}_rec`);
-
-//       if (typeof GM_getValue === 'undefined' ? debuffAutoFillRec : option.debuffAutoFillRec) {
-//         // 统计持续时间及熟练度相关数据，以便进行核验和测试
-//         onRestoredBattleServer('rec', () => {
-//           const rec = JSON.parse(localStorage.getItem(`hvAA-${_server.name}_rec`) ?? `{}`);
-//           for (const effect of effects) {
-//             const turns = effectObj[effect].turns * 1;
-//             if (isNaN(turns)) continue;
-//             const skill = getBuffSkill(effect);
-//             if (!skill) continue;
-
-//             rec[effect] ??= { t:0 };
-//             // 获取新增时间（忽略非新增的情况）
-//             let [delta, added] = [turns - rec[effect].t, rec[effect].d];
-//             if (delta > 0) {
-//               added = rec[effect].t ? delta : added;
-//             }
-//             // 获取基础、熟练度计算倍率、熟练度，设置及初始化主要数据
-//             let [duration, base, profRatio, prof, channelingRatio] = getDuration(skill, channeling);
-//             if (profRatio === 4) rec[effect].f = prof; // 比例刚好是4时的熟练度（推测是公式中的熟练度上限）
-//             rec[effect].b = base; // 基础持续时间
-//             rec[effect].c = profRatio; // 公式理论计算值
-//             rec[effect].ch = rec[effect].t && added > 0 ? channelingRatio : rec[effect].ch; // 引导倍率
-//             rec[effect].t = turns; // 当前剩余持续时间
-//             rec[effect].d = added; // 新增时间
-//             rec[effect].m = Math.max(rec[effect].m ?? 0, added); // 历史最大新增时间
-//             rec[effect].a ??= [0, 0]; // 推测熟练度倍率 [ 历史最大值, 按照‘缺失引导信息导致变成1.5倍’的修正值(除以1.5)  ]
-//             rec[effect].r ??= [0, 0, 0]; // 实际倍率 [ 0-4 应该正常, 4-6推测缺失引导信息, 6+ 异常]
-//             rec.error ??= []; // 实际倍率异常时的相关信息
-//             // 计算推测倍率
-//             if (base <= added) {
-//               const a = Math.max(base, added)/base/channelingRatio
-//               rec[effect].a[0] = Math.max(a, rec[effect].a[0]).toFixed(4) * 1;
-//               rec[effect].a[1] = Math.max(a / 1.5, rec[effect].a[1]).toFixed(4) * 1;
-//             }
-//             // 检查实际ratio
-//             const ratio = Math.max(base, added)/duration;
-//             if (ratio > 1.5) {
-//               const e = `${effect}: ${Math.max(base, added).toFixed(4)}/(${base.toFixed(4)}*${channelingRatio.toFixed(4)}*${profRatio.toFixed(4)})=${ratio.toFixed(4)}`
-//               if (!rec.error.includes(e)) rec.error.push(e);
-//             }
-//             if (ratio > 1.5 && ratio > rec[effect].r[2]) {
-//               rec[effect].r[2] = ratio.toFixed(4) * 1;
-//             } else if (ratio <= 1.5 && ratio > 1 && ratio > rec[effect].r[1]) {
-//               rec[effect].r[1] = ratio.toFixed(4) * 1;
-//             } else if (ratio <= 1 && ratio > rec[effect].r[0]) {
-//               rec[effect].r[0] = ratio.toFixed(4) * 1;
-//             }
-//             localStorage.setItem(`hvAA-${_server.name}_rec`, JSON.stringify(rec));
-//           }
-//         });
-//       }
-      // DEBUG END ---------------------
+      // DEBUG LEGACY---------------------
 
       let savedEffects = activeMonster.effectObj ??= {};
       if (effects.length <= 5) for (const effect in savedEffects) delete savedEffects[effect];
@@ -7552,7 +7438,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       battle = { proficiency: same ? battle?.proficiency ?? prof : prof };
     }
     if (!battle) {
-      battle = JSON.parse(JSON.stringify(g().battle ?? {}));
+      battle = JSON.parse(JSON.stringify(g.battle ?? {}));
       battle.monsterStatus?.sortBy(x => x.order);
     };
     [battle.token, battle.postoken] = [token, arena.postoken];
@@ -7561,12 +7447,12 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
     if (window.location.hash !== '') {
       goto();
     }
-    g('monsterAll', gE(monsterStateKeys.obj, 'all').length);
+    g.monsterAll = gE(monsterStateKeys.obj, 'all').length;
     const monsterDead = gE('img[src*="nbardead"]', 'all').length;
-    g('monsterAlive', g().monsterAll - monsterDead);
-    g('bossAll', gE(`${monsterStateKeys.lv}[style^="background"]`, 'all').length);
+    g.monsterAlive = g.monsterAll - monsterDead;
+    g.bossAll = gE(`${monsterStateKeys.lv}[style^="background"]`, 'all').length;
     const bossDead = gE(`${monsterStateKeys.obj}[style*="opacity"] ${monsterStateKeys.lv}[style*="background"]`, 'all').length;
-    g('bossAlive', g().bossAll - bossDead);
+    g.bossAlive = g.bossAll - bossDead;
     const types = {
       ar: {
         reg: /^Initializing arena challenge/,
@@ -7613,7 +7499,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       const monsterLvs = Array.from(gE(`${monsterStateKeys.lv}>div>div`, 'all')).map(monster => monster.innerText);
       const monsterDB = getValue('monsterDB', true) ?? {};
       const monsterMID = getValue('monsterMID', true) ?? {};
-      for (let i = battleLog.length - 2; i > battleLog.length - 2 - g().monsterAll; i--) {
+      for (let i = battleLog.length - 2; i > battleLog.length - 2 - g.monsterAll; i--) {
         let hp = battleLog[i].textContent.match(/HP=(\d+)$/)[1] * 1;
         if (isNaN(hp)) {
           hp = getHPFromMonsterDB(monsterDB, monsterNames[order], monsterLvs[order]) ?? monsterStatus[monsterStatus.length - 1].hp;
@@ -7727,7 +7613,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
           continue;
         }
         known[skill.img] = skill;
-        if (skill.elem && skill.elem !== g().attackStatus) {
+        if (skill.elem && skill.elem !== g.attackStatus) {
           weight += option.weight?.[`${j}1`] ?? 0;
           continue;
         }
@@ -7749,7 +7635,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
 
     // 先存一次，用于下面的额外权重公式
     battle.monsterStatus = monsterStatus.sortBy(x => x.finWeight);
-    g('battle', battle);
+    g.battle = battle;
     const extraWeightFormula = option.extraWeightFormula;
     // 额外权重公式
     monsterStatus.forEach(t => {
@@ -7757,14 +7643,14 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       t.finWeight += isNaN(+extra) ? 0 : extra;
     });
     battle.monsterStatus = monsterStatus.sortBy(x => x.finWeight);
-    g('battle', battle);
+    g.battle = battle;
   }
 
   function resolveSkillExtraWeight(target) {
-    if (g().inSkillExtraWeight) return 0;
-    g('inSkillExtraWeight', true);
-    const result = resolveRPNFormula(g().option.skillExtraWeight, target);
-    g('inSkillExtraWeight', false);
+    if (g.inSkillExtraWeight) return 0;
+    g.inSkillExtraWeight = true;
+    const result = resolveRPNFormula(g.option.skillExtraWeight, target);
+    g.inSkillExtraWeight = false;
     return result;
   }
 
@@ -7798,7 +7684,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
     if (!option.scrollRoundType) {
       return false;
     }
-    if (!option.scrollRoundType[g().battle.roundType]) {
+    if (!option.scrollRoundType[g.battle.roundType]) {
       return false;
     }
     setBattleSkillParam('scroll');
@@ -8048,7 +7934,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
     ];
 
     if (option.infusionDefaultOnly) {
-      const attackStatus = g().attackStatus;
+      const attackStatus = g.attackStatus;
       if (attackStatus === 0) return false;
       return onUse(attackStatus);
     }
@@ -8119,7 +8005,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       return false;
     }
     const skillOrder = splitOrders(option.skillOrderValue, getDefaultOrder('skillOrder'));
-    const fightStyle = g().fightingStyle; // 1二天 2单手 3双手 4双持 5法杖
+    const fightStyle = g.fightingStyle; // 1二天 2单手 3双手 4双持 5法杖
     const skillLib = {
       OFC: 1111,
       FRD: 1101,
@@ -8137,7 +8023,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       2303: { range: 5 },
       2403: { oc: 3, range: 5 },
     }
-    const monsterStatus = g().battle.monsterStatus;
+    const monsterStatus = g.battle.monsterStatus;
     for (let i in skillOrder) {
       let skill = skillOrder[i];
       if (!skill || !option.skill[skill]) {
@@ -8147,7 +8033,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       if (!isOn(id)) {
         continue;
       }
-      if (g().oc < (skillInfos[id]?.oc ?? 2)) {
+      if (g.oc < (skillInfos[id]?.oc ?? 2)) {
         continue;
       }
       const skillOTOS = getValue('skillOTOS', true) ?? {};
@@ -8170,7 +8056,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
 
   function useDeSkill() { // 自动施法DEBUFF技能
     const option = getOption();
-    const monsterStatus = g().battle.monsterStatus;
+    const monsterStatus = g.battle.monsterStatus;
     setBattleSkillParam('debuff');
     if (!option.debuffSkillSwitch || !checkCondition(option.debuffSkillCondition, monsterStatus)) { // 总开关是否开启
       return false;
@@ -8253,7 +8139,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       return 0;
     };
     let debuffByIndex = isAll && option[`debuffSkill${buff}AllByIndex`];
-    let monsterStatus = g().battle.monsterStatus;
+    let monsterStatus = g.battle.monsterStatus;
     if (debuffByIndex) {
       monsterStatus = JSON.parse(JSON.stringify(monsterStatus)).sortBy(x => x.order);
     }
@@ -8304,18 +8190,18 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
   }
 
   function getCurrentAttackStatus() {
-    let current = g().attackStatusCurrent;
+    let current = g.attackStatusCurrent;
     if (current === undefined) { // first stack of condition
       attack(true);
-      current = g().attackStatusCurrent
-      g('attackStatusCurrent', undefined);
+      current = g.attackStatusCurrent
+      g.attackStatusCurrent = undefined;
     }
     return current;
   }
 
   function attack(selectStatusOnly = false) { // 自动打怪
     const option = getOption();
-    const monsters = g().battle.monsterStatus;
+    const monsters = g.battle.monsterStatus;
     if (option.attackStatusSwitch) {
       let tier = option.attackStatusSwitchByTier ? 3 : undefined;
       const order = splitOrders(option.attackStatusOrderValue, getDefaultOrder('attackStatusOrder'));
@@ -8323,7 +8209,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
         for (const status of order) {
           if (!status && tier) continue;
           if (!option.attackStatusSwitch[status]) continue;
-          g('attackStatusCurrent', status);
+          g.attackStatusCurrent = status;
           setBattleSkillParam('switch', { tier });
           if (!checkCondition(option[`attackStatusSwitchCondition${status}`], monsters)) continue;
           if (onAttack(status, selectStatusOnly, tier)) return true;
@@ -8331,8 +8217,8 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
         if (tier === undefined) break;
       }
     }
-    g('attackStatusCurrent', g().attackStatus);
-    return onAttack(g().attackStatus, selectStatusOnly);
+    g.attackStatusCurrent = g.attackStatus;
+    return onAttack(g.attackStatus, selectStatusOnly);
   }
 
   function onAttack(attackStatus, selectStatusOnly = false, tier = undefined) {
@@ -8368,7 +8254,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
     }
 
     const option = getOption();
-    const battle = g().battle;
+    const battle = g.battle;
     const monsters = battle.monsterStatus;
     let target = monsters[0];
 
@@ -8379,7 +8265,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
     // 使用物理普通攻击，跳过Offensive Magic
     // 否则按照属性攻击模式释放Spell > Offensive Magic
     let skillRange = 1, skill = 0, attackTier = 0;
-    const fightingStyle = g().fightingStyle*1;
+    const fightingStyle = g.fightingStyle*1;
     // 1. physical
     if (attackStatus === 0) {
       skillRange = fightingStyle === 1 ? 3 : 1;
@@ -8471,7 +8357,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
 
   function displayMonsterWeight() {
 
-    const status = g().battle.monsterStatus.filter(m => !m.isDead);
+    const status = g.battle.monsterStatus.filter(m => !m.isDead);
 
     const weights = [];
     status.forEach(s => {
@@ -8596,7 +8482,7 @@ text-align: left;
         break;
       }
     }
-    const battle = g().battle;
+    const battle = g.battle;
     if (option.recordEach && (different || battle.roundNow === battle.roundAll)) {
       const old = getValue('dropOld', true) || [];
       drop.__name = getValue('battleCode', true).name;
@@ -8617,7 +8503,7 @@ text-align: left;
   }
 
   function formatMonsterNames(t) {
-    const monsterNames = g().battle.monsterStatus.map(m => gE(`.btm3>div>div`, getMonster(getMonsterID(m))).innerText);
+    const monsterNames = g.battle.monsterStatus.map(m => gE(`.btm3>div>div`, getMonster(getMonsterID(m))).innerText);
     [...monsterNames].sortBy(x => x.length).reverse().forEach(name => {
       t = t.replaceAll(new RegExp(escapeRegExp(name), 'g'), match => `MONSTER_${((monsterNames.findIndex(x => x === match)*1+1)||11)-1}`);
     });
@@ -8629,7 +8515,7 @@ text-align: left;
     if (!filter) return;
     let stats = getValue('stats', true) || {};
     let statsStatic = getValue('statsStatic', true) || {};
-    const battle = g().battle;
+    const battle = g.battle;
     (() => {
       stats.self ??= { _startTime: time(3) };
       stats.tokens ??= { token: battle.token, postoken: battle.postoken };
@@ -8672,7 +8558,7 @@ text-align: left;
       stats.self._actions += battle.actions + ((battle.actions >= stats.self._prevBattleActions) ? - stats.self._prevBattleActions : 1);
       stats.self._prevBattleActions = battle.actions;
     }
-    if (g().monsterAlive === 0) {
+    if (g.monsterAlive === 0) {
       if (filter.round) stats.self._round++;
       if (filter.battle && (battle.roundNow === battle.roundAll)) stats.self._battle++;
     }
@@ -8926,10 +8812,10 @@ text-align: left;
     if (!filter) return;
     const stats = getValue('stats', true);
     if (!different) {
-      if (filter.monster) stats.self._monster += g().monsterAll;
-      if (filter.boss) stats.self._boss += g().bossAll;
+      if (filter.monster) stats.self._monster += g.monsterAll;
+      if (filter.boss) stats.self._boss += g.bossAll;
     }
-    const battle = g().battle;
+    const battle = g.battle;
     if (option.recordEach && (different || battle.roundNow === battle.roundAll)) {
       const old = getValue('statsOld', true) || [];
       stats.__name = getValue('battleCode', true)?.name ?? stats.__name;
