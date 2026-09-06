@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.196
+// @version      2.91.197
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -599,7 +599,7 @@
   const [$RPN, $async, $debug, $ajax] = [initRPN(), initAsync(), initDebug(), window.top.$ajax ??= unsafeWindow.top.$ajax ??= initAjax()];
 
   // 初始化结束，开始实际流程
-  for (let check of [checkIsHV, checkIsWindowTop]) {
+  for (let check of [checkOption, checkIsHV, checkIsWindowTop]) {
     if (!check()) return;
   }
   if (getOption().keepAliveByAudio) createKeepAliveAudio();
@@ -1228,7 +1228,6 @@
 
   function checkIsWindowTop() {
     const currentUrl = window.self.location.href;
-    checkOption();
     if (!isFrame) {
       if (!getOption().riddlePopup || gE('#riddlecounter')) { // 未开启使用弹窗或仍处于答题
         return true;
