@@ -1063,7 +1063,7 @@
           const start = time(0);
           let remain;
           await until(() => {
-            remain = duration - time(0) + start;
+            remain = duration - time(0) + start + _1s; // add _1s to avoid time inaccuracies
             document.title = `[M]${timeStr(remain)}`;
             try { if (!isNaN(blocked)) {
               body.innerText = body.innerText.replace(blockTip, (...args) => args[0].replace(args[1], timeStr(remain)));
