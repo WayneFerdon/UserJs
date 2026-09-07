@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.202
+// @version      2.91.203
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1066,7 +1066,7 @@
             remain = duration - time(0) + start;
             document.title = `[M]${timeStr(remain)}`;
             try { if (!isNaN(blocked)) {
-              body.innerText = body.innerText.replace(blockTip, (...args) => args[0].replace(args[1], remain));
+              body.innerText = body.innerText.replace(blockTip, (...args) => args[0].replace(args[1], timeStr(remain)));
             } } catch (err) { console.log(err) };
             return remain <= 0;
           });
@@ -7036,22 +7036,22 @@
       }
     };
     unsafeWindow.api_response = function (b) {
-      if (b.readyState !== 4) {
-        return false;
-      }
+      if (b.readyState !== 4) return false;
       if (b.status !== 200) {
         window.location.href = window.location.search;
         return false;
       }
-      const a = JSON.parse(b.responseText);
-      if (a.login !== undefined) {
-        top.location.href = login_url;
-        return false;
+      try {
+        const a = JSON.parse(b.responseText);
+        if (a.login !== undefined) {
+          top.location.href = unsafeWindow.login_url;
+          return false;
+        }
+        if (a.error || a.reload) window.location.href = window.location.search;
+        return a;
+      } catch (err) {
+        console.error(b.responseText)
       }
-      if (a.error || a.reload) {
-        window.location.href = window.location.search;
-      }
-      return a;
     };
 
     function onEventStart () {
