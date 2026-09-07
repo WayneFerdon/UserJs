@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.199
+// @version      2.91.200
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -686,7 +686,7 @@
               throw new Error(`Unclosed ${quote} string`);
             }
             tokens.push(expression.slice(i, j));
-            i = j + 1;
+            i = j;
             lastTokenWasOperatorOrLeftParen = false;
             continue;
           }
@@ -5060,7 +5060,6 @@
         if (debug) console.log([str], r);
         return r;
       }
-
       // 旧版本/强制使用func
       if (str.match(/^_/) && !str.match(/\./)) {
         const arr = str.split('_');
@@ -5074,14 +5073,6 @@
       let result, isInData;
       const option = getOption();
       const battle = g.battle ?? {};
-      const sourceGetters = [
-        key => battle[key],
-        key => getValue('battle', true)?.[key],
-        key => g[key],
-        key => getValue(key, undefined, true),
-        key => option[key],
-        key => func[key](...paramList)
-      ];
       const nullOrUndefined = r => r === undefined || r === null;
       while (paramList.length) {
         const key = paramList.shift();
@@ -5104,7 +5095,13 @@
       }
 
       result ??= isInData ? 0 : result; // 存在顶层数据时默认为0
-      return onResult(isNaN(result * 1) ? result ?? str : (result * 1));
+      if (!isNaN(+result)) return onResult(result * 1);
+      if (result !== undefined) return onResult(result);
+      const matchInner = str.match(/^"(.*)"$|^'(.*)'$/);
+      let inner;
+      if (inner = matchInner?.[1]) return onResult(inner.replaceAll('\\"', '"'));
+      if (inner = matchInner?.[2]) return onResult(inner.replaceAll("\\'", "'"));
+      return onResult(str);
     }
     getter.paramResultsGetter = paramResultsGetter;
     return getter;
@@ -5142,7 +5139,7 @@
         case '6':
           return '!=';
       }
-    }).replace(/===/g, '==').replace(/(?<![=<>!~])=(?!=)/g, '==')
+    }).replace(/===/g, '==').replace(/!==/g, '!=').replace(/(?<![=<>!~])=(?!=)/g, '==')
       .replace(/≥|≤|≠|~=|<>/g, (match) => {
       switch (match) {
         case '≥':
