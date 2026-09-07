@@ -6,14 +6,14 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.203
+// @version      2.91.204
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
 // @icon         https://github.com/dodying/UserJs/raw/master/Logo.png
 // @include      http*://hentaiverse.org/*
 // @include      http*://alt.hentaiverse.org/*
-// @include      http*://e-hentai.org/news.php?encounter
+// @include      http*://e-hentai.org
 // @exclude     http*://*hentaiverse.org/*/y/*
 // @exclude     http*://*hentaiverse.org/*/z/*
 // @connect        hentaiverse.org
@@ -1420,7 +1420,7 @@
     g.timeNow = time(0);
     g.runSpeed = 1;
     newRound(false);
-    updateMonsterEffects(false);
+    onPrevBattleLog(false);
     await onBattleRound();
     const battle = g.battle;
     if (option.recordEach) {
@@ -7019,7 +7019,7 @@
       b.onreadystatechange = d;
       b.onload = function () {
         unsafeWindow.response = new Date() - unsafeWindow.send;
-        updateMonsterEffects();
+        onPrevBattleLog();
         onEventEnd();
       };
       onEventStart();
@@ -7166,16 +7166,8 @@
     };
   }
 
-  function updateMonsterEffects(isNewTurn = true) {
-    if (!(getOption().debuffAutoFill)) return;
-    let battle = getValue('battle', true);
-    if (!battle?.monsterStatus) return;
-    if (battle.monsterStatus.map(m => getMonster(getMonsterID(m))).filter(mon => mon === null).length) {
-      fixMonsterStatus();
-      battle = getValue('battle', true);
-    }
-
-    let regExp = updateMonsterEffects.prototype.regExp ??= {
+  function onPrevBattleLog(isNewTurn = true) {
+    let regExp = onPrevBattleLog.prototype.regExp ??= {
       locationQueries: /\w+=\w+/g,
       playerInfo: /(\w+) Lv\.(\d+)/,
       staminaInfo: /Stamina:\s(\d+)/,
@@ -7252,72 +7244,20 @@
       crystal: /(?:(\d+)x )?(Crystal of \w+)/,
     };
 
-    function getDuration(skill, channeling) {
-      let [base, profRatio, prof] = [skill.duration, 1, 0];
-      if (typeof base === 'number') {
-        base = base * 1;
-      } else if (base !== 'permanent') { for (const ab in base) {
-        base = base[ab][ability[ab] ?? 0];
-        break;
-      } }
-      if (skill.proficiency) {
-        const [ptype, plow, phigh] = skill.proficiency;
-        prof = proficiency[ptype];
-        profRatio = Math.max(1, Math.min(4, (prof - plow) / (phigh - plow) * 4).toFixed(6) * 1);
-      }
-      const channelingRatio = skill.channling ? channeling : 1;
-      const duration = typeof base === 'number' ? Math.round(base * channelingRatio * profRatio) : base;
-      return [duration, base, profRatio, prof, channelingRatio];
-    }
-
-    function getEffectChanges(turnLog) {
-      let effectsAdded = turnLog.matchAll(regExp.effectGain);
-      let effectsRemoved = [...turnLog.matchAll(regExp.effectExpired), ...turnLog.matchAll(regExp.effectWear)];
-      let asleepRemoved = turnLog.matchAll(regExp.effectWearAsleep);
-      let confusedRemoved = turnLog.matchAll(regExp.effectWearConfused);
-      let effectChanges = {};
-
-      for (const match of effectsAdded) (effectChanges[match[1]] ??= { add: [], remove: [] }).add.push(match[2]);
-      for (const match of effectsRemoved) (effectChanges[match[2]] ??= { add: [], remove: [] }).remove.push(match[1]);
-      for (const match of asleepRemoved) (effectChanges[match[1]] ??= { add: [], remove: [] }).remove.push('Asleep');
-      for (const match of confusedRemoved) (effectChanges[match[1]] ??= { add: [], remove: [] }).remove.push('Confused');
-
-      return effectChanges;
-    }
-
-    function applyHiddenDelta(savedEffects, effectObj, delta) {
-      if (!savedEffects) return;
-
-      let elementEffects = ['Searing Skin', 'Freezing Limbs', 'Turbulent Air', 'Deep Burns', 'Breached Defense', 'Blunted Attack'];
-      let effects = Object.keys(effectObj);
-      let elementCount = effects.filter(effect => elementEffects.includes(effect)).length;
-
-      for (const savedEffect in savedEffects) {
-        if (effects.includes(savedEffect)) continue;
-
-        if (
-          (elementCount < 3 && elementEffects.includes(savedEffect)) ||
-          savedEffect === 'Coalesced Mana'
-        ) {
-          delete savedEffects[savedEffect];
-          continue;
-        }
-
-        if (!delta || delta <= 0) continue;
-        let savedTurns = +savedEffects[savedEffect]?.turns;
-        if (isNaN(savedTurns)) continue;
-
-        if (savedTurns - delta < 0 && elementEffects.includes(savedEffect)) {
-          delete savedEffects[savedEffect];
-          continue;
-        }
-        savedEffects[savedEffect].turns = Math.max(0, savedTurns - delta);
-      }
-    }
-
+    let battle = getValue('battle', true);
     const turnLog = gE('#textlog').innerHTML.match(/([^]+?)((<tr><td class="tls">)|(<\/tbody>))/)[0];
-    isNewTurn &&= turnLog !== battle.turnLog;
-    if (turnLog.match(regExp.battleTypeLog)) return; // skip if is new round
+
+    // cache last turn channeling
+    const channeling = battle.channeling || 1;
+    battle.channeling = getBuff('channeling') ? 1.5 : 1;
+
+    if (isNewTurn &&= turnLog !== battle.turnLog) {
+      battle.turnLog = turnLog;
+      battle.time = new Date().getTime();
+    }
+    setValue('battle', battle);
+
+    if (turnLog.match(regExp.battleTypeLog)) return; // skip if is new round since no new proficiency or monster effect
 
     // update proficiency
     const proficiency = battle.proficiency ?? {};
@@ -7335,16 +7275,22 @@
       'supportive magic' : 'Supportive',
       'two-handed weapon': 'Two-handed',
     }
-    for (const prof of turnLog.match(regExp.proficiencies) ?? []) {
-      const [_, points, type] = prof.match(regExp.proficiency);
-      proficiency[ptypes[type]] += points * 1;
-      proficiency[ptypes[type]] = proficiency[ptypes[type]].toFixed(3) * 1;
+    if (isNewTurn) {
+      for (const prof of turnLog.match(regExp.proficiencies) ?? []) {
+        const [_, points, type] = prof.match(regExp.proficiency);
+        proficiency[ptypes[type]] += points * 1;
+        proficiency[ptypes[type]] = proficiency[ptypes[type]].toFixed(3) * 1;
+      }
+      setValue('proficiency', proficiency, undefined, true);
     }
-    setValue('proficiency', proficiency, undefined, true);
 
-    // cache last turn channeling
-    const channeling = battle.channeling || 1;
-    battle.channeling = getBuff('channeling') ? 1.5 : 1;
+    if (!(getOption().debuffAutoFill)) return;
+    // update monster effects
+    if (!battle?.monsterStatus) return;
+    if (battle.monsterStatus.map(m => getMonster(getMonsterID(m))).filter(mon => mon === null).length) {
+      fixMonsterStatus();
+      battle = getValue('battle', true);
+    }
 
     let effectChanges = getEffectChanges(turnLog);
 
@@ -7443,10 +7389,71 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
         monster_btm6.appendChild(img);
       }
     }
-    if (!isNewTurn) return;
-    battle.turnLog = turnLog;
-    battle.time = new Date().getTime();
-    setValue('battle', battle);
+
+    if (isNewTurn) setValue('battle', battle); // update monsterEffects
+
+    function getDuration(skill, channeling) {
+      let [base, profRatio, prof] = [skill.duration, 1, 0];
+      if (typeof base === 'number') {
+        base = base * 1;
+      } else if (base !== 'permanent') { for (const ab in base) {
+        base = base[ab][ability[ab] ?? 0];
+        break;
+      } }
+      if (skill.proficiency) {
+        const [ptype, plow, phigh] = skill.proficiency;
+        prof = proficiency[ptype];
+        profRatio = Math.max(1, Math.min(4, (prof - plow) / (phigh - plow) * 4).toFixed(6) * 1);
+      }
+      const channelingRatio = skill.channling ? channeling : 1;
+      const duration = typeof base === 'number' ? Math.round(base * channelingRatio * profRatio) : base;
+      return [duration, base, profRatio, prof, channelingRatio];
+    }
+
+    function getEffectChanges(turnLog) {
+      let effectsAdded = turnLog.matchAll(regExp.effectGain);
+      let effectsRemoved = [...turnLog.matchAll(regExp.effectExpired), ...turnLog.matchAll(regExp.effectWear)];
+      let asleepRemoved = turnLog.matchAll(regExp.effectWearAsleep);
+      let confusedRemoved = turnLog.matchAll(regExp.effectWearConfused);
+      let effectChanges = {};
+
+      for (const match of effectsAdded) (effectChanges[match[1]] ??= { add: [], remove: [] }).add.push(match[2]);
+      for (const match of effectsRemoved) (effectChanges[match[2]] ??= { add: [], remove: [] }).remove.push(match[1]);
+      for (const match of asleepRemoved) (effectChanges[match[1]] ??= { add: [], remove: [] }).remove.push('Asleep');
+      for (const match of confusedRemoved) (effectChanges[match[1]] ??= { add: [], remove: [] }).remove.push('Confused');
+
+      return effectChanges;
+    }
+
+    function applyHiddenDelta(savedEffects, effectObj, delta) {
+      if (!savedEffects) return;
+
+      let elementEffects = ['Searing Skin', 'Freezing Limbs', 'Turbulent Air', 'Deep Burns', 'Breached Defense', 'Blunted Attack'];
+      let effects = Object.keys(effectObj);
+      let elementCount = effects.filter(effect => elementEffects.includes(effect)).length;
+
+      for (const savedEffect in savedEffects) {
+        if (effects.includes(savedEffect)) continue;
+
+        if (
+          (elementCount < 3 && elementEffects.includes(savedEffect)) ||
+          savedEffect === 'Coalesced Mana'
+        ) {
+          delete savedEffects[savedEffect];
+          continue;
+        }
+
+        if (!delta || delta <= 0) continue;
+        let savedTurns = +savedEffects[savedEffect]?.turns;
+        if (isNaN(savedTurns)) continue;
+
+        if (savedTurns - delta < 0 && elementEffects.includes(savedEffect)) {
+          delete savedEffects[savedEffect];
+          continue;
+        }
+        savedEffects[savedEffect].turns = Math.max(0, savedTurns - delta);
+      }
+    }
   }
 
   async function loadUnsafeWindowBattle() { try {
