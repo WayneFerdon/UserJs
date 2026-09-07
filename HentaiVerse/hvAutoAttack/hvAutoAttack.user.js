@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.201
+// @version      2.91.202
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1560,7 +1560,7 @@
   } catch (err) { console.error(err); }}
 
   async function waitPause(isForBattle, ms) { try {
-    return await until(() => !getValue('disabled', undefined, isForBattle), ms, isForBattle);
+    return await until(() => !getValue('disabled', undefined, isForBattle), ms ?? (0.25 * _1s), isForBattle);
   } catch (err) { console.error(err); }}
 
   function setTimeoutOrExecute(resolve, ms) {
@@ -2033,7 +2033,6 @@
       return;
     }
     const itemMap = {
-      0: ['disabled'],
       1: ['battle', 'battleCode'],
     }
     for (let item of itemMap[key]) {
@@ -5193,7 +5192,7 @@
         gE('.pauseChange').innerHTML = UI.button.pause();
       }
       document.title = gE('#navbar') ? 'The Hentaiverse' : getValue('disabled', undefined, true);
-      delValue(0, undefined, true);
+      delValue('disabled', undefined, true);
       if (!gE('#navbar')) { // in battle
         onBattleRound();
       }
@@ -5483,7 +5482,10 @@
       if (e.encountered > last) last = e.encountered;
       if (e.time > last) last = e.time;
     });
-    let encounter = ((time(0) - last) >= (_1h * 0.5)) ? getLocal('encounter', true, true) : current;
+    const now = time(0);
+    const read = (now - (g.lastEncounterUpdate??0)) >= _1s;
+    let encounter = (((now - last) >= (_1h * 0.5)) && read) ? getLocal('encounter', true, true) : current;
+    if (read) g.lastEncounterUpdate = now;
     if (!encounter || !last) {
       encounter = getValue('encounter', true) ?? [];
       setEncounter(encounter);
