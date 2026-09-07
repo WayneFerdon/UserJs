@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.204
+// @version      2.91.205
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -8700,10 +8700,15 @@ text-align: left;
         if (match = type.match()) return type.recorder() || true;
       }
 
-      function onhandle(type, sub, point) { stats[type][sub] = (stats[type][sub]??0) + point * 1; }
+      function onhandle(type, sub, point) { try {
+        stats[type][sub] = (stats[type][sub]??0) + point * 1;
+      } catch (err) {
+        console.error(type, sub, err);
+        throw err;
+      } }
 
-      function handleDamage(type, damage) { onhandle('damage', type.toLowerCase(), damage); }
-      function handleRestore(magic, point) { onhandle('restore', magic, point); }
+      function handleDamage(type, damage) { if (filter.damage) onhandle('damage', type.toLowerCase(), damage); }
+      function handleRestore(magic, point) { if (filter.restore) onhandle('restore', magic, point); }
 
       function handleHurt(type, damage) {
         type = type.toLowerCase();
@@ -8751,13 +8756,12 @@ text-align: left;
           },
           {
             match: () => text.match(/^MONSTER_\d is eviscerated for (\d+) Slashing damage, putting it out of its misery/),
-            recorder: () => filter.damage && handleDamage('Bleeding Wound', match[1])
+            recorder: () => handleDamage('Bleeding Wound', match[1])
           },
           {
             match: () => text.match(/^(Refreshment|Replenishment|Regeneration|Regen) restores (\d+) points of (health|magic|spirit)\.$/)
             || text.match(/^You are (healed) for (\d+) (Health) Points\.$/),
             recorder: () => {
-              if (!filter.restore) return;
               const ids = {
                 Cure: 311,
                 ['Full-Cure']: 313,
@@ -8773,8 +8777,8 @@ text-align: left;
             match: () => text.match(/^You drain (\d+) points of (health|magic|spirit) from MONSTER_\d\.$/),
             recorder: () => {
               let [type, damage] = [`drain_${match[2]}`, match[1]];
-              if (filter.restore) handleRestore(type, damage);
-              if (filter.damage && match[2] === 'health') handleDamage('211', damage);
+              handleRestore(type, damage);
+              if (match[2] === 'health') handleDamage('211', damage);
             }
           },
           {
@@ -8787,11 +8791,11 @@ text-align: left;
           },
           {
             match: () => text.match(/^MONSTER_\d casts .*, but it is absorbed. You gain (\d+) points of (mana)\.$/),
-            recorder: () => filter.restore && handleRestore(`absorbed_to_${match[2]}`, match[1])
+            recorder: () => handleRestore(`absorbed_to_${match[2]}`, match[1])
           },
           {
             match: () => text.match(/^Recovered (\d+) points of (health|magic|spirit)\.$/),
-            recorder: () => filter.restore && handleRestore(mode ?? `Recovered_${match[2]}`, match[1])
+            recorder: () => handleRestore(mode ?? `Recovered_${match[2]}`, match[1])
           },
           {
             match: () => text.match(/^You (?:(?: |parry|and|block|resist|evade|partially)+)+ the attack( from MONSTER_\d)?\.$/),
