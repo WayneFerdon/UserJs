@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.206
+// @version      2.91.207
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -8560,47 +8560,39 @@ text-align: left;
     let stats = getValue('stats', true) || {};
     let statsStatic = getValue('statsStatic', true) || {};
     const battle = g.battle;
+    const init = (filterKey, defaultValue, keys) => {
+      let key, data = stats;
+      keys ??= filterKey;
+      keys = keys.split('.');
+      while (true) {
+        key = keys.shift();
+        if (!keys.length) break;
+        data = data[key];
+      }
+      data[key] ??= filter[filterKey] ? defaultValue : undefined;
+    };
+    const initSelf = key => init(key.replace(/_/, ''), 0, `self.${key}`);
+    const initObject = key => init(key, {});
+    const initHurt = key => init(`hurt${key}`, 0, `hurt._${key}`);
     (() => {
       stats.self ??= { _startTime: time(3) };
       stats.tokens ??= { token: battle.token, postoken: battle.postoken };
-      stats.self._turn = filter.turn ? stats.self._turn ?? 0 : undefined;
-      stats.self._prevBattleTurn = filter.turn ? stats.self._prevBattleTurn ?? 0 : undefined;
-      stats.self._actions = filter.turn ? stats.self._actions ?? 0 : undefined;
-      stats.self._prevBattleActions = filter.turn ? stats.self._prevBattleActions ?? 0 : undefined;
-      stats.self._round = filter.round ? stats.self._round ?? 0 : undefined;
-      stats.self._battle = filter.battle ? stats.self._battle ?? 0 : undefined;
-      stats.self._monster = filter.monster ? stats.self._monster ?? 0 : undefined;
-      stats.self._boss = filter.boss ? stats.self._boss ?? 0 : undefined;
-      stats.self.evade = filter.evade ? stats.self.evade ?? 0 : undefined;
-      stats.self.miss = filter.miss ? stats.self.miss ?? 0 : undefined;
-      stats.self.focus = filter.focus ? stats.self.focus ?? 0 : undefined;
-      stats.self.mp = filter.mp ? stats.self.mp ?? 0 : undefined;
-      stats.self.oc = filter.oc ? stats.self.oc ?? 0 : undefined;
-      stats.restore = filter.restore ? stats.restore ?? {} : undefined; // 回复量
-      stats.items = filter.items ? stats.items ?? {} : undefined; // 物品使用次数
-      stats.magic = filter.magic ? stats.magic ?? {} : undefined; // 技能使用次数
-      stats.damage = filter.damage ? stats.damage ?? {} : undefined; // 技能攻击造成的伤害
-      stats.proficiency = filter.proficiency ? stats.proficiency ?? {} : undefined; // 熟练度
-      stats.hurt = filter.hurt ? stats.hurt ?? {} : undefined; // 受到攻击造成的伤害
+      ['_turn', '_prevBattleTurn', '_actions', '_prevBattleActions', '_round', '_battle', '_monster', '_boss', 'evade', 'miss', 'focus', 'mp', 'oc'].forEach(initSelf);
+      // 回复量, 物品使用次数, 技能使用次数, 技能攻击造成的伤害, 熟练度, 受到攻击造成的伤害, 
+      ['restore', 'items', 'magic', 'damage', 'proficiency', 'hurt'].forEach(initObject);
     })();
     if (filter.hurt) {
-      stats.hurt._avg = filter.hurtavg ? stats.hurt._avg ?? 0 : undefined;
-      stats.hurt._count = filter.hurtcount ? stats.hurt._count ?? 0 : undefined;
-      stats.hurt._total = filter.hurttotal ? stats.hurt._total ?? 0 : undefined;
-      stats.hurt._mavg = filter.hurtmavg ? stats.hurt._mavg ?? 0 : undefined;
-      stats.hurt._mcount = filter.hurtmcount ? stats.hurt._mcount ?? 0 : undefined;
-      stats.hurt._mtotal = filter.hurtmtotal ? stats.hurt._mtotal ?? 0 : undefined;
-      stats.hurt._pavg = filter.hurtpavg ? stats.hurt._pavg ?? 0 : undefined;
-      stats.hurt._pcount = filter.hurtpcount ? stats.hurt._pcount ?? 0 : undefined;
-      stats.hurt._ptotal = filter.hurtptotal ? stats.hurt._ptotal ?? 0 : undefined;
+      ['avg', 'count', 'total', 'mavg', 'mcount', 'mtotal', 'pavg', 'pcount', 'ptotal'].forEach(initHurt);
     }
     if (filter.turn) {
-      battle.turn ??= 0;
-      battle.actions ??= battle.turn;
+      const currentLog = gE('#textlog').innerHTML.match(/([^]+?)((<tr><td class="tls">)|(<\/tbody>))/)[0];
+      const zeroturn = currentLog.match(/>You use\s*(?:\w* (?:Gem|Draught|Potion|Elixir|Drink|Candy|Infusion|Scroll|Vase|Bubble)).*?</);
+      const initturn = currentLog.match(/^Initializing .* \.\.\./);
+      battle.turn ??= (zeroturn || initturn) ? 0 : 1;
+      battle.actions ??= battle.turn ?? (initturn ? 0 : 1);
       stats.self._turn += battle.turn + ((battle.turn >= stats.self._prevBattleTurn) ? - stats.self._prevBattleTurn : 1);
-      stats.self._prevBattleTurn = battle.turn;
       stats.self._actions += battle.actions + ((battle.actions >= stats.self._prevBattleActions) ? - stats.self._prevBattleActions : 1);
-      stats.self._prevBattleActions = battle.actions;
+      [stats.self._prevBattleTurn, stats.self._prevBattleActions] = [battle.turn, battle.actions];
     }
     if (g.monsterAlive === 0) {
       if (filter.round) stats.self._round++;
