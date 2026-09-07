@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.200
+// @version      2.91.201
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1560,7 +1560,7 @@
   } catch (err) { console.error(err); }}
 
   async function waitPause(isForBattle, ms) { try {
-    return await until(() => !getValue('disabled'), ms, isForBattle);
+    return await until(() => !getValue('disabled', undefined, isForBattle), ms, isForBattle);
   } catch (err) { console.error(err); }}
 
   function setTimeoutOrExecute(resolve, ms) {
@@ -1812,7 +1812,7 @@
     }
     const button = parent.appendChild(cE('button'));
     button.innerHTML = UI.button.pause();
-    if (getValue('disabled')) { // 如果禁用
+    if (getValue('disabled', undefined, true)) { // 如果禁用
       document.title = titlePause();
       button.innerHTML = UI.button.continue();
     }
@@ -2037,7 +2037,7 @@
       1: ['battle', 'battleCode'],
     }
     for (let item of itemMap[key]) {
-      delValue(item, portable);
+      delValue(item, portable, forBattle);
     }
   }
 
@@ -5188,12 +5188,12 @@
   }
 
   function pauseChange() { // 暂停状态更改
-    if (getValue('disabled')) {
+    if (getValue('disabled', undefined, true)) {
       if (gE('.pauseChange')) {
         gE('.pauseChange').innerHTML = UI.button.pause();
       }
-      document.title = gE('#navbar') ? 'The Hentaiverse' : getValue('disabled');
-      delValue(0);
+      document.title = gE('#navbar') ? 'The Hentaiverse' : getValue('disabled', undefined, true);
+      delValue(0, undefined, true);
       if (!gE('#navbar')) { // in battle
         onBattleRound();
       }
@@ -5201,24 +5201,24 @@
       if (gE('.pauseChange')) {
         gE('.pauseChange').innerHTML = UI.button.continue();
       }
-      setValue('disabled', document.title);
+      setValue('disabled', document.title, undefined, true);
       document.title = titlePause();
     }
   }
 
   function stepIn() {
-    setValue('stepIn', true);
-    if (getValue('disabled')) {
+    setValue('stepIn', true, undefined, true);
+    if (getValue('disabled', undefined, true)) {
       g.timeNow = time(0);
       pauseChange();
     }
   }
 
   function onStepInDone() {
-    if (!getValue('stepIn')) {
+    if (!getValue('stepIn', undefined, true)) {
       return;
     }
-    delValue('stepIn');
+    delValue('stepIn', undefined, true);
     pauseChange();
   }
 
@@ -6734,7 +6734,7 @@
     countMonsterHP();
     displayMonsterWeight();
     displayPlayStatePercentage();
-    if (getValue('disabled')) { // 如果禁用
+    if (getValue('disabled', undefined, true)) { // 如果禁用
       document.title = titlePause();
       const pauseChange = gE('#hvAABox2>button.pauseChange');
       pauseChange ? pauseChange.innerHTML = UI.button.continue() : undefined;
@@ -6931,7 +6931,7 @@
       setValue('battle', battle);
     }
     if (option.autoPause && checkCondition(option.pauseCondition)) {
-      if (!getValue('stepIn')) {
+      if (!getValue('stepIn', undefined, true)) {
         battle = getValue('battle', true);
         battle.paused.turn = battle.turn;
         battle.paused.count++;
@@ -6992,7 +6992,7 @@
     if (!Object.keys(battleUnresponsive).length) return;
     let isBreak;
     while (true) {
-      await waitPause();
+      await waitPause(true);
       const waited = new Date() - lastResponsive;
       for (let t in battleUnresponsive) {
         if (battleUnresponsive[t].time > waited) continue;
