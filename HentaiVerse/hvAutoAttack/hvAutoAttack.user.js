@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.169
+// @version      2.91.207
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -33,12 +33,14 @@
 
 (function () { try {
   'use strict';
+
+  let lang, engaged;
   // constant
   const dataFlags = { sharable: ['option'] };
   dataFlags.portable = ['drop', 'stats', 'dropOld', 'statsOld', 'monsterDB', 'monsterMID'];
   dataFlags.battleDatas = [...dataFlags.portable, 'battle', 'battleCode', 'disabled', 'stepIn', 'skillOTOS', 'onriddle', 'rec'];
-  dataFlags.local = [...dataFlags.battleDatas, 'stamina'];
-  dataFlags.standalone = [...dataFlags.sharable, ...dataFlags.local, 'arena', 'lastUrl', 'ability', 'proficiency', 'lastSwitch', 'itemWorldDatas', 'lastPersona', 'lastEquipSet'];
+  dataFlags.local = [...dataFlags.battleDatas, 'stamina', 'logCache', 'statsStatic', 'proficiency'];
+  dataFlags.standalone = [...dataFlags.sharable, ...dataFlags.local, 'arena', 'lastUrl', 'ability', 'lastSwitch', 'itemWorldDatas', 'lastPersona', 'lastEquipSet'];
   dataFlags.excludeStandalone = { 'option': ['optionStandalone', 'version', 'lang'] };
 
   const _1s = 1000;
@@ -48,7 +50,7 @@
 
   const monsterStateKeys = { obj: `div.btm1`, lv: `div.btm2`, name: `div.btm3`, bars: `div.btm4>div.btm5`, buffs: `div.btm6` };
 
-  const setMonsterBuffSkillLib = () => { return {
+  const setMonsterBuffSkillLib = (ability) => { return {
     // debuff skill ------------
     We: {
       proficiency: ['Deprecating', 0, 345], // ???
@@ -386,26 +388,7 @@
 
   // runtime
   const isFrame = window.self !== window.top;
-  function $id(id, d) { return (d || document).getElementById(id); }
-  const _servername = location.pathname.includes('/isekai/') ? 'isekai' : 'persistent';
-  const addition = {
-    other: _servername === 'isekai' ? 'persistent' : 'isekai',
-    utils: _servername === 'isekai' ? 'hvuti' : 'hvut',
-  };
-  const _server = {
-    name: _servername,
-    season: $id('world_text')?.textContent.match(/\d+ Season \d+/)?.[0] || '1',
-    [_servername]: true, // _server.persistent || _server.isekai
-    ...addition,
-  };
-  const isEquipDetail = window.location.href.includes('/equip/');
-  const isMaintaining = !gE('#csp') && !isEquipDetail;
   const scriptVersion = Version(GM_info ? GM_info.script.version : '2.91');
-  let hvVersion;
-  let onIsekaiEncounter;
-  let monsterBuffSkillLib;
-  let ability = getValue('ability', true) ?? {};
-  let lastResponsive = new Date().getTime();
 
   // util methods
   function repeat(value, times) {
@@ -439,10 +422,9 @@
     langs: 3,
     byLang: function (...args) {
       if (Array.isArray(args[0])) args = args[0];
-      return args ? args[g().lang] : '';
+      return args ? args[lang] : '';
     },
     cutLang: function (str) {
-      const lang = g().lang;
       return str?.replaceAll(/<l(\d+)>(.*?)<\/l(\d+)>/g, (matched, lang1, inner, lang2) => {
         switch (true) {
           case lang1 !== lang2: return inner;
@@ -466,16 +448,13 @@
         return `<button class="${className}">${inner?.join('') ?? ''}</button>`
       },
       details: isDisplay => `${UI.l('详情', '詳情', 'Details')}${isDisplay ? `▲` : `▼`}`,
-      pause: function () {
-        const option = getOption();
+      pause: function (option) {
         return `${UI.l('暂停', '暫停', 'Pause')}${(option.pauseHotkey && option.pauseHotkeyStr) ? `(${option.pauseHotkeyStr})` : ''}`;
       },
-      stepIn: function () {
-        const option = getOption();
+      stepIn: function (option) {
         return `${UI.l('步进', '步進', 'StepIn')}${(option.stepInHotkey && option.stepInHotkeyStr) ? `(${option.stepInHotkeyStr})` : ''}`;
       },
-      continue: function () {
-        const option = getOption();
+      continue: function (option) {
         return `${UI.l('继续', '繼續', 'Continue', 'style="color:red;"')}<span style="color:red;">${(option.pauseHotkey && option.pauseHotkeyStr) ? `(${option.pauseHotkeyStr})` : ''}</span>`;
       },
     },
@@ -576,25 +555,35 @@
     reset: UI.l('重置', '重置', 'Reset'),
   }
 
+  function getCheckSupplyOptionTable(suffix = '', checkBoxOnly) {
+    const items = [
+      11191, 11291, 11391, 12101, 12201,
+      11195, 11295, 11395, 12301, 12401,
+      11199, 11299, 11399, 12501, 12601,
+      13299, 13221, 13211, 13201,        0,
+      13199, 13111, 13101,        0, 11401,
+      19111, 19131, 11501,        0, 11402];
+    return [
+      checkBoxOnly ? '' : `    <span class="checkSupply${suffix}Inner">${UI.l('库存', '庫存', 'Warn if supply')}&lt;max(100%,${UI.number(`checkSupplyWarn${suffix}`, 100)}%)${UI.hidden(UI.for(`checkSupplyWarn${suffix}`, `${UI.l('提示库存', '提示庫存', 'Supply warn')} ${suffix} %`))}${UI.l('时提示', '時提示')};</span><br>`,
+      UI.hvAATable(undefined, `hvAAcheckItems checkSupply${suffix}Inner`, ...items.map(item => {
+        if (!item) return UI.div();
+        const names = itemMap[item].map((...args) => `<l${args[1]}>${args[0]}</l${args[1]}>`).join('');
+        return UI.div(
+          UI.labeled(
+            `isCheck${suffix}_${item}`,
+            `${!checkBoxOnly ? UI.number(`checkItem${suffix}_${item}`) : ''}${UI.hidden(UI.l('库存', '庫存', 'Supply') + ' ' + suffix)}${names}`
+          ),
+          UI.hidden(UI.for(`checkItem${suffix}_${item}`, UI.l('库存', '庫存', 'Supply') + ' ' + suffix + names)),
+        )
+      }))
+    ];
+  }
+
   if (typeof Object.sortBy === 'undefined') {
     Object.defineProperty(Object.prototype, 'sortBy', { value: function sortBy(by) {
       return this.sort((x, y) => by(x) < by(y) ? -1 : by(x) > by(y) ? 1 : 0)
     }, enumerable: false });
   }
-
-  const [$RPN, $async, $debug, $ajax] = [initRPN(), initAsync(), initDebug(), window.top.$ajax ??= unsafeWindow.window.top.$ajax ??= initAjax()];
-
-  // 初始化结束，开始实际流程
-  for (let check of [checkIsHV, checkIsWindowTop]) {
-    if (!check()) return;
-  }
-  for (let step of [onRiddle, onIdle, onBattle]) {
-    if (step()) return;
-  }
-  // 其他情况进行等待刷新（例如加载错误等）
-  setTimeout(goto, 5 * _1m);
-
-  // ----------Process Steps----------
   function initRPN() {
     const $RPN = {
       operators: {
@@ -671,7 +660,7 @@
               throw new Error(`Unclosed ${quote} string`);
             }
             tokens.push(expression.slice(i, j));
-            i = j + 1;
+            i = j;
             lastTokenWasOperatorOrLeftParen = false;
             continue;
           }
@@ -831,7 +820,7 @@
   }
 
   function initDebug() {
-    const $debug = {
+    unsafeWindow.hvAA$debug = {
       Stack: class extends Error {
         constructor(...params) {
           super(...params);
@@ -856,22 +845,252 @@
           return;
         }
         $debug.logList.push({
-          args: arguments,
+          args: [...arguments],
           stack: (new $debug.Stack()).stack
         });
         if ($debug.logList.length > $debug.maxLogCache) {
           $debug.logList.shift();
         }
       },
-      shiftLog: function () {
+      shiftLog: function (stack) {
         while ($debug.logList.length) {
           const log = $debug.logList.shift();
-          console.log(...log.args, `\n`, log.stack);
+          console.log(...log.args, stack ? `\n`+log.stack : '');
         }
       }
     }
-    return $debug;
+    return unsafeWindow.hvAA$debug;
   }
+
+  function initAsync() {
+    const $async = {
+      list: [],
+      logSwitchStrict: function (name, state) { try {
+        if (!state) {
+          $async.list.splice($async.list.indexOf(name), 1);
+        } else {
+          $async.list.push(name);
+        }
+        $debug.log(`${state ? 'Start' : 'End'} ${name}\n`, JSON.parse(JSON.stringify($async.list)));
+      } catch (err) { /* console.log(err) */ } },
+      logSwitch: function (args) { try {
+        const argsStr = Array.from(args).join(',');
+        const name = `${args.callee.name}${argsStr === '' ? argsStr : `(${argsStr})`}`;
+        const state = $async.list.indexOf(name) === -1;
+        $async.logSwitchStrict(name, state);
+      } catch (err) { /* console.log(err) */ } }
+    }
+    return $async;
+  }
+
+  function formatTime(t, size = 2, quick) {
+    t = [t / _1h, (t / _1m) % 60, (t / _1s) % 60, (t % _1s) / 10].map(cdi => Math.floor(cdi));
+    while (t.length > Math.max(size, quick ? 2 : 3)) { // remove zero front
+      const front = t.shift();
+      if (!front) {
+        continue;
+      }
+      t.unshift(front);
+      break;
+    }
+    return t;
+  }
+
+  function timeStr(time, size = 2, quick) {
+    let formated = formatTime(time, size, quick);
+    if (size) formated = formated.slice(0, size);
+    return formated.map(t => pad(t)).join(`:`);
+  }
+
+  function Version(...verArgs) {
+    if (!(this instanceof Version)) {
+      return new Version(...verArgs);
+    }
+    this.ver = verArgs.join('.');
+
+    Version.prototype.upto ??= function(...args) {
+      return this.compareWith(...args) >= 0;
+    }
+    Version.prototype.eq ??= function(...args) {
+      return this.compareWith(...args) === 0;
+    };
+    Version.prototype.compareWith ??= function(...args) {
+      return Version.compare(this, Version.asString(...args));
+    }
+    Version.asString ??= function(...args) {
+      return args[0] instanceof Version ? args[0].ver : args.join('.');
+    }
+    Version.compare ??= function(...args) {
+      const seg = args.slice(0, 2).map(arg => {
+        if (typeof arg === 'number') arg = String(arg);
+        if (arg instanceof Version) arg = arg.ver;
+        return arg.split('.');
+      });
+      const maxLen = Math.max(...seg.map(s => s.length));
+
+      for (const i of range(maxLen)) {
+        const si = seg.map(s => s[i]);
+
+        const isEmpty = si.map(s => [undefined, ''].includes(s));
+
+        if (!isEmpty.some(x => !x)) continue;
+        if (isEmpty[0]) return -1;
+        if (isEmpty[1]) return 1;
+
+        const isNum = si.map(s => /^\d+$/.test(s));
+        if (isNum.some(x => !x)) {
+          if (!isNum[0] && isNum[1]) return -1;
+          if (isNum[0] && !isNum[1]) return 1;
+
+          if (si[0] < si[1]) return -1;
+          if (si[0] > si[1]) return 1;
+          continue;
+        }
+        const trim = si.map(s => s.replace(/^0+/, '') || '0');
+        const length = trim.map(t => t.length);
+        if (length[0] !== length[1]) return length[0] > length[1] ? 1 : -1;
+        for (const j of range(length[0])) {
+          if (trim[0][j] !== trim[1][j]) return trim[0][j] > trim[1][j] ? 1 : -1;
+        }
+      }
+      return 0;
+    }
+  }
+
+
+  function sleep(ms, isForBattle) {
+    if (!ms || ms <= 0) return;
+    if (!isForBattle || ms >= _1s) return new Promise(resolve => setTimeout(resolve, ms));
+    ms = Math.max(ms, 50);
+    sleep.prototype.timerWorker ??= creatWorker();
+    return sleep.prototype.timerWorker(ms);
+
+    // 在blob worker内部进行setTimeout以避免浏览器限制
+    function creatWorker() {
+      const code = `
+      let timerMap = {};
+      self.onmessage = (e) => {
+        const { id, ms } = e.data;
+        timerMap[id] = setTimeout(() => {
+          self.postMessage({ id });
+          delete timerMap[id];
+        }, ms);
+      };
+      `
+
+      const blob = new Blob([code], { type: 'application/javascript' });
+      const url = URL.createObjectURL(blob);
+      const worker = new Worker(url);
+
+      const callbacks = new Map();
+      let idCounter = 0;
+
+      worker.onmessage = (e) => {
+        const { id } = e.data;
+        const resolve = callbacks.get(id);
+        if (!resolve) return;
+        resolve();
+        callbacks.delete(id);
+      };
+
+      return (ms) => {
+        return new Promise((resolve) => {
+          const id = idCounter++;
+          callbacks.set(id, resolve);
+          worker.postMessage({ id, ms });
+        });
+      };
+    }
+  }
+
+  async function until(condition, delay, isForBattle){ try {
+    let result;
+    delay = Math.max(50, delay??50);
+    while (!(result = await condition())) await sleep(delay, isForBattle);
+    return result;
+  } catch (err) { console.error(err); }}
+
+  function setTimeoutOrExecute(resolve, ms) {
+    if (ms > 0) {
+      (async () => {
+        await sleep(ms);
+        resolve();
+      })();
+      return;
+    }
+    resolve();
+  }
+
+  function pad(num, pad = '0', total = 2) {
+    return num.toString().padStart(total, pad);
+  }
+
+  const [$RPN, $async, $debug] = [initRPN(), initAsync(), initDebug()];
+
+// ------------------------------------------
+
+  HVAA();
+
+function HVAA(forIsekaiEncounter) {
+  let g = {};
+  let currentDoc;
+  function $id(id, d) { return (d || currentDoc).getElementById(id); }
+  function $qs(q, d) { return (d || currentDoc).querySelector(q); }
+  function $qsa(q, d) { return Array.from((d || currentDoc).querySelectorAll(q)); }
+  function $doc(h) { const d = new DOMParser().parseFromString(h, 'text/html'); return d; }
+  function gE(query, mode, parent) { // 获取元素
+    switch (mode) {
+      case undefined:
+        return (isNaN(+query)) ? $qs(query, parent) : $id(query, parent);
+      case 'all':
+        return $qsa(query, parent);
+      default:
+        return $qs(query, mode);
+    }
+  }
+  function cE(name) { return currentDoc.createElement(name); }
+  const _servername = (!forIsekaiEncounter && location.pathname.includes('/isekai/')) ? 'isekai' : 'persistent';
+  const addition = {
+    other: _servername === 'isekai' ? 'persistent' : 'isekai',
+    utils: _servername === 'isekai' ? 'hvuti' : 'hvut',
+  };
+  const _server = {
+    name: _servername,
+    season: forIsekaiEncounter ? '1' : $id('world_text', document)?.textContent.match(/\d+ Season \d+/)?.[0] || '1',
+    [_servername]: true, // _server.persistent || _server.isekai
+    ...addition,
+  };
+
+  let $ajax;
+  if (forIsekaiEncounter) {
+    $ajax = window.top.$ajaxEncounter ??= unsafeWindow.top.$ajaxEncounter ??= initAjax();
+    currentDoc = $doc($ajax.insert(window.location.href.replace('/isekai/', '/')));
+  } else {
+    $ajax = window.top.$ajax ??= unsafeWindow.top.$ajax ??= initAjax();
+    currentDoc = document;
+  }
+  const isEquipDetail = window.location.href.includes('/equip/');
+  const isMaintaining = !gE('#csp') && !isEquipDetail;
+  let hvVersion, monsterBuffSkillLib;
+  let ability = getValue('ability', true) ?? {};
+  let lastResponsive = new Date().getTime();
+
+  // 初始化结束，开始实际流程
+  if (!checkOption()) return;
+  if (!checkIsHV()) return;
+
+  if (!forIsekaiEncounter) {
+    for (let check of [checkIsHV, checkIsWindowTop, setAliveAudio]) {
+      if (!check()) return;
+    }
+  }
+  for (let step of [onRiddle, onIdle, onBattle]) {
+    if (step()) return asyncOnIdle;
+  }
+  // 其他情况进行等待刷新（例如加载错误等）
+  setTimeout(goto, 5 * _1m);
+
+  // ----------Process Steps----------
 
   function initAjax() {
     const $ajax = {
@@ -965,7 +1184,7 @@
         $ajax.conn++;
         if (!$ajax.debug) return;
         const remain = $ajax.queue.map($ajax.simplify);
-        console.log('$ajax.send:', $ajax.simplify(current), ... remain?.length ? ['remain:', remain] : []);
+        $debug.log('$ajax.send:', $ajax.simplify(current), ... remain?.length ? ['remain:', remain] : []);
       },
       onload: function (r) {
         $ajax.conn--;
@@ -996,44 +1215,33 @@
     return $ajax;
   }
 
-  function initAsync() {
-    const $async = {
-      list: [],
-      logSwitchStrict: function (name, state) { try {
-        if (!state) {
-          $async.list.splice($async.list.indexOf(name), 1);
-        } else {
-          $async.list.push(name);
-        }
-        $debug.log(`${state ? 'Start' : 'End'} ${name}\n`, JSON.parse(JSON.stringify($async.list)));
-      } catch (err) { /* console.log(err) */ } },
-      logSwitch: function (args) { try {
-        const argsStr = Array.from(args).join(',');
-        const name = `${args.callee.name}${argsStr === '' ? argsStr : `(${argsStr})`}`;
-        const state = $async.list.indexOf(name) === -1;
-        $async.logSwitchStrict(name, state);
-      } catch (err) { /* console.log(err) */ } }
-    }
-    return $async;
-  }
+  function popup(text) {
+    if (!g.option.popup) return;
+    const popupWindow = cE('div');
+    popupWindow.style.cssText += 'position:fixed;top:0;left:0;width:100%;height:100%;background-color:#0006;z-index:1001;cursor:pointer;display:flex;justify-content:center;align-items:center;'
+    popupWindow.addEventListener('click', r);
+    document.body.appendChild(popupWindow);
+    const display = cE('div');
+    display.innerText = text;
+    display.style.cssText += 'min-width:400px;min-height:100px;max-width:100%;max-height:100%;padding:10px;background-color:#fff;border:1px solid;display:flex;flex-direction:column;justify-content:center;font-size:10pt;color:#333;';
+    popupWindow.appendChild(display);
+    document.addEventListener('keydown', r);
+    return display;
 
-  function formatTime(t, size = 2, quick) {
-    t = [t / _1h, (t / _1m) % 60, (t / _1s) % 60, (t % _1s) / 10].map(cdi => Math.floor(cdi));
-    while (t.length > Math.max(size, quick ? 2 : 3)) { // remove zero front
-      const front = t.shift();
-      if (!front) {
-        continue;
+    function r(e) {
+      switch(true) {
+        case e.key?.length >= 2 && e.key?.includes('F'): return;
+        case e.ctrlKey: return;
+        default: break;
       }
-      t.unshift(front);
-      break;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if (e.button !== 0 && !['Enter', ' ', 'Escape'].includes(e.key)) {
+        return;
+      }
+      popupWindow.remove();
+      document.removeEventListener('keydown', r);
     }
-    return t;
-  }
-
-  function timeStr(time, size = 2, quick) {
-    let formated = formatTime(time, size, quick);
-    if (size) formated = formated.slice(0, size);
-    return formated.map(t => pad(t)).join(`:`);
   }
 
   function checkIsHV() {
@@ -1048,20 +1256,36 @@
           const start = time(0);
           let remain;
           await until(() => {
-            remain = duration - time(0) + start;
+            remain = duration - time(0) + start + _1s; // add _1s to avoid time inaccuracies
             document.title = `[M]${timeStr(remain)}`;
             try { if (!isNaN(blocked)) {
-              body.innerText = body.innerText.replace(blockTip, (...args) => args[0].replace(args[1], remain));
+              body.innerText = body.innerText.replace(blockTip, (...args) => args[0].replace(args[1], timeStr(remain)));
             } } catch (err) { console.log(err) };
             return remain <= 0;
           });
           goto();
-        } catch (err) { console.error(err)} })();
+        } catch (err) { console.error(err) }
+        })();
+        if (forIsekaiEncounter) {
+          engaged = false;
+          return false;
+        }
         return true;
       }
-      hvVersion = Version(...gE('script[src*="hvc.js"]', document)?.src.match(/z\/(\d+)(.*?)\/hvc.js/)?.slice(1, 3));
+
+      hvVersion = Version(...gE('script[src*="hvc.js"]')?.src.match(/z\/(\d+)(.*?)\/hvc.js/)?.slice(1, 3));
+
+      try {
+        if (window.location.href.startsWith('https://')) {
+          unsafeWindow.MAIN_URL = unsafeWindow.MAIN_URL.replace(/^http:/, `https:`);
+        } else {
+          unsafeWindow.MAIN_URL = unsafeWindow.MAIN_URL.replace(/^https:/, `http:`);
+        }
+      } catch (err) { /* console.log(err) */ }
+
+      if (forIsekaiEncounter) return true;
       setValue('url', window.location.origin);
-      monsterBuffSkillLib = setMonsterBuffSkillLib();
+      monsterBuffSkillLib = setMonsterBuffSkillLib(ability);
 
       // 补充记录（因写入冲突、网络卡顿等）未被记录的encounter链接
       if (window.location.href.indexOf(`?s=Battle&ss=ba`) !== -1) {
@@ -1079,15 +1303,6 @@
           return;
         }
       }
-
-      try {
-        if (window.location.href.startsWith('https://')) {
-          unsafeWindow.MAIN_URL = unsafeWindow.MAIN_URL.replace(/^http:/, `https:`);
-        } else {
-          unsafeWindow.MAIN_URL = unsafeWindow.MAIN_URL.replace(/^https:/, `http:`);
-        }
-      } catch (err) { /* console.log(err) */ }
-
       return true;
     }
 
@@ -1135,50 +1350,15 @@
       }
     } else { // 战斗外，自动跳转
       let location = getLocal('url') ?? (document.referrer.match('hentaiverse.org') ? new URL(document.referrer).origin : 'https://hentaiverse.org');
-      $ajax.openNoFetch(`${location.includes('https') ? 'https://' : 'http://'}${(location.includes('alt') || getOption().altBattleFirst) ? 'alt.' : ''}hentaiverse.org/${url}`);
+      $ajax.openNoFetch(`${location.includes('https') ? 'https://' : 'http://'}${(location.includes('alt') || g.option.altBattleFirst) ? 'alt.' : ''}hentaiverse.org/${url}`);
     }
     return false;
   }
 
-  // 答题//
-  async function riddleAlert() { try {
-    setAlarm('Riddle');
-    const option = getOption();
-    const answerTime = option.riddleAnswerTime;
-    let time;
-    const timeDiv = gE('#riddlecounter>div>div', 'all');
-    while (time === undefined || time > answerTime) {
-      if (timeDiv.length === 0) {
-        await sleep(_1s);
-        continue;
-      }
-      time = undefined;
-      for (let t of timeDiv) {
-        time = (t.style.backgroundPosition.match(/(\d+)px$/)[1] / 12).toString() + (time ?? '');
-      }
-      time *= 1;
-      document.title = time;
-      await sleep(_1s);
-    }
-    for (let ans of gE('#riddler1>*', 'all').children) {
-      if (!ans.children[0].children[0].checked) continue;
-      gE('#riddlesubmit').click();
-      return;
-    }
-    if (!option.riddleAnswerChoose) return;
-    // if no answer selected
-    const answers = ['aj', 'fs', 'pp', 'ra', 'rd', 'ts'].sort(Math.random);
-    const answer = `riddlesubmit=Submit+Answer` + answers.slice(0, Math.max(0, Math.min(6, option.riddleAnswerChoose))).map(ans => `&riddleanswer[]=${ans}`).join('');
-    const battle = gE('#battle_main', $doc(await $ajax.fetch(window.location.href, answer)));
-    if (!battle) console.error('ERROR: Failed fetch submit.');
-    goto();
-  } catch (err) { console.error(err); }}
-
   function checkIsWindowTop() {
     const currentUrl = window.self.location.href;
-    checkOption();
     if (!isFrame) {
-      if (!getOption().riddlePopup || gE('#riddlecounter')) { // 未开启使用弹窗或仍处于答题
+      if (!g.option.riddlePopup || gE('#riddlecounter')) { // 未开启使用弹窗或仍处于答题
         return true;
       }
       if (!window.opener || window.opener === window.self || window.opener.closed) { // 没有仍存在的opener
@@ -1220,6 +1400,82 @@
     return false;
   }
 
+  function setAliveAudio() {
+    if (g.option.keepAliveByAudio) createKeepAliveAudio();
+    return true;
+  }
+
+  function createKeepAliveAudio() {
+    let audioContext;
+    try {
+      audioContext = new AudioContext();
+    } catch (err) {
+      console.error('[hvAA keepAlive] AudioContext 创建失败:', err);
+      return;
+    }
+    console.log('[hvAA keepAlive] 脚本已初始化, 当前状态:', audioContext.state); // 启动即报状态
+    audioContext.onstatechange = () => console.log('[hvAA keepAlive] 状态变更:', audioContext.state);
+    const gain = audioContext.createGain();
+    gain.gain.value = 0;           // 平时静音
+    const osc = audioContext.createOscillator();
+    osc.frequency.value = 50;      // 实测可行的频率
+    osc.connect(gain).connect(audioContext.destination);
+    osc.start();
+    // 每5秒发一个50m的微脉冲(音量0.001)，持续维持“正在播放”判定
+    setInterval(() => {
+      gain.gain.setValueAtTime(0.001, audioContext.currentTime);
+      gain.gain.setValueAtTime(0, audioContext.currentTime + 0.05);
+    }, 5000);
+    const resume = () => {
+      if (audioContext.state === 'suspended') {
+        audioContext.resume().then(() => {
+          console.log('[hvAA keepAlive] 音频已激活, 状态:', audioContext.state);
+        }).catch(err => console.error('[hvAA keepAlive] 激活失败:', err));
+      }
+    };
+    resume();
+    // chrome自动播放策略要求首次激活需一次手势
+    document.addEventListener('click', resume);
+    document.addEventListener('keydown', resume);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') resume();
+    });
+  }
+
+  // 答题//
+  async function riddleAlert() { try {
+    setAlarm('Riddle');
+    const option = g.option;
+    const answerTime = option.riddleAnswerTime;
+    let time;
+    const timeDiv = gE('#riddlecounter>div>div', 'all');
+    while (time === undefined || time > answerTime) {
+      if (timeDiv.length === 0) {
+        await sleep(_1s);
+        continue;
+      }
+      time = undefined;
+      for (let t of timeDiv) {
+        time = (t.style.backgroundPosition.match(/(\d+)px$/)[1] / 12).toString() + (time ?? '');
+      }
+      time *= 1;
+      document.title = time;
+      await sleep(_1s);
+    }
+    for (let ans of gE('#riddler1>*', 'all').children) {
+      if (!ans.children[0].children[0].checked) continue;
+      gE('#riddlesubmit').click();
+      return;
+    }
+    if (!option.riddleAnswerChoose) return;
+    // if no answer selected
+    const answers = ['aj', 'fs', 'pp', 'ra', 'rd', 'ts'].sort(Math.random);
+    const answer = `riddlesubmit=Submit+Answer` + answers.slice(0, Math.max(0, Math.min(6, option.riddleAnswerChoose))).map(ans => `&riddleanswer[]=${ans}`).join('');
+    const battle = gE('#battle_main', $doc(await $ajax.fetch(window.location.href, answer)));
+    if (!battle) console.error('ERROR: Failed fetch submit.');
+    goto();
+  } catch (err) { console.error(err); }}
+
   async function safeClose(delay) {
     try { window.close() } catch (err) { /* console.log(err) */ }
     await sleep(delay);
@@ -1241,14 +1497,10 @@
     await tryClose(attempts, delay);
   } catch (err) { console.error('Opener reload or popup close failed:', err) } }
 
-  function getOption(unstable) {
-    return typeof GM_getValue === 'undefine' ? {} : (unstable ? g().option : g().stableOption) ?? {};
-  }
-
   function checkOption() {
-    g('version', scriptVersion);
-    if (!getValue('option')) {
-      g('lang', window.prompt('请输入以下语言代码对应的数字\nPlease put in the number of your preferred language (0, 1 or 2)\n0.简体中文\n1.繁體中文\n2.English', 0) || 2);
+    g.version = scriptVersion;
+    if (!forIsekaiEncounter && !getValue('option')) {
+      lang = window.prompt('请输入以下语言代码对应的数字\nPlease put in the number of your preferred language (0, 1 or 2)\n0.简体中文\n1.繁體中文\n2.English', 0) || 2;
       addStyle();
       UI.alert('请设置hvAutoAttack', '請設置hvAutoAttack', 'Please config this script');
       gE('.hvAAButton').click();
@@ -1256,13 +1508,13 @@
     }
 
     let option = loadOption();
-    g('option', (isFrame || onIsekaiEncounter) ? option : setValue('option', option));
-    writePortables();
-    option = getOption(true);
-    g('lang', option.lang || '0');
+    g.option = isFrame ? option : setValue('option', option);
+    if (!forIsekaiEncounter) {
+      writePortables();
+      lang = g.option.lang || '0';
+    }
     addStyle();
-    if (onIsekaiEncounter) return;
-    g('stableOption', getOption(true));
+    if (forIsekaiEncounter) return;
 
     // README等合并到主分支后再取消掉注释
     // if (option.version.substr(0, 4) !== scriptVersion.ver.substr(0, 4)) {
@@ -1282,7 +1534,7 @@
   }
 
   function writePortables() {
-    const option = getOption(true);
+    const option = g.option;
     if (!option.portable) return;
     for (const key of dataFlags.portable) {
       if (!(Object.keys(option.portable).includes(key))) continue;
@@ -1300,12 +1552,10 @@
   }
 
   function onRiddle() {
-    if (!gE('#riddlecounter')) {
-      return false;
-    }
+    if (!gE('#riddlecounter')) return false;
+    if (forIsekaiEncounter) return true;
     setValue('onriddle', true);
-    (window.opener ?? window).console.log('onriddle', { riddlePopup: getOption().riddlePopup, opener: window.opener });
-    if (!getOption().riddlePopup || window.opener) {
+    if (!g.option.riddlePopup || window.opener) {
       riddleAlert();
       return true;
     }
@@ -1315,31 +1565,34 @@
 
   function onIdle() {
     if (!gE('#navbar')) {
+      engaged = false;
       return false;
     }
-    // 战斗结束跳转回原链接
-    if (window.top.location.href.endsWith(`?s=Battle`)) {
-      backFromBattle();
-      return true;
-    }
-    const arena = getValue('arena', true) ?? {};
-    delete arena?.equip;
-    arena.postoken = gE('input[name="postoken"]')?.value ?? arena.postoken;
-    setValue('arena', arena);
+    if (!forIsekaiEncounter) {
+      // 战斗结束跳转回原链接
+      if (window.top.location.href.endsWith(`?s=Battle`)) {
+        backFromBattle();
+        return true;
+      }
+      const arena = getValue('arena', true) ?? {};
+      delete arena?.equip;
+      arena.postoken = gE('input[name="postoken"]')?.value ?? arena.postoken;
+      setValue('arena', arena);
 
-    if (window.location.href.indexOf(`?s=Battle&ss=ba`) === -1) { // 不缓存encounter
-      setValue('lastUrl', window.top.location.href); // 缓存进入战斗前的页面地址
-      setArenaDisplay();
+      if (window.location.href.indexOf(`?s=Battle&ss=ba`) === -1) { // 不缓存encounter
+        setValue('lastUrl', window.top.location.href); // 缓存进入战斗前的页面地址
+        setArenaDisplay();
+      }
+      delValue(1);
+      const option = g.option;
+      if (option.showQuickSite && option.quickSite) {
+        quickSite();
+      }
+      const hvAAPauseUI = currentDoc.body.appendChild(cE('div'));
+      hvAAPauseUI.classList.add('hvAAPauseUI');
+      setPauseUI(hvAAPauseUI);
     }
-    delValue(1);
-    const option = getOption();
-    if (option.showQuickSite && option.quickSite) {
-      quickSite();
-    }
-    const hvAAPauseUI = document.body.appendChild(cE('div'));
-    hvAAPauseUI.classList.add('hvAAPauseUI');
-    setPauseUI(hvAAPauseUI);
-    asyncOnIdle();
+    (async () => { engaged = await asyncOnIdle(); })();
     return true;
   }
 
@@ -1352,10 +1605,9 @@
     return box;
   }
 
-  function onBattle() {
-    if (!gE('#textlog')) {
-      return false;
-    }
+  async function onBattle() {
+    if (forIsekaiEncounter) return true;
+    if (!gE('#textlog')) return false;
     checkResponsive();
 
     if (getValue('onriddle')) {
@@ -1364,19 +1616,19 @@
     }
     onBattleBox();
     reloader();
-    const option = getOption();
-    g('attackStatus', option.attackStatus);
+    const option = g.option;
+    g.attackStatus = option.attackStatus;
     // 1二天 2单手 3双手 4双持 5法杖
-    range(5).map(s => s + 1).filter(s => gE(`2${s}01`)).forEach(s => g('fightingStyle', s.toString()));
-    g('timeNow', time(0));
-    g('runSpeed', 1);
+    range(5).map(s => s + 1).filter(s => gE(`2${s}01`)).forEach(s => { g.fightingStyle = s.toString() });
+    g.timeNow = time(0);
+    g.runSpeed = 1;
     newRound(false);
-    updateMonsterEffects(false);
-    onBattleRound();
-    const battle = g().battle;
+    onPrevBattleLog(false);
+    await onBattleRound();
+    const battle = g.battle;
     if (option.recordEach) {
       let code = getValue('battleCode', true);
-      const tokens = { token: document.body.innerHTML.match(`var battle_token = \"(.*)\";`)[1], postoken: battle?.postoken };
+      const tokens = { token: currentDoc.body.innerHTML.match(`var battle_token = \"(.*)\";`)[1], postoken: battle?.postoken };
       const same = Object.keys(tokens).map(k => tokens[k] === code?.[k]).every(s => s);
       if (!same || !code?.roundAll || !code?.roundNow) {
         const now = same ? code?.time ?? time(1) : time(1);
@@ -1428,7 +1680,7 @@
   }
 
   function getDefaultOrder(idMatch, map) {
-    const defaultOrder = g().defaultOrder ??= {};
+    const defaultOrder = g.defaultOrder ??= {};
     const key = idMatch + (map?.toString() ?? '');
     return (defaultOrder[key] ??= [...gE(`[id^="${idMatch}_"]`, 'all')].map(map ?? (ord => ord.id.match(/_(.*)/)[1])));
   }
@@ -1438,6 +1690,7 @@
   }
 
   function goto(url) { // 前进
+    console.trace('goto');
     window.location.href = url ?? (window.location.search ? window.location.pathname + window.location.search : window.location.href);
     setTimeout(goto, 5 * _1s);
     setTimeout(() => { window.location.href = window.location.href }, 10 * _1s);
@@ -1458,130 +1711,12 @@
     return true;
   }
 
-  function sleep(ms, isForBattle) {
-    if (!ms || ms <= 0) return;
-    if (!isForBattle || ms >= 1000) return new Promise(resolve => setTimeout(resolve, ms));
-    ms = Math.max(ms, 50);
-    sleep.prototype.timerWorker ??= creatWorker();
-    return sleep.prototype.timerWorker(ms);
-
-    // 在blob worker内部进行setTimeout以避免浏览器限制
-    function creatWorker() {
-      const code = `
-      let timerMap = {};
-      self.onmessage = (e) => {
-        const { id, ms } = e.data;
-        timerMap[id] = setTimeout(() => {
-          self.postMessage({ id });
-          delete timerMap[id];
-        }, ms);
-      };
-      `
-
-      const blob = new Blob([code], { type: 'application/javascript' });
-      const url = URL.createObjectURL(blob);
-      const worker = new Worker(url);
-
-      const callbacks = new Map();
-      let idCounter = 0;
-
-      worker.onmessage = (e) => {
-        const { id } = e.data;
-        const resolve = callbacks.get(id);
-        if (!resolve) return;
-        resolve();
-        callbacks.delete(id);
-      };
-
-      return (ms) => {
-        return new Promise((resolve) => {
-          const id = idCounter++;
-          callbacks.set(id, resolve);
-          worker.postMessage({ id, ms });
-        });
-      };
-    }
-  }
-
-  async function until(condition, delay, isForBattle){ try {
-    let result;
-    delay = Math.max(50, delay??50);
-    while (!(result = await condition())) await sleep(delay, isForBattle);
-    return result;
-  } catch (err) { console.error(err); }}
-
   async function waitPause(isForBattle, ms) { try {
-    return await until(() => !getValue('disabled'), ms, isForBattle);
+    return await until(() => !getValue('disabled'), ms ?? (0.25 * _1s), isForBattle);
   } catch (err) { console.error(err); }}
-
-  function setTimeoutOrExecute(resolve, ms) {
-    if (ms > 0) {
-      (async () => {
-        await sleep(ms);
-        resolve();
-      })();
-      return;
-    }
-    resolve();
-  }
-
-  function pad(num, pad = '0', total = 2) {
-    return num.toString().padStart(total, pad);
-  }
-
-  function gE(ele, mode, parent) { // 获取元素
-    if (typeof ele === 'object') {
-      return ele;
-    } if (mode === undefined && parent === undefined) {
-      return (isNaN(ele * 1)) ? document.querySelector(ele) : document.getElementById(ele);
-    } if (mode === 'all') {
-      return (parent === undefined) ? document.querySelectorAll(ele) : parent.querySelectorAll(ele);
-    } if (typeof mode === 'object' && parent === undefined) {
-      return mode.querySelector(ele);
-    }
-  }
-
-  function cE(name) { // 创建元素
-    return document.createElement(name);
-  }
-
-  function $doc(h) {
-    const doc = document.implementation.createHTMLDocument('');
-    doc.documentElement.innerHTML = h;
-    return doc;
-  }
-
-  function popup(text) {
-    if (!getOption().popup) return;
-    const popupWindow = cE('div');
-    popupWindow.style.cssText += 'position:fixed;top:0;left:0;width:100%;height:100%;background-color:#0006;z-index:1001;cursor:pointer;display:flex;justify-content:center;align-items:center;'
-    popupWindow.addEventListener('click', r);
-    document.body.appendChild(popupWindow);
-    const display = cE('div');
-    display.innerText = text;
-    display.style.cssText += 'min-width:400px;min-height:100px;max-width:100%;max-height:100%;padding:10px;background-color:#fff;border:1px solid;display:flex;flex-direction:column;justify-content:center;font-size:10pt;color:#333;';
-    popupWindow.appendChild(display);
-    document.addEventListener('keydown', r);
-    return display;
-
-    function r(e) {
-      switch(true) {
-        case e.key?.length >= 2 && e.key?.includes('F'): return;
-        case e.ctrlKey: return;
-        default: break;
-      }
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      if (e.button !== 0 && !['Enter', ' ', 'Escape'].includes(e.key)) {
-        return;
-      }
-      popupWindow.remove();
-      document.removeEventListener('keydown', r);
-    }
-  }
 
   function setArenaDisplay() {
-    const option = getOption();
+    const option = g.option;
     if (!option.obscureNotIdleArena) {
       return;
     }
@@ -1605,8 +1740,8 @@
       ar: { 1: 1, 10: 3, 20: 5, 30: 8, 40: 9, 50: 11, 60: 12, 70: 13, 80: 15, 90: 16, 100: 17, 110: 19, 120: 20, 130: 21, 140: 23, 150: 24, 165: 26, 180: 27, 200: 28, 225: 29, 250: 32, 300: 33, 400: 34, 500: 35 },
       rb: [105, 106, 107, 108, 109, 110, 111, 112],
     }
-    const option = getOption(true);
-    doc ??= document;
+    const option = g.option;
+    doc ??= currentDoc;
     site ??= doc.location.href.match(/\?s=Battle\&ss=(.*)/)[1];
     const buttons = gE(`img[src*="startchallenge.png"], img[src*="startgrindfest.png"], img[src*="startchallenge_d.png"]`, 'all', doc);
     buttons.forEach(btn => {
@@ -1625,61 +1760,6 @@
       }
     });
     return buttons;
-  }
-
-  function Version(...verArgs) {
-    if (!(this instanceof Version)) {
-      return new Version(...verArgs);
-    }
-    this.ver = verArgs.join('.');
-
-    Version.prototype.upto ??= function(...args) {
-      return this.compareWith(...args) >= 0;
-    }
-    Version.prototype.eq ??= function(...args) {
-      return this.compareWith(...args) === 0;
-    };
-    Version.prototype.compareWith ??= function(...args) {
-      return Version.compare(this, Version.asString(...args));
-    }
-    Version.asString ??= function(...args) {
-      return args[0] instanceof Version ? args[0].ver : args.join('.');
-    }
-    Version.compare ??= function(...args) {
-      const seg = args.slice(0, 2).map(arg => {
-        if (typeof arg === 'number') arg = String(arg);
-        if (arg instanceof Version) arg = arg.ver;
-        return arg.split('.');
-      });
-      const maxLen = Math.max(...seg.map(s => s.length));
-
-      for (const i of range(maxLen)) {
-        const si = seg.map(s => s[i]);
-
-        const isEmpty = si.map(s => [undefined, ''].includes(s));
-
-        if (!isEmpty.some(x => !x)) continue;
-        if (isEmpty[0]) return -1;
-        if (isEmpty[1]) return 1;
-
-        const isNum = si.map(s => /^\d+$/.test(s));
-        if (isNum.some(x => !x)) {
-          if (!isNum[0] && isNum[1]) return -1;
-          if (isNum[0] && !isNum[1]) return 1;
-
-          if (si[0] < si[1]) return -1;
-          if (si[0] > si[1]) return 1;
-          continue;
-        }
-        const trim = si.map(s => s.replace(/^0+/, '') || '0');
-        const length = trim.map(t => t.length);
-        if (length[0] !== length[1]) return length[0] > length[1] ? 1 : -1;
-        for (const j of range(length[0])) {
-          if (trim[0][j] !== trim[1][j]) return trim[0][j] > trim[1][j] ? 1 : -1;
-        }
-      }
-      return 0;
-    }
   }
 
   function loadOption(option) {
@@ -1701,7 +1781,7 @@
     if (!version.upto(2, 90, 162)) {
       option = JSON.parse(JSON.stringify(option).replace('targetHp', 'targetHpDecimal').replace('targetMp', 'targetMpDecimal').replace('targetSp', 'targetSpDecimal').replace('DecimalDecimal', 'Decimal'));
       option.version = scriptVersion.ver;
-      g('version', option.version);
+      g.version = option.version;
     }
     option = JSON.parse(JSON.stringify(option).replace('DecimalDecimal', 'Decimal'));
 
@@ -1779,22 +1859,22 @@
   }
 
   function setPauseButton(parent) {
-    const option = getOption();
+    const option = g.option;
     if (!option.pauseButton) {
       return;
     }
     const button = parent.appendChild(cE('button'));
-    button.innerHTML = UI.button.pause();
+    button.innerHTML = UI.button.pause(option);
     if (getValue('disabled')) { // 如果禁用
       document.title = titlePause();
-      button.innerHTML = UI.button.continue();
+      button.innerHTML = UI.button.continue(option);
     }
     button.className = 'pauseChange';
     button.onclick = pauseChange;
   }
 
   function setPauseHotkey() {
-    const option = getOption();
+    const option = g.option;
     if (!option.pauseHotkey) {
       return;
     }
@@ -1809,18 +1889,18 @@
   }
 
   function setStepInButton(parent) {
-    const option = getOption();
+    const option = g.option;
     if (!option.stepInButton) {
       return;
     }
     const button = parent.appendChild(cE('button'));
-    button.innerHTML = UI.button.stepIn();
+    button.innerHTML = UI.button.stepIn(option);
     button.className = 'stepIn';
     button.onclick = stepIn;
   }
 
   function setStepInHotkey() {
-    const option = getOption();
+    const option = g.option;
     if (!option.stepInHotkey) {
       return;
     }
@@ -1835,7 +1915,7 @@
   }
 
   function setAltButton(parent) {
-    const option = getOption();
+    const option = g.option;
     if (!option.altButton) {
       return;
     }
@@ -1846,7 +1926,7 @@
   }
 
   function setAltHotkey() {
-    const option = getOption();
+    const option = g.option;
     if (!option.altHotkey) {
       return;
     }
@@ -1890,14 +1970,6 @@
     }
   }
 
-  function onRestoredBattleServer(key, method, ...addition) {
-    const isSwitch = [...dataFlags.battleDatas, ...addition].includes(key) && onIsekaiEncounter;
-    if (isSwitch) switchCurrent(true);
-    const result = method();
-    if (isSwitch) switchCurrent(true);
-    return result;
-  }
-
   function setLocal(key, value, isLocalStroage) {
     if (JSON.stringify(getLocal(key, isLocalStroage)) === JSON.stringify(value)) {
       return;
@@ -1915,11 +1987,10 @@
       setLocal(key, value, isLocalStorage);
       return value;
     }
-    onRestoredBattleServer(key, () => {
-      setLocal(`${_server.name}_${key}`, value, isLocalStorage);
-      if (!dataFlags.sharable.includes(key) || getValue('option').optionStandalone) return;
+    setLocal(`${_server.name}_${key}`, value, isLocalStorage);
+    if (dataFlags.sharable.includes(key) && !getValue('option').optionStandalone) {
       setLocal(`${_server.other}_${key}`, value, isLocalStorage);
-    }, 'option');
+    }
     return value;
   }
 
@@ -1955,29 +2026,27 @@
     if (!dataFlags.standalone.includes(key)) {
       return getLocal(key, isLocalStorage, toJSON);
     }
-    return onRestoredBattleServer(key, () => {
-      let otherWorldItem = getLocal(`${_server.other}_${key}`, isLocalStorage);
-      // 将旧的数据迁移到新的数据
+    let otherWorldItem = getLocal(`${_server.other}_${key}`, isLocalStorage);
+    // 将旧的数据迁移到新的数据
 
-      if (!getLocal(`${_server.name}_${key}`, isLocalStorage)) {
-        let itemExisted = getLocal(key, isLocalStorage);
-        if (!itemExisted && dataFlags.sharable.includes(key)) {
-          itemExisted = otherWorldItem;
-        }
-        if (!itemExisted) return null; // 若都没有该数据
-        itemExisted = JSON.parse(JSON.stringify(itemExisted));
-        setLocal(`${_server.name}_${key}`, itemExisted);
-        delLocal(key, isLocalStorage);
+    if (!getLocal(`${_server.name}_${key}`, isLocalStorage)) {
+      let itemExisted = getLocal(key, isLocalStorage);
+      if (!itemExisted && dataFlags.sharable.includes(key)) {
+        itemExisted = otherWorldItem;
       }
-      if (Object.keys(dataFlags.excludeStandalone).includes(key)) {
-        otherWorldItem ??= getLocal(`${_server.name}_${key}`, isLocalStorage) ?? {};
-        for (let i of dataFlags.excludeStandalone[key]) {
-          otherWorldItem[i] = getLocal(`${_server.name}_${key}`, isLocalStorage)[i];
-        }
+      if (!itemExisted) return null; // 若都没有该数据
+      itemExisted = JSON.parse(JSON.stringify(itemExisted));
+      setLocal(`${_server.name}_${key}`, itemExisted);
+      delLocal(key, isLocalStorage);
+    }
+    if (Object.keys(dataFlags.excludeStandalone).includes(key)) {
+      otherWorldItem ??= getLocal(`${_server.name}_${key}`, isLocalStorage) ?? {};
+      for (let i of dataFlags.excludeStandalone[key]) {
+        otherWorldItem[i] = getLocal(`${_server.name}_${key}`, isLocalStorage)[i];
       }
-      setLocal(`${_server.other}_${key}`, otherWorldItem);
-      return getLocal(`${_server.name}_${key}`, isLocalStorage, toJSON);
-    });
+    }
+    setLocal(`${_server.other}_${key}`, otherWorldItem);
+    return getLocal(`${_server.name}_${key}`, isLocalStorage, toJSON);
   }
 
   function delLocal(key, isLocalStorage) {
@@ -1994,9 +2063,7 @@
   function delValue(key, portable) { // 删除数据
     const isLocalStorage = portable ? false : dataFlags.local.includes(key);
     if (dataFlags.standalone.includes(key)) {
-      onRestoredBattleServer(key, () => {
-        key = `${_server.name}_${key}`;
-      }, 'option');
+      key = `${_server.name}_${key}`;
     }
     if (typeof key === 'string') {
       delLocal(key, isLocalStorage);
@@ -2006,24 +2073,11 @@
       return;
     }
     const itemMap = {
-      0: ['disabled'],
       1: ['battle', 'battleCode'],
     }
     for (let item of itemMap[key]) {
       delValue(item, portable);
     }
-  }
-
-  function g(key, value) { // 全局变量
-    const hvAA = window.hvAA || {};
-    if (key === undefined && value === undefined) {
-      return hvAA;
-    } if (value === undefined) {
-      return hvAA[key];
-    }
-    hvAA[key] = value;
-    window.hvAA = hvAA;
-    return window.hvAA[key];
   }
 
   function objSort(obj) { // 对象排序
@@ -2036,7 +2090,6 @@
   }
 
   function addStyle() { // CSS
-    const lang = g().lang;
     if (!gE('.hvAA-LangStyle')) {
       const langStyle = gE('head').appendChild(cE('style'));
       langStyle.className = 'hvAA-LangStyle';
@@ -2122,10 +2175,6 @@
       '#pane_log{height:403px;}',
       '.tlbQRA{text-align:left;font-weight:bold;}', // 标记已检测的日志行
       '.tlbWARN{text-align:left;font-weight:bold;color:red;font-size:20pt;}', // 标记检测出异常的日志行
-      // 怪物标号用数字替代字母，目前弃用
-      // '#pane_monster{counter-reset:order;}',
-      // `${monsterStateKeys.lv}>div:nth-child(1):before{font-size:23px;font-weight:bold;text-shadow:1px 1px 2px;content:counter(order);counter-increment:order;}`,
-      // `${monsterStateKeys.lv}>div:nth-child(1)>img{display:none;}`,
     ].join('');
     globalStyle.textContent = cssContent;
     optionBox();
@@ -2175,30 +2224,6 @@
     if (!gE('#hvAABox')) return;
     const li = gE('.hvAABackupList', gE('#hvAABox')).appendChild(cE('li'));
     li.textContent = code;
-  }
-
-  function getCheckSupplyOptionTable(suffix = '', checkBoxOnly) {
-    const items = [
-      11191, 11291, 11391, 12101, 12201,
-      11195, 11295, 11395, 12301, 12401,
-      11199, 11299, 11399, 12501, 12601,
-      13299, 13221, 13211, 13201,        0,
-      13199, 13111, 13101,        0, 11401,
-      19111, 19131, 11501,        0, 11402];
-    return [
-      checkBoxOnly ? '' : `    <span class="checkSupply${suffix}Inner">${UI.l('库存', '庫存', 'Warn if supply')}&lt;max(100%,${UI.number(`checkSupplyWarn${suffix}`, 100)}%)${UI.hidden(UI.for(`checkSupplyWarn${suffix}`, `${UI.l('提示库存', '提示庫存', 'Supply warn')} ${suffix} %`))}${UI.l('时提示', '時提示')};</span><br>`,
-      UI.hvAATable(undefined, `hvAAcheckItems checkSupply${suffix}Inner`, ...items.map(item => {
-        if (!item) return UI.div();
-        const names = itemMap[item].map((...args) => `<l${args[1]}>${args[0]}</l${args[1]}>`).join('');
-        return UI.div(
-          UI.labeled(
-            `isCheck${suffix}_${item}`,
-            `${!checkBoxOnly ? UI.number(`checkItem${suffix}_${item}`) : ''}${UI.hidden(UI.l('库存', '庫存', 'Supply') + ' ' + suffix)}${names}`
-          ),
-          UI.hidden(UI.for(`checkItem${suffix}_${item}`, UI.l('库存', '庫存', 'Supply') + ' ' + suffix + names)),
-        )
-      }))
-    ];
   }
 
   function appendInput(container, value, innerHTML) {
@@ -2284,7 +2309,7 @@
       ['挑战人物', '挑戰人物', 'Battle Persona'],
       ['挑战套装', '挑戰套裝', 'Battle Equip Set']
     ].map(s => UI.b(UI.l(s)));
-    const option = getOption();
+    const option = g.option;
     const { equips, personas, equipSets } = getValue('itemWorldDatas', true) ?? {};
     if (!personas || !equipSets) {
       return;
@@ -2350,7 +2375,7 @@
       ['挑战人物', '挑戰人物', 'Battle Persona'],
       ['挑战套装', '挑戰套裝', 'Battle Equip Set']
     ].map(s => UI.b(UI.l(s)));
-    const option = getOption();
+    const option = g.option;
     const { equips, personas, equipSets } = getValue('itemWorldDatas', true) ?? {};
     if (!equips || !personas || !equipSets) {
       gE('.itemWorldCounts').innerHTML = `${equips?.filter(eqp => option.enableItemWorld?.[eqp.id]).length ?? 0}/${equips?.length ?? 0}`;
@@ -2668,6 +2693,8 @@
         { id: 'evade', names: ['闪避', '閃避', 'Evade'] },
         { id: 'miss', names: ['未命中', '未命中', 'Miss'] },
         { id: 'focus', names: ['集中', '集中', 'Focus'] },
+        { id: 'attack', names: ['攻击', '攻擊', 'Attack'] },
+        { id: 'spirit', names: ['灵动架势', '靈動架勢', 'Spirit'] },
         { id: 'mp', names: ['MP 总消耗', 'MP 總消耗', 'MP Cost'] },
         { id: 'oc', names: ['OC 总消耗', 'OC 總消耗', 'OC Cost'] },
       ],
@@ -2701,7 +2728,7 @@
       ],
     };
 
-    let option = getOption(true);
+    let option = g.option;
     let optionBox = gE('#hvAABox');
     if (!optionBox) {
       optionBox = gE('body').appendChild(cE('div'));
@@ -2768,6 +2795,8 @@
               ),
               UI.div(
                 UI.b(UI.l('脚本行为', '腳本行為', 'Script Activity')),
+                '<br>',
+                UI.labeled('waitHVMonsterDB', UI.l('等待HVMonsterDB加载', '等待HVMonsterDB加載', 'Wait until HV Monster DB loaded')), `. ${UI.for('waitHVMonsterDBTime', UI.hidden(UI.l('等待HVMonsterDB加载', '等待HVMonsterDB加載', 'Wait until HV Monster DB loaded')) + UI.l('最多', '最多', 'Max'))}: ${UI.text('waitHVMonsterDBTime')}ms`,
                 UI.expendData(UIDatas.hotkeys, (id, names, v) => UI.div(
                   `${UI.labeled(`${id}Button`, `${names}${UI.l('按钮', '按鈕', ' Button')}`)}; ${UI.labeled(`${id}Hotkey`, `${names}${UI.l('热键', '熱鍵', ' Hotkey')}${UI.text(`${id}HotkeyStr`)}`)}${UI.hidden(UI.for(`${id}HotkeyStr`, `${names}${UI.l('热键', '熱鍵', ' Hotkey')}`))}: `,
                   `${UI.number(`${id}HotkeyCode`, 'undefined', 'hidden', '', 'disabled="true"')}`)),
@@ -2959,7 +2988,7 @@
                 UI.number('equStorageValue', 150, 'number', '', 'style="width: 32px;"'),
                 `; <span class="equStorageInner">${UI.labeled(`encounterEquStorage`, UI.l('遭遇战前检查', '遭遇戰前檢查', 'Check before encounter'), 'class="equStorageInner"')}</span>`),
               UI.div(
-                UI.labeled(`changeEquipSet`, UI.b(UI.l('[!!实验性]切换套装', '[!!實驗性]切換套裝', '[!!Experimental]Switch Equip Set'))),
+                UI.labeled(`changeEquipSet`, UI.b(UI.l('切换套装', '切換套裝', 'Switch Equip Set'))),
                 `<span class="changeEquipSetInner">`,
                 UI.button.class('updateEquipSet', UI.button.update),
                 UI.button.class('hvAAShowEquipSet', UI.button.details()),
@@ -3062,7 +3091,9 @@
             UI.hvAATab(
               'Debuff',
               UI.div(UI.for('debuffSkillCondition', UI.l('Debuff释放条件', 'Debuff釋放條件', 'Cast debuff spells Condition')), '{{debuffSkillCondition}}'),
-              UI.div(`${UI.labeled('debuffAutoFill', UI.l('[!!实验性]补全因超过默认显示上限未显示的怪物buff', '[!!實驗性]補全因超過默認顯示上限未顯示的怪物buff', '[!!Experimental]Auto fill hidden monster buffs due to display limitation'))}<span class="debuffAutoFillInner">${UI.labeled('debuffAutoFillRec', 'DEBUG RECORD')}</span>`),
+              UI.div(
+                `${UI.labeled('debuffAutoFill', UI.l('补全因超过默认显示上限未显示的怪物buff', '補全因超過默認顯示上限未顯示的怪物buff', 'Auto fill hidden monster buffs due to display limitation'))}`,
+              ),
               UI.div(
                 UI.for('debuffSkillTurnAlert', UI.l('超出6个debuff的默认显示上限时（例如同时使用jpx时可忽略上限）：', '超出6個debuff的默認顯示上限時（例如同時使用jpx時可忽略上限）：', 'When debuff count overflows 6 as the default maximum display count (such as ignore limitation while using jpx): ')),
                 '<select class="hvAANumber" name="debuffSkillTurnAlert"><option value="0" selected>跳过 / Skip</option><option value="1">警报 / Alert</option><option value="2">忽略 / Ignore</option></select><br>',
@@ -3356,7 +3387,7 @@
                 UI.b(UI.l('自身', '自身', 'Self')),
                 UI.hvAATable(
                   UI.repeat(10), '',
-                  UI.expendData(UIDatas.record1, (id, names, v) => UI.div(UI.labeled(`record_${id}`, UI.hidden(UI.l('数据记录', '數據記錄', 'Usage Tracking'),':')+names))),
+                  UI.expendData(UIDatas.record1, (id, names, v) => UI.div(UI.labeled(`record_${id}`, UI.hidden(UI.l('数据记录', '數據記錄', 'Usage Tracking'), ':') + names))),
                 ),
               ),
               UI.div(
@@ -3387,6 +3418,7 @@
                 ' <l0>总回合</l0><l1>總回合</l1><l2>Total rounds</l2>: ',
                 UI.number('roundAll', undefined, 'number', 'hvAADebug'),
               ),
+              UI.div(UI.labeled('keepAliveByAudio', UI.l('[实验性!!]使用静音音频脉冲避免浏览器节流', '[實驗性!!]使用靜音音頻脈衝避免瀏覽器節流', '[Experimental!!]Keep alive by slience audio pulse to avoid browser throttle'))),
               '<div class="hvAAQuickSite">',
               UI.labeled('showQuickSite', `<span class="hvAATitle">${UI.l('快捷站点', '快捷站點', 'Quick Site')}</span>`),
               '<span class="showQuickSiteInner">',
@@ -3427,6 +3459,7 @@
                 ),
               ),
               UI.div(UI.labeled('debugCheckCondition', 'debugCheckCondition:<br>prefix@/# to log result in console, @for formula, #for param: '), '{{debugCondition}}'),
+              '<div id="hvAADebugConsoleDisplay"></div>'
             ),
           ]
         }),
@@ -3463,15 +3496,15 @@
 
       gE('.hvAATab', 'all', optionBox).forEach(tab => { tab.style.zIndex = 1; });
       optionBox.style.display = 'none';
-      gE('select[name="lang"]', optionBox).value = g().lang;
+      gE('select[name="lang"]', optionBox).value = lang;
       bindEvents();
     }
-    updateItemWorldList(true, document);
+    updateItemWorldList(true, currentDoc);
     updateEquipSetUI();
     updateItemWorldListUI();
     changeSelectOptionText();
     loadOptionUIData();
-    g().optionLoaded = true;
+    g.optionLoaded = true;
     (async () => { gE('input, select', 'all', optionBox).forEach(setInputTitle); })();
 
     [...gE('select:not([name="lang"])', 'all', optionBox)].forEach(s => { s.onchange ??= () => selectFit(s); });
@@ -3516,7 +3549,7 @@
         if (/^[01]$/.test(this.value)) {
           gE('.hvAA-LangStyle').textContent += 'l01{display:inline!important;}';
         }
-        g('lang', this.value);
+        lang = this.value;
         changeSelectOptionText();
       };
       gE('.hvAATabmenu', optionBox).onclick = function (e) { // 标签页事件
@@ -3569,6 +3602,7 @@
           gE('#hvAATab-Drop>table').innerHTML = _html;
         } else if (name === 'Usage') { // 数据记录
           let stats = getValue('stats', true) || {};
+          let statsStatic = getValue('statsStatic', true) || {};
           const statsOld = getValue('statsOld', true) || [];
           const translation = {
             self: UI.l('自身', '自身', 'Self'),
@@ -3585,10 +3619,10 @@
               stats = statsOld[0];
             }
             for (i in stats) {
-              if (['itemsNames', 'magicNames'].includes(i)) continue;
               _html = `${_html}<tr class="hvAATh"><td>${translation[i]??i}</td><td>${UI.l('值', '值', 'Value')}</td></tr>`;
               stats[i] = objSort(stats[i]);
-              let names = stats[`${i}Names`];
+              let names = statsStatic[`${i}Names`];
+              if (!names && ['restore', 'damage'].includes(i)) names = { ...statsStatic.magicNames, ...statsStatic.itemsNames };
               for (const j in stats[i]) {
                 _html = `${_html}<tr><td>${j} ${names?.[j] ?? ''}</td><td>${stats[i][j]}</td></tr>`;
               }
@@ -3605,12 +3639,11 @@
             });
             _html = `${_html}</tr>`;
             Object.keys(translation).forEach((i) => {
-              if (['itemsNames', 'magicNames'].includes(i)) return;
               if (i === '__name') return;
-
               _html = `${_html}<tr class="hvAATh"><td colspan="${statsOld.length + 1}">${translation[i]??i}</td></tr>`;
               getKeys(statsOld, i).forEach((key) => {
-                let names = stats[`${i}Names`];
+                let names = statsStatic[`${i}Names`];
+                if (!names && i === 'restore') names = { ...statsStatic.magicNames, ...statsStatic.itemsNames };
                 _html = `${_html}<tr><td>${key} ${names?.[key] ?? ''}</td>`;
                 statsOld.forEach((_statsOld) => {
                   if (_statsOld[i] && (key in _statsOld[i])) {
@@ -3639,7 +3672,7 @@
             i.onclick = function (e) {
               const select = window.getSelection();
               select.removeAllRanges();
-              const selectRange = document.createRange();
+              const selectRange = currentDoc.createRange();
               selectRange.selectNodeContents(e.target.parentNode.parentNode.parentNode);
               select.addRange(selectRange);
             };
@@ -3662,7 +3695,7 @@
           return;
         }
         creatCustomizeBox();
-        g('customizeTarget', target);
+        g.customizeTarget = target;
         updateGroup();
       };
       // 标签页-主要选项
@@ -3955,7 +3988,7 @@
           return;
         }
 
-        const arenaPrev = getOption().idleArenaValue;
+        const arenaPrev = g.option.idleArenaValue;
 
         const _option = getCurrentUIOption();
         _option.version = scriptVersion.ver;
@@ -3965,7 +3998,7 @@
         // 清除不再需要的portable数据
         for (const key of dataFlags.portable) {
           if (_option.portable && Object.keys(_option.portable).includes(key)) continue;
-          delValue(key, true, true);
+          delValue(key, true);
         }
         // 更改设置后实时刷新竞技场数据
         const arenaNew = _option.idleArenaValue;
@@ -4133,7 +4166,7 @@
           value = value === undefined ? '' : value;
         }
 
-        if (skipUI || onIsekaiEncounter) continue;
+        if (skipUI || forIsekaiEncounter) continue;
         switch (type) {
           case 'select-one' :
           case 'text':
@@ -4156,7 +4189,7 @@
       uiOption ??= option;
       if (!uiOption) return;
       uiOption = formatOption(uiOption);
-      if (onIsekaiEncounter) return;
+      if (forIsekaiEncounter) return;
       const customizes = gE('.customize', 'all', optionBox);
       customizes.forEach(n => { while(n.firstChild) { n.removeChild(n.firstChild); }});
       for (let customize of customizes) {
@@ -4180,7 +4213,7 @@
       }
 
       if (!isCache) return;
-      g('option', uiOption);
+      g.option = uiOption;
       let _html;
       if (option.quickSite) {
         _html = `<tr class="hvAATh"><td>${UI.l('图标', '圖標', 'ICON')}</td><td>${UI.l('名称', '名稱', 'Name')}</td><td>${UI.l('链接', '鏈接', 'Link')}</td></tr>`;
@@ -4236,13 +4269,13 @@
   async function setInputTitle(input) { try {
     const id = input.id || input.name;
     input.title ||= `Loading Name ... [${id}]`;
-    g().titleQueue ??= [];
-    if (g().titleQueue.includes(input)) return;
-    g().titleQueue.push(input);
+    g.titleQueue ??= [];
+    if (g.titleQueue.includes(input)) return;
+    g.titleQueue.push(input);
     await sleep(100);
     applyLabelTitle(input);
-    if (g().isProcessingTitleQueue) return;
-    g().isProcessingTitleQueue = true;
+    if (g.isProcessingTitleQueue) return;
+    g.isProcessingTitleQueue = true;
     processTitleQueue();
   } catch (err) { console.error(err); }}
 
@@ -4259,13 +4292,13 @@
     const box = gE('#hvAABox');
     await until(() => max-- <= (box.style.display !== 'none' ? 9 : 0), 1000);
     await until(() => {
-      let input = g().titleQueue.shift();
+      let input = g.titleQueue.shift();
       if (!input) return;
       input.title = getInputFriendlyName(input);
       applyLabelTitle(input);
-      return !g().titleQueue.length;
+      return !g.titleQueue.length;
     });
-    g().isProcessingTitleQueue = false;
+    g.isProcessingTitleQueue = false;
   } catch (err) { console.error(err); }}
 
   function setCustomizeInput(input, name, value, isLastCustomizeInput) {
@@ -4274,7 +4307,7 @@
     input.name = name;
     input.value = value ?? input.value;
     customizeInputAutoFit(input, isLastCustomizeInput);
-    if(g().optionLoaded) setInputTitle(input);
+    if(g.optionLoaded) setInputTitle(input);
   }
 
   function customizeInputAutoFit(input, isLastCustomizeInput) {
@@ -4349,9 +4382,9 @@
       left: -9999px;
   `;
     measure.textContent = input.value;
-    document.body.appendChild(measure);
+    currentDoc.body.appendChild(measure);
     input.style.width = measure.offsetWidth + 'px';
-    document.body.removeChild(measure);
+    currentDoc.body.removeChild(measure);
   }
 
   function creatCustomizeBox() { // 自定义条件界面
@@ -4475,7 +4508,7 @@
       }
     };
     gE('.groupAdd', customizeBox).onclick = function () {
-      const target = g().customizeTarget;
+      const target = g.customizeTarget;
       const selects = gE('select', 'all', customizeBox);
       let groupChoose = selects[0].value;
       let group;
@@ -4523,7 +4556,7 @@
   }
 
   function updateGroup(keepPosition) {
-    const target = g().customizeTarget;
+    const target = g.customizeTarget;
     const group = gE('.customizeGroup', 'all', target);
     const customizeBox = gE('.customizeBox');
     if (group.length + 1 === gE('select[name="groupChoose"]>option', 'all', customizeBox).length) {
@@ -4540,7 +4573,7 @@
 
     function updateGroupUI() {
       const position = target.getBoundingClientRect();
-      const bodyPosition = document.body.getBoundingClientRect();
+      const bodyPosition = currentDoc.body.getBoundingClientRect();
       customizeBox.style.cssText += `z-index: 20;display: block; height: ${gE('.customizeGroup', 'all', target).length * 30 + 60}px;`
       if (!keepPosition) {
         customizeBox.style.top = `${position.bottom - bodyPosition.top}px`;
@@ -4550,7 +4583,7 @@
   }
 
   function setAlarm(e, testSrc) { // 发出警报
-    const option = getOption();
+    const option = g.option;
     e = e || 'Common';
     if (option.notification || testSrc) {
       setNotification(e);
@@ -4591,7 +4624,7 @@
   }
 
   function setAudioAlarm(e, testSrc) { // 发出音频警报
-    const option = getOption();
+    const option = g.option;
     let audio = gE(`#hvAAAlert-${e}`);
     const fileType = '.ogg'; // var fileType = (/Chrome|Safari/.test(navigator.userAgent)) ? '.mp3' : '.wav';
     if (!audio) {
@@ -4653,7 +4686,7 @@
       GM_notification({
         text: notification.text,
         image: `${window.location.origin}${unsafeWindow.IMG_URL}hentaiverse.png`,
-        highlight: getOption().focusNotification,
+        highlight: g.option.focusNotification,
         timeout: notification.time * _1s,
       });
     }
@@ -4680,53 +4713,54 @@
   }
 
   function returnValueGetter(paramResultsGetter, targetGetter) {
-    let minmaxModes = returnValueGetter.prototype.minmaxModes ??= (() => {
-      const modes = ['min', 'max', 'count', 'sum'];
-      const flags = ['a', 'ag', 'g'];
+    const paramForSort = returnValueGetter.prototype.paramForSort ??= ['rank', 'tier', 'maxtier', 'sumtier', 'counttier', ...range(10).map(n => `counttier${n}`)];
+    const modes = returnValueGetter.prototype.modes ??= ['min', 'max', 'count', 'sum', ...paramForSort];
+    const minmaxModes = returnValueGetter.prototype.minmaxModes ??= (() => {
+      const flags = ['', 'a', 'ag', 'g'];
       return flags.reduce((result, f) => result.concat(modes.map(m => f + m)), []);
     })();
     returnValueGetter.prototype.func ??= {
       ar() {
-        return g().battle.roundType === 'ar' ? 1 : 0;
+        return g.battle.roundType === 'ar' ? 1 : 0;
       },
       gr() {
-        return g().battle.roundType === 'gr' ? 1 : 0;
+        return g.battle.roundType === 'gr' ? 1 : 0;
       },
       tw() {
-        return g().battle.roundType === 'tw' ? 1 : 0;
+        return g.battle.roundType === 'tw' ? 1 : 0;
       },
       rb() {
-        return g().battle.roundType === 'rb' ? 1 : 0;
+        return g.battle.roundType === 'rb' ? 1 : 0;
       },
       iw() {
-        return g().battle.roundType === 'iw' ? 1 : 0;
+        return g.battle.roundType === 'iw' ? 1 : 0;
       },
       ba() {
-        return g().battle.roundType === 'ba' ? 1 : 0;
+        return g.battle.roundType === 'ba' ? 1 : 0;
       },
       isRoundType(t) {
-        return g().battle.roundType === t ? 1 : 0;
+        return g.battle.roundType === t ? 1 : 0;
       },
       phys() {
-        return g().attackStatus * 1 === 0 ? 1 : 0;
+        return g.attackStatus * 1 === 0 ? 1 : 0;
       },
       fire() {
-        return g().attackStatus * 1 === 1 ? 1 : 0;
+        return g.attackStatus * 1 === 1 ? 1 : 0;
       },
       cold() {
-        return g().attackStatus * 1 === 2 ? 1 : 0;
+        return g.attackStatus * 1 === 2 ? 1 : 0;
       },
       elec() {
-        return g().attackStatus * 1 === 3 ? 1 : 0;
+        return g.attackStatus * 1 === 3 ? 1 : 0;
       },
       wind() {
-        return g().attackStatus * 1 === 4 ? 1 : 0;
+        return g.attackStatus * 1 === 4 ? 1 : 0;
       },
       divi() {
-        return g().attackStatus * 1 === 5 ? 1 : 0;
+        return g.attackStatus * 1 === 5 ? 1 : 0;
       },
       forb() {
-        return g().attackStatus * 1 === 6 ? 1 : 0;
+        return g.attackStatus * 1 === 6 ? 1 : 0;
       },
       attackStatusCur() {
         return getCurrentAttackStatus() * 1;
@@ -4754,19 +4788,19 @@
       },
 
       nt() {
-        return g().fightingStyle * 1 === 1 ? 1 : 0;
+        return g.fightingStyle * 1 === 1 ? 1 : 0;
       },
       onehanded() {
-        return g().fightingStyle * 1 === 2 ? 1 : 0;
+        return g.fightingStyle * 1 === 2 ? 1 : 0;
       },
       twohanded() {
-        return g().fightingStyle * 1 === 3 ? 1 : 0;
+        return g.fightingStyle * 1 === 3 ? 1 : 0;
       },
       dw() {
-        return g().fightingStyle * 1 === 4 ? 1 : 0;
+        return g.fightingStyle * 1 === 4 ? 1 : 0;
       },
       staff() {
-        return g().fightingStyle * 1 === 5 ? 1 : 0;
+        return g.fightingStyle * 1 === 5 ? 1 : 0;
       },
       isCd(id) { // is cool down done
         return isOn(id) ? 1 : 0;
@@ -4781,27 +4815,32 @@
         return getBuffStackFromImg(getBuff(imgArray2img(...img)));
       },
       hpDecimal() {
-        return g().hp / 100;
+        return g.hp / 100;
       },
       mpDecimal() {
-        return g().mp / 100;
+        return g.mp / 100;
       },
       spDecimal() {
-        return g().sp / 100;
+        return g.sp / 100;
       },
       ocDecimal() {
-        return g().oc / 100;
+        return g.oc / 100;
       },
     };
     let currentGroup = null;
     const func = {
       ...returnValueGetter.prototype.func,
+      targetDB(...params) {
+        let param = minmaxModes.includes(params[0]) ? params.shift() : undefined;
+        const key = params.shift();
+        return switchMinMax(param, t => unsafeWindow.HVMonsterDB?.getCurrentMonstersInformation()[`mkey_${getMonsterID(t)}`]?.[key] ?? 0 );
+      },
       weighted(...params) {
         const funcName = params.shift();
-        const battle = g().battle;
+        const battle = g.battle;
         let result;
-        if (!g().inSkillExtraWeight) {
-          const origin = JSON.parse(JSON.stringify(g().battle.monsterStatus));
+        if (!g.inSkillExtraWeight) {
+          const origin = JSON.parse(JSON.stringify(g.battle.monsterStatus));
           battle.monsterStatus.forEach(t => { t.finWeight += resolveSkillExtraWeight(t); });
           battle.monsterStatus = battle.monsterStatus.sortBy(x => x.finWeight);
           result = func[funcName](...params);
@@ -4814,21 +4853,21 @@
       targetBuffStack(...img) {
         const getter = (t, i) => getBuffStackFromImg(getBuff(imgArray2img(i), getMonsterID(t)));
         let param = minmaxModes.includes(img[0]) ? img.shift() : undefined;
-        return switchMaxMin(param, t => getter(t, img));
+        return switchMinMax(param, t => getter(t, img));
       },
       targetBuffTurn(...img) {
         const getter = (t, i) => getBuffTurnFromImg(getBuff(imgArray2img(i), getMonsterID(t)));
         let param = minmaxModes.includes(img[0]) ? img.shift() : undefined;
-        return switchMaxMin(param, t => getter(t, img));
+        return switchMinMax(param, t => getter(t, img));
       },
       targetOrder(param) {
-        return switchMaxMin(param, t => t.order);
+        return switchMinMax(param, t => t.order);
       },
       targetWeight(param) {
-        return switchMaxMin(param, t => t.finWeight);
+        return switchMinMax(param, t => t.finWeight);
       },
       targetRank(param) {
-        return switchMaxMin(param, t => Object.entries(g().battle.monsterStatus).find(([k, v]) => v.order === t.order)[0] * 1);
+        return switchMinMax(param, t => Object.entries(g.battle.monsterStatus).find(([k, v]) => v.order === t.order)[0] * 1);
       },
       targetName(param) {
         param ??= targetGetter();
@@ -4836,7 +4875,7 @@
         return gE(`.btm3>div>div`, mon).innerText.replace(' ', '_');
       },
       targetBossType(param) {
-        return switchMaxMin(param, t => {
+        return switchMinMax(param, t => {
           const name = func.targetName(t);
           switch(name.replace('_', ' ')) {
             case 'Manbearpig':
@@ -4884,38 +4923,38 @@
           }});
       },
       targetIsAlive(param) {
-        return switchMaxMin(param, t => t.isDead ? 0 : 1);
+        return switchMinMax(param, t => t.isDead ? 0 : 1);
       },
       targetHPRaw(param) {
-        return switchMaxMin(param, t => t.hpNow);
+        return switchMinMax(param, t => t.hpNow);
       },
       targetHPFull(param) {
-        return switchMaxMin(param, t => t.hp);
+        return switchMinMax(param, t => t.hp);
       },
       targetHp(param) {
-        return switchMaxMin(param, t => Math.floor(func.targetHpDecimal() * 100));
+        return switchMinMax(param, t => Math.floor(func.targetHpDecimal() * 100));
       },
       targetMp(param) {
-        return switchMaxMin(param, t => Math.floor(func.targetMpDecimal() * 100));
+        return switchMinMax(param, t => Math.floor(func.targetMpDecimal() * 100));
       },
       targetSp(param) {
-        return switchMaxMin(param, t => Math.floor(func.targetSpDecimal() * 100));
+        return switchMinMax(param, t => Math.floor(func.targetSpDecimal() * 100));
       },
       targetHpDecimal(param) {
-        return switchMaxMin(param, t => t.hpNow / t.hp);
+        return switchMinMax(param, t => t.hpNow / t.hp);
       },
       targetMpDecimal(param) {
-        return switchMaxMin(param, t => t.mpNow);
+        return switchMinMax(param, t => t.mpNow);
       },
       targetSpDecimal(param) {
-        return switchMaxMin(param, t => t.spNow);
+        return switchMinMax(param, t => t.spNow);
       },
       targetGroup(...args) {
         const groupMode = args.shift();
         const numArgs = args.map(arg => arg === '' ? -1 : parseInt(arg));
         if (numArgs.some(isNaN)) throw new Error(`Error args for targetGroup, args: ${args}.`);
         const currentTarget = targetGetter();
-        const targets = g().battle.monsterStatus;
+        const targets = g.battle.monsterStatus;
         switch(groupMode) {
           case 'a': // all targets (as default if currentGroup is undefined)
             currentGroup = targets;
@@ -4969,16 +5008,14 @@
         null: () => null
     };
 
-    function switchMaxMin(param, defaultResult, skipAliveCheck = false, targets = undefined) {
-      const paramForSort = ['rank', 'tier', 'maxtier', 'sumtier', 'counttier', ...range(10).map(n => `counttier${n}`)];
-      const params = ['count', 'sum', 'max', 'min', ...paramForSort];
-      if ([ ...params.map(n => `ga${n}`), ...params.map(n => `g${n}`)].includes(param)) {
-        return switchMaxMin(param.replace(/^g/, ''), defaultResult, skipAliveCheck, currentGroup);
+    function switchMinMax(param, defaultResult, skipAliveCheck = false, targets = undefined) {
+      if ([ ...modes.map(n => `ga${n}`), ...modes.map(n => `g${n}`)].includes(param)) {
+        return switchMinMax(param.replace(/^g/, ''), defaultResult, skipAliveCheck, currentGroup);
       }
-      if ([ ...params.map(n => `a${n}`), ...params.map(n => `ag${n}`)].includes(param)) {
-        return switchMaxMin(param.replace(/^a/, ''), defaultResult, true, targets);
+      if ([ ...modes.map(n => `a${n}`), ...modes.map(n => `ag${n}`)].includes(param)) {
+        return switchMinMax(param.replace(/^a/, ''), defaultResult, true, targets);
       }
-      if (targets === undefined) targets = g().battle.monsterStatus; // 只处理 undefined，null 是空 group
+      if (targets === undefined) targets = g.battle.monsterStatus; // 只处理 undefined，null 是空 group
       if (!targets) return 0;
       if (!skipAliveCheck) targets = targets.filter(t => !t.isDead);
 
@@ -5023,7 +5060,7 @@
         case 'min':
           return Math.min(...targets.map(defaultResult));
         default:
-          if (param !== undefined) console.warn(`Unknown param`, param, `for switchMaxMin, fallback to default.`);
+          if (param !== undefined) console.warn(`Unknown param`, param, `for switchMinMax, fallback to default.`);
           return defaultResult(targetGetter());
       }
     }
@@ -5037,7 +5074,6 @@
         if (debug) console.log([str], r);
         return r;
       }
-
       // 旧版本/强制使用func
       if (str.match(/^_/) && !str.match(/\./)) {
         const arr = str.split('_');
@@ -5049,28 +5085,19 @@
       // 将不是数字小数点的 . 转为 _ 以便进行参数分割
       const paramList = str.replace(/[^\d](\.)/g, match => match.replace('.', '_')).split('_');
       let result, isInData;
-      const option = getOption();
-      const battle = g().battle ?? {};
+      const option = g.option;
+      const battle = g.battle ?? {};
+      const nullOrUndefined = r => r === undefined || r === null;
       while (paramList.length) {
         const key = paramList.shift();
-        if (typeof result === 'undefined') { // 获取顶层数据
+        if (nullOrUndefined(result)) { // 获取顶层数据
           result = battle[key];
-          if (typeof result === 'undefined' || result === null) {
-            result = getValue('battle', true) ? getValue('battle', true)[key] : undefined;
-          }
-          if (typeof result === 'undefined' || result === null) {
-            result = g(key);
-          }
-          if (typeof result === 'undefined' || result === null) {
-            result = getValue(key);
-          }
-          if (typeof result === 'undefined' || result === null) {
-            result = option[key];
-          }
-          if ((typeof result === 'undefined' || result === null) && func[key]) {
-            result = func[key](...paramList);
-          }
-          if (typeof result === 'undefined' || result === null) break;
+          if (nullOrUndefined(result)) result = getValue('battle', true)?.[key];
+          if (nullOrUndefined(result)) result = g[key];
+          if (nullOrUndefined(result)) result = getValue(key);
+          if (nullOrUndefined(result)) result = option[key];
+          if (nullOrUndefined(result)) result = func[key] ? func[key](...paramList) : undefined;
+          if (nullOrUndefined(result)) break;
           isInData = true; // 存在顶层数据
           continue;
         }
@@ -5082,7 +5109,13 @@
       }
 
       result ??= isInData ? 0 : result; // 存在顶层数据时默认为0
-      return onResult(isNaN(result * 1) ? result ?? str : (result * 1));
+      if (!isNaN(+result)) return onResult(result * 1);
+      if (result !== undefined) return onResult(result);
+      const matchInner = str.match(/^"(.*)"$|^'(.*)'$/);
+      let inner;
+      if (inner = matchInner?.[1]) return onResult(inner.replaceAll('\\"', '"'));
+      if (inner = matchInner?.[2]) return onResult(inner.replaceAll("\\'", "'"));
+      return onResult(str);
     }
     getter.paramResultsGetter = paramResultsGetter;
     return getter;
@@ -5120,7 +5153,7 @@
         case '6':
           return '!=';
       }
-    }).replace(/===/g, '==').replace(/(?<![=<>!~])=(?!=)/g, '==')
+    }).replace(/===/g, '==').replace(/!==/g, '!=').replace(/(?<![=<>!~])=(?!=)/g, '==')
       .replace(/≥|≤|≠|~=|<>/g, (match) => {
       switch (match) {
         case '≥':
@@ -5147,7 +5180,7 @@
 
   function checkCondition(params, targets = undefined) {
     let i, j, target, paramResults = {};
-    targets ??= [g().battle.monsterStatus[0]];
+    targets ??= [g.battle.monsterStatus[0]];
     if (!params || !Object.keys(params).length) {
       return targets[0];
     }
@@ -5169,28 +5202,29 @@
   }
 
   function pauseChange() { // 暂停状态更改
+    const option = g.option;
     if (getValue('disabled')) {
       if (gE('.pauseChange')) {
-        gE('.pauseChange').innerHTML = UI.button.pause();
+        gE('.pauseChange').innerHTML = UI.button.pause(option);
       }
-      document.title = gE('#navbar') ? 'The Hentaiverse' : getValue('disabled');
-      delValue(0);
+      currentDoc.title = gE('#navbar') ? 'The Hentaiverse' : getValue('disabled');
+      delValue('disabled');
       if (!gE('#navbar')) { // in battle
         onBattleRound();
       }
     } else {
       if (gE('.pauseChange')) {
-        gE('.pauseChange').innerHTML = UI.button.continue();
+        gE('.pauseChange').innerHTML = UI.button.continue(option);
       }
-      setValue('disabled', document.title);
-      document.title = titlePause();
+      setValue('disabled', currentDoc.title);
+      currentDoc.title = titlePause();
     }
   }
 
   function stepIn() {
     setValue('stepIn', true);
     if (getValue('disabled')) {
-      g('timeNow', time(0));
+      g.timeNow = time(0);
       pauseChange();
     }
   }
@@ -5204,7 +5238,7 @@
   }
 
   function getCurrentUser() {
-    const cookie = document.cookie.split("; ");
+    const cookie = currentDoc.cookie.split("; ");
     for (const cookieObj of cookie) {
       const match = cookieObj.match(/ipb_member_id=(\d+)/);
       if (match) {
@@ -5218,7 +5252,7 @@
     const quickSiteBar = gE('body').appendChild(cE('div'));
     quickSiteBar.className = 'quickSiteBar';
     quickSiteBar.innerHTML = '<span><a href="javascript:void(0);"class="quickSiteBarToggle">&lt;&lt;</a></span><span><a href="https://tieba.baidu.com/f?kw=hv网页游戏"target="_blank"><img src="https://www.baidu.com/favicon.ico" class="favicon"></img>贴吧</a></span><span><a href="https://forums.e-hentai.org/index.php?showforum=76"target="_blank"><img src="https://forums.e-hentai.org/favicon.ico" class="favicon"></img>Forums</a></span>';
-    getOption().quickSite?.forEach((site) => {
+    g.option.quickSite?.forEach((site) => {
       quickSiteBar.innerHTML = `${quickSiteBar.innerHTML}<span title="${site.name}"><a href="${site.url}"target="_self">${(site.fav) ? `<img src="${site.fav}"class="favicon"></img>` : ''}${site.name}</a></span>`;
     });
     gE('.quickSiteBarToggle', quickSiteBar).onclick = function () {
@@ -5231,8 +5265,8 @@
   }
 
   async function autoSwitchIsekai() {
-    const option = getOption();
-    await sleep(option.isekaiTime * _1s - (time(0) - g().idleStart));
+    const option = g.option;
+    await sleep(option.isekaiTime * _1s - (time(0) - g.idleStart));
     await waitPause();
     $async.logSwitch(arguments);
     if (!option.isekai) return; // 若不启用自动跳转
@@ -5253,7 +5287,7 @@
   }
 
   function isInBattle(doc) {
-    return gE('#riddlecounter, #battle_main', doc ?? document);
+    return gE('#riddlecounter, #battle_main', doc);
   }
 
   async function restorePersonaAndEquipSet() {
@@ -5289,16 +5323,16 @@
   }
 
   async function displayCDRemain() { try {
-    const option = getOption();
+    const option = g.option;
     await until(() => {
       const optionBox = gE('#hvAABox');
       const ui = gE('.encounterUI');
       if (optionBox.style.display === 'none' && !ui) return;
-      const idleStart = g().idleStart;
+      const idleStart = g.idleStart;
       const now = time(0);
       const durations = {
-        onIdle: { name: UI.l('闲置延时', '閒置延時', 'Idle Delay'), selector: '.onIdleRemain', start: g().beforeIdle, wait: option.onIdleDelay },
-        encounter: { name: UI.l('遭遇延时', '遭遇延時', 'Encounter Delay'), selector: '.encounterDelayRemain', start: g().encounterStart ?? now, wait: option.encounterDelay },
+        onIdle: { name: UI.l('闲置延时', '閒置延時', 'Idle Delay'), selector: '.onIdleRemain', start: g.beforeIdle, wait: option.onIdleDelay },
+        encounter: { name: UI.l('遭遇延时', '遭遇延時', 'Encounter Delay'), selector: '.encounterDelayRemain', start: g.encounterStart ?? now, wait: option.encounterDelay },
         arena: { name: UI.l('闲置竞技场', '閒置競技場', 'Idle Arena'), selector: '.arenaRemain', start: idleStart ?? now, wait: option.idleArenaTime },
         switch: { name: UI.l('闲置异世界', '閒置異世界', 'Idle Isekai'), selector: '.isekaiSwitchRemain', start: idleStart ?? now, wait: option.isekaiTime },
         switchCD: { name: UI.l('异世界CD', '異世界CD', 'Isekai CD'), selector: '.isekaiCDRemain', start: (getValue('lastSwitch') ?? 0), wait: option.isekaiCD },
@@ -5316,12 +5350,12 @@
   } catch (err) { console.error(err); }}
 
   async function asyncOnIdle() { try {
-    let option = getOption(true);
-    const beforeIdle = g('beforeIdle', time(0));
+    let option = g.option;
+    const beforeIdle = g.beforeIdle = time(0);
     displayCDRemain();
     $async.logSwitch(arguments);
     await updateEncounter(false);
-    if (!onIsekaiEncounter && option.onIdleDelay) {
+    if (!forIsekaiEncounter && option.onIdleDelay) {
       const delay = option.onIdleDelay * _1s;
       until(async () => {
         const remain = beforeIdle + delay - time(0);
@@ -5331,10 +5365,10 @@
       }, 250);
       await sleep(option.onIdleDelay * _1s);
     }
-    const idleStart = g('idleStart', time(0));
+    const idleStart = g.idleStart = time(0);
     await waitPause();
     displayUntil(() => `[TIMER]${UI.byLang('人物套装检查', '人物套裝檢查', 'Persona/EquipSet check')}`);
-    if (onIsekaiEncounter) {
+    if (forIsekaiEncounter) {
       const persistent = await $ajax.fetch(window.location.href.replace('/isekai', ''));
       if (!persistent || isInBattle($doc(persistent))) {
         $async.logSwitch(arguments);
@@ -5346,7 +5380,6 @@
       await restorePersonaAndEquipSet();
     }
     displayProcess();
-    option = getOption(true);
 
     const steps = [
       [{ step: 'proficiency', method: asyncSetProficiency, condition: true }],
@@ -5376,9 +5409,8 @@
         await setReady(step.step, await step.method() || !step.check);
       }
       done++;
-    } catch (err) { console.error(err); }})()), onIsekaiEncounter ? undefined : updateArena()]);
-
-    if (!onIsekaiEncounter) {
+    } catch (err) { console.error(err); }})()), forIsekaiEncounter ? undefined : updateArena()]);
+    if (!forIsekaiEncounter) {
       if (ready.isChecked() && option.idleArena && option.idleArenaValue) {
         displayUntil(() => `[TIMER]${UI.byLang('竞技场更新', '競技場更新', 'Arena update')}`);
         battleStarted = await startUpdateArena(idleStart);
@@ -5392,33 +5424,11 @@
     $async.logSwitch(arguments);
     return ready.encounter;
 
-    function displayUntil(info, condition) {
-      const start = displayUntil.prototype.start = time(0);
-      until(async () => {
-        if (condition && condition()) return true;
-        if (displayUntil.prototype.start !== start) return true;
-        const formated = ['undefined', 'string'].includes(typeof info) ? info : info?.();
-        displayProcess(formated.replace('[TIMER]', `[+${remainTime2Str(time(0) - start, true)}]`));
-      });
-    }
-
-    function displayProcess(info) {
-      const cleaned = document.title.replace(/\[AR\].*\[AR\]/, '');
-      if (!info) {
-        document.title = cleaned;
-        displayUntil.prototype.start = undefined;
-        return;
-      }
-      const updated = `[AR]${info}[AR]` + cleaned;
-      if (updated === document.title) return;
-      document.title = updated;
-    }
-
     async function setReady(step, value) { try {
       ready[step] = value;
       if (ready.encounterUpdated) return;
       $async.logSwitch(arguments);
-      const onEncounter = option.encounter || onIsekaiEncounter;
+      const onEncounter = option.encounter || forIsekaiEncounter;
       if (_server.persistent) {
         if (onEncounter && steps.find(group => group.find(step => step.condition && !ready[step.step]))) return;
         ready.encounterUpdated = true;
@@ -5431,10 +5441,32 @@
     } catch (err) { console.error(err); }}
   } catch (err) { console.error(err); }}
 
+  function displayUntil(info, condition) {
+    const start = displayUntil.prototype.start = time(0);
+    until(async () => {
+      if (condition && condition()) return true;
+      if (displayUntil.prototype.start !== start) return true;
+      const formated = ['undefined', 'string'].includes(typeof info) ? info : info?.();
+      displayProcess(formated.replace('[TIMER]', `[+${remainTime2Str(time(0) - start, true)}]`));
+    });
+  }
+
+  function displayProcess(info) {
+    const cleaned = document.title.replace(/\[AR\].*\[AR\]/, '');
+    if (!info) {
+      document.title = cleaned;
+      displayUntil.prototype.start = undefined;
+      return;
+    }
+    const updated = `[AR]${info}[AR]` + cleaned;
+    if (updated === document.title) return;
+    document.title = updated;
+  }
+
   function getTodayEncounter(encounter) { return encounter.filter(e => time(2, e.time) === time(2)); }
 
   function getLocalEncounter(encounter = []) {
-    encounter = [ ... getValue('encounter', true) ?? [], ... getLocal('encounter', true, true) ?? [], ...encounter ];
+    encounter = [ ... getValue('encounter', true) ?? [], ... getLocal('encounter', true) ?? [], ...encounter ];
     const uniqued = [];
     while (encounter.length) {
       const item = encounter.pop();
@@ -5453,17 +5485,21 @@
   function setEncounter(encounter) {
     encounter = getLocalEncounter(encounter);
     setLocal('encounter', encounter, true);
-    return g('encounter', setValue('encounter', encounter));
+    g.encounter = setValue('encounter', encounter);
+    return g.encounter;
   }
 
   function getEncounter() {
-    const current = g().encounter ?? [];
+    const current = g.encounter ?? [];
     let last = 0;
     current.forEach(e=> {
       if (e.encountered > last) last = e.encountered;
       if (e.time > last) last = e.time;
     });
-    let encounter = ((time(0) - last) >= (_1h * 0.5)) ? getLocal('encounter', true, true) : current;
+    const now = time(0);
+    const read = (now - (g.lastEncounterUpdate??0)) >= _1s;
+    let encounter = (((now - last) >= (_1h * 0.5)) && read) ? getLocal('encounter', true, true) : current;
+    if (read) g.lastEncounterUpdate = now;
     if (!encounter || !last) {
       encounter = getValue('encounter', true) ?? [];
       setEncounter(encounter);
@@ -5495,19 +5531,24 @@
   }
 
   function queryToPersistent(query) {
-    return onIsekaiEncounter ? `${window.location.href.includes('https') ? 'https://' : 'http://'}${window.location.href.includes('alt') ? 'alt.' : ''}hentaiverse.org/${query}` : query;
+    return forIsekaiEncounter ? `${window.location.href.includes('https') ? 'https://' : 'http://'}${window.location.href.includes('alt') ? 'alt.' : ''}hentaiverse.org/${query}` : query;
   }
 
   async function asyncSetProficiency() { try {
     await waitPause();
     $async.logSwitch(arguments);
     const doc = $doc(await $ajax.insert(queryToPersistent('?s=Character')));
-    const proficiency = {};
+    const current = {};
     gE('#stats_scrollable table:last-child tr', 'all', doc).forEach((tr) => {
       const exec = tr.innerHTML.match(/<td>(.*)<\/td>.*<td>(.*)<\/td>/);
-      proficiency[exec[2]] = exec[1] * 1;
+      current[exec[2]] = exec[1] * 1;
     });
-    localStorage.setItem(`hvAA-${_server.name}_proficiency`, JSON.stringify(proficiency));
+    const proficiency = getValue('proficiency', true);
+    for (const key in current) {
+      const [p, c] = [proficiency[key] , current[key]];
+      if (!p || (c > p)) proficiency[key] = c;
+    }
+    setValue('proficiency', proficiency);
     $async.logSwitch(arguments);
   } catch (err) { console.error(err); }}
 
@@ -5622,7 +5663,7 @@
         if (!perk?.length) {
           perk = undefined;
         }
-        if (_server.isekai || !g().option?.restoreStamina) {
+        if (_server.isekai || !g.option?.restoreStamina) {
           return perk;
         }
         let currentID, html;
@@ -5687,7 +5728,7 @@
   } catch (err) { console.error(err); }}
 
   async function asyncGetItems() { try {
-    const option = getOption(true);
+    const option = g.option;
     if (!option.checkSupply && (_server.isekai || !option.restoreStamina)) {
       return;
     }
@@ -5698,7 +5739,7 @@
     const doc = $doc(html);
     if (isInBattle(doc)) {
       $async.logSwitch(arguments);
-      g('items', null);
+      g.items = null;
       return;
     }
     for (let each of gE('.nosel.itemlist>tbody', doc).children) {
@@ -5707,19 +5748,19 @@
       const count = each.children[1].innerText;
       items[id] = [name, count];
     }
-    g('items', items);
-    g('slotItems', Array.from(gE('[id*="item_"]', 'all', gE('#item_slots', doc))).map(slot => slot.id.match(/item_(\d+)/)[1]));
+    g.items = items;
+    g.slotItems = Array.from(gE('[id*="item_"]', 'all', gE('#item_slots', doc))).map(slot => slot.id.match(/item_(\d+)/)[1]);
     $async.logSwitch(arguments);
   } catch (err) { console.error(err); }}
 
   function popupFailedCheck(title, popupText, ...log) {
-    if (title) document.title = `[${title}!${onIsekaiEncounter?'p':''}]` + document.title;
-    if (popupText) popup(`${onIsekaiEncounter ? UI.byLang('主世界', '主世界', '[Persistent]') ?? '[Persistent]' : ''}${UI.byLang(popupText) ?? popupText[2]}`);
-    if (log?.length) console.log(`${onIsekaiEncounter ? '[Persistent]' : ''}`, ...log);
+    if (title) document.title = `[${title}!${forIsekaiEncounter?'p':''}]` + document.title;
+    if (popupText) popup(`${forIsekaiEncounter ? UI.byLang('主世界', '主世界', '[Persistent]') ?? '[Persistent]' : ''}${UI.byLang(popupText) ?? popupText[2]}`);
+    if (log?.length) console.log(`${forIsekaiEncounter ? '[Persistent]' : ''}`, ...log);
   }
 
   function checkSupply(extra) {
-    const option = getOption(true);
+    const option = g.option;
     if (extra && !option[`checkSupply${extra}`]) return true;
     extra = {
       GF: {
@@ -5736,9 +5777,9 @@
       },
     }[extra];
     if (!option.checkSupply) return true;
-    const items = g().items;
+    const items = g.items;
     if (!items) return false;
-    const slotItems = g().slotItems;
+    const slotItems = g.slotItems;
     const slotedCheckList = option.checkSupplySlotted ? option.isCheckSlotted : undefined;
     const thresholdList = extra?.checkItem ?? option.checkItem;
     const checkList = extra?.isCheck ?? option.isCheck;
@@ -5787,7 +5828,7 @@
   }
 
   async function asyncCheckRepair(extra) { try {
-    const option = getOption(true);
+    const option = g.option;
     if (extra && !option[`repairValue${extra}`]) return true;
     if (!option.repair) {
       return true;
@@ -5930,7 +5971,7 @@
   } catch (err) { console.error(err); }}
 
   async function asyncCheckEquStorage() { try {
-    const option = getOption(true);
+    const option = g.option;
     if (!option.equStorage) {
       return true;
     }
@@ -5965,27 +6006,27 @@
         return;
       }
     }
-    const option = getOption(true);
+    const option = g.option;
     const stamina = getValue('stamina', true);
     const [low, lowNR, cost, ratio] = [condition.staminaLow ?? option.staminaLow, option.staminaLowWithReNat ?? 0, Math.round((condition.staminaCost ?? 0) * 100) / 100, stamina.punish ? stamina.ratio ?? 1 : 1]
     const checked = await checkStamina(low, cost);
     const [staminaChecked, stmNR] = [checked.checked, checked.stmNR];
     const [neat, neatNR] = [stamina.current-low, stmNR-lowNR];
     console.log(
-      `${onIsekaiEncounter ? '[Persistent]' : ''}stamina check succeed:`, staminaChecked === 1, ...staminaChecked === -1 ? ['with nature recover', lowNR, 'stmNR:', stmNR, '(', ...neatNR >= 0 ? ['+', neatNR] : ['-', -neatNR], ')'] : [],
+      `${forIsekaiEncounter ? '[Persistent]' : ''}stamina check succeed:`, staminaChecked === 1, ...staminaChecked === -1 ? ['with nature recover', lowNR, 'stmNR:', stmNR, '(', ...neatNR >= 0 ? ['+', neatNR] : ['-', -neatNR], ')'] : [],
       '\nlow:', low, ...cost ? ['cost:', cost, ...stamina.punish ? ['*', ratio, '=', Math.round(cost * ratio * 10000) / 10000] : [], 'current:', stamina.current, '(', neat >= 0 ? '+' : '-', neat, ')'] : [],
       '\nstamina:', stamina,
     );
     if (staminaChecked === 1) { // succeed
-      document.title = document.title.replace(`[S!${onIsekaiEncounter?'p':''}]`, '');
+      document.title = document.title.replace(`[S!${forIsekaiEncounter?'p':''}]`, '');
       return true;
     }
     if (staminaChecked === 0) { // failed currently
       const now = time(0);
       setTimeout(method, Math.floor(now / _1h + 1) * _1h - now);
       // popup('Failed stamina check for now.');
-      if (!document.title.includes(`[S!${onIsekaiEncounter?'p':''}]`)) {
-        document.title = `[S!${onIsekaiEncounter?'p':''}]` + document.title;
+      if (!document.title.includes(`[S!${forIsekaiEncounter?'p':''}]`)) {
+        document.title = `[S!${forIsekaiEncounter?'p':''}]` + document.title;
       }
     } else { // case -1: // failed with nature recover
       popupFailedCheck(`S!`, [
@@ -5999,7 +6040,7 @@
   async function getCurrentStamina() { try {
     // await waitPause();
     $async.logSwitch(arguments);
-    const doc = $doc(await $ajax.insert(onIsekaiEncounter ? window.location.href.replace(/\/isekai/, '') : window.location.href));
+    const doc = $doc(await $ajax.insert(forIsekaiEncounter ? window.location.href.replace(/\/isekai/, '') : window.location.href));
     if (isInBattle(doc)) {
       $async.logSwitch(arguments);
       return [ undefined, undefined ];
@@ -6014,7 +6055,7 @@
     // await waitPause();
     $async.logSwitch(arguments);
     const stamina = getValue('stamina', true);
-    const option = getOption(true);
+    const option = g.option;
     let now = time(0);
     let hours = Math.floor(now / _1h);
     let [current, punish] = await until(getCurrentStamina, _1m);
@@ -6027,7 +6068,7 @@
     const result = { checked: stmNRChecked ? (current - cost >= (low ?? option.staminaLow)) ? 1 : 0 : -1, stmNR: stmNR };
     $async.logSwitch(arguments);
     if (result.checked === 1 || _server.isekai || !option.restoreStamina) return result;
-    const items = g().items;
+    const items = g.items;
     $async.logSwitch(arguments);
     if (!items) return result;
     const recoverItems = { 11401: true, 11402: false }
@@ -6036,7 +6077,8 @@
       if (!items[id]) continue;
       const recover = recoverItems[id] ? isPerk ? 20 : 10 : 5;
       if (current + recover >= 100) continue; // check if overflow by (20 or 10) -> (5)
-      const recovered = gE('#stamina_readout .fc4.far>div', $doc(await $ajax.insert(window.location.href, 'recover=stamina'))).textContent.match(/\d+/)[0] * 1;
+      gE('#stamina_readout .fc4.far>div', $doc(await $ajax.insert(window.location.href, 'recover=stamina'))).textContent.match(/\d+/)[0] * 1;
+      // const recovered = gE('#stamina_readout .fc4.far>div', $doc(await $ajax.insert(window.location.href, 'recover=stamina'))).textContent.match(/\d+/)[0] * 1;
       goto();
       break;
     }
@@ -6046,7 +6088,7 @@
 
   async function updateEncounter(engage) { try {
     const MAX = 24;
-    const option = getOption(true);
+    const option = g.option;
     if (!option.encounter && !option.encounterDisplay) {
       console.log("skip encounter check");
       return false;
@@ -6057,7 +6099,7 @@
     const last = encounter[0]?.time ?? getValue('lastEH', true) ?? 0; // 上次遭遇 或 上次打开EH 或 0
     let now = time(0);
     let cd = getCD();
-    function setUITitle(ui) {
+    function setUITitle() {
       appendEncounterUITitle('e', `${time(3, last)}\n${UI.l('遭遇次数', '遭遇次數','Encounter Time')}: ${count}`);
     }
     const ui = gE('.encounterUI') ?? (() => {
@@ -6132,14 +6174,14 @@
 
   async function switchEquipSet(persona, equipSet, personas, equipSets) { try {
     $async.logSwitch(arguments);
-    if (personas !== undefined) g('personas', personas);
-    personas = g().personas;
-    if (equipSets !== undefined) g('equipSets', equipSets);
-    equipSets = g().equipSets;
+    if (personas !== undefined) g.personas = personas;
+    personas = g.personas;
+    if (equipSets !== undefined) g.equipSets = equipSets;
+    equipSets = g.equipSets;
     if ([personas, equipSets].includes(undefined)) {
       const { e, p, s } = getValue('itemWorldDatas', true) ?? {};
-      g('personas', personas ??= p);
-      g('equipSets', equipSets ??= s);
+      g.personas = personas ??= p;
+      g.equipSets = equipSets ??= s;
     }
 
     let changed = await onChangeEquipSet('lastPersona', persona, personas, id => [`?s=Character&ss=ch`, `persona_set=${id}`], true);
@@ -6149,7 +6191,7 @@
   } catch (err) { console.error(err); }}
 
   function getArenaEquipSet(id) {
-    const option = getOption();
+    const option = g.option;
     if (!option.changeEquipSet) return;
 
     const onGetArenaEquipSet = function (id) {
@@ -6186,12 +6228,16 @@
   } catch (err) { console.error(err); }}
 
   async function onEncounter() { try {
-    const option = getOption(true);
+    const option = g.option;
     if (getValue('disabled')) return;
     if (_server.isekai) {
-      onIsekaiEncounter = true;
-      const engaged = await asyncOnIdle();
-      onIsekaiEncounter = false;
+      engaged = undefined;
+      if (g.encounterAsyncOnIdle) {
+        engaged = await g.encounterAsyncOnIdle();
+      } else {
+        g.encounterAsyncOnIdle = HVAA(true);
+        await until(() => engaged !== undefined);
+      }
       return engaged;
     }
     if (await changeArenaEquipSet('ba') && !(await asyncCheckRepair())) {
@@ -6200,7 +6246,7 @@
     }
     $async.logSwitchStrict('updateEncounter', true);
     // persistent in battle
-    if (isInBattle(await $ajax.insert(window.location.href.replace(/\/isekai/, '')))) {
+    if (isInBattle($doc(await $ajax.insert(window.location.href.replace(/\/isekai/, ''))))) {
       $async.logSwitchStrict('updateEncounter', false);
       return;
     }
@@ -6214,7 +6260,7 @@
       $async.logSwitchStrict('updateEncounter', false);
       return;
     }
-    g('encounterStart', time(0));
+    g.encounterStart = time(0);
     await sleep(option.encounterDelay * _1s);
     setEncounter(getEncounter()); // 离开页面前保存
     if (!window.top.location.href.endsWith(`?s=Battle`)) {
@@ -6229,7 +6275,7 @@
     $async.logSwitchStrict('startUpdateArena', true);
     const now = time(0);
     if (!idleStart) await updateArena(); // new day
-    let timeout = getOption().idleArenaTime * _1s;
+    let timeout = g.option.idleArenaTime * _1s;
     if (idleStart) timeout -= time(0) - idleStart;
     if (timeout > 0) await sleep(timeout);
     const started = await idleArena();
@@ -6265,7 +6311,7 @@
       } catch (err) { console.error(err); }})(s)));
     }
 
-    const option = getOption();
+    const option = g.option;
     if (!isToday) {
       arena.date = time(0);
       arena.gr = option.idleArenaGrTime;
@@ -6273,7 +6319,7 @@
     }
     arena.arrayDone = arena.arrayDone.filter(id => id && (id === 'gr' || !arena.enabled?.includes(id.toString())));
     delete arena.equip;
-    delete arena.tw;
+    if (_server.isekai) delete arena.tw;
     $async.logSwitch(arguments);
     return setValue('arena', arena);
   } catch (err) { console.error(err); }}
@@ -6285,7 +6331,7 @@
   async function idleArena() { try { // 闲置竞技场
     let id;
     let arena = getValue('arena', true)??{};
-    const option = getOption();
+    const option = g.option;
     const array = splitOrders(option.idleArenaValue).map(String);
     if (array.length === 0) {
       autoSwitchIsekai();
@@ -6349,7 +6395,7 @@
   } catch (err) { console.error(err); }}
 
   async function idleItemWorld() { try {
-    const option = getOption();
+    const option = g.option;
     if (!option.idleItemWorld) return;
     $async.logSwitch(arguments);
     await updateItemWorldList();
@@ -6401,7 +6447,7 @@
 
   async function gotoBattle(id, rounds, equip) { try {
     $async.logSwitch(arguments);
-    const option = getOption();
+    const option = g.option;
     if (await changeArenaEquipSet(id) && !(await asyncCheckRepair())) {
       await restorePersonaAndEquipSet();
       $async.logSwitch(arguments);
@@ -6494,16 +6540,28 @@
   } catch (err) { console.error(err); }}
 
   function setBattleSkillParam(id, params) {
-    g().battle.skill = { id, [id]: 1, ...params };
+    g.battle.skill = { id, [id]: 1, ...params };
   }
 
   // 战斗中//
-  function onBattleRound() { // 主程序
-    if (!gE('#battle_main')) return;
+  async function onBattleRound() { // 主程序
+    if (!gE('#battle_main') || g.battleOngoing) return;
+    g.battleOngoing = true;
     lastResponsive = time(0);
+    const option = g.option;
     let battle = getValue('battle', true);
+
+    if (battle && battle.prevLog !== battle.turnLog) {
+      battle.prevLog = battle.turnLog;
+      const zeroturn = battle.turnLog.match(/>You use\s*(\w* (?:Gem|Draught|Potion|Elixir|Drink|Candy|Infusion|Scroll|Vase|Bubble)).*?</);
+      if (!zeroturn) {
+        battle.turn = (battle.turn??0) + 1;
+      }
+      battle.actions = (battle.actions??0) + 1;
+    }
+
     if (!battle || !battle.roundAll) { // 修复因多个页面/世界同时读写造成缓存数据异常的情况
-      battle = JSON.parse(JSON.stringify(g().battle));
+      battle = JSON.parse(JSON.stringify(g.battle));
       battle.monsterStatus = battle.monsterStatus.map(ms => {
         return {
           order: ms.order,
@@ -6515,15 +6573,15 @@
     $debug.log('onBattle', `\n`, battle);
     //人物状态
     if (gE('#vbh')) {
-      g('hp', gE('#vbh>div>img').offsetWidth / 496 * 100);
-      g('mp', gE('#vbm>div>img').offsetWidth / 207 * 100);
-      g('sp', gE('#vbs>div>img').offsetWidth / 207 * 100);
-      g('oc', gE('#vcp>div>div') ? (gE('#vcp>div>div', 'all').length - gE('#vcp>div>div#vcr', 'all').length) * 25 : 0);
+      g.hp = gE('#vbh>div>img').offsetWidth / 496 * 100;
+      g.mp = gE('#vbm>div>img').offsetWidth / 207 * 100;
+      g.sp = gE('#vbs>div>img').offsetWidth / 207 * 100;
+      g.oc = gE('#vcp>div>div') ? (gE('#vcp>div>div', 'all').length - gE('#vcp>div>div#vcr', 'all').length) * 25 : 0;
     } else {
-      g('hp', gE('#dvbh>div>img').offsetWidth / 418 * 100);
-      g('mp', gE('#dvbm>div>img').offsetWidth / 418 * 100);
-      g('sp', gE('#dvbs>div>img').offsetWidth / 418 * 100);
-      g('oc', gE('#dvrc').childNodes[0].textContent * 1);
+      g.hp = gE('#dvbh>div>img').offsetWidth / 418 * 100;
+      g.mp = gE('#dvbm>div>img').offsetWidth / 418 * 100;
+      g.sp = gE('#dvbs>div>img').offsetWidth / 418 * 100;
+      g.oc = gE('#dvrc').childNodes[0].textContent * 1;
     }
 
     // 战斗战况
@@ -6669,24 +6727,24 @@
     }
 
     let currentTurn = (battle.turn ?? 0);
-    if (battle.turnLog !== battle.prevLog) currentTurn++;
+    const currentActions = (battle.actions ?? currentTurn);
     const display = getBattleTypeDisplay();
     gE('.hvAALog').innerHTML = [
-      `${UI.l('攻击模式', '攻擊模式', 'Attack Mode')}: ${UI.attackStatusType[g().attackStatus]}`,
-      `${(_server.isekai || onIsekaiEncounter) ? UI.l('异世界', '異世界', 'Isekai') : UI.l('恒定世界', '恆定世界', 'Persistent')}`, // 战役模式显示
+      `${UI.l('攻击模式', '攻擊模式', 'Attack Mode')}: ${UI.attackStatusType[g.attackStatus]}`,
+      `${(_server.isekai) ? UI.l('异世界', '異世界', 'Isekai') : UI.l('恒定世界', '恆定世界', 'Persistent')}`, // 战役模式显示
       `${display.full}`, // 战役模式显示
-      `R${battle.roundNow}/${battle.roundAll}:T${currentTurn}`,
-      `<div style="font-size: 9pt!important">TPS: ${g().runSpeed}<br>${g().runTimeGap??''}</div>`,
-      `${UI.l('敌人', '敵人', 'Monsters')}: ${g().monsterAlive}/${g().monsterAll}`,
+      `R${battle.roundNow}/${battle.roundAll}:T${currentTurn}<span style="font-size: 9pt!important">(+${currentActions-currentTurn}*0tic)</span>`,
+      `<div style="font-size: 9pt!important">TPS: ${g.runSpeed}<br>${g.runTimeGap??''}</div>`,
+      `${UI.l('敌人', '敵人', 'Monsters')}: ${g.monsterAlive}/${g.monsterAll}`,
     ].join(`<br>`).replaceAll(`</div><br>`, `</div>`);
     if (!battle.roundAll) {
       pauseChange();
       $debug.shiftLog();
     }
-    const option = getOption();
-    document.title = `${currentTurn % 2 ? option.frequencySign1 ?? '' : option.frequencySign2 ?? ''}${display.title}:R${battle.roundNow}/${battle.roundAll}:T${currentTurn}@${g().runSpeed}tps,${g().monsterAlive}/${g().monsterAll}`;
+    document.title = `${currentActions % 2 ? option.frequencySign1 ?? '' : option.frequencySign2 ?? ''}${display.title}:R${battle.roundNow}/${battle.roundAll}:T${currentTurn}@${g.runSpeed}tps,${g.monsterAlive}/${g.monsterAll}`;
     setValue('battle', battle);
-    if (!battle.monsterStatus || battle.monsterStatus.length !== g().monsterAll) {
+
+    if (!battle.monsterStatus || battle.monsterStatus.length !== g.monsterAll) {
       fixMonsterStatus();
     }
     countMonsterHP();
@@ -6695,68 +6753,61 @@
     if (getValue('disabled')) { // 如果禁用
       document.title = titlePause();
       const pauseChange = gE('#hvAABox2>button.pauseChange');
-      if (!pauseChange) return;
-      pauseChange.innerHTML = UI.button.continue();
+      pauseChange ? pauseChange.innerHTML = UI.button.continue(option) : undefined;
+      g.battleOngoing = false;
       return;
     }
     killBug(); // 解决 HentaiVerse 可能出现的 bug
-    setBattleSkillParam(1001, { flee: 1, skill: 'flee' });
-    if (option.autoFlee && checkCondition(option.fleeCondition)) {
-      if (option.fleeAlarm) setAlarm('Flee');
-      gE('1001').click();
-      setExitBattleTimeout('Flee');
-      return;
-    }
-    const noturn = 1;
-    const taskList = {
-      'Cure': { action: () => autoRecover(true), noturn },
-      'Pause': { action: autoPause, noturn },
-      'SSDisable': { action: () => autoSS(true) },
-      'Rec': { action: () => autoRecover(false), noturn },
-      'Scroll': { action: useScroll, noturn },
-      'Infus': { action: useInfusions, noturn },
-      'Def': { action: autoDefend },
-      'Channel': { action: useChannelSkill },
-      'Buff': { action: useBuffSkill, noturn },
-      'Debuff': { action: useDeSkill },
-      'Focus': { action: autoFocus },
-      'SS': { action: () => autoSS(false) },
-      'Skill': { action: autoSkill },
-      'Atk': { action: attack },
-    };
-    const order = option.battleOrderDefaultOnly ? [] : splitOrders(option.battleOrderName);
-    if (option.debugCheckCondition) {
-      checkCondition(option.debugCondition);
-    }
-    onTasks();
 
+    const taskList = {
+      'Flee': () => {
+        setBattleSkillParam(1001, { flee: 1, skill: 'flee' });
+        if (option.autoFlee && checkCondition(option.fleeCondition)) {
+          if (option.fleeAlarm) setAlarm('Flee');
+          gE('1001').click();
+          setExitBattleTimeout('Flee');
+          return true;
+        }
+      },
+      'Cure': () => autoRecover(true),
+      'Pause': autoPause,
+      'SSDisable': () => autoSS(true),
+      'Rec': () => autoRecover(false),
+      'Scroll': useScroll,
+      'Infus': useInfusions,
+      'Def': autoDefend,
+      'Channel': useChannelSkill,
+      'Buff': useBuffSkill,
+      'Debuff': useDeSkill,
+      'Focus': autoFocus,
+      'SS': () => autoSS(false),
+      'Skill': autoSkill,
+      'Atk': attack,
+    };
+    const order = ['Flee', ...option.battleOrderDefaultOnly ? [] : splitOrders(option.battleOrderName)];
+    onTasks();
     async function onTasks() {
+      if (option.debugCheckCondition) checkCondition(option.debugCondition);
+
       const prevActionTime = battle.prevActionTime ?? 0;
       const remainDelay = prevActionTime + option.delay - time(0);
-      if (remainDelay > 0) {
-        await sleep(remainDelay, true);
-      }
-      const onTask = task => {
-        const result = task.action();
-        if (!result) return;
-        if (!task.noturn || result === 1) {
-          battle = getValue('battle', true);
-          battle.turn = g().battle.turn = currentTurn;
-          battle.prevLog = battle.turnLog;
-          battle.prevActionTime = time(0);
-          g('battle', battle);
-          setValue('battle', battle);
-        }
+      if (remainDelay > 0) await sleep(remainDelay, true);
+
+      const onTask = name => {
+        if (!taskList[name]()) return;
+        setValue('battle', battle);
         onStepInDone();
+        g.battleOngoing = false;
         return true;
       }
       for (const name of range(order).map(i => order[i])) {
-        if (onTask(taskList[name])) return;
+        if (onTask(name)) return;
         delete taskList[name];
       }
       for (let name in taskList) {
-        if (onTask(taskList[name])) return;
+        if (onTask(name)) return;
       }
+      g.battleOngoing = false;
     }
   }
 
@@ -6832,14 +6883,14 @@
 * @returns
 */
   function getRangeCenter(target, rangeSize, isWeaponAttack, excludeWeight, forceUseIndex) {
-    let msTemp = JSON.parse(JSON.stringify(g().battle.monsterStatus));
+    let msTemp = JSON.parse(JSON.stringify(g.battle.monsterStatus));
     msTemp.sortBy(x => x.order);
     let minWeight = Number.MAX_SAFE_INTEGER;
     // 0. 范围大于等于全体时，直接释放全体
     if (!rangeSize || rangeSize >= msTemp.length) {
       return { id: getMonsterID(target), weight: minWeight };
     }
-    const option = getOption();
+    const option = g.option;
     const centralExtraWeight = -1 * Math.log10(1 + (isWeaponAttack ? option.centralExtraRatio / 100 : 0));
     let order = target.order;
     let newOrder = order;
@@ -6880,7 +6931,7 @@
   }
 
   function autoPause() {
-    const option = getOption();
+    const option = g.option;
     let battle = getValue('battle', true);
     if (
       battle.paused?.round !== battle.roundNow
@@ -6910,7 +6961,7 @@
   }
 
   function autoDefend() {
-    const option = getOption();
+    const option = g.option;
     setBattleSkillParam('defend');
     if (option.defend && checkCondition(option.defendCondition)) {
       updateSkillOTOS('defend');
@@ -6922,9 +6973,9 @@
 
   function setExitBattleTimeout(alarm) {
     lastResponsive = Infinity;
-    g('battleExit', true);
+    g.battleExit = true;
     setAlarm(alarm);
-    const option = getOption();
+    const option = g.option;
     if (alarm === 'Defeat' && (!option.autoSkipDefeated || !checkCondition(option.exitCondition))) {
       return;
     }
@@ -6939,7 +6990,7 @@
   }
 
   async function checkResponsive() {
-    const option = getOption();
+    const option = g.option;
     const battleUnresponsive = {
       'Alert': { method: () => (setAlarm('BattleUnresponsive') || true) },
       'Reload': { method: goto },
@@ -6957,60 +7008,99 @@
     if (!Object.keys(battleUnresponsive).length) return;
     let isBreak;
     while (true) {
-      await waitPause();
+      await waitPause(true);
       const waited = new Date() - lastResponsive;
       for (let t in battleUnresponsive) {
         if (battleUnresponsive[t].time > waited) continue;
         isBreak ||= battleUnresponsive[t].method();
       }
-      if (g().battleExit || isBreak) break;
+      if (g.battleExit || isBreak) break;
       await sleep(min - waited);
     }
   }
 
   function reloader() {
-    let obj, a, cost;
-    const eventStart = cE('a');
-    eventStart.id = 'eventStart';
-    eventStart.onclick = function () {
-      const option = getOption();
-      a = unsafeWindow.info;
-      if (option.recordUsage) {
-        obj = {
-          mode: a.mode,
-        };
-        if (a.mode === 'items') {
-          obj.itemName = gE(`#pane_item div[id^="ikey"][onclick*="skill('${a.skill}')"]`).textContent;
-          obj.item = gE(`#pane_item div[id^="ikey"][onclick*="skill('${a.skill}')"]`).getAttribute('onmouseover').match(/(\d+)/)[1];
-        } else if (a.mode === 'magic') {
-          obj.magic = a.skill;
-          obj.magicName = gE(a.skill).textContent;
-          cost = gE(a.skill).getAttribute('onmouseover').match(/\('.*', '.*', '.*', (\d+), (\d+), \d+\)/);
-          obj.mp = cost[1] * 1;
-          obj.oc = cost[2] * 1;
-        }
+    let obj;
+    unsafeWindow.api_call = function (b, a, d) {
+      const option = g.option;
+      let delay = option.delay * 1;
+      const delay2 = option.delay2 * 1;
+      unsafeWindow.info = a;
+      unsafeWindow.send = new Date();
+      b.open('POST', `${unsafeWindow.MAIN_URL}json`);
+      b.setRequestHeader('Content-Type', 'application/json');
+      b.withCredentials = true;
+      b.onreadystatechange = d;
+      b.onload = function () {
+        unsafeWindow.response = new Date() - unsafeWindow.send;
+        onPrevBattleLog();
+        onEventEnd();
+      };
+      onEventStart();
+      if (a.mode !== 'magic' || a.skill < 200) {
+        delay = delay2;
+      }
+      if (delay <= 0) {
+        b.send(JSON.stringify(a));
+      } else {
+        (async () => {
+          await sleep(delay * (Math.random() * 50 + 50) / 100, true);
+          b.send(JSON.stringify(a));
+        })();
       }
     };
-    gE('body').appendChild(eventStart);
+    unsafeWindow.api_response = function (b) {
+      if (b.readyState !== 4) return false;
+      if (b.status !== 200) {
+        window.location.href = window.location.search;
+        return false;
+      }
+      try {
+        const a = JSON.parse(b.responseText);
+        if (a.login !== undefined) {
+          top.location.href = unsafeWindow.login_url;
+          return false;
+        }
+        if (a.error || a.reload) window.location.href = window.location.search;
+        return a;
+      } catch (err) {
+        console.error(b.responseText)
+      }
+    };
 
-    const eventEnd = cE('a');
-    eventEnd.id = 'eventEnd';
-    eventEnd.onclick = function () {
-      const option = getOption();
+    function onEventStart () {
+      const option = g.option;
+      if (!option.recordUsage) return;
+      const [mode, skill] = [unsafeWindow.info.mode, unsafeWindow.info.skill];
+      obj = { mode };
+      if (mode === 'items') {
+        obj.itemName = gE(`#pane_item div[id^="ikey"][onclick*="skill('${skill}')"]`).textContent;
+        obj.item = gE(`#pane_item div[id^="ikey"][onclick*="skill('${skill}')"]`).getAttribute('onmouseover').match(/(\d+)/)[1];
+      } else if (mode === 'magic') {
+        obj.magic = skill;
+        obj.magicName = gE(skill).textContent;
+        const cost = gE(skill).getAttribute('onmouseover').match(/\('.*', '.*', '.*', (\d+), (\d+), \d+\)/);
+        obj.mp = cost[1] * 1;
+        obj.oc = cost[2] * 1;
+      }
+    };
+
+    function onEventEnd () {
+      const option = g.option;
       const timeNow = time(0);
-      const timeDelta = timeNow - g().timeNow;
+      const timeDelta = timeNow - g.timeNow;
       const timeDelay = Math.max(0, option.delay - unsafeWindow.response);
-      g('runSpeed', (_1s / timeDelta).toFixed(2));
-      g('runTimeGap', `(${Math.max(0,timeDelta-unsafeWindow.response-timeDelay)}+network:${unsafeWindow.response}${timeDelay ? `+delay:${timeDelay}`: ''}ms)`);
-      g('timeNow', timeNow);
+      g.runSpeed = (_1s / timeDelta).toFixed(2);
+      g.runTimeGap = `(${Math.max(0,timeDelta-unsafeWindow.response-timeDelay)}+network:${unsafeWindow.response}${timeDelay ? `+delay:${timeDelay}`: ''}ms)`;
+      g.timeNow = timeNow;
       const monsterDead = gE('img[src*="nbardead"]', 'all').length;
-      g('monsterAlive', g().monsterAll - monsterDead);
+      g.monsterAlive = g.monsterAll - monsterDead;
       const bossDead = gE(`${monsterStateKeys.obj}[style*="opacity"] ${monsterStateKeys.lv}[style*="background"]`, 'all').length;
-      g('bossAlive', g().bossAll - bossDead);
+      g.bossAlive = g.bossAll - bossDead;
       const battleLog = gE('#textlog>tbody>tr>td', 'all');
 
       let stats = getValue('stats', true) || {};
-      const battle = g().battle;
+      const battle = g.battle;
       if (Object.keys(stats.tokens ?? {}).map(k => battle[k] === stats.tokens?.[k]).some(s => !s)) {
         if (option.recordUsage) recordUsage2(true);
         if (option.dropMonitor) dropMonitor(battleLog, true);
@@ -7020,7 +7110,7 @@
         obj.log = battleLog;
         recordUsage(obj);
       }
-      if (g().monsterAlive && !gE('#btcp')) {
+      if (g.monsterAlive && !gE('#btcp')) {
         onBattleRound();
         return;
       }
@@ -7036,10 +7126,9 @@
         $async.logSwitch(arguments);
         switch (true) {
           case gE('#btcp')?.innerHTML.includes("You have run away!"): return setExitBattleTimeout('Flee');
-          case g().monsterAlive > 0: return setExitBattleTimeout('Defeat');
-          case g().battle.roundNow === g().battle.roundAll: return setExitBattleTimeout('Victory');
+          case g.monsterAlive > 0: return setExitBattleTimeout('Defeat');
+          case g.battle.roundNow === g.battle.roundAll: return setExitBattleTimeout('Victory');
         }
-
         if (option.NewRoundWaitTime) { // Next Round
           await sleep(option.NewRoundWaitTime * _1s, true);
           await waitPause(true);
@@ -7085,97 +7174,14 @@
         }
         newRound(true);
         onStepInDone();
-        onBattleRound();
+        await onBattleRound();
         $async.logSwitch(arguments);
       } catch (err) { console.error(err); }}
     };
-    gE('body').appendChild(eventEnd);
-
-    const option = getOption();
-    window.sessionStorage.delay = option.delay;
-    window.sessionStorage.delay2 = option.delay2;
-    const fakeApiCall = cE('script');
-    fakeApiCall.textContent = `api_call = ${function (b, a, d) {
-      let delay = window.sessionStorage.delay * 1;
-      const delay2 = window.sessionStorage.delay2 * 1;
-      window.info = a;
-      unsafeWindow = typeof unsafeWindow === 'undefined' ? window : unsafeWindow;
-      unsafeWindow.send = new Date();
-      b.open('POST', `${unsafeWindow.MAIN_URL}json`);
-      b.setRequestHeader('Content-Type', 'application/json');
-      b.withCredentials = true;
-      b.onreadystatechange = d;
-      b.onload = function () {
-        unsafeWindow.response = new Date() - unsafeWindow.send;
-        updateMonsterEffects();
-        document.getElementById('eventEnd').click();
-      };
-      document.getElementById('eventStart').click();
-      if (a.mode !== 'magic' || a.skill < 200) {
-        delay = delay2;
-      }
-      if (delay <= 0) {
-        b.send(JSON.stringify(a));
-      } else {
-        (async () => {
-          await sleep(delay * (Math.random() * 50 + 50) / 100, true);
-          b.send(JSON.stringify(a));
-        })();
-      }
-    }.toString()};
-// bool
-let isDisplay = ${option.isDisplayAllDebuff};
-let debuffAutoFill = ${option.debuffAutoFill?.toString() ?? 'undefined'};
-let debuffAutoFillRec = ${option.debuffAutoFillRec?.toString() ?? 'undefined'};
-let onIsekaiEncounter = ${onIsekaiEncounter ?? 'undefined'};
-// object
-let dataFlags = ${JSON.stringify(dataFlags)};
-let _server = ${JSON.stringify(_server)};
-let monsterStateKeys = ${JSON.stringify(monsterStateKeys)};
-let ability = ${JSON.stringify(ability)};
-let monsterBuffSkillLib = ${JSON.stringify(monsterBuffSkillLib)};
-let hvVersion = Version(...${JSON.stringify(hvVersion.ver.split('.'))});
-// funciton
-${[updateMonsterEffects, fixMonsterStatus,
-getMonsterID, getMonster, getMonster, getBuff,
-onRestoredBattleServer, getValue, setValue, delValue,
-getLocal, setLocal, delLocal,
-gE, cE, Version, sleep].map(f => f.toString()).join(';')};
-`;
-    gE('head').appendChild(fakeApiCall);
-    const fakeApiResponse = cE('script');
-    fakeApiResponse.textContent = `api_response = ${function (b) {
-      if (b.readyState !== 4) {
-        return false;
-      }
-      if (b.status !== 200) {
-        window.location.href = window.location.search;
-        return false;
-      }
-      const a = JSON.parse(b.responseText);
-      if (a.login !== undefined) {
-        top.window.location.href = login_url;
-        return false;
-      }
-      if (a.error || a.reload) {
-        window.location.href = window.location.search;
-      }
-      return a;
-    }.toString()}`;
-    gE('head').appendChild(fakeApiResponse);
   }
 
-  function updateMonsterEffects(isNewTurn = true) {
-    const option = typeof GM_getValue === 'undefined' ? {} : getOption();
-    if (!(typeof GM_getValue === 'undefined' ? debuffAutoFill : option.debuffAutoFill)) return;
-    let battle = getValue('battle', true);
-    if (!battle?.monsterStatus) return;
-    if (battle.monsterStatus.map(m => getMonster(getMonsterID(m))).filter(mon => mon === null).length) {
-      fixMonsterStatus();
-      battle = getValue('battle', true);
-    }
-
-    let regExp = updateMonsterEffects.prototype.regExp ??= {
+  function onPrevBattleLog(isNewTurn = true) {
+    let regExp = onPrevBattleLog.prototype.regExp ??= {
       locationQueries: /\w+=\w+/g,
       playerInfo: /(\w+) Lv\.(\d+)/,
       staminaInfo: /Stamina:\s(\d+)/,
@@ -7252,6 +7258,154 @@ gE, cE, Version, sleep].map(f => f.toString()).join(';')};
       crystal: /(?:(\d+)x )?(Crystal of \w+)/,
     };
 
+    let battle = getValue('battle', true);
+    const turnLog = gE('#textlog').innerHTML.match(/([^]+?)((<tr><td class="tls">)|(<\/tbody>))/)[0];
+
+    // cache last turn channeling
+    const channeling = battle.channeling || 1;
+    battle.channeling = getBuff('channeling') ? 1.5 : 1;
+
+    if (isNewTurn &&= turnLog !== battle.turnLog) {
+      battle.turnLog = turnLog;
+      battle.time = new Date().getTime();
+    }
+    setValue('battle', battle);
+
+    if (turnLog.match(regExp.battleTypeLog)) return; // skip if is new round since no new proficiency or monster effect
+
+    // update proficiency
+    const proficiency = battle.proficiency ?? {};
+    const ptypes = {
+      'cloth armor': 'Cloth Armor',
+      'deprecating magic' : 'Deprecating',
+      'divine': 'Divine',
+      'dual wielding' : 'Dual-wielding',
+      'elemental': 'Elemental',
+      'forbidden': 'Forbidden',
+      'heavy armor': 'Heavy Armor',
+      'light armor': 'Light Armor',
+      'one-handed weapon': 'One-handed',
+      'staff': 'Staff',
+      'supportive magic' : 'Supportive',
+      'two-handed weapon': 'Two-handed',
+    }
+    if (isNewTurn) {
+      for (const prof of turnLog.match(regExp.proficiencies) ?? []) {
+        const [_, points, type] = prof.match(regExp.proficiency);
+        proficiency[ptypes[type]] += points * 1;
+        proficiency[ptypes[type]] = proficiency[ptypes[type]].toFixed(3) * 1;
+      }
+      setValue('proficiency', proficiency);
+    }
+
+    if (!(g.option.debuffAutoFill)) return;
+    // update monster effects
+    if (!battle?.monsterStatus) return;
+    if (battle.monsterStatus.map(m => getMonster(getMonsterID(m))).filter(mon => mon === null).length) {
+      fixMonsterStatus();
+      battle = getValue('battle', true);
+    }
+
+    let effectChanges = getEffectChanges(turnLog);
+
+    // 消除对每次操作影响turns程度最大的加速buff（技能或卷轴）
+    let turnDelta = (isNewTurn && !turnLog.match(regExp.zeroturn)) ? 1 : 0;
+    turnDelta *= 100 / ((getBuff('haste')?.getAttribute('onmouseover').match(/increasing its action speed by (.*)%\./)[1] ?? 0) * 1 + 100);
+
+    const getBuffSkill = (buff) => Object.values(monsterBuffSkillLib).find(skill => [skill.name, skill.buff].includes(buff)) ?? console.log('Unknown debuff skill', buff);
+    for (const activeMonster of battle.monsterStatus) {
+      const monster = getMonster(getMonsterID(activeMonster));
+      if (gE('img[src*="nbardead.png"]', monster)) continue; // continue if dead
+
+      let name = gE(monsterStateKeys.name, monster).innerText;
+      let effectObj = {};
+      let jpxObj = {};
+      let monster_btm6 = gE('.btm6', monster);
+      const abs = ability;
+      monster_btm6.querySelectorAll('img').forEach(effect => {
+        let tooltip = effect.getAttribute('onmouseover');
+        if (!tooltip) return;
+
+        let matches = tooltip.match(regExp.spellMatch);
+        if (!matches?.groups) return;
+
+        let { name, stack, description, turns } = matches.groups;
+        if (!name) return console.log('Undefined debuff name:', name);
+        const jpx = turns === '-' || description.includes('jpx Hidden Effects');
+        if (jpx) { // 可能为jpx补全的buff，在hvAA中重新计算确认数据
+          jpxObj[name] = effect;
+          return;
+        }
+        let dc = getBuffSkill(name)?.description;
+        if (dc !== description) {
+          // TODO 测试确保 ability[4213] Better Slow 效果描述正常，目前是描述均是30%
+          if (dc !== `'The target has been slowed by ${[30, 40, 40, 45, 50, 50][abs[4213] ?? 0]}%, making it attack less frequently.'` && description !== `'The target has been slowed by 30%, making it attack less frequently.'`) {
+            console.log('Unmatched debuff description:', description, '\n from', name, dc);
+          }
+        }
+        effectObj[name] = { turns, stack: stack ?? 1 };
+      });
+      let effects = Object.keys(effectObj);
+
+      // DEBUG LEGACY ---------------------
+      localStorage.removeItem(`hvAA-${_server.name}_rec`);
+      // DEBUG LEGACY---------------------
+
+      let savedEffects = activeMonster.effectObj ??= {};
+      if (effects.length <= 5) for (const effect in savedEffects) delete savedEffects[effect];
+      if (effects.length >= 5) for (const effect of effects) savedEffects[effect] = { ...effectObj[effect] }; // updated directly
+      if (effects.length !== 6) continue; // <= 5 && undetermined situation
+
+      if (effectChanges[name]) {
+        for (const effect of effectChanges[name].add) {
+          const skill = getBuffSkill(effect);
+          if (!skill) continue;
+          /* TODO
+1. TBD stack from monsterBuffSkillLib etc.
+2. 测试检查非 减益技能(deprecating) 的debuff持续时间是否正确 (monsterBuffSkillLib)
+3. 确认v091不同buff的叠加规则（部分抵抗无法估算?）
+4. 确认熟练度倍率公式，已知最大为4。推测：
+计算方式为 (p-pmin)/(pmax-pmin) * 4
+pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
+和 https://ehwiki.org/wiki/Spells#Offensive_Magic
+减益技能(deprecating) 统一按照减益的熟练度
+元素攻击（应该包括Burning Soul/Ripened Soul?）带来的按各自的熟练度（推测是按T3的pmin/pmax）
+至于取整方式则暂时无法确定
+*/
+          let [duration, base, profRatio, prof, channelingRatio] = getDuration(skill, channeling);
+          if (savedEffects[name]) savedEffects[name][effect].channeling ??= channelingRatio;
+          if (effects.includes(effect)) continue; // updated directly above
+          if (!duration) { console.log('duration undefined saved effect:', effect, savedEffects[effect]) }
+          if (savedEffects[effect]) {
+            const turn = (savedEffects[effect].turns ?? 0) * 1;
+            if (isNewTurn && !isNaN(turn)) duration = turn + (duration ?? 0);
+          }
+          savedEffects[effect] = { turns: duration ?? '-', stack: '-' , channeling: channelingRatio};
+        }
+        for (const effect of effectChanges[name].remove) (!effects.includes(effect) && (effect in savedEffects)) && delete savedEffects[effect];
+      }
+
+      applyHiddenDelta(savedEffects, effectObj, turnDelta);
+
+      monster_btm6.style.width = 'max-content';
+      activeMonster.effectObj = savedEffects;
+      for (const effect in savedEffects) {
+        if (effect in effectObj) continue;
+        let { turns, stack } = savedEffects[effect];
+        effectObj[effect] = { turns, stack };
+        if (isNaN(+turns)) turns = `'${String(turns).replace(/'/g, "\\'")}'`;
+        let img = jpxObj[effect] ?? document.createElement('img');
+        img.src = (`${_server.isekai ? '/isekai' : ''}/y/e/${ getBuffSkill(effect)?.img || 'channeling'}.png`);
+        let description = getBuffSkill(effect)?.description;
+        img.setAttribute('onmouseover', `battle.set_infopane_effect('${effect} (x${stack})', ${description}, ${isNaN(+turns) ? turns : Math.floor(turns)})`);
+        img.setAttribute('onmouseout', 'battle.clear_infopane()');
+
+        monster_btm6.appendChild(img);
+      }
+    }
+
+    if (isNewTurn) setValue('battle', battle); // update monsterEffects
+
     function getDuration(skill, channeling) {
       let [base, profRatio, prof] = [skill.duration, 1, 0];
       if (typeof base === 'number') {
@@ -7314,188 +7468,6 @@ gE, cE, Version, sleep].map(f => f.toString()).join(';')};
         savedEffects[savedEffect].turns = Math.max(0, savedTurns - delta);
       }
     }
-
-    const turnLog = gE('#textlog').innerHTML.match(/([^]+?)((<tr><td class="tls">)|(<\/tbody>))/)[0];
-    isNewTurn &&= turnLog !== battle.turnLog;
-    if (turnLog.match(regExp.battleTypeLog)) return; // skip if is new round
-
-    // update proficiency
-    const proficiency = battle.proficiency ?? {};
-    const ptypes = {
-      'cloth armor': 'Cloth Armor',
-      'deprecating magic' : 'Deprecating',
-      'divine': 'Divine',
-      'dual wielding' : 'Dual-wielding',
-      'elemental': 'Elemental',
-      'forbidden': 'Forbidden',
-      'heavy armor': 'Heavy Armor',
-      'light armor': 'Light Armor',
-      'one-handed weapon': 'One-handed',
-      'staff': 'Staff',
-      'supportive magic' : 'Supportive',
-      'two-handed weapon': 'Two-handed',
-    }
-    for (const prof of turnLog.match(regExp.proficiencies) ?? []) {
-      const [_, points, type] = prof.match(regExp.proficiency);
-      proficiency[ptypes[type]] += points * 1;
-      proficiency[ptypes[type]] = proficiency[ptypes[type]].toFixed(3) * 1;
-    }
-
-    // cache last turn channeling
-    const channeling = battle.channeling || 1;
-    battle.channeling = getBuff('channeling') ? 1.5 : 1;
-
-    let effectChanges = getEffectChanges(turnLog);
-
-    // 消除对每次操作影响turns程度最大的加速buff（技能或卷轴）
-    let turnDelta = (isNewTurn && !turnLog.match(regExp.zeroturn)) ? 1 : 0;
-    turnDelta *= 100 / ((getBuff('haste')?.getAttribute('onmouseover').match(/increasing its action speed by (.*)%\./)[1] ?? 0) * 1 + 100);
-
-    const getBuffSkill = (buff) => Object.values(monsterBuffSkillLib).find(skill => [skill.name, skill.buff].includes(buff)) ?? console.log('Unknown debuff skill', buff);
-    for (const activeMonster of battle.monsterStatus) {
-      const monster = getMonster(getMonsterID(activeMonster));
-      if (gE('img[src*="nbardead.png"]', monster)) continue; // continue if dead
-
-      let name = gE(monsterStateKeys.name, monster).innerText;
-      let effectObj = {};
-      let jpxObj = {};
-      let monster_btm6 = gE('.btm6', monster);
-      const abs = ability;
-      monster_btm6.querySelectorAll('img').forEach(effect => {
-        let tooltip = effect.getAttribute('onmouseover');
-        if (!tooltip) return;
-
-        let matches = tooltip.match(regExp.spellMatch);
-        if (!matches?.groups) return;
-
-        let { name, stack, description, turns } = matches.groups;
-        if (!name) return console.log('Undefined debuff name:', name);
-        const jpx = turns === '-' || description.includes('jpx Hidden Effects');
-        if (jpx) { // 可能为jpx补全的buff，在hvAA中重新计算确认数据
-          jpxObj[name] = effect;
-          return;
-        }
-        let dc = getBuffSkill(name)?.description;
-        if (dc !== description) {
-          // TODO 测试确保 ability[4213] Better Slow 效果描述正常，目前是描述均是30%
-          if (dc !== `'The target has been slowed by ${[30, 40, 40, 45, 50, 50][abs[4213] ?? 0]}%, making it attack less frequently.'` && description !== `'The target has been slowed by 30%, making it attack less frequently.'`) {
-            console.log('Unmatched debuff description:', description, '\n from', name, dc);
-          }
-        }
-        effectObj[name] = { turns, stack: stack ?? 1 };
-      });
-      let effects = Object.keys(effectObj);
-
-      // DEBUG ---------------------
-      if (typeof GM_getValue === 'undefined' ? debuffAutoFillRec : option.debuffAutoFillRec) {
-        // 统计持续时间及熟练度相关数据，以便进行核验和测试
-        onRestoredBattleServer('rec', () => {
-          const rec = JSON.parse(localStorage.getItem(`hvAA-${_server.name}_rec`) ?? `{}`);
-          for (const effect of effects) {
-            const turns = effectObj[effect].turns * 1;
-            if (isNaN(turns)) continue;
-            const skill = getBuffSkill(effect);
-            if (!skill) continue;
-
-            rec[effect] ??= { t:0 };
-            // 获取新增时间（忽略非新增的情况）
-            let [delta, added] = [turns - rec[effect].t, rec[effect].d];
-            if (delta > 0) {
-              added = rec[effect].t ? delta : added;
-            }
-            // 获取基础、熟练度计算倍率、熟练度，设置及初始化主要数据
-            let [duration, base, profRatio, prof, channelingRatio] = getDuration(skill, channeling);
-            if (profRatio === 4) rec[effect].f = prof; // 比例刚好是4时的熟练度（推测是公式中的熟练度上限）
-            rec[effect].b = base; // 基础持续时间
-            rec[effect].c = profRatio; // 公式理论计算值
-            rec[effect].ch = rec[effect].t && added > 0 ? channelingRatio : rec[effect].ch; // 引导倍率
-            rec[effect].t = turns; // 当前剩余持续时间
-            rec[effect].d = added; // 新增时间
-            rec[effect].m = Math.max(rec[effect].m ?? 0, added); // 历史最大新增时间
-            rec[effect].a ??= [0, 0]; // 推测熟练度倍率 [ 历史最大值, 按照‘缺失引导信息导致变成1.5倍’的修正值(除以1.5)  ]
-            rec[effect].r ??= [0, 0, 0]; // 实际倍率 [ 0-4 应该正常, 4-6推测缺失引导信息, 6+ 异常]
-            rec.error ??= []; // 实际倍率异常时的相关信息
-            // 计算推测倍率
-            if (base <= added) {
-              const a = Math.max(base, added)/base/channelingRatio
-              rec[effect].a[0] = Math.max(a, rec[effect].a[0]).toFixed(4) * 1;
-              rec[effect].a[1] = Math.max(a / 1.5, rec[effect].a[1]).toFixed(4) * 1;
-            }
-            // 检查实际ratio
-            const ratio = Math.max(base, added)/duration;
-            if (ratio > 1.5) {
-              const e = `${effect}: ${Math.max(base, added).toFixed(4)}/(${base.toFixed(4)}*${channelingRatio.toFixed(4)}*${profRatio.toFixed(4)})=${ratio.toFixed(4)}`
-              if (!rec.error.includes(e)) rec.error.push(e);
-            }
-            if (ratio > 1.5 && ratio > rec[effect].r[2]) {
-              rec[effect].r[2] = ratio.toFixed(4) * 1;
-            } else if (ratio <= 1.5 && ratio > 1 && ratio > rec[effect].r[1]) {
-              rec[effect].r[1] = ratio.toFixed(4) * 1;
-            } else if (ratio <= 1 && ratio > rec[effect].r[0]) {
-              rec[effect].r[0] = ratio.toFixed(4) * 1;
-            }
-            localStorage.setItem(`hvAA-${_server.name}_rec`, JSON.stringify(rec));
-          }
-        });
-      }
-      // DEBUG END ---------------------
-
-      let savedEffects = activeMonster.effectObj ??= {};
-      if (effects.length <= 5) for (const effect in savedEffects) delete savedEffects[effect];
-      if (effects.length >= 5) for (const effect of effects) savedEffects[effect] = { ...effectObj[effect] }; // updated directly
-      if (effects.length !== 6) continue; // <= 5 && undetermined situation
-
-      if (effectChanges[name]) {
-        for (const effect of effectChanges[name].add) {
-          const skill = getBuffSkill(effect);
-          if (!skill) continue;
-          /* TODO
-1. TBD stack from monsterBuffSkillLib etc.
-2. 测试检查非 减益技能(deprecating) 的debuff持续时间是否正确 (monsterBuffSkillLib)
-3. 确认v091不同buff的叠加规则（部分抵抗无法估算?）
-4. 确认熟练度倍率公式，已知最大为4。推测：
-计算方式为 (p-pmin)/(pmax-pmin) * 4
-pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
-和 https://ehwiki.org/wiki/Spells#Offensive_Magic
-减益技能(deprecating) 统一按照减益的熟练度
-元素攻击（应该包括Burning Soul/Ripened Soul?）带来的按各自的熟练度（推测是按T3的pmin/pmax）
-至于取整方式则暂时无法确定
-*/
-          let [duration, base, profRatio, prof, channelingRatio] = getDuration(skill, channeling);
-          if (savedEffects[name]) savedEffects[name][effect].channeling ??= channelingRatio;
-          if (effects.includes(effect)) continue; // updated directly above
-          if (!duration) { console.log('duration undefined saved effect:', effect, savedEffects[effect]) }
-          if (savedEffects[effect]) {
-            const turn = (savedEffects[effect].turns ?? 0) * 1;
-            if (isNewTurn && !isNaN(turn)) duration = turn + (duration ?? 0);
-          }
-          savedEffects[effect] = { turns: duration ?? '-', stack: '-' , channeling: channelingRatio};
-        }
-        for (const effect of effectChanges[name].remove) (!effects.includes(effect) && (effect in savedEffects)) && delete savedEffects[effect];
-      }
-
-      applyHiddenDelta(savedEffects, effectObj, turnDelta);
-
-      monster_btm6.style.width = 'max-content';
-      activeMonster.effectObj = savedEffects;
-      for (const effect in savedEffects) {
-        if (effect in effectObj) continue;
-        let { turns, stack } = savedEffects[effect];
-        effectObj[effect] = { turns, stack };
-        if (isNaN(+turns)) turns = `'${String(turns).replace(/'/g, "\\'")}'`;
-        let img = jpxObj[effect] ?? document.createElement('img');
-        img.src = (`${_server.isekai ? '/isekai' : ''}/y/e/${ getBuffSkill(effect)?.img || 'channeling'}.png`);
-        let description = getBuffSkill(effect)?.description;
-        img.setAttribute('onmouseover', `battle.set_infopane_effect('${effect} (x${stack})', ${description}, ${isNaN(+turns) ? turns : Math.floor(turns)})`);
-        img.setAttribute('onmouseout', 'battle.clear_infopane()');
-
-        monster_btm6.appendChild(img);
-      }
-    }
-    if (!isNewTurn) return;
-    battle.turnLog = turnLog;
-    battle.time = new Date().getTime();
-    setValue('battle', battle);
   }
 
   async function loadUnsafeWindowBattle() { try {
@@ -7514,7 +7486,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
 
   function newRound(isNew) { // New Round
     $debug.log('______________newRound', isNew);
-    const option = getOption();
+    const option = g.option;
     const token = document.documentElement.outerHTML.match(/var battle_token = "(.*)";/)[1];
     let battle = getValue('battle', true);
     const arena = getValue('arena', true) ?? {};
@@ -7524,7 +7496,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       battle = { proficiency: same ? battle?.proficiency ?? prof : prof };
     }
     if (!battle) {
-      battle = JSON.parse(JSON.stringify(g().battle ?? {}));
+      battle = JSON.parse(JSON.stringify(g.battle ?? {}));
       battle.monsterStatus?.sortBy(x => x.order);
     };
     [battle.token, battle.postoken] = [token, arena.postoken];
@@ -7533,12 +7505,12 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
     if (window.location.hash !== '') {
       goto();
     }
-    g('monsterAll', gE(monsterStateKeys.obj, 'all').length);
+    g.monsterAll = gE(monsterStateKeys.obj, 'all').length;
     const monsterDead = gE('img[src*="nbardead"]', 'all').length;
-    g('monsterAlive', g().monsterAll - monsterDead);
-    g('bossAll', gE(`${monsterStateKeys.lv}[style^="background"]`, 'all').length);
+    g.monsterAlive = g.monsterAll - monsterDead;
+    g.bossAll = gE(`${monsterStateKeys.lv}[style^="background"]`, 'all').length;
     const bossDead = gE(`${monsterStateKeys.obj}[style*="opacity"] ${monsterStateKeys.lv}[style*="background"]`, 'all').length;
-    g('bossAlive', g().bossAll - bossDead);
+    g.bossAlive = g.bossAll - bossDead;
     const types = {
       ar: {
         reg: /^Initializing arena challenge/,
@@ -7585,7 +7557,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       const monsterLvs = Array.from(gE(`${monsterStateKeys.lv}>div>div`, 'all')).map(monster => monster.innerText);
       const monsterDB = getValue('monsterDB', true) ?? {};
       const monsterMID = getValue('monsterMID', true) ?? {};
-      for (let i = battleLog.length - 2; i > battleLog.length - 2 - g().monsterAll; i--) {
+      for (let i = battleLog.length - 2; i > battleLog.length - 2 - g.monsterAll; i--) {
         let hp = battleLog[i].textContent.match(/HP=(\d+)$/)[1] * 1;
         if (isNaN(hp)) {
           hp = getHPFromMonsterDB(monsterDB, monsterNames[order], monsterLvs[order]) ?? monsterStatus[monsterStatus.length - 1].hp;
@@ -7677,7 +7649,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
 
     const monsterBuff = gE(monsterStateKeys.buffs, 'all');
     const hpMin = Math.min.apply(null, hpArray);
-    const option = getOption();
+    const option = g.option;
     const yggdrasilExtraWeight = option.YggdrasilExtraWeight;
     const baseHpRatio = option.baseHpRatio;
     // 权重越小，优先级越高
@@ -7699,7 +7671,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
           continue;
         }
         known[skill.img] = skill;
-        if (skill.elem && skill.elem !== g().attackStatus) {
+        if (skill.elem && skill.elem !== g.attackStatus) {
           weight += option.weight?.[`${j}1`] ?? 0;
           continue;
         }
@@ -7721,24 +7693,27 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
 
     // 先存一次，用于下面的额外权重公式
     battle.monsterStatus = monsterStatus.sortBy(x => x.finWeight);
-    g('battle', battle);
+    g.battle = battle;
     const extraWeightFormula = option.extraWeightFormula;
     // 额外权重公式
-    monsterStatus.forEach(t => { t.finWeight += resolveRPNFormula(extraWeightFormula, t); });
+    monsterStatus.forEach(t => {
+      const extra = resolveRPNFormula(extraWeightFormula, t);
+      t.finWeight += isNaN(+extra) ? 0 : extra;
+    });
     battle.monsterStatus = monsterStatus.sortBy(x => x.finWeight);
-    g('battle', battle);
+    g.battle = battle;
   }
 
   function resolveSkillExtraWeight(target) {
-    if (g().inSkillExtraWeight) return 0;
-    g('inSkillExtraWeight', true);
-    const result = resolveRPNFormula(g().option.skillExtraWeight, target);
-    g('inSkillExtraWeight', false);
+    if (g.inSkillExtraWeight) return 0;
+    g.inSkillExtraWeight = true;
+    const result = resolveRPNFormula(g.option.skillExtraWeight, target);
+    g.inSkillExtraWeight = false;
     return result;
   }
 
   function autoRecover(isCureOnly) { // 自动回血回魔
-    const option = getOption();
+    const option = g.option;
     if (!option.item) return false;
     const name = splitOrders(option.itemOrderName, getDefaultOrder('itemOrder'));
     const order = splitOrders(option.itemOrderValue, getDefaultOrder('itemOrder', ord => ord.value.match(/,(.*)/)[1] * 1));
@@ -7750,14 +7725,14 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       if (option.item[name[i]] && checkCondition(option[`item${name[i]}Condition`]) && isOn(id)) {
         updateSkillOTOS(id);
         (gE(`.bti3>div[onmouseover*="(${id})"]`) ?? gE(id)).click();
-        return id > 10000 ? -1 : 1;
+        return true
       }
     }
     return false;
   }
 
   function useScroll() { // 自动使用卷轴
-    const option = getOption();
+    const option = g.option;
     if (!option.scrollSwitch) {
       return false;
     }
@@ -7767,7 +7742,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
     if (!option.scrollRoundType) {
       return false;
     }
-    if (!option.scrollRoundType[g().battle.roundType]) {
+    if (!option.scrollRoundType[g.battle.roundType]) {
       return false;
     }
     setBattleSkillParam('scroll');
@@ -7861,7 +7836,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
   }
 
   function useChannelSkill() { // 自动施法Channel技能
-    const option = getOption();
+    const option = g.option;
     if (!option.channelSkillSwitch) {
       return false;
     }
@@ -7914,7 +7889,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
   }
 
   function useBuffSkill() { // 自动施法BUFF技能
-    const option = getOption();
+    const option = g.option;
     if (!option.buffSkillSwitch) {
       return false;
     }
@@ -7934,7 +7909,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       setBattleSkillParam(id, { buff: 1});
       if (checkCondition(option[`buffSkill${buff}Condition`])) {
         onClickBuff(id);
-        return 1;
+        return true;
       }
     }
 
@@ -7966,14 +7941,14 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       if (!getBuff(draughtPack[i].img) && option.buffSkill && option.buffSkill[i] && checkCondition(option[`buffSkill${i}Condition`]) && gE(`.bti3>div[onmouseover*="(${id})"]`)) {
         updateSkillOTOS(id);
         gE(`.bti3>div[onmouseover*="(${id})"]`).click();
-        return id > 10000 ? -1 : 1;
+        return true;
       }
     }
     return false;
   }
 
   function useInfusions() { // 自动使用魔药
-    const option = getOption();
+    const option = g.option;
     if (!option.infusionSwitch) return false;
     setBattleSkillParam('infusion');
     if (!checkCondition(option.infusionCondition)) {
@@ -8017,7 +7992,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
     ];
 
     if (option.infusionDefaultOnly) {
-      const attackStatus = g().attackStatus;
+      const attackStatus = g.attackStatus;
       if (attackStatus === 0) return false;
       return onUse(attackStatus);
     }
@@ -8035,7 +8010,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
   }
 
   function autoFocus() {
-    const option = getOption();
+    const option = g.option;
     setBattleSkillParam('focus');
     if (option.focus && checkCondition(option.focusCondition)) {
       updateSkillOTOS('focus');
@@ -8051,7 +8026,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
     if (spValue <= 1) {
       return false;
     }
-    const option = getOption();
+    const option = g.option;
     const enabled = gE('#ckey_spirit[src*="spirit_a"]');
     setBattleSkillParam(enabled ? 'spiritoff' : 'spiriton', { spirit: enabled ? 'off' : 'on' });
     if (
@@ -8081,14 +8056,14 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
 * 优先释放先天和武器技能
 */
   function autoSkill() {
-    const option = getOption();
+    const option = g.option;
     if (!option.skillSwitch) return false;
     if (!option.skill) return false;
     if (option.skillSSOnly && !gE('#ckey_spirit[src*="spirit_a"]')) {
       return false;
     }
     const skillOrder = splitOrders(option.skillOrderValue, getDefaultOrder('skillOrder'));
-    const fightStyle = g().fightingStyle; // 1二天 2单手 3双手 4双持 5法杖
+    const fightStyle = g.fightingStyle; // 1二天 2单手 3双手 4双持 5法杖
     const skillLib = {
       OFC: 1111,
       FRD: 1101,
@@ -8106,7 +8081,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       2303: { range: 5 },
       2403: { oc: 3, range: 5 },
     }
-    const monsterStatus = g().battle.monsterStatus;
+    const monsterStatus = g.battle.monsterStatus;
     for (let i in skillOrder) {
       let skill = skillOrder[i];
       if (!skill || !option.skill[skill]) {
@@ -8116,7 +8091,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       if (!isOn(id)) {
         continue;
       }
-      if (g().oc < (skillInfos[id]?.oc ?? 2)) {
+      if (g.oc < (skillInfos[id]?.oc ?? 2)) {
         continue;
       }
       const skillOTOS = getValue('skillOTOS', true) ?? {};
@@ -8138,8 +8113,8 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
   }
 
   function useDeSkill() { // 自动施法DEBUFF技能
-    const option = getOption();
-    const monsterStatus = g().battle.monsterStatus;
+    const option = g.option;
+    const monsterStatus = g.battle.monsterStatus;
     setBattleSkillParam('debuff');
     if (!option.debuffSkillSwitch || !checkCondition(option.debuffSkillCondition, monsterStatus)) { // 总开关是否开启
       return false;
@@ -8203,7 +8178,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       break;
     }
     // 获取目标
-    const option = getOption();
+    const option = g.option;
     const excludedWeight = target => resolveRPNFormula(option.excludedWeightFormula[buff], target);
     let exclusiveBuffs;
     if (isAll && option.debuffAllExclusive) {
@@ -8222,7 +8197,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       return 0;
     };
     let debuffByIndex = isAll && option[`debuffSkill${buff}AllByIndex`];
-    let monsterStatus = g().battle.monsterStatus;
+    let monsterStatus = g.battle.monsterStatus;
     if (debuffByIndex) {
       monsterStatus = JSON.parse(JSON.stringify(monsterStatus)).sortBy(x => x.order);
     }
@@ -8273,18 +8248,18 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
   }
 
   function getCurrentAttackStatus() {
-    let current = g().attackStatusCurrent;
+    let current = g.attackStatusCurrent;
     if (current === undefined) { // first stack of condition
       attack(true);
-      current = g().attackStatusCurrent
-      g('attackStatusCurrent', undefined);
+      current = g.attackStatusCurrent
+      g.attackStatusCurrent = undefined;
     }
     return current;
   }
 
   function attack(selectStatusOnly = false) { // 自动打怪
-    const option = getOption();
-    const monsters = g().battle.monsterStatus;
+    const option = g.option;
+    const monsters = g.battle.monsterStatus;
     if (option.attackStatusSwitch) {
       let tier = option.attackStatusSwitchByTier ? 3 : undefined;
       const order = splitOrders(option.attackStatusOrderValue, getDefaultOrder('attackStatusOrder'));
@@ -8292,7 +8267,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
         for (const status of order) {
           if (!status && tier) continue;
           if (!option.attackStatusSwitch[status]) continue;
-          g('attackStatusCurrent', status);
+          g.attackStatusCurrent = status;
           setBattleSkillParam('switch', { tier });
           if (!checkCondition(option[`attackStatusSwitchCondition${status}`], monsters)) continue;
           if (onAttack(status, selectStatusOnly, tier)) return true;
@@ -8300,8 +8275,8 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
         if (tier === undefined) break;
       }
     }
-    g('attackStatusCurrent', g().attackStatus);
-    return onAttack(g().attackStatus, selectStatusOnly);
+    g.attackStatusCurrent = g.attackStatus;
+    return onAttack(g.attackStatus, selectStatusOnly);
   }
 
   function onAttack(attackStatus, selectStatusOnly = false, tier = undefined) {
@@ -8336,8 +8311,8 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       4503: { 153: [7, 8, 9, 10] },
     }
 
-    const option = getOption();
-    const battle = g().battle;
+    const option = g.option;
+    const battle = g.battle;
     const monsters = battle.monsterStatus;
     let target = monsters[0];
 
@@ -8348,7 +8323,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
     // 使用物理普通攻击，跳过Offensive Magic
     // 否则按照属性攻击模式释放Spell > Offensive Magic
     let skillRange = 1, skill = 0, attackTier = 0;
-    const fightingStyle = g().fightingStyle*1;
+    const fightingStyle = g.fightingStyle*1;
     // 1. physical
     if (attackStatus === 0) {
       skillRange = fightingStyle === 1 ? 3 : 1;
@@ -8418,7 +8393,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
 
   // TODO TBD 根据lv模糊推测（一般数据都是等级逐渐提升的，可能可以直接用缓存而不需要推测，异世界新赛季时可以自动刷新缓存?）
   function getHPFromMonsterDB(mdb, name, lv) {
-    return mdb?.[name]?.[lv]
+    return mdb?.[name]?.[lv];
   }
 
   function fixMonsterStatus() { // 修复monsterStatus
@@ -8440,7 +8415,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
 
   function displayMonsterWeight() {
 
-    const status = g().battle.monsterStatus.filter(m => !m.isDead);
+    const status = g.battle.monsterStatus.filter(m => !m.isDead);
 
     const weights = [];
     status.forEach(s => {
@@ -8450,7 +8425,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       weights.push(s.finWeight);
     });
     const colorTextList = [];
-    const option = getOption();
+    const option = g.option;
     const weightBG = option.weightBackground;
     if (weightBG) {
       for (const i of range(weights)) {
@@ -8480,7 +8455,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       }
       gE(monsterStateKeys.name, getMonster(id)).style.cssText += 'display: flex; flex-direction: row;'
       if (option.displayWeight) {
-        gE(monsterStateKeys.name, getMonster(id)).innerHTML += `<div style='font-weight: bolder; right:0px; position: absolute;'>[${rank}|-${-rank + weights.length - 1}|${s.finWeight.toPrecision(s.finWeight >= 1 ? 5 : 4)}]</div>`;
+        getMonster(id).innerHTML += `<div style='font-weight: bolder; right:0px; position: absolute;'>[${rank}|-${-rank + weights.length - 1}|${s.finWeight.toPrecision(s.finWeight >= 1 ? 5 : 4)}]</div>`;
       }
     });
   }
@@ -8526,7 +8501,7 @@ text-align: left;
       '#EXP': 0,
       '#Credit': 0,
     };
-    const option = getOption();
+    const option = g.option;
     let item, name, amount, regexp;
     for (const i of range(battleLog)) {
       if (/^You gain \d+ (EXP|Credit)/.test(battleLog[i].textContent)) {
@@ -8565,7 +8540,7 @@ text-align: left;
         break;
       }
     }
-    const battle = g().battle;
+    const battle = g.battle;
     if (option.recordEach && (different || battle.roundNow === battle.roundAll)) {
       const old = getValue('dropOld', true) || [];
       drop.__name = getValue('battleCode', true).name;
@@ -8581,75 +8556,64 @@ text-align: left;
     }
   }
 
-  function matchDamageInfoFromLogText(text, isSkipUnmatched = true) {
-    const regList = [
-      /you for (\d+) (\w+) damage/,
-      /and take (\d+) (\w+) damage/,
-      /You take (\d+) (\w+) damage/,
-      /hits you, causing (\d+) points of (\w+) damage/
-    ];
-    for (let reg of regList) {
-      let match = text.match(reg);
-      if (!match) {
-        continue;
-      }
-      return match;
-    }
-    if (!isSkipUnmatched) {
-      console.log(`Can't match damage info from: `, text);
-    }
+  function escapeRegExp(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function formatMonsterNames(t) {
+    const monsterNames = g.battle.monsterStatus.map(m => gE(`.btm3>div>div`, getMonster(getMonsterID(m))).innerText);
+    [...monsterNames].sortBy(x => x.length).reverse().forEach(name => {
+      t = t.replaceAll(new RegExp(escapeRegExp(name), 'g'), match => `MONSTER_${((monsterNames.findIndex(x => x === match)*1+1)||11)-1}`);
+    });
+    return t;
   }
 
   function recordUsage(param) {
-    const filter = getOption().record;
+    const filter = g.option.record;
     if (!filter) return;
     let stats = getValue('stats', true) || {};
-    const battle = g().battle;
-    stats.self ??= { _startTime: time(3) };
-    stats.tokens ??= { token: battle.token, postoken: battle.postoken };
-    stats.self._turn = filter.turn ? battle.turn ?? 0 : undefined;
-    stats.self._round = filter.round ? stats.self._round ?? 0 : undefined;
-    stats.self._battle = filter.battle ? stats.self._battle ?? 0 : undefined;
-    stats.self._monster = filter.monster ? stats.self._monster ?? 0 : undefined;
-    stats.self._boss = filter.boss ? stats.self._boss ?? 0 : undefined;
-    stats.self.evade = filter.evade ? stats.self.evade ?? 0 : undefined;
-    stats.self.miss = filter.miss ? stats.self.miss ?? 0 : undefined;
-    stats.self.focus = filter.focus ? stats.self.focus ?? 0 : undefined;
-    stats.self.mp = filter.mp ? stats.self.mp ?? 0 : undefined;
-    stats.self.oc = filter.oc ? stats.self.oc ?? 0 : undefined;
-    stats.restore = filter.restore ? stats.restore ?? {} : undefined; // 回复量
-    stats.items = filter.items ? stats.items ?? {} : undefined; // 物品使用次数
-    stats.magic = filter.magic ? stats.magic ?? {} : undefined; // 技能使用次数
-    stats.damage = filter.damage ? stats.damage ?? {} : undefined; // 技能攻击造成的伤害
-    stats.proficiency = filter.proficiency ? stats.proficiency ?? {} : undefined; // 熟练度
-    stats.hurt = filter.hurt ? stats.hurt ?? {} : undefined; // 受到攻击造成的伤害
+    let statsStatic = getValue('statsStatic', true) || {};
+    const battle = g.battle;
+    const init = (filterKey, defaultValue, keys) => {
+      let key, data = stats;
+      keys ??= filterKey;
+      keys = keys.split('.');
+      while (true) {
+        key = keys.shift();
+        if (!keys.length) break;
+        data = data[key];
+      }
+      data[key] ??= filter[filterKey] ? defaultValue : undefined;
+    };
+    const initSelf = key => init(key.replace(/_/, ''), 0, `self.${key}`);
+    const initObject = key => init(key, {});
+    const initHurt = key => init(`hurt${key}`, 0, `hurt._${key}`);
+    (() => {
+      stats.self ??= { _startTime: time(3) };
+      stats.tokens ??= { token: battle.token, postoken: battle.postoken };
+      ['_turn', '_prevBattleTurn', '_actions', '_prevBattleActions', '_round', '_battle', '_monster', '_boss', 'evade', 'miss', 'focus', 'mp', 'oc'].forEach(initSelf);
+      // 回复量, 物品使用次数, 技能使用次数, 技能攻击造成的伤害, 熟练度, 受到攻击造成的伤害,
+      ['restore', 'items', 'magic', 'damage', 'proficiency', 'hurt'].forEach(initObject);
+    })();
     if (filter.hurt) {
-      stats.hurt._avg = filter.hurtavg ? stats.hurt._avg ?? 0 : undefined;
-      stats.hurt._count = filter.hurtcount ? stats.hurt._count ?? 0 : undefined;
-      stats.hurt._total = filter.hurttotal ? stats.hurt._total ?? 0 : undefined;
-      stats.hurt._mavg = filter.hurtmavg ? stats.hurt._mavg ?? 0 : undefined;
-      stats.hurt._mcount = filter.hurtmcount ? stats.hurt._mcount ?? 0 : undefined;
-      stats.hurt._mtotal = filter.hurtmtotal ? stats.hurt._mtotal ?? 0 : undefined;
-      stats.hurt._pavg = filter.hurtpavg ? stats.hurt._pavg ?? 0 : undefined;
-      stats.hurt._pcount = filter.hurtpcount ? stats.hurt._pcount ?? 0 : undefined;
-      stats.hurt._ptotal = filter.hurtptotal ? stats.hurt._ptotal ?? 0 : undefined;
+      ['avg', 'count', 'total', 'mavg', 'mcount', 'mtotal', 'pavg', 'pcount', 'ptotal'].forEach(initHurt);
     }
-    let text, magic, magicName, item, itemName, point, reg;
-    if (g().monsterAlive === 0) {
-      if (filter.turn) {
-        stats.self._turn += battle.turn;
-      }
-      if (filter.round) {
-        stats.self._round += 1;
-      }
-      if (filter.battle) {
-        if (battle.roundNow === battle.roundAll) {
-          stats.self._battle += 1;
-        }
-      }
+    if (filter.turn) {
+      const currentLog = gE('#textlog').innerHTML.match(/([^]+?)((<tr><td class="tls">)|(<\/tbody>))/)[0];
+      const zeroturn = currentLog.match(/>You use\s*(?:\w* (?:Gem|Draught|Potion|Elixir|Drink|Candy|Infusion|Scroll|Vase|Bubble)).*?</);
+      const initturn = currentLog.match(/^Initializing .* \.\.\./);
+      battle.turn ??= (zeroturn || initturn) ? 0 : 1;
+      battle.actions ??= battle.turn ?? (initturn ? 0 : 1);
+      stats.self._turn += battle.turn + ((battle.turn >= stats.self._prevBattleTurn) ? - stats.self._prevBattleTurn : 1);
+      stats.self._actions += battle.actions + ((battle.actions >= stats.self._prevBattleActions) ? - stats.self._prevBattleActions : 1);
+      [stats.self._prevBattleTurn, stats.self._prevBattleActions] = [battle.turn, battle.actions];
+    }
+    if (g.monsterAlive === 0) {
+      if (filter.round) stats.self._round++;
+      if (filter.battle && (battle.roundNow === battle.roundAll)) stats.self._battle++;
     }
     if (param.mode === 'magic') {
-      [magic, magicName] = [param.magic, param.magicName];
+      const [magic, magicName] = [param.magic, param.magicName];
       if (filter.magic) {
         let prev = stats.magic[magic] ?? 0;
         if (magicName in stats.magic) {
@@ -8657,164 +8621,255 @@ text-align: left;
           delete stats.magic[magicName];
         }
         stats.magic[magic] = prev + 1;
-        (stats.magicNames ??= {})[magic] = magicName;
+        (statsStatic.magicNames ??= {})[magic] = magicName;
       }
-      if (filter.mp) {
-        stats.self.mp += param.mp;
-      }
-      if (filter.oc) {
-        stats.self.oc += param.oc;
-      }
-    } else if (param.mode === 'items') {
+      if (filter.mp) stats.self.mp += param.mp;
+      if (filter.oc) stats.self.oc += param.oc;
+    }
+    else if (param.mode === 'items') {
       if (filter.items) {
-        [item, itemName] = [param.item, param.itemName];
+        const[item, itemName] = [param.item, param.itemName];
         let prev = stats.items[item] ?? 0;
         if (itemName in stats.items) {
           prev += stats.items[itemName];
           delete stats.items[itemName];
         }
         stats.items[item] = prev + 1;
-        (stats.itemsNames ??= {})[item] = itemName;
+        (statsStatic.itemsNames ??= {})[item] = itemName;
       }
-    } else {
+    }
+    else {
       if (filter[param.mode]) {
         stats.self[param.mode] = (param.mode in stats.self) ? stats.self[param.mode] + 1 : 1;
       }
     }
 
-    const debug = false;
-    let log = false;
-    for (const i of range(param.log)) {
-      if (param.log[i].className === 'tls') {
-        break;
-      }
-      text = param.log[i].textContent;
-      if (debug) {
-        console.log(text);
-      }
-      if (reg = matchDamageInfoFromLogText(text)) {
-        magic = reg[2].replace('ing', '');
-        point = reg[1] * 1;
-        if (filter.hurt) {
-          stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
-          if (filter.hurtcount || filter.hurtavg) {
-            stats.hurt._count++;
-          }
-          if (filter.hurttotal || filter.hurtavg) {
-            stats.hurt._total += point;
-          }
-          if (filter.hurtavg) {
-            stats.hurt._avg = Math.round(stats.hurt._total / stats.hurt._count);
-          }
-          if (magic.match(/pierc|crush|slash/)) {
-            if (filter.hurtpcount || filter.hurtpavg) {
-              stats.hurt._pcount++;
-            }
-            if (filter.hurtptotal || filter.hurtpavg) {
-              stats.hurt._ptotal += point;
-            }
-            if (filter.hurtpavg) {
-              stats.hurt._pavg = Math.round(stats.hurt._ptotal / stats.hurt._pcount);
-            }
-          } else {
-            if (filter.hurtmcount || filter.hurtmavg) {
-              stats.hurt._mcount++;
-            }
-            if (filter.hurtmtotal || filter.hurtmavg) {
-              stats.hurt._mtotal += point;
-            }
-            if (filter.hurtmavg) {
-              stats.hurt._mavg = Math.round(stats.hurt._mtotal / stats.hurt._mcount);
-            }
-          }
+    let logCache = getValue('logCache', true) ?? [];
+    try { logCache = logCache.filter(r => {
+      if (!r.handled) return; // remove legacy record
+      return !recordLog(r.text, stats, filter, r.prev, r.handled, r.mode);
+    })}
+    catch (err) { console.error(err); };
+    let logRange = [...param.log].findIndex(log => log.className === 'tls');
+    if (logRange >= 0) param.log = [...param.log].slice(0, logRange);
+    param.log = [...param.log].map(log => formatMonsterNames(log.textContent).trim()).filter(t => t);
+    let text, prev, handled = [];
+    const mode = param.magic ?? param.item ?? param.mode;
+    // reverse track
+    while (prev || param.log.length) {
+      if (text) handled.push(text);
+      text = prev;
+      prev = param.log.shift() ?? undefined;
+      if (!text) continue;
+      try {
+        if (!recordLog(text, stats, filter, prev, handled, mode)) {
+          logWarn('unknown log type', text, prev, handled, mode);
         }
-        if (filter.evade && text.match(/You ((partially )*(evade|parry|block)( and )*)+ the attack/)) {
-          stats.self.evade++;
-        }
-      } else if (text.match(/^[\w ]+ [a-z]+s [\w+ -]+ for \d+( .*)? damage/) || text.match(/^You .* for \d+ .* damage/)) {
-        if (filter.damage) {
-          reg = text.match(/for (\d+)( .*)? damage/);
-          magic = text.match(/^[\w ]+ [a-z]+s [\w+ -]+ for/) ? text.match(/^([\w ]+) [a-z]+s [\w+ -]+ for/)[1].replace(/^Your /, '') : text.match(/^You (\w+)/)[1];
-          point = reg[1] * 1;
-          stats.damage[magic] = (magic in stats.damage) ? stats.damage[magic] + point : point;
-        }
-      } else if (text.match(/Vital Theft hits .*? for \d+ damage/)) {
-        if (filter.damage) {
-          magic = 'Vital Theft';
-          point = text.match(/Vital Theft hits .*? for (\d+) damage/)[1] * 1;
-          stats.damage[magic] = (magic in stats.damage) ? stats.damage[magic] + point : point;
-        }
-      } else if (text.match(/You (evade|parry|block) the attack|misses the attack against you|(casts|uses) .* misses the attack/)) {
-        if (filter.evade) {
-          stats.self.evade++;
-        }
-      } else if (text.match(/(resists your spell|Your spell is absorbed|(evades|parries) your (attack|spell))|Your attack misses its mark|Your spell fails to connect/)) {
-        if (filter.miss) {
-          stats.self.miss++;
-        }
-      } else if (text.match(/You gain the effect Focusing/)) {
-        if (filter.focus) {
-          stats.self.focus++;
-        }
-      } else if (text.match(/^Recovered \d+ points of/) || text.match(/You are healed for \d+ Health Points/) || text.match(/You drain \d+ HP from/)) {
-        if (filter.restore) {
-          magic = (param.mode === 'defend') ? 'defend' : text.match(/You drain \d+ HP from/) ? 'drain' : param.magic || param.item;
-          point = text.match(/\d+/)[0] * 1;
-          stats.restore[magic] = (magic in stats.restore) ? stats.restore[magic] + point : point;
-        }
-      } else if (text.match(/(restores|drain) \d+ points of/)) {
-        if (filter.restore) {
-          reg = text.match(/^(.*) restores (\d+) points of (\w+)/) || text.match(/^You (drain) (\d+) points of (\w+)/);
-          magic = reg[1];
-          point = reg[2] * 1;
-          stats.restore[magic] = (magic in stats.restore) ? stats.restore[magic] + point : point;
-        }
-      } else if (text.match(/absorbs \d+ points of damage from the attack into \d+ points of \w+ damage/)) {
-        if (filter.hurt) {
-          reg = text.match(/(.*) absorbs (\d+) points of damage from the attack into (\d+) points of (\w+) damage/);
-          point = reg[2] * 1;
-          magic = matchDamageInfoFromLogText(param.log[i - 1].textContent, false)[2].replace('ing', '');
-          stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
-          point = reg[3] * 1;
-          magic = `${reg[1].replace('Your ', '')}_${reg[4]}`;
-          stats.hurt[magic] = (magic in stats.hurt) ? stats.hurt[magic] + point : point;
-        }
-      } else if (text.match(/You gain .* proficiency/)) {
-        if (filter.proficiency) {
-          reg = text.match(/You gain ([\d.]+) points of (.*?) proficiency/);
-          magic = reg[2];
-          point = reg[1] * 1;
-          stats.proficiency[magic] = (magic in stats.proficiency) ? stats.proficiency[magic] + point : point;
-          stats.proficiency[magic] = stats.proficiency[magic].toFixed(3) * 1;
-        }
-      } else if (text.trim() === '' || text.match(/You (gain |cast |use |are Victorious|have reached Level|have obtained the title|do not have enough MP)/) || text.match(/Cooldown|has expired|Spirit Stance|gains the effect|insufficient Spirit|Stop beating dead ponies| defeat |Clear Bonus|brink of defeat|Stop \w+ing|Spawned Monster| drop(ped|s) |defeated/)) {
-        // nothing;
-      } else if (debug) {
-        log = true;
-        setAudioAlarm('Error');
-        console.log(text);
+      } catch (err) {
+        logWarn('error log type'+err, text, prev, handled, mode);
       }
     }
-    if (debug && log) {
-      console.table(stats);
-      pauseChange();
-    }
+
+    setValue('logCache', logCache.slice(0, Math.min(logCache.length, 50)));
     setValue('stats', stats);
+    setValue('statsStatic', statsStatic);
     if (getComputedStyle(gE('#hvAATab-Usage')).display === 'block') {
       gE(`.hvAATabmenu>span[name="Usage"]`).click();
+    }
+
+    function logWarn(info, text, prev, handled, mode) {
+      const toWarn = t => t?.replaceAll(/MONSTER_\d/g, 'MONSTER_0').replaceAll(/ [\d.]+/g, ' 0').replaceAll(/_\d+/g, '_0');
+      const warn = {
+        prev: toWarn(prev),
+        text: toWarn(text),
+        handled: handled.map(toWarn),
+        mode
+      }
+      if (!logCache.some(w => JSON.stringify(w.text) === JSON.stringify(warn.text))) {
+        console.warn(info, ':', warn.text);
+        logCache.unshift(warn);
+      }
+    }
+
+    function recordLog(text, stats, filter, prev, handled, mode, match) {
+      function matchDamage(fromText) {
+        const regExp = matchDamage.prototype.regExp ??= /^(MONSTER_\d|[yY]ou|[^\,\.]+)?(?:(?:(?:uses|casts) .*, which)*(?:was|resists, and was)* ((?:\d+x-)*crit|hit|glance|counter|explode)?(?:d|s|!)*) (MONSTER_\d|[yY]ou)*(?:(?:; MONSTER_\d |; [yY]ou |, which )*((?: |partially|block|blocks|parry|parries|evade|resist|evades|and)+)+(?: the attack, and)?)?(?:, causing| ?for| ?takes*)+( \d+)?(?: additional)*(?: points of)*( [^0-9]+)? damage\.?\s*$/
+        const matched = fromText.match(regExp);
+        let [_0, source, hit, target, block, damage, type] = (matched??[]).map(t => t?.trim());
+        block = block?.replaceAll('partially ', 'p-').replace('parries', 'parry').replace('blocks', 'block').replace('and', '&');
+        const infos = { source, hit, target, block, damage, type };
+        Object.keys(infos).forEach(k => { if (infos[k] === undefined) delete infos[k]; });
+        return matched ? infos : undefined;
+      }
+
+      for (const type of initTypes()) {
+        if (match = type.match()) return type.recorder() || true;
+      }
+
+      function onhandle(type, sub, point) { try {
+        stats[type][sub] = (stats[type][sub]??0) + point * 1;
+      } catch (err) {
+        console.error(type, sub, err);
+        throw err;
+      } }
+
+      function handleDamage(type, damage) { if (filter.damage) onhandle('damage', type.toLowerCase(), damage); }
+      function handleRestore(magic, point) { if (filter.restore) onhandle('restore', magic, point); }
+
+      function handleHurt(type, damage) {
+        type = type.toLowerCase();
+        onhandle('hurt', type, damage);
+        type = type.match(/pierc|crush|slash/) ? 'p' : 'm';
+        // if (type === 'm' && !['void', 'elec', 'dark', 'holy', 'wind', 'cold', 'fire'].includes(magic)) console.warn('Not-basic element magic hurts:', text);
+        hurtSum();
+        hurtSum(type);
+
+        function hurtSum(t) {
+          t ??= '';
+          if (filter[`hurt${t}count`] || filter[`hurt${t}avg`]) stats.hurt[`_${t}count`]++;
+          if (filter[`hurt${t}total`] || filter[`hurt${t}avg`]) stats.hurt[`_${t}total`] += damage * 1;
+          if (filter[`hurt${t}avg`]) stats.hurt[`_${t}avg`] = Math.round(stats.hurt[`_${t}total`] / stats.hurt[`_${t}count`]);
+        }
+      }
+
+      function initTypes() {
+        return [
+          {
+            match: () => (text.match('damage') && !text.match('absorbs')) ? matchDamage(text) : undefined,
+            recorder: () => {
+              let { source, hit, target, block, damage, type } = match;
+              type ??= source;
+              if (!target?.match(`[yY]ou`)) return handleDamage(type, damage);
+              if (filter.evade && text.match(/You ((partially )*(evade|parry|block)( and )*)+ the attack/)) stats.self.evade++;
+              if (!filter.hurt) return;
+              handleHurt(type, damage);
+            }
+          },
+          {
+            match: () => text.match(/^Your (spirit shield) absorbs (\d+) points of damage from the attack into (\d+) points of (spirit) damage/),
+            recorder: () => {
+              if (!filter.hurt) return;
+              let nextmatched;
+              for (const next of handled) {
+                if (!(nextmatched = matchDamage(next))) continue;
+                const { source, hit, target, block, damage, type } = nextmatched;
+                handleHurt(type ?? source, match[2]);
+                handleHurt(match[4], match[3]);
+                return;
+              }
+              logWarn('unkown spirit shield origin damage type:', text, prev, handled, mode);
+            }
+          },
+          {
+            match: () => text.match(/^MONSTER_\d is eviscerated for (\d+) Slashing damage, putting it out of its misery/),
+            recorder: () => handleDamage('Bleeding Wound', match[1])
+          },
+          {
+            match: () => text.match(/^(Refreshment|Replenishment|Regeneration|Regen) restores (\d+) points of (health|magic|spirit)\.$/)
+            || text.match(/^You are (healed) for (\d+) (Health) Points\.$/),
+            recorder: () => {
+              const ids = {
+                Cure: 311,
+                ['Full-Cure']: 313,
+                Regen: 312,
+                Regeneration: 11191,
+                Replenishment: 11291,
+                Refreshment: 11391,
+              }
+              handleRestore(ids[match[1]] ?? ids[prev?.match(/^You cast (.+)\./)?.[1]], match[2]);
+            }
+          },
+          {
+            match: () => text.match(/^You drain (\d+) points of (health|magic|spirit) from MONSTER_\d\.$/),
+            recorder: () => {
+              let [type, damage] = [`drain_${match[2]}`, match[1]];
+              handleRestore(type, damage);
+              if (match[2] === 'health') handleDamage('211', damage);
+            }
+          },
+          {
+            match: () => text.match(/^You gain ([\d.]+) points of (.*?) proficiency.$/),
+            recorder: () => {
+              if (!filter.proficiency) return;
+              let [elem, point] = [match[2],match[1]];
+              stats.proficiency[elem] = ((stats.proficiency[elem] ?? 0) * 1 + point * 1).toFixed(3);
+            }
+          },
+          {
+            match: () => text.match(/^MONSTER_\d casts .*, but it is absorbed. You gain (\d+) points of (mana)\.$/),
+            recorder: () => handleRestore(`absorbed_to_${match[2]}`, match[1])
+          },
+          {
+            match: () => text.match(/^Recovered (\d+) points of (health|magic|spirit)\.$/),
+            recorder: () => handleRestore(mode ?? `Recovered_${match[2]}`, match[1])
+          },
+          {
+            match: () => text.match(/^You (?:(?: |parry|and|block|resist|evade|partially)+)+ the attack( from MONSTER_\d)?\.$/),
+            recorder: () => filter.evade && stats.self.evade++
+          },
+          {
+            match: () => text.match(/^MONSTER_\d (partially )*(?:resists|shrugs off) the effects of your spell\.$/)
+            || text.match(/^MONSTER_\d (?:(?: |deftly|parries|and|blocks|block|evades|evade|dodges|partially)+)+ your (offhand attack|attack|spell)\.$/),
+            recorder: () => filter.miss && stats.self.miss++
+          },
+          {
+            match: () =>
+            0
+            || text.match(/^The effect .* (on MONSTER_\d)? has worn off\.$/)
+            || text.match(/^The effect .* was dispelled\.$/)
+            || text.match(/^MONSTER_\d gains the effect .*\.$/)
+            || text.match(/^MONSTER_\d has been roused from its sleep\.$/)
+            || text.match(/^MONSTER_\d got knocked out of confuse\.$/)
+            || text.match(/^MONSTER_\d (( |parries|blocks|evades|block|evade)+)+ the attack from MONSTER_\d\.$/)
+            || text.match(/^MONSTER_\d (vigorously whiffs at|(uses|casts) .* in the general direction of)? a shadow, missing you completely\.$/)
+            || text.match(/MONSTER_\d gets hit, but the spell is absorbed\.$/)
+            || text.match(/MONSTER_\d casts Healing Roots, healing MONSTER_\d for \d points of health\.$/)
+            || text.match(/^MONSTER_\d (uses|casts)+ .*, but misses the attack\.$/)
+            || text.match(/^Scanning MONSTER_\d\.\.\./)
+            || text.match(/^You gain the effect .*\.$/)
+            || text.match(/^You block the attack from MONSTER_\d\.$/)
+            || text.match(/^You use ((Health|Mana|Spirit) (Elixir|Potion|Draught|Gem)|Last Elixir|Mystic Gem|Scroll of (Life|the Avatar|the Gods|Swiftness|Protection|Absorption|Shadows)|Infusion of (Flames|Frost|Lightning|Storms|Divinity|Darkness)|Flower Vase|Bubble-Gum|Energy Drink|Caffeinated Candy|Vital Strike|Shield Bash|Merciful Blow|Skyward Sword|Frenzied Blows|Concussive Strike|Iris Strike|Backstab|Shatter Strike|Rending Blow|Great Cleave|FUS RO DAH|Orbital Friendship Cannon)\.$/)
+            || text.match(/^You cast (Regen|Heartseeker|Fiery Blast|Inferno|Flames of Loki|Freeze|Blizzard|Fimbulvetr|Shockblast|Chained Lightning|Wrath of Thor|Gale|Downburst|Storms of Njord|Smite|Banishment|Paradise Lost|Corruption|Disintegrate|Ragnarok|Drain|Slow|Weaken|Silence|Sleep|Confuse|Imperil|Blind|MagNet|Immobilize|Cure|Regen|Full-Cure|Haste|Protection|Shadow Veil|Absorb|Spark of Life|Arcane Focus|Heartseeker|Spirit Shield)\.$/)
+            || text.match(/^Cooldown expired for .*$/)
+            || text.match(/^Spirit Stance (Disabled|Engaged|Exhausted)$/)
+            || text.match(/^Spark of Life saves you from the brink of defeat!$/)
+            || text.match(/^Insufficient overcharge (to use .*|or spirit for Spirit Stance\.$)/)
+            || text.match(/^Slot is currently not usable\.$/)
+            || text.match(/^Cooldown is still pending for .*\.$/)
+            || text.match(/^The potential of your equipment has grown!$/)
+            || text.match(/^Stop (beating dead ponies|kicking the dead horse)\.$/)
+            || text.match(/fails due to insufficient Spirit!$/)
+            || text.match(/^With the light of a new dawn, your experience in all things increases\.$/)
+            || text.match(/^You have been defeated\.$/)
+            || text.match(/^You have escaped from the battle\.$/)
+            || text.match(/^You are Victorious!$/)
+            || text.match(/^You gain \d+ (Credits|EXP)!$/)
+            || text.match(/^You (have reached Level|have obtained the title|do not have enough MP)/)
+            || text.match(/^MONSTER_\d has been defeated\.$/)
+            || text.match(/^MONSTER_\d dropped \[.*\]$/)
+            || text.match(/^MONSTER_\d drops a (Health|Mana|Spirit|Mystic) Gem powerup!$/)
+            || text.match(/^You obtained \d+x \[.*\]$/)
+            || text.match(/^Arena Extra Bonus! You obtained \dx \[.*\]$/)
+            || text.match(/^Arena Token Bonus! \[.*\]$/)
+            || text.match(/^Battle Clear Bonus! \[.*\]$/)
+            || 0,
+            recorder: () => { }
+          },
+        ];
+      }
     }
   }
 
   function recordUsage2(different) {
-    const option = getOption();
+    const option = g.option;
     const filter = option.record;
     if (!filter) return;
     const stats = getValue('stats', true);
     if (!different) {
-      if (filter.monster) stats.self._monster += g().monsterAll;
-      if (filter.boss) stats.self._boss += g().bossAll;
+      if (filter.monster) stats.self._monster += g.monsterAll;
+      if (filter.boss) stats.self._boss += g.bossAll;
     }
-    const battle = g().battle;
+    const battle = g.battle;
     if (option.recordEach && (different || battle.roundNow === battle.roundAll)) {
       const old = getValue('statsOld', true) || [];
       stats.__name = getValue('battleCode', true)?.name ?? stats.__name;
@@ -8829,7 +8884,9 @@ text-align: left;
       gE(`.hvAATabmenu>span[name="Usage"]`).click();
     }
   }
-} catch (err) {
+} } catch (err) {
   console.error(err);
   document.title = err;
+  const errorDisplay = document.getElementById('hvAADebugConsoleDisplay');
+  if (errorDisplay) errorDisplay.innerHTML = err;
 }})();
