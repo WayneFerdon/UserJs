@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.209
+// @version      2.91.210
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1082,7 +1082,7 @@ function HVAA(forIsekaiEncounter) {
     runtime.lastResponsive = new Date().getTime(),
     ability = getValue('ability', true) ?? {};
 
-    switch (true) { 
+    switch (true) {
       case !checkOption(): return;
       case !checkIsHV(): return;
       case !checkIsWindowTop(): return;
@@ -6247,11 +6247,10 @@ function HVAA(forIsekaiEncounter) {
       $async.logSwitchStrict('updateEncounter', false);
       return;
     }
-    // url check
-    await until( // perhaps network connect not available
-      async () => await $ajax.insert(window.location.href) && (!option.checkURLBeforeNewRound || await $ajax.insert(option.checkURLBeforeNewRound)),
-      option.checkURLBeforeNewRoundRetry
-    );
+
+    await checkURLBeforeNewRound(window.location.href);
+    await checkURLBeforeNewRound();
+
     // stamina
     if (!await checkBattleReady(onEncounter, { staminaLow: option.staminaEncounter })) {
       $async.logSwitchStrict('updateEncounter', false);
@@ -6495,14 +6494,7 @@ function HVAA(forIsekaiEncounter) {
     }
     await waitPause();
 
-    if (option.checkURLBeforeNewRound) {
-      await until(async () => {
-        if (await $ajax.insert(option.checkURLBeforeNewRound)) {
-          return true;
-        }
-        console.log('Failed arena wating url check before new round, retrying...\n', option.checkURLBeforeNewRound);
-      }, option.checkURLBeforeNewRoundRetry);
-    }
+    await checkURLBeforeNewRound(undefined, 'Failed arena wating url check before new round, retrying...\n');
 
     console.log('Arena Start', equip ? `e${equip.id} (${equip.world} => ${equip.world + 1}) / ${equip.max}\n${JSON.stringify(equip)}` : id);
     let result, debug = true;
@@ -7016,6 +7008,23 @@ function HVAA(forIsekaiEncounter) {
     }
   }
 
+  async function checkURLBeforeNewRound(url, logInfo) { try {
+    const option = g.option;
+    url ??= option.checkURLBeforeNewRound;
+    if (!url) return;
+    let attempts = 0;
+    displayUntil(() => `[TIMER]${UI.byLang('等待URL检查', '等待URL檢查', 'Wait URL Check')}${attempts}`);
+    runtime.lastResponsive = Infinity;
+    await until(async () => { try {
+      attempts++;
+      await waitPause(true);
+      if (await $ajax.insert(url, undefined, undefined, {}, {}, true)) return true;
+      console.log(logInfo);
+    } catch (err) { console.error('Connect failed:', url) }}, option.checkURLBeforeNewRoundRetry * _1s, true);
+    runtime.lastResponsive = time(0);
+    displayProcess();
+  } catch(err) { console.error(err); }}
+
   function reloader() {
     let obj;
     unsafeWindow.api_call = function (b, a, d) {
@@ -7131,19 +7140,7 @@ function HVAA(forIsekaiEncounter) {
           await waitPause(true);
         }
         if (gE('#btcp')?.innerHTML.includes("finishbattle.png")) return console.error(`gE('#btcp')?.innerHTML.includes("finishbattle.png")`);
-        let url = option.checkURLBeforeNewRound;
-        if (url) {
-          let attempts = 0;
-          displayUntil(() => `[TIMER]${UI.byLang('等待URL检查', '等待URL檢查', 'Wait URL Check')}${attempts}`);
-          runtime.lastResponsive = Infinity;
-          await until(async () => { try {
-            attempts++;
-            await waitPause(true);
-            return await $ajax.insert(url, undefined, undefined, {}, {}, true);
-          } catch (err) { console.error('Connect failed:', url) }}, option.checkURLBeforeNewRoundRetry * _1s, true);
-          runtime.lastResponsive = time(0);
-          displayProcess();
-        }
+        await checkURLBeforeNewRound();
         const doc = $doc(await $ajax.insert(window.location.href, undefined, undefined, {}, {}, true));
         if (gE('#riddlecounter', doc)) {
           runtime.lastResponsive = Infinity;
