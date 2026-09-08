@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.207
+// @version      2.91.208
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1926,13 +1926,18 @@
   }
 
   function setLocal(key, value, isLocalStroage) {
-    if (JSON.stringify(getLocal(key, isLocalStroage)) === JSON.stringify(value)) {
-      return;
-    }
-    if (typeof GM_setValue === 'undefined' || isLocalStroage) {
-      window.localStorage[`hvAA-${key}`] = (typeof value === 'string') ? value : JSON.stringify(value);
+    let storedStr;
+    if (isLocalStroage) {
+      storedStr = window.localStorage[`hvAA-${key}`];
     } else {
-      GM_setValue(key, value);
+      storedStr = JSON.stringify(getLocal(key, isLocalStroage)); // GM 自动读取为object，对比时需要重新stringify
+    }
+    const newStr = (typeof value === 'string') ? value : JSON.stringify(value);
+    if (storedStr === newStr) return;
+    if (typeof GM_setValue === 'undefined' || isLocalStroage) {
+      window.localStorage[`hvAA-${key}`] = newStr;
+    } else {
+      GM_setValue(key, value); // GM 写入前会自动stringify
     }
   }
 
@@ -2001,8 +2006,8 @@
         for (let i of dataFlags.excludeStandalone[key]) {
           otherWorldItem[i] = getLocal(`${_server.name}_${key}`, isLocalStorage)[i];
         }
+        setLocal(`${_server.other}_${key}`, otherWorldItem);
       }
-      setLocal(`${_server.other}_${key}`, otherWorldItem);
       return getLocal(`${_server.name}_${key}`, isLocalStorage, toJSON);
     }, forBattle ? key : undefined);
   }
