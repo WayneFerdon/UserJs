@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.215
+// @version      2.91.217
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1040,73 +1040,7 @@
     return num.toString().padStart(total, pad);
   }
 
-  function HVAA(forIsekaiEncounter) {
-  const g = forIsekaiEncounter ? script.runtime.encounterHVAA ??= {} : script;
-  const runtime = g.runtime ??= {};
-  const flags = runtime.flags ??= {};
-  const times = runtime.times ??= { encounter: {} };
-  const realtime = g.realtime ??= {};
-  let $ajax, monsterBuffSkillLib, ability;
-  function $id(id, d) { return (d || runtime.document).getElementById(id); }
-  function $qs(q, d) { return (d || runtime.document).querySelector(q); }
-  function $qsa(q, d) { return Array.from((d || runtime.document).querySelectorAll(q)); }
-  function $doc(h) { const d = new DOMParser().parseFromString(h, 'text/html'); return d; }
-  function gE(query, mode, parent) { // 获取元素
-    switch (mode) {
-      case undefined:
-        return (isNaN(+query)) ? $qs(query, parent) : $id(query, parent);
-      case 'all':
-        return $qsa(query, parent);
-      default:
-        return $qs(query, mode);
-    }
-  }
-  function cE(name) { return runtime.document.createElement(name); }
-  const _servername = (!forIsekaiEncounter && location.pathname.includes('/isekai/')) ? 'isekai' : 'persistent';
-  const addition = {
-    other: _servername === 'isekai' ? 'persistent' : 'isekai',
-    utils: _servername === 'isekai' ? 'hvuti' : 'hvut',
-  };
-  const _server = {
-    name: _servername,
-    season: forIsekaiEncounter ? '1' : $id('world_text', document)?.textContent.match(/\d+ Season \d+/)?.[0] || '1',
-    [_servername]: true, // _server.persistent || _server.isekai
-    ...addition,
-  };
-
-  if (forIsekaiEncounter) {
-    $ajax = window.top.$ajaxEncounter ??= unsafeWindow.top.$ajaxEncounter ??= initAjax();
-    (async () => {
-      runtime.document = $doc(await $ajax.insert(window.location.href.replace('/isekai/', '/')));
-      mainProcess();
-    })();
-  } else {
-    $ajax = window.top.$ajax ??= unsafeWindow.top.$ajax ??= initAjax();
-    runtime.document = document;
-    mainProcess();
-  }
-
-  function mainProcess() {
-    if (window.location.href.includes('/equip/')) flags.equip = true;
-    if (!gE('#csp') && !flags.equip) flags.maintain = true;
-    times.responsive = new Date().getTime(),
-    ability = getValue('ability', true) ?? {};
-
-    switch (true) {
-      case !checkOption(): return;
-      case !checkIsHV(): return;
-      case !checkIsWindowTop(): return;
-      case onIdle(): return;
-      case forIsekaiEncounter: return;
-      case onRiddle(): return;
-      case onBattle(): return;
-      default: setTimeout(goto, 5 * _1m);
-    }
-  }
-
-  // ----------Process Steps----------
-
-  function initAjax() {
+  function initAjax(_server, popup, $debug) {
     const $ajax = {
       debug: false,
       interval: 300, // DO NOT DECREASE THIS NUMBER, OR IT MAY TRIGGER THE SERVER'S LIMITER AND YOU WILL GET BANNED
@@ -1115,6 +1049,8 @@
       error: null,
       conn: 0,
       queue: [],
+      popup,
+      $debug,
 
       insert: function (url, data, method, context = {}, headers = {}, isForBattle) {
         return $ajax.fetch(url, data, method, context, headers, true, isForBattle);
@@ -1198,7 +1134,7 @@
         $ajax.conn++;
         if (!$ajax.debug) return;
         const remain = $ajax.queue.map($ajax.simplify);
-        $debug.log('$ajax.send:', $ajax.simplify(current), ... remain?.length ? ['remain:', remain] : []);
+        $ajax.$debug?.log('$ajax.send:', $ajax.simplify(current), ... remain?.length ? ['remain:', remain] : []);
       },
       onload: function (r) {
         $ajax.conn--;
@@ -1208,7 +1144,7 @@
           r.context.onerror?.(new Error($ajax.error));
         } else if (text === 'state lock limiter in effect') {
           if ($ajax.error !== text) {
-            popup(`<p style="color: #f00; font-weight: bold;">${text}</p><p>Your connection speed is so fast that <br>you have reached the maximum connection limit.</p><p>Try again later.</p>`);
+            $ajax.popup ? $ajax.popup(`<p style="color: #f00; font-weight: bold;">${text}</p><p>Your connection speed is so fast that <br>you have reached the maximum connection limit.</p><p>Try again later.</p>`) : undefined;
             console.error(`${text}\nYour connection speed is so fast that you have reached the maximum connection limit. Try again later.`);
           }
           $ajax.error = text;
@@ -1228,6 +1164,86 @@
     window.addEventListener('unhandledrejection', (e) => { console.error($ajax.error, e); });
     return $ajax;
   }
+
+  function goto(url) { // 前进
+    window.location.href = url ?? (window.location.search ? window.location.pathname + window.location.search : window.location.href);
+    setTimeout(goto, 5 * _1s);
+    setTimeout(() => { window.location.href = window.location.href }, 10 * _1s);
+    return true;
+  }
+
+function HVAA(forIsekaiEncounter) {
+  const g = forIsekaiEncounter ? script.runtime.encounterHVAA ??= {} : script;
+  const runtime = g.runtime ??= {};
+  const flags = runtime.flags ??= {};
+  const times = runtime.times ??= { encounter: {} };
+  const realtime = g.realtime ??= {};
+  let $ajax, monsterBuffSkillLib, ability;
+  function $id(id, d) { return (d || runtime.document).getElementById(id); }
+  function $qs(q, d) { return (d || runtime.document).querySelector(q); }
+  function $qsa(q, d) { return Array.from((d || runtime.document).querySelectorAll(q)); }
+  function $doc(h) { const d = new DOMParser().parseFromString(h, 'text/html'); return d; }
+  function gE(query, mode, parent) { // 获取元素
+    switch (mode) {
+      case undefined:
+        return (isNaN(+query)) ? $qs(query, parent) : $id(query, parent);
+      case 'all':
+        return $qsa(query, parent);
+      default:
+        return $qs(query, mode);
+    }
+  }
+  function cE(name) { return runtime.document.createElement(name); }
+  const _servername = (!forIsekaiEncounter && location.pathname.includes('/isekai/')) ? 'isekai' : 'persistent';
+  const addition = {
+    other: _servername === 'isekai' ? 'persistent' : 'isekai',
+    utils: _servername === 'isekai' ? 'hvuti' : 'hvut',
+  };
+  const _server = {
+    name: _servername,
+    season: forIsekaiEncounter ? '1' : $id('world_text', document)?.textContent.match(/\d+ Season \d+/)?.[0] || '1',
+    [_servername]: true, // _server.persistent || _server.isekai
+    ...addition,
+  };
+
+  const $ajaxInit = window.top.$ajaxInit ??= unsafeWindow.top.$ajaxInit ??= initAjax;
+  if (forIsekaiEncounter) {
+    $ajax = window.top.$ajaxEncounter ??= unsafeWindow.top.$ajaxEncounter ??= $ajaxInit(_server, popup, $debug);
+    $ajax._server ??= _server;
+    $ajax.popup ??= popup;
+    $ajax.$debug ??= $debug;
+    (async () => {
+      runtime.document = $doc(await $ajax.insert(window.location.href.replace('/isekai/', '/')));
+      mainProcess();
+    })();
+  } else {
+    $ajax = window.top.$ajax ??= unsafeWindow.top.$ajax ??= $ajaxInit(_server, popup, $debug);
+    $ajax._server ??= _server;
+    $ajax.popup ??= popup;
+    $ajax.$debug ??= $debug;
+    runtime.document = document;
+    mainProcess();
+  }
+
+  function mainProcess() {
+    if (window.location.href.includes('/equip/')) flags.equip = true;
+    if (!gE('#csp') && !flags.equip) flags.maintain = true;
+    times.responsive = new Date().getTime();
+    ability = getValue('ability', true) ?? {};
+
+    switch (true) {
+      case !checkOption(): return;
+      case !checkIsHV(): return;
+      case !checkIsWindowTop(): return;
+      case onIdle(): return;
+      case forIsekaiEncounter: return;
+      case onRiddle(): return;
+      case onBattle(): return;
+      default: setTimeout(goto, 5 * _1m);
+    }
+  }
+
+  // ----------Process Steps----------
 
   function popup(text) {
     if (!g.option.popup) return;
@@ -1693,13 +1709,6 @@
 
   function splitOrders(orderValue, defaultOrder, ...args) {
     return unique(object2Order(orderValue, ...args).concat(defaultOrder ?? []).map(v => isNaN(v * 1) ? v : v * 1));
-  }
-
-  function goto(url) { // 前进
-    window.location.href = url ?? (window.location.search ? window.location.pathname + window.location.search : window.location.href);
-    setTimeout(goto, 5 * _1s);
-    setTimeout(() => { window.location.href = window.location.href }, 10 * _1s);
-    return true;
   }
 
   function gotoAlt(isAltOnly) {
@@ -5231,10 +5240,11 @@
     }} return undefined;
   }
 
-  function pauseChange({temporaryPause}) { // 暂停状态更改
+  function pauseChange(temporaryPause) { // 暂停状态更改
     const option = g.option;
     const disabled = getPause();
     const button = gE('.pauseChange');
+    temporaryPause = typeof temporaryPause === 'object' ? temporaryPause?.temporaryPause : temporaryPause;
     if (!disabled) {
       if (button) button.innerHTML = UI.button.continue(option);
       runtime.document.title = titlePause();
