@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.214
+// @version      2.91.215
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -558,6 +558,8 @@
     reset: UI.l('重置', '重置', 'Reset'),
   }
 
+  function copy(d) { return d ? JSON.parse(JSON.stringify(d)) : undefined; }
+
   function getCheckSupplyOptionTable(suffix = '', checkBoxOnly) {
     const items = [
       11191, 11291, 11391, 12101, 12201,
@@ -582,10 +584,16 @@
     ];
   }
 
-  if (typeof Array.sortBy === 'undefined') {
-    Object.defineProperty(Array.prototype, 'sortBy', { value: function sortBy(by) {
+  const descriptor = Object.getOwnPropertyDescriptor(Array.prototype, 'sortBy');
+  if (!descriptor || descriptor.configurable) {
+    Object.defineProperty(Array.prototype, 'sortBy', {
+      value: function sortBy(by) {
       return this.sort((x, y) => by(x) < by(y) ? -1 : by(x) > by(y) ? 1 : 0)
-    }, enumerable: false });
+    },
+      enumerable: false,
+      configurable: true,
+      writable: true
+    });
   }
 
   const [$RPN, $async, $debug] = [initRPN(), initAsync(), initDebug()];
@@ -1032,7 +1040,7 @@
     return num.toString().padStart(total, pad);
   }
 
-function HVAA(forIsekaiEncounter) {
+  function HVAA(forIsekaiEncounter) {
   const g = forIsekaiEncounter ? script.runtime.encounterHVAA ??= {} : script;
   const runtime = g.runtime ??= {};
   const flags = runtime.flags ??= {};
@@ -1107,7 +1115,7 @@ function HVAA(forIsekaiEncounter) {
       error: null,
       conn: 0,
       queue: [],
-
+      
       insert: function (url, data, method, context = {}, headers = {}, isForBattle) {
         return $ajax.fetch(url, data, method, context, headers, true, isForBattle);
       },
@@ -1154,7 +1162,7 @@ function HVAA(forIsekaiEncounter) {
         $ajax.next();
       },
       next: async function () {
-        let last, now = new Date().getTime();;
+        let last, now = new Date().getTime();
         await until(() => {
           if (!$ajax.queue.length || $ajax.conn >= $ajax.max) return true;
           now = new Date().getTime();
@@ -1417,9 +1425,9 @@ function HVAA(forIsekaiEncounter) {
     console.log('[hvAA keepAlive] 脚本已初始化, 当前状态:', audioContext.state); // 启动即报状态
     audioContext.onstatechange = () => console.log('[hvAA keepAlive] 状态变更:', audioContext.state);
     const gain = audioContext.createGain();
-    gain.gain.value = 0;           // 平时静音
+    gain.gain.value = 0; // 平时静音
     const osc = audioContext.createOscillator();
-    osc.frequency.value = 50;      // 实测可行的频率
+    osc.frequency.value = 50; // 实测可行的频率
     osc.connect(gain).connect(audioContext.destination);
     osc.start();
     // 每5秒发一个50m的微脉冲(音量0.001)，持续维持“正在播放”判定
@@ -5230,12 +5238,12 @@ function HVAA(forIsekaiEncounter) {
     if (!disabled) {
       if (button) button.innerHTML = UI.button.continue(option);
       runtime.document.title = titlePause();
-      setPause(runtime.document.title, temporary);
+      setPause(runtime.document.title, temporaryPause);
       return;
     }
     if (button) button.innerHTML = UI.button.pause(option);
     runtime.document.title = gE('#navbar') ? 'The Hentaiverse' : disabled;
-    setPause(undefined, temporary);
+    setPause('', temporaryPause);
     if (gE('#navbar')) return; // not in battle
     onBattleRound();
   }
@@ -6567,8 +6575,6 @@ function HVAA(forIsekaiEncounter) {
     g.battle.skill = { id, [id]: 1, ...params };
   }
 
-  function copy(d) { return d ? JSON.parse(JSON.stringify(d)) : undefined; }
-
   // 战斗中//
   async function onBattleRound() { // 主程序
     if (!gE('#battle_main') || flags.battle) return;
@@ -6977,7 +6983,7 @@ function HVAA(forIsekaiEncounter) {
     if (option.autoPause && checkCondition(option.pauseCondition)) {
       if (!flags.stepIn) {
         battle.data = temp;
-        battle.data.paused.turn = battle.data.turn;
+                battle.data.paused.turn = battle.data.turn;
         battle.data.paused.count++;
       }
       pauseChange();
