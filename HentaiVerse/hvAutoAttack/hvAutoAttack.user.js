@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.210
+// @version      2.91.211
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -34,7 +34,7 @@
 (function () { try {
   'use strict';
 
-  let script = unsafeWindow.HVAA ??= {};
+  const script = unsafeWindow.HVAA ??= {};
 
   let lang, engaged, encounterAsyncOnIdle;
   // constant
@@ -393,8 +393,8 @@
   script.scriptVersion = Version(GM_info ? GM_info.script.version : '2.91');
 
   // util methods
-  function repeat(value, times) {
-    return range(times).map(_ => value);
+  function repeat(value, amount) {
+    return range(amount).map(_ => value);
   }
 
   function range(start, stop, step = 1) {
@@ -879,7 +879,7 @@
         } else {
           $async.list.push(name);
         }
-        $debug.log(`${state ? 'Start' : 'End'} ${name}\n`, JSON.parse(JSON.stringify($async.list)));
+        $debug.log(`${state ? 'Start' : 'End'} ${name}\n`, copy($async.list));
       } catch (err) { /* console.log(err) */ } },
       logSwitch: function (args) { try {
         const argsStr = Array.from(args).join(',');
@@ -1033,13 +1033,15 @@
   }
 
 function HVAA(forIsekaiEncounter) {
-  let g = forIsekaiEncounter ? script.runtime.encounterHVAA ??= {} : script;
-  let runtime = g.runtime ??= {};
-  let realtime = g.realtime ??= {};
-  let currentDoc, $ajax, monsterBuffSkillLib, ability;
-  function $id(id, d) { return (d || currentDoc).getElementById(id); }
-  function $qs(q, d) { return (d || currentDoc).querySelector(q); }
-  function $qsa(q, d) { return Array.from((d || currentDoc).querySelectorAll(q)); }
+  const g = forIsekaiEncounter ? script.runtime.encounterHVAA ??= {} : script;
+  const runtime = g.runtime ??= {};
+  const flags = runtime.flags ??= {};
+  const times = runtime.times ??= { encounter: {} };
+  const realtime = g.realtime ??= {};
+  let $ajax, monsterBuffSkillLib, ability;
+  function $id(id, d) { return (d || runtime.document).getElementById(id); }
+  function $qs(q, d) { return (d || runtime.document).querySelector(q); }
+  function $qsa(q, d) { return Array.from((d || runtime.document).querySelectorAll(q)); }
   function $doc(h) { const d = new DOMParser().parseFromString(h, 'text/html'); return d; }
   function gE(query, mode, parent) { // 获取元素
     switch (mode) {
@@ -1051,7 +1053,7 @@ function HVAA(forIsekaiEncounter) {
         return $qs(query, mode);
     }
   }
-  function cE(name) { return currentDoc.createElement(name); }
+  function cE(name) { return runtime.document.createElement(name); }
   const _servername = (!forIsekaiEncounter && location.pathname.includes('/isekai/')) ? 'isekai' : 'persistent';
   const addition = {
     other: _servername === 'isekai' ? 'persistent' : 'isekai',
@@ -1067,19 +1069,19 @@ function HVAA(forIsekaiEncounter) {
   if (forIsekaiEncounter) {
     $ajax = window.top.$ajaxEncounter ??= unsafeWindow.top.$ajaxEncounter ??= initAjax();
     (async () => {
-      currentDoc = $doc(await $ajax.insert(window.location.href.replace('/isekai/', '/')));
+      runtime.document = $doc(await $ajax.insert(window.location.href.replace('/isekai/', '/')));
       mainProcess();
     })();
   } else {
     $ajax = window.top.$ajax ??= unsafeWindow.top.$ajax ??= initAjax();
-    currentDoc = document;
+    runtime.document = document;
     mainProcess();
   }
 
   function mainProcess() {
-    runtime.isEquipDetail = window.location.href.includes('/equip/'),
-    runtime.isMaintaining = !gE('#csp') && !runtime.isEquipDetail,
-    runtime.lastResponsive = new Date().getTime(),
+    if (window.location.href.includes('/equip/')) flags.equip = true;
+    if (!gE('#csp') && !flags.equip) flags.maintain = true;
+    times.responsive = new Date().getTime(),
     ability = getValue('ability', true) ?? {};
 
     switch (true) {
@@ -1250,7 +1252,7 @@ function HVAA(forIsekaiEncounter) {
 
   function checkIsHV() {
     if (window.location.host !== 'e-hentai.org') {
-      if (runtime.isMaintaining) {
+      if (flags.maintain) {
         (async function onwait() { try {
           const body = document.body;
           const blockTip = /Blocking requests for (\d+) seconds due to excessive request rate/;
@@ -1260,7 +1262,7 @@ function HVAA(forIsekaiEncounter) {
           let remain;
           await until(() => {
             remain = duration - time(0) + start + _1s; // add _1s to avoid time inaccuracies
-            currentDoc.title = `[M]${timeStr(remain)}`;
+            runtime.document.title = `[M]${timeStr(remain)}`;
             try { if (!isNaN(blocked)) {
               body.innerText = body.innerText.replace(blockTip, (...args) => args[0].replace(args[1], timeStr(remain)));
             } } catch (err) { console.log(err) };
@@ -1288,7 +1290,6 @@ function HVAA(forIsekaiEncounter) {
 
       if (forIsekaiEncounter) return true;
       setValue('url', window.location.origin);
-      monsterBuffSkillLib = setMonsterBuffSkillLib(ability);
 
       // 补充记录（因写入冲突、网络卡顿等）未被记录的encounter链接
       if (window.location.href.indexOf(`?s=Battle&ss=ba`) !== -1) {
@@ -1538,7 +1539,7 @@ function HVAA(forIsekaiEncounter) {
     if (!option.portable) return;
     for (const key of dataFlags.portable) {
       if (!(Object.keys(option.portable).includes(key))) continue;
-      setValue(key, getValue(key), true);
+      setIfChanged(key, getWithStringfied(key), true);
     }
   }
 
@@ -1546,7 +1547,7 @@ function HVAA(forIsekaiEncounter) {
     const beforeEncounter = getValue('beforeEncounter');
     if (beforeEncounter) {
       setValue('lastUrl', beforeEncounter);
-      delValue('beforeEncounter');
+      setValue('beforeEncounter', 0);
     }
     $ajax.openNoFetch(getValue('lastUrl'));
   }
@@ -1571,10 +1572,10 @@ function HVAA(forIsekaiEncounter) {
       backFromBattle();
       return true;
     }
-    const arena = getValue('arena', true) ?? {};
-    delete arena?.equip;
-    arena.postoken = gE('input[name="postoken"]')?.value ?? arena.postoken;
-    setValue('arena', arena);
+    const arena = getWithStringfied('arena', true, {});
+    delete arena.data?.equip;
+    arena.data.postoken = gE('input[name="postoken"]')?.value ?? arena.data.postoken;
+    setIfChanged('arena', arena);
 
     if (window.location.href.indexOf(`?s=Battle&ss=ba`) === -1) { // 不缓存encounter
       setValue('lastUrl', window.top.location.href); // 缓存进入战斗前的页面地址
@@ -1585,7 +1586,7 @@ function HVAA(forIsekaiEncounter) {
     if (option.showQuickSite && option.quickSite) {
       quickSite();
     }
-    const hvAAPauseUI = currentDoc.body.appendChild(cE('div'));
+    const hvAAPauseUI = runtime.document.body.appendChild(cE('div'));
     hvAAPauseUI.classList.add('hvAAPauseUI');
     setPauseUI(hvAAPauseUI);
     asyncOnIdle();
@@ -1603,11 +1604,13 @@ function HVAA(forIsekaiEncounter) {
 
   async function onBattle() {
     if (!gE('#textlog')) return false;
+    monsterBuffSkillLib = setMonsterBuffSkillLib(ability);
+
     checkResponsive();
 
     if (getValue('onriddle')) {
       window.history.replaceState(null, '', window.location.href);
-      delValue('onriddle');
+      setValue('onriddle', 0);
     }
     onBattleBox();
     reloader();
@@ -1615,27 +1618,27 @@ function HVAA(forIsekaiEncounter) {
     realtime.attackStatus = option.attackStatus;
     // 1二天 2单手 3双手 4双持 5法杖
     range(5).map(s => s + 1).filter(s => gE(`2${s}01`)).forEach(s => { realtime.fightingStyle = s.toString() });
-    runtime.timeNow = time(0);
+    times.now = time(0);
     runtime.runSpeed = 1;
     newRound(false);
     onPrevBattleLog(false);
     await onBattleRound();
     const battle = g.battle;
     if (option.recordEach) {
-      let code = getValue('battleCode', true);
-      const tokens = { token: currentDoc.body.innerHTML.match(`var battle_token = \"(.*)\";`)[1], postoken: battle?.postoken };
-      const same = Object.keys(tokens).map(k => tokens[k] === code?.[k]).every(s => s);
-      if (!same || !code?.roundAll || !code?.roundNow) {
-        const now = same ? code?.time ?? time(1) : time(1);
+      let code = getWithStringfied('battleCode', true);
+      const tokens = { token: runtime.document.body.innerHTML.match(`var battle_token = \"(.*)\";`)[1], postoken: battle?.postoken };
+      const same = Object.keys(tokens).map(k => tokens[k] === code.data?.[k]).every(s => s);
+      if (!same || !code.data?.roundAll || !code.data?.roundNow) {
+        const now = same ? code.data?.time ?? time(1) : time(1);
         const roundType = battle?.roundType?.toUpperCase();
         const [roundAll, roundNow] = [battle?.roundAll, battle?.roundNow];
-        code = {
+        code.data = {
           ...tokens,
           time: now,
           roundType, roundAll, roundNow,
           name: `${now}: ${roundType}-${roundAll}`,
         };
-        setValue('battleCode', code);
+        setIfChanged('battleCode', code);
       }
     }
     updateEncounter(_server.isekai && option.encounter);
@@ -1705,8 +1708,17 @@ function HVAA(forIsekaiEncounter) {
     return true;
   }
 
+  function getPause() { 
+    if (g.disabled !== undefined) return g.disabled;
+    return (g.disabled = getValue('disabled') || false);
+  }
+
+  function setPause(value = '', temporary) {
+    if (g.disabled !== value) g.disabled = temporary ? value : setValue('disabled', value);
+  }
+
   async function waitPause(isForBattle, ms) { try {
-    return await until(() => !getValue('disabled'), ms ?? (0.25 * _1s), isForBattle);
+    return await until(() => !getPause(), ms ?? (0.25 * _1s), isForBattle);
   } catch (err) { console.error(err); }}
 
   function setArenaDisplay() {
@@ -1735,7 +1747,7 @@ function HVAA(forIsekaiEncounter) {
       rb: [105, 106, 107, 108, 109, 110, 111, 112],
     }
     const option = g.option;
-    doc ??= currentDoc;
+    doc ??= runtime.document;
     site ??= doc.location.href.match(/\?s=Battle\&ss=(.*)/)[1];
     const buttons = gE(`img[src*="startchallenge.png"], img[src*="startgrindfest.png"], img[src*="startchallenge_d.png"]`, 'all', doc);
     buttons.forEach(btn => {
@@ -1859,8 +1871,8 @@ function HVAA(forIsekaiEncounter) {
     }
     const button = parent.appendChild(cE('button'));
     button.innerHTML = UI.button.pause(option);
-    if (getValue('disabled')) { // 如果禁用
-      currentDoc.title = titlePause();
+    if (getPause()) { // 如果禁用
+      runtime.document.title = titlePause();
       button.innerHTML = UI.button.continue(option);
     }
     button.className = 'pauseChange';
@@ -1993,59 +2005,56 @@ function HVAA(forIsekaiEncounter) {
     return value;
   }
 
-  function getLocal(key, isLocalStorage, toJSON) {
-    let value;
-    if (isLocalStorage || typeof GM_getValue === 'undefined' || !GM_getValue(key, null)) {
+  function getLocal(key, isLocalStorage) {
+    let value, gmValue;
+    isLocalStorage ||= typeof GM_getValue === 'undefined';
+    if (isLocalStorage || ((gmValue = GM_getValue(key)) === undefined)) {
       key = `hvAA-${key}`;
-      value = window.localStorage[key];
-      return toJSON ? JSONParse(value) : value;
+      return window.localStorage[key];
     }
-    value = GM_getValue(key, null);
-    if (!isLocalStorage) {
-      return value;
-    }
+    if (!isLocalStorage) return gmValue;
     key = `hvAA-${key}`;
-    if (!(key in window.localStorage)) {
-      return value;
-    }
-    value = window.localStorage[key];
-    value = toJSON ? JSONParse(value) : value;
+    if ((value = window.localStorage[key]) === undefined) return GM_getValue(key);
     return value;
+  }
 
-    function JSONParse(object) {
-      if (object === undefined || object === '') {
-        return object;
-      }
-      return JSON.parse(object)
+  function JSONParse(object) {
+    if (typeof object !== 'string' || object === '') {
+      return object;
     }
+    return JSON.parse(object)
   }
 
   function getValue(key, toJSON) { // 读取数据
     const isLocalStorage = dataFlags.local.includes(key);
+    let standalone, otherWorldItem, otherLoaded;
     if (!dataFlags.standalone.includes(key)) {
-      return getLocal(key, isLocalStorage, toJSON);
+      standalone = getLocal(key, isLocalStorage);
+      return toJSON ? JSONParse(standalone) : standalone;
     }
-    let otherWorldItem = getLocal(`${_server.other}_${key}`, isLocalStorage);
-    // 将旧的数据迁移到新的数据
-
-    if (!getLocal(`${_server.name}_${key}`, isLocalStorage)) {
-      let itemExisted = getLocal(key, isLocalStorage);
-      if (!itemExisted && dataFlags.sharable.includes(key)) {
-        itemExisted = otherWorldItem;
+    let thisWorldItem = getLocal(`${_server.name}_${key}`, isLocalStorage);
+    if (!thisWorldItem) {
+      standalone = getLocal(key, isLocalStorage);
+      if (!standalone && dataFlags.sharable.includes(key)) {
+        otherWorldItem = getLocal(`${_server.other}_${key}`, isLocalStorage);
+        otherLoaded = true;
+        standalone = otherWorldItem !== undefined ? copy(otherWorldItem) : undefined;
       }
-      if (!itemExisted) return null; // 若都没有该数据
-      itemExisted = JSON.parse(JSON.stringify(itemExisted));
-      setLocal(`${_server.name}_${key}`, itemExisted);
+      if (!standalone) return null; // 若都没有该数据
+      setLocal(`${_server.name}_${key}`, thisWorldItem = standalone);
       delLocal(key, isLocalStorage);
     }
     if (Object.keys(dataFlags.excludeStandalone).includes(key)) {
-      otherWorldItem ??= getLocal(`${_server.name}_${key}`, isLocalStorage) ?? {};
+      if (!otherWorldItem) { 
+        if (!otherLoaded) otherWorldItem = getLocal(`${_server.other}_${key}`, isLocalStorage);
+        otherWorldItem ??= thisWorldItem ?? {};
+      }
       for (let i of dataFlags.excludeStandalone[key]) {
-        otherWorldItem[i] = getLocal(`${_server.name}_${key}`, isLocalStorage)[i];
+        otherWorldItem[i] = thisWorldItem[i];
       }
       setLocal(`${_server.other}_${key}`, otherWorldItem);
     }
-    return getLocal(`${_server.name}_${key}`, isLocalStorage, toJSON);
+    return toJSON ? JSONParse(thisWorldItem) : thisWorldItem;
   }
 
   function delLocal(key, isLocalStorage) {
@@ -2104,7 +2113,7 @@ function HVAA(forIsekaiEncounter) {
       '#hvAABox2{position:absolute;left:1075px;padding-top: 6px;}',
       '.hvAALog{font-size:20px;}',
       '.hvAAPauseUI{top:30px;left:1246px;position:absolute;z-index:9999; width:80px}',
-      '.hvAAButton{top:5px;left:' + ((runtime.isMaintaining || runtime.isEquipDetail)?'0':'1255') + 'px;position:absolute;z-index:9999;cursor:pointer;width:40px;height:24px;background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAADi0lEQVRIiZVWPYgUZxj+dvGEk7vsNdPYCMul2J15n+d991PIMkWmOEyMyRW2FoJIUojYp5ADFbZJkyISY3EqKGpgz+Ma4bqrUojICaIsKGIXSSJcsZuD3RT3zWZucquXDwYG5n2f9/d5vnFuHwfAZySfAXgN4DXJzTiOj+3H90OnkmXZAe/9FMm3JJ8AuBGepyRfle2yLDvgnKt8EDVJkq8B3DGzjve+1m63p0n2AVzJbUh2SG455yre+5qZ/aCq983sxMfATwHYJvlCVYckHwFYVdURgO8LAS6RHJJcM7N1VR0CeE5yAGBxT3AR+QrA3wA20tQOq+pFkgOS90Tk85J51Xs9qaorqjoAcC6KohmSGyQHcRx/kbdv7AHgDskXaWqH0zSddc5Voyia2SOXapqmswsLvpam6ez8/Pwn+YcoimYAvARw04XZ5N8qZtZR1aGqXnTOVSd0cRd42U5EzqvqSFWX2u32tPd+yjnnXNiCGslHJAf7ybwM7r2vAdgWkYdZls157w+NK/DeT7Xb7WkAqyTvlZHjOD5oxgtmtqrKLsmze1VJsquqKwsLO9vnnKvkJHpLsq+qo/JAd8BtneTvqvqTiPwoIu9EZKUUpGpmi2Y2UtU+yTdJkhx1JJ8FEl0pruK/TrwA4F2r1WrkgI1G4wjJP0XkdLF9WaZzZnZZVa8GMj5xgf43JvXczFZbLb1ebgnJn0nenjQbEVkG0JsUYOykyi6Aa+XoQTJuTRr8OADJzVBOh+SlckYkz5L8Q0TquXOj0fhURN6r6pkSeAXAUsDaJPnYxXF8jOQrklskh97ryZJTVURWAPwF4DqAX0TkvRl/zTKdK2aeJMnxICFbAHrNZtOKVVdIrrVa2t1jz6sicprkbQC3VPVMGTzMpQvgQY63i8lBFddVdVCk/6TZlMFzopFci+P44H+YHCR3CODc/wUvDPY7ksMg9buZrKr3ATwvyoT3vrafzPP3er1eA9Azs7tjJhcqOBHkeSOKohkROR9K7prZYqnnlSRJjofhb4vIt/V6vUbyN1Xtt1qtb1zpZqs45xyAxXAnvCQ5FJGHqrpiZiMzu5xnHlZxCOABybXw3gvgp/Zq3/gA+BLATVVdyrJsbods2lfVq7lN4crMtapjZndD5pPBixWFLTgU7uQ3AJ6KyLKILAdy9sp25bZMBC//JSRJcjQIYg9Aj+TjZrNp+/mb+Ad711sdZZ1k/QAAAABJRU5ErkJggg==) center no-repeat transparent;}',
+      '.hvAAButton{top:5px;left:' + ((flags.maintain || flags.equip)?'0':'1255') + 'px;position:absolute;z-index:9999;cursor:pointer;width:40px;height:24px;background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAADi0lEQVRIiZVWPYgUZxj+dvGEk7vsNdPYCMul2J15n+d991PIMkWmOEyMyRW2FoJIUojYp5ADFbZJkyISY3EqKGpgz+Ma4bqrUojICaIsKGIXSSJcsZuD3RT3zWZucquXDwYG5n2f9/d5vnFuHwfAZySfAXgN4DXJzTiOj+3H90OnkmXZAe/9FMm3JJ8AuBGepyRfle2yLDvgnKt8EDVJkq8B3DGzjve+1m63p0n2AVzJbUh2SG455yre+5qZ/aCq983sxMfATwHYJvlCVYckHwFYVdURgO8LAS6RHJJcM7N1VR0CeE5yAGBxT3AR+QrA3wA20tQOq+pFkgOS90Tk85J51Xs9qaorqjoAcC6KohmSGyQHcRx/kbdv7AHgDskXaWqH0zSddc5Voyia2SOXapqmswsLvpam6ez8/Pwn+YcoimYAvARw04XZ5N8qZtZR1aGqXnTOVSd0cRd42U5EzqvqSFWX2u32tPd+yjnnXNiCGslHJAf7ybwM7r2vAdgWkYdZls157w+NK/DeT7Xb7WkAqyTvlZHjOD5oxgtmtqrKLsmze1VJsquqKwsLO9vnnKvkJHpLsq+qo/JAd8BtneTvqvqTiPwoIu9EZKUUpGpmi2Y2UtU+yTdJkhx1JJ8FEl0pruK/TrwA4F2r1WrkgI1G4wjJP0XkdLF9WaZzZnZZVa8GMj5xgf43JvXczFZbLb1ebgnJn0nenjQbEVkG0JsUYOykyi6Aa+XoQTJuTRr8OADJzVBOh+SlckYkz5L8Q0TquXOj0fhURN6r6pkSeAXAUsDaJPnYxXF8jOQrklskh97ryZJTVURWAPwF4DqAX0TkvRl/zTKdK2aeJMnxICFbAHrNZtOKVVdIrrVa2t1jz6sicprkbQC3VPVMGTzMpQvgQY63i8lBFddVdVCk/6TZlMFzopFci+P44H+YHCR3CODc/wUvDPY7ksMg9buZrKr3ATwvyoT3vrafzPP3er1eA9Azs7tjJhcqOBHkeSOKohkROR9K7prZYqnnlSRJjofhb4vIt/V6vUbyN1Xtt1qtb1zpZqs45xyAxXAnvCQ5FJGHqrpiZiMzu5xnHlZxCOABybXw3gvgp/Zq3/gA+BLATVVdyrJsbods2lfVq7lN4crMtapjZndD5pPBixWFLTgU7uQ3AJ6KyLKILAdy9sp25bZMBC//JSRJcjQIYg9Aj+TjZrNp+/mb+Ad711sdZZ1k/QAAAABJRU5ErkJggg==) center no-repeat transparent;}',
       '#hvAABox{left:0;top:50px;font-size:16px!important;z-index:4;width:1238px;height:650px;position:absolute;text-align:left;background-color:#E3E0D1;border:1px solid #000;border-radius:10px;font-family:"Microsoft Yahei";}',
       '#hvAABox a {display: unset!important;}',
       '.hvAATab {display: none;}',
@@ -2199,27 +2208,27 @@ function HVAA(forIsekaiEncounter) {
   function backup(code, alert) {
     const currentOption = getValue('option');
     const auto = code ? undefined : `[auto backup for ${_server.name}@${currentOption.version}] ${time(3)}`;
-    const backups = getValue('backup', true) || {};
+    const backups = getWithStringfied('backup', true, {});
     code ??= auto;
-    if (code in backups) { // 覆写同名配置
+    if (code in backups.data) { // 覆写同名配置
       if (!alert || UI.confirm(alert)) {
-        delete backups[code];
+        delete backups.data[code];
         rmListItem(code);
       } else return;
     }
-    backups[code] = getValue('option');
-    backups[code].auto = auto ? time(0) : undefined;
-    backups[code].server = _server.name;
-    const autos = Object.keys(backups).filter(c => backups[c].auto);
-    autos.sortBy(a => -backups[a].auto);
+    backups.data[code] = currentOption;
+    backups.data[code].auto = auto ? time(0) : undefined;
+    backups.data[code].server = _server.name;
+    const autos = Object.keys(backups.data).filter(c => backups.data[c].auto);
+    autos.sortBy(a => -backups.data[a].auto);
     let i = 0, max = 5;
     for (const a of autos) {
-      if (backups[a].server !== _server.name) continue;
+      if (backups.data[a].server !== _server.name) continue;
       i++;
       if (i <= max) continue;
-      delete backups[a];
+      delete backups.data[a];
     }
-    setValue('backup', backups);
+    setIfChanged('backup', backups);
     if (!gE('#hvAABox')) return;
     const li = gE('.hvAABackupList', gE('#hvAABox')).appendChild(cE('li'));
     li.textContent = code;
@@ -2408,11 +2417,12 @@ function HVAA(forIsekaiEncounter) {
   }
 
   async function updateItemWorldList(skipEquips, doc) {
-    const equips = skipEquips ? getValue('itemWorldDatas', true)?.equips : await asyncUpdateEquipModifyList();
+    let local;
+    const equips = !skipEquips ? await asyncUpdateEquipModifyList() : (local = getWithStringfied('itemWorldDatas', true)).data?.equips;
     const personas = await asyncUpdatePersona(doc);
     const equipSets = await asyncUpdateEquipSet(doc);
     if ((!skipEquips && !equips?.length) || !personas || !equipSets) return;
-    setValue('itemWorldDatas', { equips, personas, equipSets });
+    setIfChanged('itemWorldDatas', { data: { equips, personas, equipSets }, old: local?.old });
   }
 
   function optionBox() { // 配置界面
@@ -3498,12 +3508,12 @@ function HVAA(forIsekaiEncounter) {
       gE('select[name="lang"]', optionBox).value = lang;
       bindEvents();
     }
-    updateItemWorldList(true, currentDoc);
+    updateItemWorldList(true, runtime.document);
     updateEquipSetUI();
     updateItemWorldListUI();
     changeSelectOptionText();
     loadOptionUIData();
-    runtime.optionLoaded = true;
+    flags.option = true;
     (async () => { gE('input, select', 'all', optionBox).forEach(setInputTitle); })();
 
     [...gE('select:not([name="lang"])', 'all', optionBox)].forEach(s => { s.onchange ??= () => selectFit(s); });
@@ -3658,11 +3668,8 @@ function HVAA(forIsekaiEncounter) {
           gE('#hvAATab-Usage>table').innerHTML = _html;
         } else if (name === 'Tools') { // 关于本脚本
           gE('.hvAADebug', 'all', optionBox).forEach((input) => {
-            if (getValue('battle') && getValue('battle')[input.name]) {
-              input.value = getValue('battle')[input.name];
-            } else if (getValue(input.name)) {
-              input.value = getValue(input.name);
-            }
+            let value = getValue('battle')?.[input.name] ?? getValue(input.name);
+            if (value) input.value = value;
           });
         }
         if (name === 'Drop' || name === 'Usage') {
@@ -3671,7 +3678,7 @@ function HVAA(forIsekaiEncounter) {
             i.onclick = function (e) {
               const select = window.getSelection();
               select.removeAllRanges();
-              const selectRange = currentDoc.createRange();
+              const selectRange = runtime.document.createRange();
               selectRange.selectNodeContents(e.target.parentNode.parentNode.parentNode);
               select.addRange(selectRange);
             };
@@ -4272,8 +4279,8 @@ function HVAA(forIsekaiEncounter) {
     runtime.titleQueue.push(input);
     await sleep(100);
     applyLabelTitle(input);
-    if (runtime.isProcessingTitleQueue) return;
-    runtime.isProcessingTitleQueue = true;
+    if (flags.title) return;
+    flags.title = true;
     processTitleQueue();
   } catch (err) { console.error(err); }}
 
@@ -4296,7 +4303,7 @@ function HVAA(forIsekaiEncounter) {
       applyLabelTitle(input);
       return !runtime.titleQueue.length;
     }, 0);
-    runtime.isProcessingTitleQueue = false;
+    delete flags.title;
   } catch (err) { console.error(err); }}
 
   function setCustomizeInput(input, name, value, isLastCustomizeInput) {
@@ -4305,7 +4312,7 @@ function HVAA(forIsekaiEncounter) {
     input.name = name;
     input.value = value ?? input.value;
     customizeInputAutoFit(input, isLastCustomizeInput);
-    if(runtime.optionLoaded) setInputTitle(input);
+    if(flags.option) setInputTitle(input);
   }
 
   function customizeInputAutoFit(input, isLastCustomizeInput) {
@@ -4380,9 +4387,9 @@ function HVAA(forIsekaiEncounter) {
       left: -9999px;
   `;
     measure.textContent = input.value;
-    currentDoc.body.appendChild(measure);
+    runtime.document.body.appendChild(measure);
     input.style.width = measure.offsetWidth + 'px';
-    currentDoc.body.removeChild(measure);
+    runtime.document.body.removeChild(measure);
   }
 
   function creatCustomizeBox() { // 自定义条件界面
@@ -4571,7 +4578,7 @@ function HVAA(forIsekaiEncounter) {
 
     function updateGroupUI() {
       const position = target.getBoundingClientRect();
-      const bodyPosition = currentDoc.body.getBoundingClientRect();
+      const bodyPosition = runtime.document.body.getBoundingClientRect();
       customizeBox.style.cssText += `z-index: 20;display: block; height: ${gE('.customizeGroup', 'all', target).length * 30 + 60}px;`
       if (!keepPosition) {
         customizeBox.style.top = `${position.bottom - bodyPosition.top}px`;
@@ -4710,12 +4717,27 @@ function HVAA(forIsekaiEncounter) {
     return img.join('_').replace('_png', 'png');
   }
 
+  function resetFormulaCache() { 
+    returnValueGetter.prototype.cache = {
+      source: [
+        { get: () => realtime },
+        { get: () => g.battle ?? {} },
+        { get: () => 'func' },
+        { get: () => runtime },
+        { get: () => g.option },
+        { get: () => script },
+        { get: () => getValue('battle', true) ?? {} },
+      ],
+      static: {}
+    }
+  }
+
   function returnValueGetter(paramResultsGetter, targetGetter) {
     const paramForSort = returnValueGetter.prototype.paramForSort ??= ['rank', 'tier', 'maxtier', 'sumtier', 'counttier', ...range(10).map(n => `counttier${n}`)];
     const modes = returnValueGetter.prototype.modes ??= ['min', 'max', 'count', 'sum', ...paramForSort];
     const minmaxModes = returnValueGetter.prototype.minmaxModes ??= (() => {
-      const flags = ['', 'a', 'ag', 'g'];
-      return flags.reduce((result, f) => result.concat(modes.map(m => f + m)), []);
+      const prefixs = ['', 'a', 'ag', 'g'];
+      return prefixs.reduce((result, f) => result.concat(modes.map(m => f + m)), []);
     })();
     returnValueGetter.prototype.func ??= {
       ar() {
@@ -4837,8 +4859,8 @@ function HVAA(forIsekaiEncounter) {
         const funcName = params.shift();
         const battle = g.battle;
         let result;
-        if (!runtime.inSkillExtraWeight) {
-          const origin = JSON.parse(JSON.stringify(g.battle.monsterStatus));
+        if (!flags.weight) {
+          const origin = copy(g.battle.monsterStatus);
           battle.monsterStatus.forEach(t => { t.finWeight += resolveSkillExtraWeight(t); });
           battle.monsterStatus = battle.monsterStatus.sortBy(x => x.finWeight);
           result = func[funcName](...params);
@@ -5081,23 +5103,21 @@ function HVAA(forIsekaiEncounter) {
         return onResult(str * 1);
       }
       // 将不是数字小数点的 . 转为 _ 以便进行参数分割
-      const paramList = str.replace(/[^\d](\.)/g, match => match.replace('.', '_')).split('_');
-      let result, isInData;
-      const option = g.option;
-      const battle = g.battle ?? {};
       const nou = r => r === undefined || r === null; // nullOrUndefined
+      const paramList = str.replace(/[^\d](\.)/g, match => match.replace('.', '_')).split('_');
+      
+      let result, isInData;
       while (paramList.length) {
         const key = paramList.shift();
-        if (nou(result)) { // 获取顶层数据
-          result = battle[key];
-          if (nou(result)) result = getValue('battle', true)?.[key];
-          if (nou(result)) result = realtime[key];
-          if (nou(result)) result = runtime[key];
-          if (nou(result)) result = g[key];
-          if (nou(result)) result = script[key];
-          if (nou(result)) result = getValue(key);
-          if (nou(result)) result = option[key];
-          if (nou(result)) result = func[key] ? func[key](...paramList) : undefined;
+        if (!isInData && nou(result)) {
+          for (const source of returnValueGetter.prototype.cache.source) {
+            let cached = source.cached ??= source.get();
+            if (cached === 'func') cached = func;
+            result = cached[key];
+            if (typeof result === 'function') result = result(...paramList);
+            if (!nou(result)) break;
+          }
+          if (nou(result)) result = returnValueGetter.prototype.cache.static[key] ??= getValue(key);
           if (nou(result)) break;
           isInData = true; // 存在顶层数据
           continue;
@@ -5107,6 +5127,7 @@ function HVAA(forIsekaiEncounter) {
         } catch (err) {}}
         if (['number', 'string'].includes(typeof result)) continue;
         result = result[key];
+        if (nou(result)) break;
       }
 
       result ??= isInData ? 0 : result; // 存在顶层数据时默认为0
@@ -5202,44 +5223,38 @@ function HVAA(forIsekaiEncounter) {
     }} return undefined;
   }
 
-  function pauseChange() { // 暂停状态更改
+  function pauseChange(temporary) { // 暂停状态更改
     const option = g.option;
-    if (getValue('disabled')) {
-      if (gE('.pauseChange')) {
-        gE('.pauseChange').innerHTML = UI.button.pause(option);
-      }
-      currentDoc.title = gE('#navbar') ? 'The Hentaiverse' : getValue('disabled');
-      delValue('disabled');
-      if (!gE('#navbar')) { // in battle
-        onBattleRound();
-      }
-    } else {
-      if (gE('.pauseChange')) {
-        gE('.pauseChange').innerHTML = UI.button.continue(option);
-      }
-      setValue('disabled', currentDoc.title);
-      currentDoc.title = titlePause();
-    }
+    const disabled = getPause();
+    const button = gE('.pauseChange');
+    if (!disabled) {
+      if (button) button.innerHTML = UI.button.continue(option);
+      runtime.document.title = titlePause();
+      setPause(runtime.document.title, temporary);
+      return;
+    } 
+    if (button) button.innerHTML = UI.button.pause(option);
+    runtime.document.title = gE('#navbar') ? 'The Hentaiverse' : disabled;
+    setPause(undefined, temporary);
+    if (gE('#navbar')) return; // not in battle
+    onBattleRound();
   }
 
   function stepIn() {
-    setValue('stepIn', true);
-    if (getValue('disabled')) {
-      runtime.timeNow = time(0);
-      pauseChange();
-    }
+    flags.stepIn = true;
+    if (!getPause()) return;
+    times.now = time(0);
+    pauseChange(true);
   }
 
   function onStepInDone() {
-    if (!getValue('stepIn')) {
-      return;
-    }
-    delValue('stepIn');
-    pauseChange();
+    if (!flags.stepIn) return;
+    delete flags.stepIn;
+    pauseChange(true);
   }
 
   function getCurrentUser() {
-    const cookie = currentDoc.cookie.split("; ");
+    const cookie = runtime.document.cookie.split("; ");
     for (const cookieObj of cookie) {
       const match = cookieObj.match(/ipb_member_id=(\d+)/);
       if (match) {
@@ -5267,15 +5282,16 @@ function HVAA(forIsekaiEncounter) {
 
   async function autoSwitchIsekai() {
     const option = g.option;
-    await sleep(option.isekaiTime * _1s - (time(0) - runtime.beforeIdle));
+    await sleep(option.isekaiTime * _1s - (time(0) - times.idle));
     await waitPause();
     $async.logSwitch(arguments);
     if (!option.isekai) return; // 若不启用自动跳转
     const now = time(0);
-    const remain = (getValue('lastSwitch') ?? 0) * 1 + (option.isekaiCD ?? 0) * _1s - now;
+    times.switch = getValue('lastSwitch') ?? 0
+    const remain = times.switch * 1 + (option.isekaiCD ?? 0) * _1s - now;
     await sleep(remain);
     await waitPause();
-    setValue('lastSwitch', now);
+    times.switch = setValue('lastSwitch', now);
     $ajax.openNoFetch(`${window.location.href.slice(0, window.location.href.indexOf('.org') + 4)}/${_server.isekai ? '' : 'isekai/'}`);
     $async.logSwitch(arguments);
   }
@@ -5322,14 +5338,14 @@ function HVAA(forIsekaiEncounter) {
       const optionBox = gE('#hvAABox');
       const ui = gE('.encounterUI');
       if (optionBox.style.display === 'none' && !ui) return;
-      const idleStart = runtime.beforeIdle;
+      const idleStart = times.idle;
       const now = time(0);
       const durations = {
-        onIdle: { name: UI.l('闲置延时', '閒置延時', 'Idle Delay'), selector: '.onIdleRemain', start: runtime.beforeIdle, wait: option.onIdleDelay },
-        encounter: { name: UI.l('遭遇延时', '遭遇延時', 'Encounter Delay'), selector: '.encounterDelayRemain', start: runtime.encounterStart ?? now, wait: option.encounterDelay },
+        onIdle: { name: UI.l('闲置延时', '閒置延時', 'Idle Delay'), selector: '.onIdleRemain', start: times.idle, wait: option.onIdleDelay },
+        encounter: { name: UI.l('遭遇延时', '遭遇延時', 'Encounter Delay'), selector: '.encounterDelayRemain', start: times.encounter.start ?? now, wait: option.encounterDelay },
         arena: { name: UI.l('闲置竞技场', '閒置競技場', 'Idle Arena'), selector: '.arenaRemain', start: idleStart ?? now, wait: option.idleArenaTime },
         switch: { name: UI.l('闲置异世界', '閒置異世界', 'Idle Isekai'), selector: '.isekaiSwitchRemain', start: idleStart ?? now, wait: option.isekaiTime },
-        switchCD: { name: UI.l('异世界CD', '異世界CD', 'Isekai CD'), selector: '.isekaiCDRemain', start: (getValue('lastSwitch') ?? 0), wait: option.isekaiCD },
+        switchCD: { name: UI.l('异世界CD', '異世界CD', 'Isekai CD'), selector: '.isekaiCDRemain', start: times.switch, wait: option.isekaiCD },
       }
       let idleStarted;
       const remain = Object.fromEntries(Object.entries(durations).map(([k, data]) => {
@@ -5345,7 +5361,7 @@ function HVAA(forIsekaiEncounter) {
 
   async function asyncOnIdle() { try {
     let option = g.option;
-    const beforeIdle = runtime.beforeIdle = time(0);
+    const beforeIdle = times.idle = time(0);
     displayCDRemain();
     $async.logSwitch(arguments);
     await updateEncounter(false);
@@ -5359,7 +5375,7 @@ function HVAA(forIsekaiEncounter) {
       }, 250);
       await sleep(option.onIdleDelay * _1s);
     }
-    const idleStart = runtime.beforeIdle = time(0);
+    const idleStart = times.idle = time(0);
     await waitPause();
     displayUntil(() => `[TIMER]${UI.byLang('人物套装检查', '人物套裝檢查', 'Persona/EquipSet check')}`);
     if (forIsekaiEncounter) {
@@ -5445,21 +5461,23 @@ function HVAA(forIsekaiEncounter) {
   }
 
   function displayProcess(info) {
-    const cleaned = currentDoc.title.replace(/\[AR\].*\[AR\]/, '');
+    const cleaned = runtime.document.title.replace(/\[AR\].*\[AR\]/, '');
     if (!info) {
-      currentDoc.title = cleaned;
+      runtime.document.title = cleaned;
       displayUntil.prototype.start = undefined;
       return;
     }
     const updated = `[AR]${info}[AR]` + cleaned;
-    if (updated === currentDoc.title) return;
-    currentDoc.title = updated;
+    if (updated === runtime.document.title) return;
+    runtime.document.title = updated;
   }
 
-  function getTodayEncounter(encounter) { return encounter.filter(e => time(2, e.time) === time(2)); }
+  function getTodayEncounter(encounter) { return encounter.filter(e => time(2, e.time) === time(2)).sortBy(x => -x.time); }
 
   function getLocalEncounter(encounter = []) {
-    encounter = [ ... getValue('encounter', true) ?? [], ... getLocal('encounter', true) ?? [], ...encounter ];
+    let gm = getValue('encounter', true) ?? [];
+    let local = getLocal('encounter', true) ?? [];
+    encounter = [ ... gm, ... local, ...encounter ];
     const uniqued = [];
     while (encounter.length) {
       const item = encounter.pop();
@@ -5472,33 +5490,37 @@ function HVAA(forIsekaiEncounter) {
       }
       uniqued.unshift(item);
     }
-    return getTodayEncounter(uniqued);
+    return { data: getTodayEncounter(uniqued), gm: JSON.stringify(gm), local: JSON.stringify(local) };
   }
 
   function setEncounter(encounter) {
-    encounter = getLocalEncounter(encounter);
-    setLocal('encounter', encounter, true);
-    g.encounter = setValue('encounter', encounter);
+    const got = getLocalEncounter(encounter);
+    g.encounter = got.encounter;
+    setIfChanged('encounter', { ...got, old: got.local }, undefined, true);
+    setIfChanged('encounter', { ...got, old: got.gm }).data;
     return g.encounter;
   }
 
   function getEncounter() {
-    const current = g.encounter ?? [];
+    const current = g.encounter ??= [];
     let last = 0;
     current.forEach(e=> {
       if (e.encountered > last) last = e.encountered;
       if (e.time > last) last = e.time;
     });
     const now = time(0);
-    const read = (now - (runtime.lastEncounterUpdate??0)) >= _1s;
-    let encounter = (((now - last) >= (_1h * 0.5)) && read) ? getLocal('encounter', true, true) : current;
-    if (read) runtime.lastEncounterUpdate = now;
+    const read = (now - (times.encounter.update ?? 0)) >= _1s;
+    const count = current.filter(e => e.url).length;
+    if (read) times.encounter.update = now;
+    
+    let encounter = (((now - last) >= (_1h * 0.5)) && read && (count < 24 || !current[0].encountered)) ? JSON.parse(getLocal('encounter', true)) : current;
     if (!encounter || !last) {
       encounter = getValue('encounter', true) ?? [];
       setEncounter(encounter);
     }
+    g.encounter = encounter;
     if (JSON.stringify(current) === JSON.stringify(encounter)) {
-      return getTodayEncounter(encounter);
+      return (g.encounter = getTodayEncounter(encounter));
     }
     let dict = {};
     for (let e of current) {
@@ -5507,9 +5529,8 @@ function HVAA(forIsekaiEncounter) {
     // if is not latest version data (old versions)
     if (!Array.isArray(encounter)) {
       const last = encounter.lastTime;
-      const times = encounter.time + 1;
       encounter = [];
-      for (const i of range(times)) {
+      for (const i of range(encounter.time + 1)) {
         encounter.unshift({ url: i === 0 ? undefined : i, time: last, encountered: i === 0 ? undefined : time(0) });
       }
       setEncounter(encounter);
@@ -5520,7 +5541,7 @@ function HVAA(forIsekaiEncounter) {
       dict[key].time = Math.max(dict[key].time, e.time);
       dict[key].encountered = (e.encountered || dict[key].encountered) ? Math.max(dict[key].encountered ?? 0, e.encountered ?? 0) : undefined;
     }
-    return getTodayEncounter(Object.values(dict)).sortBy(x => -x.time);
+    return (g.encounter = getTodayEncounter(Object.values(dict)));
   }
 
   function queryToPersistent(query) {
@@ -5536,12 +5557,18 @@ function HVAA(forIsekaiEncounter) {
       const exec = tr.innerHTML.match(/<td>(.*)<\/td>.*<td>(.*)<\/td>/);
       current[exec[2]] = exec[1] * 1;
     });
-    const proficiency = getValue('proficiency', true);
-    for (const key in current) {
-      const [p, c] = [proficiency[key] , current[key]];
-      if (!p || (c > p)) proficiency[key] = c;
+    const proficiency = getWithStringfied('proficiency', true);
+    current.season = _server.season;
+    if (proficiency.season && (proficiency.season != _server.season)) { 
+      setIfChanged('proficiency', current);
+      $async.logSwitch(arguments);
+      return
     }
-    setValue('proficiency', proficiency);
+    for (const key in current) {
+      const [p, c] = [proficiency.data[key] , current[key]];
+      if ((key === 'season') || !p || (c > p)) proficiency.data[key] = c;
+    }
+    setIfChanged('proficiency', proficiency);
     $async.logSwitch(arguments);
   } catch (err) { console.error(err); }}
 
@@ -5644,12 +5671,17 @@ function HVAA(forIsekaiEncounter) {
   async function asyncSetStamina() { try {
     await waitPause();
     $async.logSwitch(arguments);
-    const stamina = getValue('stamina', true) ?? { ratio: 1 };
-    let [last, lastTime] = [stamina.current, stamina.time];
-    [stamina.current, stamina.punish, stamina.perk] = await Promise.all([
+    let stamina = getWithStringfied('stamina', true);
+    let notExisit;
+    if (!stamina.data) { 
+      notExisit = true;
+      stamina.data = { ratio: 1 };
+    } 
+    let [last, lastTime] = [stamina.data.current, stamina.data.time];
+    [stamina.data.current, stamina.data.punish, stamina.data.perk] = await Promise.all([
       ... (await getCurrentStamina()),
       (await (async () => { try {
-        let perk = stamina.perk;
+        let perk = stamina.data.perk;
         if (perk && !Array.isArray(perk)) {
           perk = Object.keys(perk).map(id => id * 1);
         }
@@ -5674,49 +5706,49 @@ function HVAA(forIsekaiEncounter) {
         return perk;
       } catch (err) { console.error(err); }})())?.filter(p=>p)
     ]);
-    if (!stamina.current) {
-      if (!getValue('stamina')) {
-        setValue('stamina', stamina);
+    if (!stamina.data.current) {
+      if (notExisit) {
+        setIfChanged('stamina', stamina);
       }
       $async.logSwitch(arguments);
       return;
     }
-    stamina.time = time(0);
-    if (!stamina.punish) {
-      [stamina.lastRatio, stamina.lastRatioRaw] = [stamina.ratio, stamina.ratioRaw];
-      delete stamina.ratio;
-      delete stamina.ratioRaw;
+    stamina.data.time = time(0);
+    if (!stamina.data.punish) {
+      [stamina.data.lastRatio, stamina.data.lastRatioRaw] = [stamina.data.ratio, stamina.data.ratioRaw];
+      delete stamina.data.ratio;
+      delete stamina.data.ratioRaw;
     }
-    if (stamina.ratio === 1 && (stamina.lastRatio === 1 || !stamina.lastRatio)) {
-      delete stamina.ratio;
-      delete stamina.lastRatio;
-      delete stamina.lastRatioRaw;
-      delete stamina.ratioRaw;
+    if (stamina.data.ratio === 1 && (stamina.data.lastRatio === 1 || !stamina.data.lastRatio)) {
+      delete stamina.data.ratio;
+      delete stamina.data.lastRatio;
+      delete stamina.data.lastRatioRaw;
+      delete stamina.data.ratioRaw;
     }
-    const lastCost = stamina.lastCost;
-    delete stamina.lastCost;
+    const lastCost = stamina.data.lastCost;
+    delete stamina.data.lastCost;
     if (!lastCost || lastCost <= 0.06 ) {
-      setValue('stamina', stamina);
+      setIfChanged('stamina', stamina);
       $async.logSwitch(arguments);
       return;
     }
-    last += Math.floor(stamina.time / _1h) - Math.floor(lastTime / _1h);
-    const delta = last - stamina.current;
+    last += Math.floor(stamina.data.time / _1h) - Math.floor(lastTime / _1h);
+    const delta = last - stamina.data.current;
     if (!delta) {
-      setValue('stamina', stamina);
+      setIfChanged('stamina', stamina);
       $async.logSwitch(arguments);
       return;
     }
-    const ratio = stamina.punish ? Math.max(1, Math.round(delta / lastCost / 0.25) * 0.25) : 1;
-    if (stamina.ratio === ratio) {
-      setValue('stamina', stamina);
+    const ratio = stamina.data.punish ? Math.max(1, Math.round(delta / lastCost / 0.25) * 0.25) : 1;
+    if (stamina.data.ratio === ratio) {
+      setIfChanged('stamina', stamina);
       $async.logSwitch(arguments);
       return;
     }
-    [stamina.lastRatio, stamina.lastRatioRaw] = [stamina.ratio ?? 1, stamina.ratioRaw];
-    [stamina.ratio, stamina.ratioRaw] = [ratio, `${delta} / ${Math.round(lastCost * 100) / 100} = ${delta / lastCost}`]
-    setValue('stamina', stamina);
-    console.log('stamina', stamina, '\n', last, '->', stamina.current, '=', lastCost, '*', ratio);
+    [stamina.data.lastRatio, stamina.data.lastRatioRaw] = [stamina.data.ratio ?? 1, stamina.data.ratioRaw];
+    [stamina.data.ratio, stamina.data.ratioRaw] = [ratio, `${delta} / ${Math.round(lastCost * 100) / 100} = ${delta / lastCost}`]
+    setIfChanged('stamina', stamina);
+    console.log('stamina', stamina.data, '\n', last, '->', stamina.data.current, '=', lastCost, '*', ratio);
     $async.logSwitch(arguments);
   } catch (err) { console.error(err); }}
 
@@ -6122,15 +6154,18 @@ function HVAA(forIsekaiEncounter) {
       ui.innerHTML = newHTML;
     }
     setUITitle(ui);
-    if (currentDoc.title.includes(titlePause())) {
-      currentDoc.title = ui.innerHTML + titlePause();
+    if (runtime.document.title.includes(titlePause())) {
+      runtime.document.title = ui.innerHTML + titlePause();
     }
-    if (engage && !getValue('disabled')) {
-      if (cd <= 0) {
+    let subzerocd = cd <= 0;
+    let unencountered = cd < 30 * _1m && encounter[0]?.url && !encounter[0].encountered;
+
+    if (engage && (subzerocd || unencountered) && !getPause()) {
+      if (subzerocd) {
         $async.logSwitch(arguments);
         return await onEncounter();
       }
-      if (cd < 30 * _1m && encounter[0]?.url && !encounter[0].encountered) {
+      if (unencountered) {
         $ajax.openNoFetch(encounter[0].url);
         $async.logSwitch(arguments);
         return true;
@@ -6159,11 +6194,11 @@ function HVAA(forIsekaiEncounter) {
   } catch (err) { console.error(err); }}
 
   async function onChangeEquipSet(lastKey, target, list, toFetchParam, reload) { try {
-    let last = getValue(lastKey);
+    let last = getWithStringfied(lastKey);
     let current = list ? Object.keys(list).find(p => list[p].selected) * 1 : undefined;
-    target ??= last;
+    target ??= last.data;
     if ([undefined, current].includes(target)) return;
-    if (!last) setValue(lastKey, current);
+    if (!last.data) setIfChanged(lastKey, { ...last, data: current });
     await $ajax.fetch(...toFetchParam(target));
     if (reload) await updateItemWorldList(true);
     return true;
@@ -6226,7 +6261,7 @@ function HVAA(forIsekaiEncounter) {
 
   async function onEncounter() { try {
     const option = g.option;
-    if (getValue('disabled')) return;
+    if (getPause()) return;
     if (_server.isekai) {
       [engaged, encounterAsyncOnIdle] = [];
       HVAA(true); // reload
@@ -6256,7 +6291,7 @@ function HVAA(forIsekaiEncounter) {
       $async.logSwitchStrict('updateEncounter', false);
       return;
     }
-    runtime.encounterStart = time(0);
+    times.encounter.start = time(0);
     await sleep(option.encounterDelay * _1s);
     setEncounter(getEncounter()); // 离开页面前保存
     if (!window.top.location.href.endsWith(`?s=Battle`)) {
@@ -6289,35 +6324,35 @@ function HVAA(forIsekaiEncounter) {
   async function updateArena(forceUpdateToken = false) { try {
     await waitPause();
     $async.logSwitch(arguments);
-    let arena = getValue('arena', true) ?? {};
-    const isToday = arena.date && time(2, arena.date) === time(2);
-    if (forceUpdateToken || !isToday || !arena.isOptionUpdated) {
-      arena.enabled = [];
+    let arena = getWithStringfied('arena', true, {});
+    const isToday = arena.data.date && time(2, arena.data.date) === time(2);
+    if (forceUpdateToken || !isToday || !arena.data.isOptionUpdated) {
+      arena.data.enabled = [];
       await Promise.all(['gr', 'ar', 'rb'].map(s => (async site => { try {
         const doc = $doc(await $ajax.insert(`?s=Battle&ss=${site}`));
         getStartBattleButtons(doc, site).forEach(btn => {
           if (!btn.enabled) return;
           if (btn.cleared) {
-            arena.enabled.push(btn.id);
+            arena.data.enabled.push(btn.id);
             return;
           }
-          const index = arena.enabled.indexOf(btn.id);
-          if (index !== -1) arena.enabled.splice(index, 1);
+          const index = arena.data.enabled.indexOf(btn.id);
+          if (index !== -1) arena.data.enabled.splice(index, 1);
         });
       } catch (err) { console.error(err); }})(s)));
     }
 
     const option = g.option;
     if (!isToday) {
-      arena.date = time(0);
-      arena.gr = option.idleArenaGrTime;
-      arena.arrayDone = [];
+      arena.data.date = time(0);
+      arena.data.gr = option.idleArenaGrTime;
+      arena.data.arrayDone = [];
     }
-    arena.arrayDone = arena.arrayDone.filter(id => id && (id === 'gr' || !arena.enabled?.includes(id.toString())));
-    delete arena.equip;
-    if (_server.isekai) delete arena.tw;
+    arena.data.arrayDone = arena.data.arrayDone.filter(id => id && (id === 'gr' || !arena.data.enabled?.includes(id.toString())));
+    delete arena.data.equip;
+    if (_server.isekai) delete arena.data.tw;
     $async.logSwitch(arguments);
-    return setValue('arena', arena);
+    return setIfChanged('arena', arena);
   } catch (err) { console.error(err); }}
 
   function titlePause() {
@@ -6326,7 +6361,7 @@ function HVAA(forIsekaiEncounter) {
 
   async function idleArena() { try { // 闲置竞技场
     let id;
-    let arena = getValue('arena', true)??{};
+    let arena = getWithStringfied('arena', true, {});
     const option = g.option;
     const array = splitOrders(option.idleArenaValue).map(String);
     if (array.length === 0) {
@@ -6334,13 +6369,13 @@ function HVAA(forIsekaiEncounter) {
       return false;
     }
     $async.logSwitch(arguments);
-    if (!arena.enabled?.length) {
-      arena.enabled = (await updateArena(true)).enabled;
-      setValue('arena', arena);
+    if (!arena.data.enabled?.length) {
+      arena.data.enabled = (await updateArena(true)).enabled;
+      setIfChanged('arena', arena);
     }
     while (array.length > 0) {
       id = array.shift();
-      if (arena.arrayDone?.includes(id) || option.arLevelDisable?.[id]) {
+      if (arena.data.arrayDone?.includes(id) || option.arLevelDisable?.[id]) {
         id = undefined;
         continue;
       }
@@ -6350,11 +6385,11 @@ function HVAA(forIsekaiEncounter) {
         if (_server.persistent) continue;
         const doc = $doc(await $ajax.insert('?s=Battle&ss=tw'));
         let [_, floor, rounds, attempts, maxAttempts, clears, max] = gE('#towerstart', doc).innerText.match(/Current Floor: (\d+) \((\d+) Rounds\)\n\t.*\n\tDaily Attempts: (\d+) \/ (\d+)\n\tDaily Clears: (\d+) \/ (\d+)/).map(x => x * 1);
-        arena.tw = { data: attempts };
-        setValue('arena', arena);
+        arena.data.tw = { data: attempts };
+        setIfChanged('arena', arena);
         if (clears >= max || attempts >= maxAttempts) {
-          arena.arrayDone.push('tw');
-          setValue('arena', arena);
+          arena.data.arrayDone.push('tw');
+          setIfChanged('arena', arena);
           continue;
         }
         if (attempts >= option.idleArenaTwTime) continue;
@@ -6371,16 +6406,16 @@ function HVAA(forIsekaiEncounter) {
         $async.logSwitch(arguments);
         return true;
       }
-      if (arena.enabled.includes(id)) break;
+      if (arena.data.enabled.includes(id)) break;
       if (id >= 105) {
-        arena.enabled = (await updateArena(true)).enabled;
-        setValue('arena', arena);
-        if (arena.enabled.includes(id)) break;
+        arena.data.enabled = (await updateArena(true)).enabled;
+        setIfChanged('arena', arena);
+        if (arena.data.enabled.includes(id)) break;
       }
       id = undefined;
     }
     if (!id) {
-      console.log('No Arena Id Available', arena);
+      console.log('No Arena Id Available', arena.data);
       await restorePersonaAndEquipSet();
       $async.logSwitch(arguments);
       return false;
@@ -6449,7 +6484,7 @@ function HVAA(forIsekaiEncounter) {
       $async.logSwitch(arguments);
       return false;
     }
-    let stamina = getValue('stamina', true);
+    let stamina = getWithStringfied('stamina', true);
     let staminaCost = {
       1: 2, 3: 4, 5: 6, 8: 8, 9: 10,
       11: 12, 12: 15, 13: 20, 15: 25, 16: 30,
@@ -6459,19 +6494,19 @@ function HVAA(forIsekaiEncounter) {
       105: 1, 106: 1, 107: 1, 108: 1, 109: 1, 110: 1, 111: 1, 112: 1,
       gr: 0
     };
-    [stamina.current, stamina.punish] = await getCurrentStamina();
-    stamina.time = time(0);
+    [stamina.data.current, stamina.data.punish] = await getCurrentStamina();
+    stamina.data.time = time(0);
     rounds ??= staminaCost[id];
-    const cost = rounds * (_server.isekai ? 2 : 1) * (stamina.current >= 60 ? 0.03 : 0.02);
+    const cost = rounds * (_server.isekai ? 2 : 1) * (stamina.data.current >= 60 ? 0.03 : 0.02);
 
-    const arena = getValue('arena', true)??{};
+    const arena = getWithStringfied('arena', true, {});
     let query = id;
     if (!['gr', 'iw', 'tw'].includes(id)) {
       query = id >= 105 ? 'rb' : 'ar';
     } else if (id === 'gr') {
-      if (arena.gr <= 0) {
-        arena.arrayDone.push('gr');
-        setValue('arena', arena);
+      if (arena.data.gr <= 0) {
+        arena.data.arrayDone.push('gr');
+        setIfChanged('arena', arena);
         $async.logSwitch(arguments);
         return await idleArena();
       }
@@ -6482,13 +6517,13 @@ function HVAA(forIsekaiEncounter) {
 
     let extra = { gr: 'GF', iw: 'IW', tw: 'TW' }[id];
     if (extra && ((!checkSupply(extra)) || !await asyncCheckRepair(extra))) {
-      console.log('Check Extra Battle Ready Failed in supply/repair', 'id:', id, `eid:${equip?.id}`, equip, arena);
+      console.log('Check Extra Battle Ready Failed in supply/repair', 'id:', id, `eid:${equip?.id}`, equip, arena.data);
       $async.logSwitch(arguments);
       return false;
     }
     extra = { gr: 'GrindFest', iw: 'ItemWorld', tw: 'Tower' }[id];
     if (!await checkBattleReady(idleArena, { staminaCost: cost, checkEncounter: option.encounter, staminaLow: extra ? option[`stamina${extra}`] : undefined })) {
-      console.log('Check Battle Ready Failed', 'id:', id, `eid:${equip?.id}`, equip, arena);
+      console.log('Check Battle Ready Failed', 'id:', id, `eid:${equip?.id}`, equip, arena.data);
       $async.logSwitch(arguments);
       return false;
     }
@@ -6515,14 +6550,14 @@ function HVAA(forIsekaiEncounter) {
       return true;
     } catch (err) { onTryFailed('result erroring', err); }}, option.checkURLBeforeNewRoundRetry);
 
-    if (id === 'gr') arena.gr--;
-    else if (!['tw', 'iw'].includes(id)) arena.arrayDone.push(id);
-    else if (equip) arena.equip = { data: equip };
-    setValue('arena', arena);
-    stamina.lastCost = id === 'gr' ? undefined : cost;
-    setValue('stamina', stamina);
+    if (id === 'gr') arena.data.gr--;
+    else if (!['tw', 'iw'].includes(id)) arena.data.arrayDone.push(id);
+    else if (equip) arena.data.equip = { data: equip };
+    setIfChanged('arena', arena);
+    stamina.data.lastCost = id === 'gr' ? undefined : cost;
+    setIfChanged('stamina', stamina);
     const alt = option.altBattleFirst && await $ajax.insert(window.location.href.replace('://hentaiverse.org', '://alt.hentaiverse.org'));
-    console.log('Arena Fetch Done.', 'altBattleFirst:', option.altBattleFirst, 'Arena goto', alt ? 'alt' : '', arena);
+    console.log('Arena Fetch Done.', 'altBattleFirst:', option.altBattleFirst, 'Arena goto', alt ? 'alt' : '', arena.data);
     alt ? gotoAlt(true) : goto();
     $async.logSwitch(arguments);
     return true;
@@ -6532,34 +6567,36 @@ function HVAA(forIsekaiEncounter) {
     g.battle.skill = { id, [id]: 1, ...params };
   }
 
+  function copy(d) { return d ? JSON.parse(JSON.stringify(d)) : undefined; }
+
   // 战斗中//
   async function onBattleRound() { // 主程序
-    if (!gE('#battle_main') || runtime.battleOngoing) return;
-    runtime.battleOngoing = true;
-    runtime.lastResponsive = time(0);
+    if (!gE('#battle_main') || flags.battle) return;
+    flags.battle = true;
+    times.responsive = time(0);
     const option = g.option;
-    let battle = getValue('battle', true);
+    let battle = getWithStringfied('battle', true);
 
-    if (battle && battle.prevLog !== battle.turnLog) {
-      battle.prevLog = battle.turnLog;
-      const zeroturn = battle.turnLog.match(/>You use\s*(\w* (?:Gem|Draught|Potion|Elixir|Drink|Candy|Infusion|Scroll|Vase|Bubble)).*?</);
+    if (battle.data && battle.data.prevLog !== battle.data.turnLog) {
+      battle.data.prevLog = battle.data.turnLog;
+      const zeroturn = battle.data.turnLog.match(/>You use\s*(\w* (?:Gem|Draught|Potion|Elixir|Drink|Candy|Infusion|Scroll|Vase|Bubble)).*?</);
       if (!zeroturn) {
-        battle.turn = (battle.turn??0) + 1;
+        battle.data.turn = (battle.data.turn??0) + 1;
       }
-      battle.actions = (battle.actions??0) + 1;
+      battle.data.actions = (battle.data.actions??0) + 1;
     }
 
-    if (!battle || !battle.roundAll) { // 修复因多个页面/世界同时读写造成缓存数据异常的情况
-      battle = JSON.parse(JSON.stringify(g.battle));
-      battle.monsterStatus = battle.monsterStatus.map(ms => {
+    if (!battle.data || !battle.data.roundAll) { // 修复因多个页面/世界同时读写造成缓存数据异常的情况
+      battle.data = copy(g.battle);
+      battle.data.monsterStatus = battle.data.monsterStatus.map(ms => {
         return {
           order: ms.order,
           hp: ms.hp
         }
       });
-      battle.monsterStatus.sortBy(x => x.order);
+      battle.data.monsterStatus.sortBy(x => x.order);
     };
-    $debug.log('onBattle', `\n`, battle);
+    $debug.log('onBattle', `\n`, battle.data);
     //人物状态
     if (gE('#vbh')) {
       realtime.hp = gE('#vbh>div>img').offsetWidth / 496 * 100;
@@ -6618,7 +6655,7 @@ function HVAA(forIsekaiEncounter) {
             ['额外游戏内容', '額外游戲内容', 'Post Game Content', 400, 95],
             ['神秘小马领域', '神秘小馬領域', 'Secret Pony Level', 500, 100],
           ],
-          condition: sub => sub[4] === battle.roundAll,
+          condition: sub => sub[4] === battle.data.roundAll,
           content: sub => sub[3],
         },
         'rb': {
@@ -6654,21 +6691,21 @@ function HVAA(forIsekaiEncounter) {
             ['困难×2', '困難×2', 'Hard×2', 7],
             ['普通×1', '普通×1', 'Normal×1', 1],
           ],
-          condition: sub => sub[3] && sub[3] <= battle.tower,
-          content: _ => battle.tower,
-          format: formatted => `<div style="font-size: 9pt!important">${formatted}<br>${battle.tower > 40 ? `+${(battle.tower - 40) * 5}%DMG&HP` : ''}</div>`,
+          condition: sub => sub[3] && sub[3] <= battle.data.tower,
+          content: _ => battle.data.tower,
+          format: formatted => `<div style="font-size: 9pt!important">${formatted}<br>${battle.data.tower > 40 ? `+${(battle.data.tower - 40) * 5}%DMG&HP` : ''}</div>`,
         }
       }
-      const type = battle.roundType;
+      const type = battle.data.roundType;
       const monsterNames = Array.from(gE(`${monsterStateKeys.name}>div>div`, 'all')).map(monster => monster.innerHTML);
       const info = battleInfoList[type];
-      const arena = getValue('arena', true)??{};
-      battle.postoken ??= arena.postoken;
+      const arena = realtime.arena ??= getWithStringfied('arena', true, {});
+      battle.data.postoken ??= arena.data.postoken;
 
       [{ t: 'iw', k: 'equip'}, { t: 'tw', k: 'tw' }].forEach(({t, k}) => {
-        if (!arena?.[k] || type === t) return;
-        delete arena[k];
-        setValue('arena', arena);
+        if (!arena.data?.[k] || type === t) return;
+        delete arena.data[k];
+        setIfChanged('arena', arena);
       });
 
       let subtype = '', title = `${info?.title??''}`;
@@ -6685,20 +6722,20 @@ function HVAA(forIsekaiEncounter) {
       }
 
       const setDataSub = function (dataName, titleGetter, subtypeGetter) {
-        const obj = arena[dataName];
+        const obj = arena.data[dataName];
         if (!obj) return;
-        if (Object.keys(obj.tokens ?? {}).map(k => obj.tokens[k] === battle[k]).some(s => !s)) {
+        if (Object.keys(obj.tokens ?? {}).map(k => obj.tokens[k] === battle.data[k]).some(s => !s)) {
           // 有旧token，移除
-          delete arena[dataName];
-          setValue('arena', arena);
+          delete arena.data[dataName];
+          setIfChanged('arena', arena);
           return;
         }
         // 没有token或是当前token，正常显示
-        obj.tokens = { token: battle.token, postoken: battle.postoken };
+        obj.tokens = { token: battle.data.token, postoken: battle.data.postoken };
         const data = obj.data;
         title += titleGetter(data);
         subtype += subtypeGetter(data);
-        setValue('arena', arena);
+        setIfChanged('arena', arena);
       }
 
       switch (type) {
@@ -6715,35 +6752,38 @@ function HVAA(forIsekaiEncounter) {
       return { title, full: `${UI.byLang(info?.name ?? ['未知', '未知', 'Unknown'])}:[${title}]${subtype}` };
     }
 
-    let currentTurn = (battle.turn ?? 0);
-    const currentActions = (battle.actions ?? currentTurn);
+    let currentTurn = (battle.data.turn ?? 0);
+    const currentActions = (battle.data.actions ?? currentTurn);
     const display = getBattleTypeDisplay();
     gE('.hvAALog').innerHTML = [
       `${UI.l('攻击模式', '攻擊模式', 'Attack Mode')}: ${UI.attackStatusType[realtime.attackStatus]}`,
       `${(_server.isekai) ? UI.l('异世界', '異世界', 'Isekai') : UI.l('恒定世界', '恆定世界', 'Persistent')}`, // 战役模式显示
       `${display.full}`, // 战役模式显示
-      `R${battle.roundNow}/${battle.roundAll}:T${currentTurn}<span style="font-size: 9pt!important">(+${currentActions-currentTurn}*0tic)</span>`,
+      `R${battle.data.roundNow}/${battle.data.roundAll}:T${currentTurn}<span style="font-size: 9pt!important">(+${currentActions-currentTurn}*0tic)</span>`,
       `<div style="font-size: 9pt!important">TPS: ${runtime.runSpeed}<br>${runtime.runTimeGap??''}</div>`,
       `${UI.l('敌人', '敵人', 'Monsters')}: ${realtime.monsterAlive}/${realtime.monsterAll}`,
     ].join(`<br>`).replaceAll(`</div><br>`, `</div>`);
-    if (!battle.roundAll) {
+    if (!battle.data.roundAll) {
       pauseChange();
       $debug.shiftLog();
     }
-    document.title = `${currentActions % 2 ? option.frequencySign1 ?? '' : option.frequencySign2 ?? ''}${display.title}:R${battle.roundNow}/${battle.roundAll}:T${currentTurn}@${runtime.runSpeed}tps,${realtime.monsterAlive}/${realtime.monsterAll}`;
-    setValue('battle', battle);
+    document.title = `${currentActions % 2 ? option.frequencySign1 ?? '' : option.frequencySign2 ?? ''}${display.title}:R${battle.data.roundNow}/${battle.data.roundAll}:T${currentTurn}@${runtime.runSpeed}tps,${realtime.monsterAlive}/${realtime.monsterAll}`;
 
-    if (!battle.monsterStatus || battle.monsterStatus.length !== realtime.monsterAll) {
-      fixMonsterStatus();
+    if (!battle.data.monsterStatus || battle.data.monsterStatus.length !== realtime.monsterAll) {
+      fixMonsterStatus(battle);
     }
-    countMonsterHP();
+    setIfChanged('battle', battle);
+    
+    // 完成基础战斗数据更新，开始涉及公式部分及流程执行
+    resetFormulaCache();
+    countMonsterHP(copy(battle.data)); // 复制一份给 g
     displayMonsterWeight();
     displayPlayStatePercentage();
-    if (getValue('disabled')) { // 如果禁用
+    if (getPause()) { // 如果禁用
       document.title = titlePause();
       const pauseChange = gE('#hvAABox2>button.pauseChange');
       pauseChange ? pauseChange.innerHTML = UI.button.continue(option) : undefined;
-      runtime.battleOngoing = false;
+      delete flags.battle;
       return;
     }
     killBug(); // 解决 HentaiVerse 可能出现的 bug
@@ -6759,7 +6799,7 @@ function HVAA(forIsekaiEncounter) {
         }
       },
       'Cure': () => autoRecover(true),
-      'Pause': autoPause,
+      'Pause': () => autoPause(battle),
       'SSDisable': () => autoSS(true),
       'Rec': () => autoRecover(false),
       'Scroll': useScroll,
@@ -6778,15 +6818,15 @@ function HVAA(forIsekaiEncounter) {
     async function onTasks() {
       if (option.debugCheckCondition) checkCondition(option.debugCondition);
 
-      const prevActionTime = battle.prevActionTime ?? 0;
+      const prevActionTime = battle.data.prevActionTime ?? 0;
       const remainDelay = prevActionTime + option.delay - time(0);
       if (remainDelay > 0) await sleep(remainDelay, true);
 
       const onTask = name => {
         if (!taskList[name]()) return;
-        setValue('battle', battle);
+        setIfChanged('battle', battle);
         onStepInDone();
-        runtime.battleOngoing = false;
+        delete flags.battle;
         return true;
       }
       for (const name of range(order).map(i => order[i])) {
@@ -6796,7 +6836,7 @@ function HVAA(forIsekaiEncounter) {
       for (let name in taskList) {
         if (onTask(name)) return;
       }
-      runtime.battleOngoing = false;
+      delete flags.battle;
     }
   }
 
@@ -6872,7 +6912,7 @@ function HVAA(forIsekaiEncounter) {
 * @returns
 */
   function getRangeCenter(target, rangeSize, isWeaponAttack, excludeWeight, forceUseIndex) {
-    let msTemp = JSON.parse(JSON.stringify(g.battle.monsterStatus));
+    let msTemp = copy(g.battle.monsterStatus);
     msTemp.sortBy(x => x.order);
     let minWeight = Number.MAX_SAFE_INTEGER;
     // 0. 范围大于等于全体时，直接释放全体
@@ -6919,33 +6959,32 @@ function HVAA(forIsekaiEncounter) {
     return { id: getMonsterID(newOrder), weight: minWeight };
   }
 
-  function autoPause() {
+  function autoPause(battle) {
+    const temp = copy(battle.data);
     const option = g.option;
-    let battle = getValue('battle', true);
     if (
-      battle.paused?.round !== battle.roundNow
-      || battle.paused?.token !== battle.token
-      || battle.paused?.postoken !== battle.postoken
+      battle.data.paused?.round !== battle.data.roundNow
+      || battle.data.paused?.token !== battle.data.token
+      || battle.data.paused?.postoken !== battle.data.postoken
     ) {
-      battle.paused = {
+      battle.data.paused = {
         count: 0,
-        round: battle.roundNow,
-        token: battle.token,
-        postoken: battle.postoken ??= (getValue('arena', true) ?? {}).postoken
+        round: battle.data.roundNow,
+        token: battle.data.token,
+        postoken: battle.data.postoken ??= (getValue('arena', true) ?? {}).postoken
       };
-      setValue('battle', battle);
     }
     if (option.autoPause && checkCondition(option.pauseCondition)) {
-      if (!getValue('stepIn')) {
-        battle = getValue('battle', true);
-        battle.paused.turn = battle.turn;
-        battle.paused.count++;
-        setValue('battle', battle);
+      if (!flags.stepIn) {
+        battle.data = temp;
+        battle.data.paused.turn = battle.data.turn;
+        battle.data.paused.count++;
       }
       pauseChange();
       if (option.pauseAlarm) setAlarm('Pause');
       return true;
     }
+    setIfChanged('battle', battle);
     return false;
   }
 
@@ -6961,8 +7000,8 @@ function HVAA(forIsekaiEncounter) {
   }
 
   function setExitBattleTimeout(alarm) {
-    runtime.lastResponsive = Infinity;
-    runtime.battleExit = true;
+    times.responsive = Infinity;
+    flags.exit = true;
     setAlarm(alarm);
     const option = g.option;
     if (alarm === 'Defeat' && (!option.autoSkipDefeated || !checkCondition(option.exitCondition))) {
@@ -6998,12 +7037,12 @@ function HVAA(forIsekaiEncounter) {
     let isBreak;
     while (true) {
       await waitPause(true);
-      const waited = new Date() - runtime.lastResponsive;
+      const waited = new Date() - times.responsive;
       for (let t in battleUnresponsive) {
         if (battleUnresponsive[t].time > waited) continue;
         isBreak ||= battleUnresponsive[t].method();
       }
-      if (runtime.battleExit || isBreak) break;
+      if (flags.exit || isBreak) break;
       await sleep(min - waited);
     }
   }
@@ -7014,14 +7053,14 @@ function HVAA(forIsekaiEncounter) {
     if (!url) return;
     let attempts = 0;
     displayUntil(() => `[TIMER]${UI.byLang('等待URL检查', '等待URL檢查', 'Wait URL Check')}${attempts}`);
-    runtime.lastResponsive = Infinity;
+    times.responsive = Infinity;
     await until(async () => { try {
       attempts++;
       await waitPause(true);
       if (await $ajax.insert(url, undefined, undefined, {}, {}, true)) return true;
       console.log(logInfo);
     } catch (err) { console.error('Connect failed:', url) }}, option.checkURLBeforeNewRoundRetry * _1s, true);
-    runtime.lastResponsive = time(0);
+    times.responsive = time(0);
     displayProcess();
   } catch(err) { console.error(err); }}
 
@@ -7093,29 +7132,30 @@ function HVAA(forIsekaiEncounter) {
 
     function onEventEnd () {
       const option = g.option;
-      const timeNow = time(0);
-      const timeDelta = timeNow - runtime.timeNow;
-      const timeDelay = Math.max(0, option.delay - unsafeWindow.response);
-      runtime.runSpeed = (_1s / timeDelta).toFixed(2);
-      runtime.runTimeGap = `(${Math.max(0,timeDelta-unsafeWindow.response-timeDelay)}+network:${unsafeWindow.response}${timeDelay ? `+delay:${timeDelay}`: ''}ms)`;
-      runtime.timeNow = timeNow;
+      const now = time(0);
+      const delta = now - times.now;
+      const delay = Math.max(0, option.delay - unsafeWindow.response);
+      runtime.runSpeed = (_1s / delta).toFixed(2);
+      runtime.runTimeGap = `(${Math.max(0,delta-unsafeWindow.response-delay)}+network:${unsafeWindow.response}${delay ? `+delay:${delay}`: ''}ms)`;
+      times.now = now;
       const monsterDead = gE('img[src*="nbardead"]', 'all').length;
       realtime.monsterAlive = realtime.monsterAll - monsterDead;
       const bossDead = gE(`${monsterStateKeys.obj}[style*="opacity"] ${monsterStateKeys.lv}[style*="background"]`, 'all').length;
       realtime.bossAlive = realtime.bossAll - bossDead;
       const battleLog = gE('#textlog>tbody>tr>td', 'all');
 
-      let stats = getValue('stats', true) || {};
+      let stats = getWithStringfied('stats', true, {});
       const battle = g.battle;
-      if (Object.keys(stats.tokens ?? {}).map(k => battle[k] === stats.tokens?.[k]).some(s => !s)) {
-        if (option.recordUsage) recordUsage2(true);
+      if (Object.keys(stats.data.tokens ?? {}).map(k => battle[k] === stats.data.tokens?.[k]).some(s => !s)) {
+        if (option.recordUsage) recordUsage2(true, stats);
         if (option.dropMonitor) dropMonitor(battleLog, true);
       }
-
       if (option.recordUsage) {
         obj.log = battleLog;
-        recordUsage(obj);
+        recordUsage(obj, stats);
       }
+      setIfChanged('stats', stats);
+
       if (realtime.monsterAlive && !gE('#btcp')) {
         onBattleRound();
         return;
@@ -7143,7 +7183,7 @@ function HVAA(forIsekaiEncounter) {
         await checkURLBeforeNewRound();
         const doc = $doc(await $ajax.insert(window.location.href, undefined, undefined, {}, {}, true));
         if (gE('#riddlecounter', doc)) {
-          runtime.lastResponsive = Infinity;
+          times.responsive = Infinity;
           if (option.riddlePopup && !window.opener) {
             window.open(window.location.href, 'riddleWindow', 'resizable, scrollbars, width=1241, height=707');
             $async.logSwitch(arguments);
@@ -7256,23 +7296,23 @@ function HVAA(forIsekaiEncounter) {
       crystal: /(?:(\d+)x )?(Crystal of \w+)/,
     };
 
-    let battle = getValue('battle', true);
+    let battle = getWithStringfied('battle', true);
     const turnLog = gE('#textlog').innerHTML.match(/([^]+?)((<tr><td class="tls">)|(<\/tbody>))/)[0];
 
     // cache last turn channeling
-    const channeling = battle.channeling || 1;
-    battle.channeling = getBuff('channeling') ? 1.5 : 1;
+    const channeling = battle.data.channeling || 1;
+    battle.data.channeling = getBuff('channeling') ? 1.5 : 1;
 
-    if (isNewTurn &&= turnLog !== battle.turnLog) {
-      battle.turnLog = turnLog;
-      battle.time = new Date().getTime();
+    if (isNewTurn &&= turnLog !== battle.data.turnLog) {
+      battle.data.turnLog = turnLog;
+      battle.data.time = new Date().getTime();
     }
-    setValue('battle', battle);
+    setIfChanged('battle', battle);
 
     if (turnLog.match(regExp.battleTypeLog)) return; // skip if is new round since no new proficiency or monster effect
 
     // update proficiency
-    const proficiency = battle.proficiency ?? {};
+    const proficiency = battle.data.proficiency ?? {};
     const ptypes = {
       'cloth armor': 'Cloth Armor',
       'deprecating magic' : 'Deprecating',
@@ -7298,10 +7338,9 @@ function HVAA(forIsekaiEncounter) {
 
     if (!(g.option.debuffAutoFill)) return;
     // update monster effects
-    if (!battle?.monsterStatus) return;
-    if (battle.monsterStatus.map(m => getMonster(getMonsterID(m))).filter(mon => mon === null).length) {
-      fixMonsterStatus();
-      battle = getValue('battle', true);
+    if (!battle.data?.monsterStatus) return;
+    if (battle.data.monsterStatus.map(m => getMonster(getMonsterID(m))).filter(mon => mon === null).length) {
+      fixMonsterStatus(battle);
     }
 
     let effectChanges = getEffectChanges(turnLog);
@@ -7311,7 +7350,7 @@ function HVAA(forIsekaiEncounter) {
     turnDelta *= 100 / ((getBuff('haste')?.getAttribute('onmouseover').match(/increasing its action speed by (.*)%\./)[1] ?? 0) * 1 + 100);
 
     const getBuffSkill = (buff) => Object.values(monsterBuffSkillLib).find(skill => [skill.name, skill.buff].includes(buff)) ?? console.log('Unknown debuff skill', buff);
-    for (const activeMonster of battle.monsterStatus) {
+    for (const activeMonster of battle.data.monsterStatus) {
       const monster = getMonster(getMonsterID(activeMonster));
       if (gE('img[src*="nbardead.png"]', monster)) continue; // continue if dead
 
@@ -7402,7 +7441,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       }
     }
 
-    if (isNewTurn) setValue('battle', battle); // update monsterEffects
+    if (isNewTurn) setIfChanged('battle', battle); // update monsterEffects
 
     function getDuration(skill, channeling) {
       let [base, profRatio, prof] = [skill.duration, 1, 0];
@@ -7486,20 +7525,20 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
     $debug.log('______________newRound', isNew);
     const option = g.option;
     const token = document.documentElement.outerHTML.match(/var battle_token = "(.*)";/)[1];
-    let battle = getValue('battle', true);
+    let battle = getWithStringfied('battle', true);
     const arena = getValue('arena', true) ?? {};
-    const same = battle?.token === token && arena?.postoken === battle?.postoken;
+    const same = battle.data?.token === token && arena?.postoken === battle.data?.postoken;
     const prof = getValue('proficiency', true);
     if (isNew) {
-      battle = { proficiency: same ? battle?.proficiency ?? prof : prof };
+      battle.data = { proficiency: same ? battle.data?.proficiency ?? prof : prof };
     }
-    if (!battle) {
-      battle = JSON.parse(JSON.stringify(g.battle ?? {}));
-      battle.monsterStatus?.sortBy(x => x.order);
+    if (!battle.data) {
+      battle.data = copy(g.battle ?? {});
+      battle.data.monsterStatus?.sortBy(x => x.order);
     };
-    [battle.token, battle.postoken] = [token, arena.postoken];
-    battle.proficiency = same ? battle?.proficiency ?? prof : prof;
-    setValue('battle', battle);
+    [battle.data.token, battle.data.postoken] = [token, arena.postoken];
+    battle.data.proficiency = same ? battle.data?.proficiency ?? prof : prof;
+    setIfChanged('battle', battle);
     if (window.location.hash !== '') {
       goto();
     }
@@ -7525,20 +7564,20 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
     }
     const battleLog = gE('#textlog>tbody>tr>td', 'all');
     const firstLog = battleLog[battleLog.length - 1].textContent;
-    if (!battle.roundType || firstLog.match(/^Initializing/)) {
-      battle.tower = (firstLog.match(/\(Floor (\d+)\)/) ?? [null])[1] * 1;
+    if (!battle.data.roundType || firstLog.match(/^Initializing/)) {
+      battle.data.tower = (firstLog.match(/\(Floor (\d+)\)/) ?? [null])[1] * 1;
       const id = (firstLog.match(/\d+/) ?? [null])[0] * 1;
-      battle.roundType = undefined;
+      battle.data.roundType = undefined;
       for (let name in types) {
         const type = types[name];
         if (!firstLog.match(type.reg)) continue;
         if (type.extra && !type.extra(id)) continue;
-        battle.roundType = name;
+        battle.data.roundType = name;
         break;
       }
-      if (!battle.roundType) console.warn('Unable to get battle type from log:', _server, firstLog);
+      if (!battle.data.roundType) console.warn('Unable to get battle type from log:', _server, firstLog);
     }
-    if (battle.roundType === 'ba' || document.body.innerHTML.match(/Initializing random encounter/)) {
+    if (battle.data.roundType === 'ba' || document.body.innerHTML.match(/Initializing random encounter/)) {
       const encounter = getEncounter();
       if (encounter[0]) {
         encounter[0].encountered = time(0);
@@ -7546,19 +7585,19 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
       }
     }
 
-    const roundPrev = battle.roundNow;
+    const roundPrev = battle.data.roundNow;
 
     if (battleLog[battleLog.length - 1].textContent.match('Initializing')) {
       const monsterStatus = [];
       let order = 0;
       const monsterNames = Array.from(gE(`${monsterStateKeys.name}>div>div`, 'all')).map(monster => monster.innerText);
       const monsterLvs = Array.from(gE(`${monsterStateKeys.lv}>div>div`, 'all')).map(monster => monster.innerText);
-      const monsterDB = getValue('monsterDB', true) ?? {};
-      const monsterMID = getValue('monsterMID', true) ?? {};
+      const monsterDB = getWithStringfied('monsterDB', true, {});
+      const monsterMID = getWithStringfied('monsterMID', true, {});
       for (let i = battleLog.length - 2; i > battleLog.length - 2 - realtime.monsterAll; i--) {
         let hp = battleLog[i].textContent.match(/HP=(\d+)$/)[1] * 1;
         if (isNaN(hp)) {
-          hp = getHPFromMonsterDB(monsterDB, monsterNames[order], monsterLvs[order]) ?? monsterStatus[monsterStatus.length - 1].hp;
+          hp = getHPFromMonsterDB(monsterDB.data, monsterNames[order], monsterLvs[order]) ?? monsterStatus[monsterStatus.length - 1].hp;
         }
         monsterStatus[order] = { order, hp };
         order++;
@@ -7568,43 +7607,43 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
         let [_, mid, name] = battleLog[i].textContent.match(/MID=(\d+) \((.*)\) LV/);
         mid*=1;
         if (!name || isNaN(lv) || isNaN(mid)) continue;
-        monsterDB[name] ??= {};
-        if (monsterDB[name].mid && monsterDB[name].mid !== mid) { // 名称被其他mid被占用
-          monsterMID[monsterDB[name].mid] = JSON.parse(JSON.stringify(monsterDB[name])); // 将之前mid的数据进行另外备份
-          monsterDB[name] = {}; // 重置该名称的数据
+        monsterDB.data[name] ??= {};
+        if (monsterDB.data[name].mid && monsterDB.data[name].mid !== mid) { // 名称被其他mid被占用
+          monsterMID.data[monsterDB.data[name].mid] = copy(monsterDB.data[name]); // 将之前mid的数据进行另外备份
+          monsterDB.data[name] = {}; // 重置该名称的数据
         }
-        if (monsterMID[mid]) {
-          monsterDB[name] = JSON.parse(JSON.stringify(monsterMID[mid])); // 将之前备份的mid的数据进行恢复
-          delete monsterMID[mid];
+        if (monsterMID.data[mid]) {
+          monsterDB.data[name] = copy(monsterMID.data[mid]); // 将之前备份的mid的数据进行恢复
+          delete monsterMID.data[mid];
         }
-        monsterDB[name].mid = mid;
-        monsterDB[name][lv] = hp;
+        monsterDB.data[name].mid = mid;
+        monsterDB.data[name][lv] = hp;
       }
       if (option.cacheMonsterHP) {
-        setValue('monsterDB', monsterDB);
-        setValue('monsterMID', monsterMID);
+        setIfChanged('monsterDB', monsterDB);
+        setIfChanged('monsterMID', monsterMID);
       }
-      battle.monsterStatus = monsterStatus;
+      battle.data.monsterStatus = monsterStatus;
 
       const round = battleLog[battleLog.length - 1].textContent.match(/\(Round (\d+) \/ (\d+)\)/);
-      if (round && battle.roundType !== 'ba') {
-        battle.roundNow = round[1] * 1;
-        battle.roundAll = round[2] * 1;
+      if (round && battle.data.roundType !== 'ba') {
+        battle.data.roundNow = round[1] * 1;
+        battle.data.roundAll = round[2] * 1;
       } else {
-        battle.roundNow = 1;
-        battle.roundAll = 1;
+        battle.data.roundNow = 1;
+        battle.data.roundAll = 1;
       }
-    } else if (!battle.monsterStatus || battle.monsterStatus.length !== gE(monsterStateKeys.lv, 'all').length) {
-      battle.roundNow = 1;
-      battle.roundAll = 1;
+    } else if (!battle.data.monsterStatus || battle.data.monsterStatus.length !== gE(monsterStateKeys.lv, 'all').length) {
+      battle.data.roundNow = 1;
+      battle.data.roundAll = 1;
     }
 
-    if (roundPrev !== battle.roundNow) {
-      battle.turn = 0;
+    if (roundPrev !== battle.data.roundNow) {
+      battle.data.turn = 0;
       setValue('skillOTOS', {});
     }
-    battle.roundLeft = battle.roundAll - battle.roundNow;
-    setValue('battle', battle);
+    battle.data.roundLeft = battle.data.roundAll - battle.data.roundNow;
+    setIfChanged('battle', battle);
   }
 
   function killBug() { // 在 HentaiVerse 发生导致 turn 损失的 bug 时发出警告并移除问题元素: https://ehwiki.org/wiki/HentaiVerse_Bugs_%26_Errors#Combat
@@ -7622,12 +7661,11 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
     }
   }
 
-  function countMonsterHP() { // 统计敌人血量
+  function countMonsterHP(battle) { // 统计敌人血量
     let i, j;
     const monsterHp = gE(`${monsterStateKeys.bars}:nth-child(1)`, 'all');
     const monsterMp = gE(`${monsterStateKeys.bars}:nth-child(2)`, 'all');
     const monsterSp = gE(`${monsterStateKeys.bars}:nth-child(3)`, 'all');
-    let battle = getValue('battle', true);
     const monsterStatus = battle.monsterStatus;
     const hpArray = [];
     for (i of range(monsterHp)) {
@@ -7703,10 +7741,10 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
   }
 
   function resolveSkillExtraWeight(target) {
-    if (runtime.inSkillExtraWeight) return 0;
-    runtime.inSkillExtraWeight = true;
+    if (flags.weight) return 0;
+    flags.weight = true;
     const result = resolveRPNFormula(g.option.skillExtraWeight, target);
-    runtime.inSkillExtraWeight = false;
+    delete flags.weight;
     return result;
   }
 
@@ -8166,7 +8204,6 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
     // 获取范围
     let skillRange = 1;
     let ab;
-    const ability = getValue('ability', true);
     for (ab in skill.range) {
       const ranges = skill.range[ab];
       if (!ranges) {
@@ -8197,7 +8234,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
     let debuffByIndex = isAll && option[`debuffSkill${buff}AllByIndex`];
     let monsterStatus = g.battle.monsterStatus;
     if (debuffByIndex) {
-      monsterStatus = JSON.parse(JSON.stringify(monsterStatus)).sortBy(x => x.order);
+      monsterStatus = copy(monsterStatus).sortBy(x => x.order);
     }
     let max = isAll ? monsterStatus.length : 1;
     let id;
@@ -8383,10 +8420,11 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
   }
 
   function updateSkillOTOS(id, skillOTOS) {
-    skillOTOS ??= getValue('skillOTOS', true) ?? {};
+    let local;
+    skillOTOS ??= (local = getWithStringfied('skillOTOS', true, {})).data;
     skillOTOS[id] ??= 0;
     skillOTOS[id]++;
-    return setValue('skillOTOS', skillOTOS);
+    return setIfChanged('skillOTOS', { data:skillOTOS, old: local?.old });
   }
 
   // TODO TBD 根据lv模糊推测（一般数据都是等级逐渐提升的，可能可以直接用缓存而不需要推测，异世界新赛季时可以自动刷新缓存?）
@@ -8394,7 +8432,7 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
     return mdb?.[name]?.[lv];
   }
 
-  function fixMonsterStatus() { // 修复monsterStatus
+  function fixMonsterStatus(battle) { // 修复monsterStatus
     // document.title = UI.byLang('monsterStatus错误，正在尝试修复', 'monsterStatus錯誤，正在嘗試修復', 'monsterStatus Error, trying to fix');
     const monsterStatus = [];
     const monsterNames = Array.from(gE(`${monsterStateKeys.name}>div>div`, 'all')).map(monster => monster.innerText);
@@ -8406,9 +8444,8 @@ pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
         hp: getHPFromMonsterDB(monsterDB, monsterNames[order], monsterLvs[order]) ?? ((monster.style.background === '') ? 1000 : 100000),
       });
     });
-    const battle = getValue('battle', true);
-    battle.monsterStatus = monsterStatus;
-    setValue('battle', battle);
+    battle.data.monsterStatus = monsterStatus;
+    setIfChanged('battle', battle);
   }
 
   function displayMonsterWeight() {
@@ -8494,7 +8531,8 @@ text-align: left;
   }
 
   function dropMonitor(battleLog, different) { // 掉落监测
-    const drop = getValue('drop', true) || {
+    let drop = getWithStringfied('drop', true, {});
+    drop.data ??= {
       '#startTime': time(3),
       '#EXP': 0,
       '#Credit': 0,
@@ -8505,7 +8543,7 @@ text-align: left;
       if (/^You gain \d+ (EXP|Credit)/.test(battleLog[i].textContent)) {
         regexp = battleLog[i].textContent.match(/^You gain (\d+) (EXP|Credit)/);
         if (regexp) {
-          drop[`#${regexp[2]}`] += regexp[1] * 1;
+          drop.data[`#${regexp[2]}`] += regexp[1] * 1;
         }
       } else if (gE('span', battleLog[i])) {
         item = gE('span', battleLog[i]);
@@ -8515,7 +8553,7 @@ text-align: left;
           for (const j of range(option.dropQuality, quality)) {
             if (name.match(quality[j])) {
               name = `Equipment of ${name.match(/^\w+/)[0]}`;
-              drop[name] = (name in drop) ? drop[name] + 1 : 1;
+              drop.data[name] = (name in drop.data) ? drop.data[name] + 1 : 1;
               break;
             }
           }
@@ -8528,11 +8566,11 @@ text-align: left;
             name = name.match(/^(Crystal of \w+)$/)[1];
             amount = 1;
           }
-          drop[name] = (name in drop) ? drop[name] + amount : amount;
+          drop.data[name] = (name in drop.data) ? drop.data[name] + amount : amount;
         } else if (item.style.color === 'rgb(168, 144, 0)') {
-          drop['#Credit'] = drop['#Credit'] + name.match(/\d+/)[0] * 1;
+          drop.data['#Credit'] = drop.data['#Credit'] + name.match(/\d+/)[0] * 1;
         } else {
-          drop[name] = (name in drop) ? drop[name] + 1 : 1;
+          drop.data[name] = (name in drop.data) ? drop.data[name] + 1 : 1;
         }
       } else if (battleLog[i].textContent === 'You are Victorious!') {
         break;
@@ -8540,14 +8578,14 @@ text-align: left;
     }
     const battle = g.battle;
     if (option.recordEach && (different || battle.roundNow === battle.roundAll)) {
-      const old = getValue('dropOld', true) || [];
-      drop.__name = getValue('battleCode', true).name;
-      drop['#endTime'] = time(3);
-      old.push(drop);
-      setValue('dropOld', old);
+      const old = getWithStringfied('dropOld', true, []);
+      drop.data.__name = getValue('battleCode', true).name;
+      drop.data['#endTime'] = time(3);
+      old.data.push(drop.data);
+      setIfChanged('dropOld', old);
       delValue('drop');
     } else {
-      setValue('drop', drop);
+      setIfChanged('drop', drop);
     }
     if (getComputedStyle(gE('#hvAATab-Drop')).display === 'block') {
       gE(`.hvAATabmenu>span[name="Drop"]`).click();
@@ -8566,14 +8604,27 @@ text-align: left;
     return t;
   }
 
-  function recordUsage(param) {
+  function getWithStringfied(key, toJSON, defaultValue, local) {
+    const data = (local ? getLocal(key, true) : getValue(key, toJSON)) || defaultValue;
+    return { data: data, old: JSON.stringify(data) };
+  }
+
+  function setIfChanged(key, value, portable, local) { 
+    if (value.old !== JSON.stringify(value.data)) { 
+      if (local) setLocal(key, value.data, true);
+      else setValue(key, value.data, portable);
+    }
+    return value;
+  }
+
+  function recordUsage(param, stats) {
     const filter = g.option.record;
     if (!filter) return;
-    let stats = getValue('stats', true) || {};
-    let statsStatic = getValue('statsStatic', true) || {};
+    let statsStatic = getWithStringfied('statsStatic', true, {});
+    let logCache = getWithStringfied('logCache', true, []);
     const battle = g.battle;
     const init = (filterKey, defaultValue, keys) => {
-      let key, data = stats;
+      let key, data = stats.data;
       keys ??= filterKey;
       keys = keys.split('.');
       while (true) {
@@ -8587,8 +8638,8 @@ text-align: left;
     const initObject = key => init(key, {});
     const initHurt = key => init(`hurt${key}`, 0, `hurt._${key}`);
     (() => {
-      stats.self ??= { _startTime: time(3) };
-      stats.tokens ??= { token: battle.token, postoken: battle.postoken };
+      stats.data.self ??= { _startTime: time(3) };
+      stats.data.tokens ??= { token: battle.token, postoken: battle.postoken };
       ['_turn', '_prevBattleTurn', '_actions', '_prevBattleActions', '_round', '_battle', '_monster', '_boss', 'evade', 'miss', 'focus', 'mp', 'oc'].forEach(initSelf);
       // 回复量, 物品使用次数, 技能使用次数, 技能攻击造成的伤害, 熟练度, 受到攻击造成的伤害,
       ['restore', 'items', 'magic', 'damage', 'proficiency', 'hurt'].forEach(initObject);
@@ -8602,50 +8653,49 @@ text-align: left;
       const initturn = currentLog.match(/^Initializing .* \.\.\./);
       battle.turn ??= (zeroturn || initturn) ? 0 : 1;
       battle.actions ??= battle.turn ?? (initturn ? 0 : 1);
-      stats.self._turn += battle.turn + ((battle.turn >= stats.self._prevBattleTurn) ? - stats.self._prevBattleTurn : 1);
-      stats.self._actions += battle.actions + ((battle.actions >= stats.self._prevBattleActions) ? - stats.self._prevBattleActions : 1);
-      [stats.self._prevBattleTurn, stats.self._prevBattleActions] = [battle.turn, battle.actions];
+      stats.data.self._turn += battle.turn + ((battle.turn >= stats.data.self._prevBattleTurn) ? - stats.data.self._prevBattleTurn : 1);
+      stats.data.self._actions += battle.actions + ((battle.actions >= stats.data.self._prevBattleActions) ? - stats.data.self._prevBattleActions : 1);
+      [stats.data.self._prevBattleTurn, stats.data.self._prevBattleActions] = [battle.turn, battle.actions];
     }
     if (realtime.monsterAlive === 0) {
-      if (filter.round) stats.self._round++;
-      if (filter.battle && (battle.roundNow === battle.roundAll)) stats.self._battle++;
+      if (filter.round) stats.data.self._round++;
+      if (filter.battle && (battle.roundNow === battle.roundAll)) stats.data.self._battle++;
     }
     if (param.mode === 'magic') {
       const [magic, magicName] = [param.magic, param.magicName];
       if (filter.magic) {
-        let prev = stats.magic[magic] ?? 0;
-        if (magicName in stats.magic) {
-          prev += stats.magic[magicName];
-          delete stats.magic[magicName];
+        let prev = stats.data.magic[magic] ?? 0;
+        if (magicName in stats.data.magic) {
+          prev += stats.data.magic[magicName];
+          delete stats.data.magic[magicName];
         }
-        stats.magic[magic] = prev + 1;
-        (statsStatic.magicNames ??= {})[magic] = magicName;
+        stats.data.magic[magic] = prev + 1;
+        (statsStatic.data.magicNames ??= {})[magic] = magicName;
       }
-      if (filter.mp) stats.self.mp += param.mp;
-      if (filter.oc) stats.self.oc += param.oc;
+      if (filter.mp) stats.data.self.mp += param.mp;
+      if (filter.oc) stats.data.self.oc += param.oc;
     }
     else if (param.mode === 'items') {
       if (filter.items) {
         const[item, itemName] = [param.item, param.itemName];
-        let prev = stats.items[item] ?? 0;
-        if (itemName in stats.items) {
-          prev += stats.items[itemName];
-          delete stats.items[itemName];
+        let prev = stats.data.items[item] ?? 0;
+        if (itemName in stats.data.items) {
+          prev += stats.data.items[itemName];
+          delete stats.data.items[itemName];
         }
-        stats.items[item] = prev + 1;
-        (statsStatic.itemsNames ??= {})[item] = itemName;
+        stats.data.items[item] = prev + 1;
+        (statsStatic.data.itemsNames ??= {})[item] = itemName;
       }
     }
     else {
       if (filter[param.mode]) {
-        stats.self[param.mode] = (param.mode in stats.self) ? stats.self[param.mode] + 1 : 1;
+        stats.data.self[param.mode] = (param.mode in stats.data.self) ? stats.data.self[param.mode] + 1 : 1;
       }
     }
 
-    let logCache = getValue('logCache', true) ?? [];
-    try { logCache = logCache.filter(r => {
+    try { logCache.data = logCache.data.filter(r => {
       if (!r.handled) return; // remove legacy record
-      return !recordLog(r.text, stats, filter, r.prev, r.handled, r.mode);
+      return !recordLog(r.text, stats.data, filter, r.prev, r.handled, r.mode);
     })}
     catch (err) { console.error(err); };
     let logRange = [...param.log].findIndex(log => log.className === 'tls');
@@ -8660,7 +8710,7 @@ text-align: left;
       prev = param.log.shift() ?? undefined;
       if (!text) continue;
       try {
-        if (!recordLog(text, stats, filter, prev, handled, mode)) {
+        if (!recordLog(text, stats.data, filter, prev, handled, mode)) {
           logWarn('unknown log type', text, prev, handled, mode);
         }
       } catch (err) {
@@ -8668,9 +8718,9 @@ text-align: left;
       }
     }
 
-    setValue('logCache', logCache.slice(0, Math.min(logCache.length, 50)));
-    setValue('stats', stats);
-    setValue('statsStatic', statsStatic);
+    logCache.data = logCache.data.slice(0, Math.min(logCache.data.length, 50));
+    setIfChanged('logCache', logCache);
+    setIfChanged('statsStatic', statsStatic);
     if (getComputedStyle(gE('#hvAATab-Usage')).display === 'block') {
       gE(`.hvAATabmenu>span[name="Usage"]`).click();
     }
@@ -8683,9 +8733,9 @@ text-align: left;
         handled: handled.map(toWarn),
         mode
       }
-      if (!logCache.some(w => JSON.stringify(w.text) === JSON.stringify(warn.text))) {
+      if (!logCache.data.some(w => JSON.stringify(w.text) === JSON.stringify(warn.text))) {
         console.warn(info, ':', warn.text);
-        logCache.unshift(warn);
+        logCache.data.unshift(warn);
       }
     }
 
@@ -8859,26 +8909,26 @@ text-align: left;
     }
   }
 
-  function recordUsage2(different) {
+  function recordUsage2(different, stats) {
     const option = g.option;
     const filter = option.record;
     if (!filter) return;
-    const stats = getValue('stats', true);
+    stats ??= getWithStringfied('stats', true);
     if (!different) {
-      if (filter.monster) stats.self._monster += realtime.monsterAll;
-      if (filter.boss) stats.self._boss += realtime.bossAll;
+      if (filter.monster) stats.data.self._monster += realtime.monsterAll;
+      if (filter.boss) stats.data.self._boss += realtime.bossAll;
     }
     const battle = g.battle;
     if (option.recordEach && (different || battle.roundNow === battle.roundAll)) {
-      const old = getValue('statsOld', true) || [];
-      stats.__name = getValue('battleCode', true)?.name ?? stats.__name;
-      stats.self._endTime = time(3);
-      old.push(stats);
-      setValue('statsOld', old);
+      const old = getWithStringfied('statsOld', true, []);
+      stats.data.__name = getValue('battleCode', true)?.name ?? stats.data.__name;
+      stats.data.self._endTime = time(3);
+      old.data.push(stats.data);
+      setIfChanged('statsOld', old);
       delValue('stats');
       return;
     }
-    setValue('stats', stats);
+    setIfChanged('stats', stats);
     if (getComputedStyle(gE('#hvAATab-Usage')).display === 'block') {
       gE(`.hvAATabmenu>span[name="Usage"]`).click();
     }
