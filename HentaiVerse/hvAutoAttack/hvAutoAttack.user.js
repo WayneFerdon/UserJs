@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.211
+// @version      2.91.212
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1363,6 +1363,7 @@ function HVAA(forIsekaiEncounter) {
     if (forIsekaiEncounter) return true;
     const currentUrl = window.self.location.href;
     if (!isFrame) {
+      if (g.option.keepAliveByAudio) createKeepAliveAudio();
       if (!g.option.riddlePopup || gE('#riddlecounter')) { // 未开启使用弹窗或仍处于答题
         return true;
       }
@@ -1391,7 +1392,6 @@ function HVAA(forIsekaiEncounter) {
       tryClose(3, isFirefox ? 500 : 300);
       return false;
     }
-    if (g.option.keepAliveByAudio) createKeepAliveAudio();
 
     if (isInBattle()) {
       if (!window.top.location.href.endsWith(`?s=Battle`)) {
@@ -1708,7 +1708,7 @@ function HVAA(forIsekaiEncounter) {
     return true;
   }
 
-  function getPause() { 
+  function getPause() {
     if (g.disabled !== undefined) return g.disabled;
     return (g.disabled = getValue('disabled') || false);
   }
@@ -2045,7 +2045,7 @@ function HVAA(forIsekaiEncounter) {
       delLocal(key, isLocalStorage);
     }
     if (Object.keys(dataFlags.excludeStandalone).includes(key)) {
-      if (!otherWorldItem) { 
+      if (!otherWorldItem) {
         if (!otherLoaded) otherWorldItem = getLocal(`${_server.other}_${key}`, isLocalStorage);
         otherWorldItem ??= thisWorldItem ?? {};
       }
@@ -4717,7 +4717,7 @@ function HVAA(forIsekaiEncounter) {
     return img.join('_').replace('_png', 'png');
   }
 
-  function resetFormulaCache() { 
+  function resetFormulaCache() {
     returnValueGetter.prototype.cache = {
       source: [
         { get: () => realtime },
@@ -5105,7 +5105,7 @@ function HVAA(forIsekaiEncounter) {
       // 将不是数字小数点的 . 转为 _ 以便进行参数分割
       const nou = r => r === undefined || r === null; // nullOrUndefined
       const paramList = str.replace(/[^\d](\.)/g, match => match.replace('.', '_')).split('_');
-      
+
       let result, isInData;
       while (paramList.length) {
         const key = paramList.shift();
@@ -5232,7 +5232,7 @@ function HVAA(forIsekaiEncounter) {
       runtime.document.title = titlePause();
       setPause(runtime.document.title, temporary);
       return;
-    } 
+    }
     if (button) button.innerHTML = UI.button.pause(option);
     runtime.document.title = gE('#navbar') ? 'The Hentaiverse' : disabled;
     setPause(undefined, temporary);
@@ -5512,7 +5512,7 @@ function HVAA(forIsekaiEncounter) {
     const read = (now - (times.encounter.update ?? 0)) >= _1s;
     const count = current.filter(e => e.url).length;
     if (read) times.encounter.update = now;
-    
+
     let encounter = (((now - last) >= (_1h * 0.5)) && read && (count < 24 || !current[0].encountered)) ? JSON.parse(getLocal('encounter', true)) : current;
     if (!encounter || !last) {
       encounter = getValue('encounter', true) ?? [];
@@ -5559,7 +5559,7 @@ function HVAA(forIsekaiEncounter) {
     });
     const proficiency = getWithStringfied('proficiency', true);
     current.season = _server.season;
-    if (proficiency.season && (proficiency.season != _server.season)) { 
+    if (proficiency.season && (proficiency.season != _server.season)) {
       setIfChanged('proficiency', current);
       $async.logSwitch(arguments);
       return
@@ -5673,10 +5673,10 @@ function HVAA(forIsekaiEncounter) {
     $async.logSwitch(arguments);
     let stamina = getWithStringfied('stamina', true);
     let notExisit;
-    if (!stamina.data) { 
+    if (!stamina.data) {
       notExisit = true;
       stamina.data = { ratio: 1 };
-    } 
+    }
     let [last, lastTime] = [stamina.data.current, stamina.data.time];
     [stamina.data.current, stamina.data.punish, stamina.data.perk] = await Promise.all([
       ... (await getCurrentStamina()),
@@ -6773,7 +6773,7 @@ function HVAA(forIsekaiEncounter) {
       fixMonsterStatus(battle);
     }
     setIfChanged('battle', battle);
-    
+
     // 完成基础战斗数据更新，开始涉及公式部分及流程执行
     resetFormulaCache();
     countMonsterHP(copy(battle.data)); // 复制一份给 g
@@ -8609,8 +8609,8 @@ text-align: left;
     return { data: data, old: JSON.stringify(data) };
   }
 
-  function setIfChanged(key, value, portable, local) { 
-    if (value.old !== JSON.stringify(value.data)) { 
+  function setIfChanged(key, value, portable, local) {
+    if (value.old !== JSON.stringify(value.data)) {
       if (local) setLocal(key, value.data, true);
       else setValue(key, value.data, portable);
     }
