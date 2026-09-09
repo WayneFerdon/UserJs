@@ -1115,7 +1115,7 @@
       error: null,
       conn: 0,
       queue: [],
-      
+
       insert: function (url, data, method, context = {}, headers = {}, isForBattle) {
         return $ajax.fetch(url, data, method, context, headers, true, isForBattle);
       },
@@ -5231,7 +5231,7 @@
     }} return undefined;
   }
 
-  function pauseChange(temporary) { // 暂停状态更改
+  function pauseChange({temporaryPause}) { // 暂停状态更改
     const option = g.option;
     const disabled = getPause();
     const button = gE('.pauseChange');
@@ -6968,12 +6968,13 @@
   function autoPause(battle) {
     const temp = copy(battle.data);
     const option = g.option;
+    let paused = battle.data.paused;
     if (
-      battle.data.paused?.round !== battle.data.roundNow
-      || battle.data.paused?.token !== battle.data.token
-      || battle.data.paused?.postoken !== battle.data.postoken
+      paused?.round !== battle.data.roundNow
+      || paused?.token !== battle.data.token
+      || paused?.postoken !== battle.data.postoken
     ) {
-      battle.data.paused = {
+      paused = battle.data.paused = {
         count: 0,
         round: battle.data.roundNow,
         token: battle.data.token,
@@ -6983,7 +6984,13 @@
     if (option.autoPause && checkCondition(option.pauseCondition)) {
       if (!flags.stepIn) {
         battle.data = temp;
-                battle.data.paused.turn = battle.data.turn;
+        battle.data.paused ??= paused ?? {
+          count: 0,
+          round: battle.data.roundNow,
+          token: battle.data.token,
+          postoken: battle.data.postoken ??= (getValue('arena', true) ?? {}).postoken
+        };
+        battle.data.paused.turn = battle.data.turn;
         battle.data.paused.count++;
       }
       pauseChange();
