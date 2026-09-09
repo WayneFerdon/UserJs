@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.213
+// @version      2.91.214
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -5287,7 +5287,7 @@ function HVAA(forIsekaiEncounter) {
     $async.logSwitch(arguments);
     if (!option.isekai) return; // 若不启用自动跳转
     const now = time(0);
-    times.switch = getValue('lastSwitch') ?? 0
+    times.switch = getValue('lastSwitch') ?? 0;
     const remain = times.switch * 1 + (option.isekaiCD ?? 0) * _1s - now;
     await sleep(remain);
     await waitPause();
@@ -5345,7 +5345,7 @@ function HVAA(forIsekaiEncounter) {
         encounter: { name: UI.l('遭遇延时', '遭遇延時', 'Encounter Delay'), selector: '.encounterDelayRemain', start: times.encounter.start ?? now, wait: option.encounterDelay },
         arena: { name: UI.l('闲置竞技场', '閒置競技場', 'Idle Arena'), selector: '.arenaRemain', start: idleStart ?? now, wait: option.idleArenaTime },
         switch: { name: UI.l('闲置异世界', '閒置異世界', 'Idle Isekai'), selector: '.isekaiSwitchRemain', start: idleStart ?? now, wait: option.isekaiTime },
-        switchCD: { name: UI.l('异世界CD', '異世界CD', 'Isekai CD'), selector: '.isekaiCDRemain', start: times.switch, wait: option.isekaiCD },
+        switchCD: { name: UI.l('异世界CD', '異世界CD', 'Isekai CD'), selector: '.isekaiCDRemain', start: times.switch ??= getValue('lastSwitch'), wait: option.isekaiCD },
       }
       let idleStarted;
       const remain = Object.fromEntries(Object.entries(durations).map(([k, data]) => {
