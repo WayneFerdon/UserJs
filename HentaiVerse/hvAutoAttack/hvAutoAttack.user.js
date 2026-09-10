@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.217
+// @version      2.91.218
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -5254,7 +5254,7 @@ function HVAA(forIsekaiEncounter) {
     if (button) button.innerHTML = UI.button.pause(option);
     runtime.document.title = gE('#navbar') ? 'The Hentaiverse' : disabled;
     setPause('', temporaryPause);
-    if (gE('#navbar')) return; // not in battle
+    if (gE('#navbar') || gE('#btcp')) return; // not in battle
     onBattleRound();
   }
 
