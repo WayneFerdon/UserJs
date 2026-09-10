@@ -6,14 +6,15 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.218
+// @version      2.91.219
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
 // @icon         https://github.com/dodying/UserJs/raw/master/Logo.png
 // @include      http*://hentaiverse.org/*
 // @include      http*://alt.hentaiverse.org/*
-// @include      http*://e-hentai.org/*
+// @include      http*://e-hentai.org/g/*
+// @include      http*://e-hentai.org/news.php*
 // @exclude     http*://*hentaiverse.org/*/y/*
 // @exclude     http*://*hentaiverse.org/*/z/*
 // @connect        hentaiverse.org
@@ -6067,7 +6068,6 @@ function HVAA(forIsekaiEncounter) {
     if (staminaChecked === 0) { // failed currently
       const now = time(0);
       setTimeout(method, Math.floor(now / _1h + 1) * _1h - now);
-      // popup('Failed stamina check for now.');
       if (!document.title.includes(`[S!${forIsekaiEncounter?'p':''}]`)) {
         document.title = `[S!${forIsekaiEncounter?'p':''}]` + document.title;
       }
@@ -6081,7 +6081,6 @@ function HVAA(forIsekaiEncounter) {
   }
 
   async function getCurrentStamina() { try {
-    // await waitPause();
     $async.logSwitch(arguments);
     const doc = $doc(await $ajax.insert(forIsekaiEncounter ? window.location.href.replace(/\/isekai/, '') : window.location.href));
     if (isInBattle(doc)) {
@@ -6095,7 +6094,6 @@ function HVAA(forIsekaiEncounter) {
   } catch (err) { console.error(err); }}
 
   async function checkStamina(low, cost) {
-    // await waitPause();
     $async.logSwitch(arguments);
     const stamina = getValue('stamina', true);
     const option = g.option;
@@ -6121,7 +6119,6 @@ function HVAA(forIsekaiEncounter) {
       const recover = recoverItems[id] ? isPerk ? 20 : 10 : 5;
       if (current + recover >= 100) continue; // check if overflow by (20 or 10) -> (5)
       gE('#stamina_readout .fc4.far>div', $doc(await $ajax.insert(window.location.href, 'recover=stamina'))).textContent.match(/\d+/)[0] * 1;
-      // const recovered = gE('#stamina_readout .fc4.far>div', $doc(await $ajax.insert(window.location.href, 'recover=stamina'))).textContent.match(/\d+/)[0] * 1;
       goto();
       break;
     }
@@ -6132,10 +6129,7 @@ function HVAA(forIsekaiEncounter) {
   async function updateEncounter(engage) { try {
     const MAX = 24;
     const option = g.option;
-    if (!option.encounter && !option.encounterDisplay) {
-      console.log("skip encounter check");
-      return false;
-    }
+    if (!option.encounter && !option.encounterDisplay) return false;
     $async.logSwitch(arguments);
     const encounter = getEncounter();
     const count = encounter.filter(e => e.url).length;
@@ -6939,8 +6933,8 @@ function HVAA(forIsekaiEncounter) {
     const centralExtraWeight = -1 * Math.log10(1 + (isWeaponAttack ? option.centralExtraRatio / 100 : 0));
     let order = target.order;
     let newOrder = order;
-    // sort by order to fix id
     let unreachableWeight = resolveRPNFormula(option.unreachableWeight, target);
+    // sort by order to fix id
     // 1. 以选中目标为中心，优先向上
     // 2. 超过顶部则向下找
     // 3. 死亡、超过底下的将被溢出抛弃
@@ -7420,18 +7414,7 @@ function HVAA(forIsekaiEncounter) {
         for (const effect of effectChanges[name].add) {
           const skill = getBuffSkill(effect);
           if (!skill) continue;
-          /* TODO
-1. TBD stack from monsterBuffSkillLib etc.
-2. 测试检查非 减益技能(deprecating) 的debuff持续时间是否正确 (monsterBuffSkillLib)
-3. 确认v091不同buff的叠加规则（部分抵抗无法估算?）
-4. 确认熟练度倍率公式，已知最大为4。推测：
-计算方式为 (p-pmin)/(pmax-pmin) * 4
-pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic
-和 https://ehwiki.org/wiki/Spells#Offensive_Magic
-减益技能(deprecating) 统一按照减益的熟练度
-元素攻击（应该包括Burning Soul/Ripened Soul?）带来的按各自的熟练度（推测是按T3的pmin/pmax）
-至于取整方式则暂时无法确定
-*/
+          // TODO 确认熟练度倍率公式，已知最大为4。推测：计算方式为 (p-pmin)/(pmax-pmin) * 4. pmin/pmax 见 https://ehwiki.org/wiki/Spells#Deprecating_Magic 和 https://ehwiki.org/wiki/Spells#Offensive_Magic ; 减益技能(deprecating) 统一按照减益的熟练度; 元素攻击（应该包括Burning Soul/Ripened Soul?）带来的按各自的熟练度（推测是按T3的pmin/pmax）; 至于取整方式则暂时无法确定
           let [duration, base, profRatio, prof, channelingRatio] = getDuration(skill, channeling);
           if (savedEffects[name]) savedEffects[name][effect].channeling ??= channelingRatio;
           if (effects.includes(effect)) continue; // updated directly above
