@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.220
+// @version      2.91.221
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -50,7 +50,7 @@
   const hv = 'hentaiverse.org';
   const alt = 'alt.' + hv;
   const isEH = window.location.host === eh;
-  const isHV = window.location.host === hv;
+  const isHV = window.location.host === hv || window.location.host === alt;
 
   const _1s = 1000;
   const _1m = 60 * _1s;
@@ -1237,7 +1237,6 @@ function HVAA(forIsekaiEncounter) {
     if (!gE('#csp') && !flags.equip) flags.maintain = true;
     times.responsive = new Date().getTime();
     ability = getValue('ability', true) ?? {};
-
     switch (true) {
       case !checkOption(): return;
       case !(isHV ? onHandleHV() : isEH ? onHandleEHNewsAndGallery() : false): return;
@@ -1366,7 +1365,8 @@ function HVAA(forIsekaiEncounter) {
       filtered[0].encountered ??= time(0);
     }
     setEncounter(encounter);
-    if (!isInBattle()) return backFromBattle();
+    if (!isInBattle()) backFromBattle();
+    return true;
   }
 
   function checkIsWindowTop() {
