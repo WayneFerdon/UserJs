@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.219
+// @version      2.91.220
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -45,6 +45,12 @@
   dataFlags.local = [...dataFlags.battleDatas, 'stamina', 'logCache', 'statsStatic', 'proficiency'];
   dataFlags.standalone = [...dataFlags.sharable, ...dataFlags.local, 'arena', 'lastUrl', 'ability', 'lastSwitch', 'itemWorldDatas', 'lastPersona', 'lastEquipSet'];
   dataFlags.excludeStandalone = { 'option': ['optionStandalone', 'version', 'lang'] };
+
+  const eh = 'e-hentai.org';
+  const hv = 'hentaiverse.org';
+  const alt = 'alt.' + hv;
+  const isEH = window.location.host === eh;
+  const isHV = window.location.host === hv;
 
   const _1s = 1000;
   const _1m = 60 * _1s;
@@ -1234,7 +1240,7 @@ function HVAA(forIsekaiEncounter) {
 
     switch (true) {
       case !checkOption(): return;
-      case !checkIsHV(): return;
+      case !(isHV ? onHandleHV() : isEH ? onHandleEHNewsAndGallery() : false): return;
       case !checkIsWindowTop(): return;
       case onIdle(): return;
       case forIsekaiEncounter: return;
@@ -1275,74 +1281,13 @@ function HVAA(forIsekaiEncounter) {
     }
   }
 
-  function checkIsHV() {
-    if (window.location.host !== 'e-hentai.org') {
-      if (flags.maintain) {
-        (async function onwait() { try {
-          const body = document.body;
-          const blockTip = /Blocking requests for (\d+) seconds due to excessive request rate/;
-          let blocked = body.innerText?.match(blockTip)?.[1] * _1s;
-          const duration = isNaN(blocked) ? _1h : blocked; // 非封禁，维护中? 过一个小时再刷新
-          const start = time(0);
-          let remain;
-          await until(() => {
-            remain = duration - time(0) + start + _1s; // add _1s to avoid time inaccuracies
-            runtime.document.title = `[M]${timeStr(remain)}`;
-            try { if (!isNaN(blocked)) {
-              body.innerText = body.innerText.replace(blockTip, (...args) => args[0].replace(args[1], timeStr(remain)));
-            } } catch (err) { console.log(err) };
-            return remain <= 0;
-          });
-          goto();
-        } catch (err) { console.error(err) }
-        })();
-        if (forIsekaiEncounter) {
-          engaged = false;
-          return false;
-        }
-        return true;
-      }
-
-      g.hvVersion = Version(...gE('script[src*="hvc.js"]')?.src.match(/z\/(\d+)(.*?)\/hvc.js/)?.slice(1, 3));
-
-      try {
-        if (window.location.href.startsWith('https://')) {
-          unsafeWindow.MAIN_URL = unsafeWindow.MAIN_URL.replace(/^http:/, `https:`);
-        } else {
-          unsafeWindow.MAIN_URL = unsafeWindow.MAIN_URL.replace(/^https:/, `http:`);
-        }
-      } catch (err) { /* console.log(err) */ }
-
-      if (forIsekaiEncounter) return true;
-      setValue('url', window.location.origin);
-
-      // 补充记录（因写入冲突、网络卡顿等）未被记录的encounter链接
-      if (window.location.href.indexOf(`?s=Battle&ss=ba`) !== -1) {
-        const encounterURL = window.location.href?.split('/')[3];
-        const encounter = getEncounter();
-        const filtered = encounter.filter(e => e.url === encounterURL);
-        if (!filtered.length) {
-          encounter.unshift({ url: encounterURL, time: time(0), encountered: time(0) });
-        } else {
-          filtered[0].encountered ??= time(0);
-        }
-        setEncounter(encounter);
-        if (!isInBattle()) {
-          backFromBattle();
-          return;
-        }
-      }
-      return true;
-    }
-
+  function onHandleEHNewsAndGallery() {
     setValue('lastEH', time(0));
-    let encounter = getEncounter();
+    let url, encounter = getEncounter();
     const eventpane = gE('#eventpane');
     const now = time(0);
-    let url;
     if (eventpane) { // 新一天或遭遇战
-      url = gE('#eventpane>div>a')?.href.split('/')[3];
-      if (url === undefined) encounter = []; // 新一天
+      if ((url = gE('#eventpane>div>a')?.href.split('/')[3]) === undefined) encounter = []; // 新一天
       encounter.unshift({ url: url, time: now });
       setEncounter(encounter);
     } else if (encounter.length) {
@@ -1359,29 +1304,69 @@ function HVAA(forIsekaiEncounter) {
 
     const isEngage = window.location.href === 'https://e-hentai.org/news.php?encounter';
     if (!url) {
-      if (isEngage && !getLocal('persistent_battle')) {
-        // 自动跳转，同时先刷新遭遇时间，延长下一次遭遇
-        backFromBattle();
-      }
-      return false;
+      if (isEngage && !getLocal('persistent_battle')) backFromBattle(); // 自动跳转，同时先刷新遭遇时间，延长下一次遭遇
+      return;
     }
     // 减少因在恒定世界处于战斗中时打开eh触发了遭遇而导致的错失
     // 缓存当前链接，等战斗结束时再自动打开，下次打开链接时：
     // 1. 若新的遭遇未出现，进入已缓存的战斗链接
     // 2. 若新的遭遇已出现，则前一次已超时失效错过，重新获取新的一次
     if (!isEngage) { // 战斗外，非自动跳转
-      if (eventpane) {
-        eventpane.style.cssText += 'color:red;'; // 链接标红提醒
-      }
+      if (eventpane) eventpane.style.cssText += 'color:red;'; // 链接标红提醒
     } else if (getLocal('persistent_battle')) { //战斗中
-      if (eventpane) {
-        eventpane.style.cssText += 'color:gray;'; // 链接置灰提醒
-      }
+      if (eventpane) eventpane.style.cssText += 'color:gray;'; // 链接置灰提醒
     } else { // 战斗外，自动跳转
       let location = getLocal('url') ?? (document.referrer.match('hentaiverse.org') ? new URL(document.referrer).origin : 'https://hentaiverse.org');
       $ajax.openNoFetch(`${location.includes('https') ? 'https://' : 'http://'}${(location.includes('alt') || g.option.altBattleFirst) ? 'alt.' : ''}hentaiverse.org/${url}`);
     }
-    return false;
+  }
+
+  async function onMaintain() { try {
+    const body = document.body;
+    const blockTip = /Blocking requests for (\d+) seconds due to excessive request rate/;
+    let blocked = body.innerText?.match(blockTip)?.[1] * _1s;
+    const duration = isNaN(blocked) ? _1h : blocked; // 非封禁，维护中? 过一个小时再刷新
+    const start = time(0);
+    let remain;
+    await until(() => {
+      remain = duration - time(0) + start + _1s; // add _1s to avoid time inaccuracies
+      runtime.document.title = `[M]${timeStr(remain)}`;
+      try { if (!isNaN(blocked)) {
+        body.innerText = body.innerText.replace(blockTip, (...args) => args[0].replace(args[1], timeStr(remain)));
+      } } catch (err) { console.log(err) };
+      return remain <= 0;
+    });
+    goto();
+  } catch (err) { console.error(err) } };
+
+  function onHandleHV() {
+    if (flags.maintain) {
+      onMaintain();
+      return forIsekaiEncounter ? (engaged = false) : true;
+    }
+
+    g.hvVersion = Version(...gE('script[src*="hvc.js"]')?.src.match(/z\/(\d+)(.*?)\/hvc.js/)?.slice(1, 3));
+
+    try { if (window.location.href.startsWith('https://')) {
+      unsafeWindow.MAIN_URL = unsafeWindow.MAIN_URL.replace(/^http:/, `https:`);
+    } else {
+      unsafeWindow.MAIN_URL = unsafeWindow.MAIN_URL.replace(/^https:/, `http:`);
+    } } catch (err) { /* console.log(err) */ }
+
+    if (forIsekaiEncounter) return true;
+    setValue('url', window.location.origin);
+    if (window.location.href.indexOf(`?s=Battle&ss=ba`) === -1) return true;
+    // 补充记录（因写入冲突、网络卡顿等）未被记录的encounter链接
+    const encounterURL = window.location.href?.split('/')[3];
+    const encounter = getEncounter();
+    const filtered = encounter.filter(e => e.url === encounterURL);
+    if (!filtered.length) {
+      encounter.unshift({ url: encounterURL, time: time(0), encountered: time(0) });
+    } else {
+      filtered[0].encountered ??= time(0);
+    }
+    setEncounter(encounter);
+    if (!isInBattle()) return backFromBattle();
   }
 
   function checkIsWindowTop() {
@@ -1552,7 +1537,7 @@ function HVAA(forIsekaiEncounter) {
     //   return false;
     // }
 
-    if (gE('[class^="c5"], [class^="c4"]') && UI.confirm('请设置字体\n使用默认字体可能使某些功能失效\n是否查看相关说明？', '請設置字體\n使用默認字體可能使某些功能失效\n是否查看相關說明？', 'Please set the font\nThe default font may make some functions fail to work\nDo you want to see instructions?')) {
+    if (isHV && gE('[class^="c5"], [class^="c4"]') && UI.confirm('请设置字体\n使用默认字体可能使某些功能失效\n是否查看相关说明？', '請設置字體\n使用默認字體可能使某些功能失效\n是否查看相關說明？', 'Please set the font\nThe default font may make some functions fail to work\nDo you want to see instructions?')) {
       $ajax.openNoFetch(`https://github.com/dodying/UserJs/blob/master/HentaiVerse/hvAutoAttack/README${UI.l('.md#关于字体的说明', '.md#关于字体的说明', '_en.md#about-font')}`, true);
       return false;
     }
@@ -1713,11 +1698,9 @@ function HVAA(forIsekaiEncounter) {
   }
 
   function gotoAlt(isAltOnly) {
-    const hv = 'hentaiverse.org';
-    const alt = 'alt.' + hv;
     const current = window.location.href;
     let next = current;
-    if (window.location.host === hv) {
+    if (isHV) {
       next = current.replace(`://${hv}`, `://${alt}`);
     } else if (window.location.host === alt) {
       next = isAltOnly ? current : current.replace(`://${alt}`, `://${hv}`);
