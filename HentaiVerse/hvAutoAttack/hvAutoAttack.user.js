@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.226
+// @version      2.91.227
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1333,7 +1333,7 @@
       runtime.runSpeed = 1;
       newRound(false);
       onPrevBattleLog(false);
-      await onBattleRound();
+      await onBattleRound(true);
       const battle = g.battle;
       if (option.recordEach) {
         let code = getWithStringfied('battleCode', true);
@@ -6267,7 +6267,7 @@
   }
 
   // 战斗中//
-  async function onBattleRound() { // 主程序
+  async function onBattleRound(init) { // 主程序
     if (!gE('#battle_main') || flags.battle) return;
     flags.battle = true;
     times.responsive = time(0);
@@ -6512,7 +6512,7 @@
     };
     const order = ['Flee', ...option.battleOrderDefaultOnly ? [] : splitOrders(option.battleOrderName)];
 
-    if (currentActions === 0) await waitBattleDelay('BeforeRound');
+    if (init || currentActions === 0) await waitBattleDelay('BeforeRound');
 
     onTasks();
     async function onTasks() {
@@ -6776,8 +6776,18 @@
     let delay = option[`${name}WaitTime`];
     if (!delay) return;
     const random = (option[`${name}WaitTimeRandom`] ?? 0) / 100;
-    delay *= _1s * (1 + (2 * Math.random() - 1) * random); // ± 0 ~ random %
+    delay *= 1 + (2 * Math.random() - 1) * random; // ± 0 ~ random %
+    const toDisplay = delay.toFixed(2);
+    delay *= _1s;
+    const start = time(0);
+    until(async () => {
+      const remain = start + delay - time(0);
+      if (remain <= 0) return true;
+      await waitPause();
+      displayProcess(`[-${remainTime2Str(remain, true)}/${toDisplay}]${UI.byLang('等待延时', '等待延時', 'Waiting Delay')}`);
+    }, 250);
     await sleep(delay, true);
+    displayProcess();
     await waitPause(true);
     return delay;
   }
