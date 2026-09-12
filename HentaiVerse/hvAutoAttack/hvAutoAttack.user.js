@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.225
+// @version      2.91.226
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2175,8 +2175,9 @@
           { id: 'Reload', names: ['刷新页面', '刷新頁面', 'reload page'] },
           { id: 'Alt', names: ['切换主服务器与alt服务器', '切換主服務器與alt服務器', 'switch between alt.hentaiverse'] },
         ],
-        battleExitDelay: [
-          { id: 'NewRound', names: ['继续新回合', '繼續新回合', 'New round'], values: [0] },
+        battleDelay: [
+          { id: 'BeforeRound', names: ['Round前延时', 'Round前延時', 'Before round'], values: [0] },
+          { id: 'NewRound', names: ['继续新Round', '繼續新Round', 'New round'], values: [0] },
           { id: 'ExitBattle', names: ['战斗结束退出', '戰鬥結束退出', 'Exit battle'], values: [3] },
         ],
         battleOrder: [
@@ -2582,13 +2583,16 @@
                   UI.for('checkURLBeforeNewRoundRetry', UI.hidden(UI.l('新回合前检查链接：', '新回合前檢查連接：', 'Check url before new round: ')) + UI.l('秒后重试', '秒後重試', '(s) to retry'))
                 ),
                 UI.div(UI.hvAATable(
-                  UI.repeat(3), '',
+                  UI.repeat(4), '',
                   UI.div(UI.b(UI.l('延时', '延時', 'Wait time for'))),
-                  UI.expendData(UIDatas.battleExitDelay, (id, names, v) => UI.div(
+                  UI.expendData(UIDatas.battleDelay, (id, names, v) => UI.div(
                     UI.for(`${id}WaitTime`, names),
                     ': ',
                     UI.number(`${id}WaitTime`, v),
-                    UI.l('(秒)', '(秒)', '(s)')
+                    UI.l('(秒)', '(秒)', '(s)'),
+                    ' ±  0 ~',
+                    UI.number(`${id}WaitTimeRandom`),
+                    ' %',
                   )),
                 )),
                 UI.div(UI.hvAATable(
@@ -6507,6 +6511,9 @@
       'Atk': attack,
     };
     const order = ['Flee', ...option.battleOrderDefaultOnly ? [] : splitOrders(option.battleOrderName)];
+
+    if (currentActions === 0) await waitBattleDelay('BeforeRound');
+
     onTasks();
     async function onTasks() {
       if (option.debugCheckCondition) checkCondition(option.debugCondition);
@@ -6710,10 +6717,9 @@
     if (option.exitAlarm) setAlarm('Exit');
     delValue(1);
     (async () => {
-      const waitTime = option.ExitBattleWaitTime * _1s;
+      const waitTime = await waitBattleDelay('ExitBattle');
       const maxWaited = time(0) + 10 * waitTime; // 等jpx最多等10倍时间
       if (gE('#ctrl-widget')) await until(() => (time(0) >= maxWaited) || (gE('#time-records-div') && gE('#revenue-records-table'))); // wait jpx
-      if (waitTime > 0) await sleep(waitTime);
       backFromBattle();
     })();
   }
@@ -6764,6 +6770,17 @@
     times.responsive = time(0);
     displayProcess();
   } catch(err) { console.error(err); }}
+
+  async function waitBattleDelay(name) {
+    const option = g.option;
+    let delay = option[`${name}WaitTime`];
+    if (!delay) return;
+    const random = (option[`${name}WaitTimeRandom`] ?? 0) / 100;
+    delay *= _1s * (1 + (2 * Math.random() - 1) * random); // ± 0 ~ random %
+    await sleep(delay, true);
+    await waitPause(true);
+    return delay;
+  }
 
   function reloader() {
     let obj;
@@ -6876,10 +6893,7 @@
           case realtime.monsterAlive > 0: return setExitBattleTimeout('Defeat');
           case g.battle.roundNow === g.battle.roundAll: return setExitBattleTimeout('Victory');
         }
-        if (option.NewRoundWaitTime) { // Next Round
-          await sleep(option.NewRoundWaitTime * _1s, true);
-          await waitPause(true);
-        }
+        await waitBattleDelay('NewRound');
         if (gE('#btcp')?.innerHTML.includes("finishbattle.png")) return console.error(`gE('#btcp')?.innerHTML.includes("finishbattle.png")`);
         await checkURLBeforeNewRound();
         const doc = $doc(await $ajax.insert(window.location.href, undefined, undefined, {}, {}, true));
