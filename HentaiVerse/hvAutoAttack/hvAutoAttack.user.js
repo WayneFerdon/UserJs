@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.231
+// @version      2.91.232
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1103,7 +1103,10 @@
             if (_query.ss !== 'tw') return;
             const arena = getWithStringfied('arena', true, {});
             const attempts = gE('#towerstart').innerText.match(/.*: (\d+) \/ \d+(?:\n|.)*: \d+ \/ \d+/)[1] * 1;
-            if ((arena.data.cached.tw.data??0) <= attempts) arena.data.cached.tw = { data: attempts };
+            if ((arena.data.cached?.tw?.data??0) <= attempts) {
+              arena.data.cached ??= {};
+              arena.data.cached.tw = { data: attempts };
+            }
             setIfChanged('arena', arena);
             return;
           }
@@ -5245,7 +5248,7 @@
     const got = getLocalEncounter(encounter);
     g.encounter = got.encounter;
     setIfChanged('encounter', { ...got, old: got.local }, undefined, true);
-    setIfChanged('encounter', { ...got, old: got.gm }).data;
+    setIfChanged('encounter', { ...got, old: got.gm });
     return g.encounter;
   }
 
