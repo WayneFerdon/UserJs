@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.229
+// @version      2.91.230
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -491,7 +491,7 @@
       return UI.div({
         args: { class: 'checkSupplyInner' },
         inner: [
-          UI.labeled(`checkSupply${key}`, UI.b('[C!!]', UI.l(['[name]使用额外的库存检查', '[name]使用額外的庫存檢查', 'Extra supply check for [name]'].map(t => t.replace('[name]', names))), ';')),
+          UI.labeled(`checkSupply${key}`, UI.b(UI.l(['[name]使用额外的库存检查', '[name]使用額外的庫存檢查', 'Extra supply check for [name]'].map(t => t.replace('[name]', names))), ';')),
           ...UI.getCheckSupplyOptionTable(key),
         ]
       });
@@ -527,7 +527,7 @@
         13199, 13111, 13101,        0, 11401,
         19111, 19131, 11501,        0, 11402];
       return [
-        checkBoxOnly ? '' : `    <span class="checkSupply${suffix}Inner">${UI.l('库存', '庫存', 'Warn if supply')}&lt;max(100%,${UI.number(`checkSupplyWarn${suffix}`, 100)}%)${UI.hidden(UI.for(`checkSupplyWarn${suffix}`, `${UI.l('提示库存', '提示庫存', 'Supply warn')} ${suffix} %`))}${UI.l('时提示', '時提示')};</span><br>`,
+        checkBoxOnly ? '' : `    <span class="checkSupply${suffix}Inner">${UI.l('库存', '庫存', 'Warn if supply')}&lt;max(100%,${UI.number(`checkSupplyWarn${suffix}`, 100)}%)${UI.hidden(UI.for(`checkSupplyWarn${suffix}`, `${UI.l('提示库存', '提示庫存', 'Supply warn')} ${suffix} %`))}${UI.l('时提示', '時提示')}${suffix ? '' : `[c!]`};</span><br>`,
         UI.hvAATable(undefined, `hvAAcheckItems checkSupply${suffix}Inner`, ...items.map(item => {
           if (!item) return UI.div();
           const names = itemMap[item].map((...args) => `<l${args[1]}>${args[0]}</l${args[1]}>`).join('');
@@ -2752,17 +2752,22 @@
                   UI.hvAATable(UI.repeat(3) + ';display:none', 'equipSetList changeEquipSetInner'),
                 ),
                 UI.div(
-                  UI.labeled(`checkSupplySlotted`, UI.b('[C!]', UI.l('检查物品是否装备', '檢查物品是否裝備', 'Check is item slotted'), ';')),
-                  ...UI.getCheckSupplyOptionTable('Slotted', true),
+                  UI.b('[C!]', UI.l('检查物品', '檢查物品', 'Check item'), ':'),
+                  '<hr style="border: none; height: 2px; background: grey; width: 95%;">',
+                  UI.div(
+                    UI.labeled(`checkSupplySlotted`, UI.b(UI.l('检查物品是否装备', '檢查物品是否裝備', 'Check is item slotted'), ';')),
+                    ...UI.getCheckSupplyOptionTable('Slotted', true),
+                  ),
+                  '<hr style="border: none; height: 2px; background: grey; width: 95%;">',
+                  UI.div(
+                    UI.labeled(`checkSupply`, UI.b(UI.l('检查物品库存', '檢查物品庫存', 'Check is item needs supply'), ';')),
+                    '<span class="checkSupplyInner">',
+                    UI.labeled(`encounterSupply`, UI.l('遭遇战前检查', '遭遇戰前檢查', 'Check before encounter')),
+                    '<br></span>',
+                    ...UI.getCheckSupplyOptionTable(),
+                  ),
+                  UI.expendData(UIDatas.checkSupplyInnerExtra, (id, names, v) => '<hr style="border: none; height: 1px; background: grey; width: 95%;">'+UI.checkSupplyInnerExtra(id, names)),
                 ),
-                UI.div(
-                  UI.labeled(`checkSupply`, UI.b('[C!]', UI.l('检查物品库存', '檢查物品庫存', 'Check is item needs supply'), ';')),
-                  '<span class="checkSupplyInner">',
-                  UI.labeled(`encounterSupply`, UI.l('遭遇战前检查', '遭遇戰前檢查', 'Check before encounter')),
-                  '<br></span>',
-                  ...UI.getCheckSupplyOptionTable(),
-                ),
-                UI.expendData(UIDatas.checkSupplyInnerExtra, (id, names, v) => UI.checkSupplyInnerExtra(id, names)),
               ),
               UI.hvAATab(
                 'Recovery',
@@ -5529,6 +5534,7 @@
 
   function checkSupply(extra) {
     const option = g.option;
+    const key = extra;
     if (extra && !option[`checkSupply${extra}`]) return true;
     extra = {
       GF: {
@@ -5574,19 +5580,19 @@
     extra = (UI.byLang(extra?.name) ?? '');
     extra = extra ? extra + ' ' : '';
     if (unslotted.length) {
-      popupFailedCheck(`C`, [
+      popupFailedCheck(`C:Slot`, [
         `消耗品未装备:\n${unslotted}`,
         `消耗品未裝備:\n${unslotted}`,
         `Consumables not slotted:\n${unslotted}`,
       ], `Unslotted items:${unslotted}`);
     } else if (needs.length) {
-      popupFailedCheck(`C${extra ? '!' : ''}`, [
+      popupFailedCheck(`C${key ? ':'+key : ''}`, [
         `消耗品${extra ? `(${extra}额外配置)` : ''}不足:\n${needs}`,
         `消耗品${extra ? `(${extra}額外配置)` : ''}不足:\n${needs}`,
         `Failed supply check${extra ? ` for ${extra}extra` : ''}:\n${needs}`,
       ], `${extra}Needs supply:${needs}`);
     } else if (warns.length) {
-      popupFailedCheck(`C${extra ? '!' : ''}`, [
+      popupFailedCheck(`c${key ? ':'+key : ''}`, [
         `消耗品${extra ? `(${extra}额外配置)` : ''} < ${percentage}%:\n${warns}`,
         `消耗品${extra ? `(${extra}額外配置)`: ''} < ${percentage}%:\n${warns}`,
         `Supplys ${extra ? ` for ${extra}extra` : ''} < ${percentage}%:\n${warns}`,
@@ -5604,6 +5610,7 @@
     await waitPause();
     $async.logSwitch(arguments);
     let eqps;
+    const key = extra;
     extra = {
       GF: {
         name: { 0: '压榨界', 1: '壓榨界', 2: 'Grindfest' },
@@ -5670,7 +5677,7 @@
     }
     extra = UI.byLang(extra?.name??'');
     if (eqps.length) {
-      popupFailedCheck(`R`, [
+      popupFailedCheck(`R${key ? ':'+key : ''}`, [
         `${extra}装备需要修理:\n${eqps.join('\n ')}`,
         `${extra}裝備需要修理:\n${eqps.join('\n ')}`,
         `${extra}Equips need repair:\n${eqps.join('\n ')}`,
