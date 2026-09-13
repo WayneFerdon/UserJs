@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.227
+// @version      2.91.228
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -909,6 +909,7 @@
       [_servername]: true, // _server.persistent || _server.isekai
       ...addition,
     };
+    const _query = Object.fromEntries(location.search.slice(1).split('&').map((q) => { const [k, v = ''] = q.split('=', 2); return [decodeURIComponent(k.replace(/\+/g, ' ')), decodeURIComponent(v.replace(/\+/g, ' '))]; }));
 
     const $ajaxInit = window.top.$ajaxInit ??= unsafeWindow.top.$ajaxInit ??= initAjax;
     if (forIsekaiEncounter) {
@@ -939,6 +940,7 @@
         case !host.hv: return;
         case !checkOption(): return;
         case !onHandleHV(): return;
+        case cacheIWorTW(): return;
         case !checkIsWindowTop(): return;
         case onIdle(): return;
         case forIsekaiEncounter: return;
@@ -1066,6 +1068,46 @@
       setEncounter(encounter);
       if (!isInBattle()) backFromBattle();
       return true;
+    }
+
+    function getItemWorldDetail(doc) {
+      doc ??= document;
+      const matched = doc.body.innerHTML.match(/const info_itemworld = (\{.+\})/);
+      if (!matched) return;
+      const name = doc.body.innerHTML.match(/confirm_info.eqname = "(.*)";/)[1];
+      const [_, level, world, max] = gE('#equpgrade', doc).innerHTML.match(/(\d+) \/ (\d+) \/ (\d+)/).map(x => x * 1);
+      return { ...JSON.parse(matched[1]), name, level, world, max };
+    }
+
+    function cacheIWorTW() {
+      switch (_query.s) {
+          case 'Bazaar': {
+            if (_query.ss !== 'am') return;
+            if (_query.screen !== 'modify') return;
+            const id = _query['eqids[]'];
+            if (!id) return;
+            const detail = getItemWorldDetail();
+            if (!detail) return;
+            let equip = { ...detail, filter: _query.filter, id };
+            const arena = getWithStringfied('arena', true, {});
+            arena.data.cached ??= {};
+            arena.data.cached.iw ??= [];
+            const index = arena.data.cached.iw.findIndex(d => d.id === id);
+            if (index !== -1) arena.data.cached.iw.splice(index, 1);
+            arena.data.cached.iw.unshift( { id, equip } );
+            arena.data.cached.iw = arena.data.cached.iw.slice(0, 10);
+            setIfChanged('arena', arena);
+            return;
+          }
+          case 'Battle': {
+            if (_query.ss !== 'tw') return;
+            const arena = getWithStringfied('arena', true, {});
+            const attempts = gE('#towerstart').innerText.match(/.*: (\d+) \/ \d+(?:\n|.)*: \d+ \/ \d+/)[1] * 1;
+            if ((arena.data.cached.tw.data??0) <= attempts) arena.data.cached.tw = { data: attempts };
+            setIfChanged('arena', arena);
+            return;
+          }
+      }
     }
 
     function checkIsWindowTop() {
@@ -4400,22 +4442,17 @@
           timeout: notification.time * _1s,
         });
       }
-      if (window.Notification && window.Notification.permission !== 'denied') {
-        window.Notification.requestPermission((status) => {
-          if (status === 'granted') {
-            const n = new window.Notification(notification.text, {
-              icon: `${unsafeWindow.IMG_URL}hentaiverse.png`,
-            });
-            setTimeout(() => n?.close(), notification.time * _1s);
-
-            const nClose = function (e) {
-              n?.close();
-              document.removeEventListener(e.type, nClose, true);
-            };
-            document.addEventListener('mousemove', nClose, true);
-          }
-        });
-      }
+      if (!window.Notification || window.Notification.permission === 'denied') return;
+      window.Notification.requestPermission(status => {
+        if (status !== 'granted') return;
+        const n = new window.Notification(notification.text, { icon: `${unsafeWindow.IMG_URL}hentaiverse.png` });
+        setTimeout(() => n?.close(), notification.time * _1s);
+        const nClose = function (e) {
+          n?.close();
+          document.removeEventListener(e.type, nClose, true);
+        };
+        document.addEventListener('mousemove', nClose, true);
+      });
     }
 
     function imgArray2img(...img) {
@@ -5669,7 +5706,7 @@
             return;
         }})();
         if (!rounds) return;
-        equips.push({name, id, filter, level, world, max, round: rounds[world]});
+        equips.push({name, id, filter, level, world, max, rounds: rounds[world]});
       } catch (err) { console.error(err); }}));
     }
     $async.logSwitch(arguments);
@@ -6143,7 +6180,7 @@
 
     let doc, errorMsg;
     for (const eid of list) {
-      const equip = equips.find(eqp => eqp.id === eid);
+      let equip = equips.find(eqp => eqp.id === eid);
       if (equip.world >= equip.max || equip.world >= option.levelItemWorld?.[eid]) continue;
       doc = $doc(await $ajax.insert(`?s=Bazaar&ss=am&screen=modify&eqids[]=${eid}`));
       if (errorMsg = gE('.messagebox_error', doc)) {
@@ -6155,6 +6192,7 @@
 
       if (switchEquipSet(option.itemWorldPersona?.[eid], option.itemWorldEquipSet?.[eid], personas, equipSets)) {
         doc = $doc(await $ajax.insert(`?s=Bazaar&ss=am&screen=modify&eqids[]=${eid}`));
+        equip = { ...equip, ...getItemWorldDetail(doc) }
         if (errorMsg = gE('.messagebox_error', doc)) {
           console.log(equip, errorMsg.innerText);
           continue;
@@ -6167,7 +6205,7 @@
         continue;
       }
 
-      if (await gotoBattle('iw', equip.round, equip)) {
+      if (await gotoBattle('iw', equip.rounds, equip)) {
         $async.logSwitch(arguments);
         return true;
       }
@@ -6314,6 +6352,15 @@
     }
 
     function getBattleTypeDisplay() {
+      const difficulty = [
+        ['普通×1', '普通×1', 'Normal×1', 1],
+        ['困难×2', '困難×2', 'Hard×2', 7],
+        ['噩梦×4', '噩夢×4', 'Nightmare×4', 14],
+        ['地狱×7', '地獄×7', 'Hell×7', 20],
+        ['任天堂×10', '任天堂×10', 'Nintendo×10', 27],
+        ['IWBTH×15', 'IWBTH×15', 'IWBTH×15', 34],
+        ['PFUDOR×20', 'PFUDOR×20', 'PFUDOR×20', 40],
+      ];
       const battleInfoList = getBattleTypeDisplay.prototype.battleInfoList ??= {
         'gr': {
           name: ['压榨', '壓榨', 'Grindfest'],
@@ -6379,15 +6426,7 @@
         'tw': {
           name: ['塔楼', '塔樓', 'The Tower'],
           title: 'TW',
-          list: [
-            ['PFUDOR×20', 'PFUDOR×20', 'PFUDOR×20', 40],
-            ['IWBTH×15', 'IWBTH×15', 'IWBTH×15', 34],
-            ['任天堂×10', '任天堂×10', 'Nintendo×10', 27],
-            ['地狱×7', '地獄×7', 'Hell×7', 20],
-            ['噩梦×4', '噩夢×4', 'Nightmare×4', 14],
-            ['困难×2', '困難×2', 'Hard×2', 7],
-            ['普通×1', '普通×1', 'Normal×1', 1],
-          ],
+          list: difficulty,
           condition: sub => sub[3] && sub[3] <= battle.data.tower,
           content: _ => battle.data.tower,
           format: formatted => `<div style="font-size: 9pt!important">${formatted}<br>${battle.data.tower > 40 ? `+${(battle.data.tower - 40) * 5}%DMG&HP` : ''}</div>`,
@@ -6441,10 +6480,18 @@
           break;
         case 'tw':
           setNormalSub();
+          if (!arena.data.tw) {
+            const cache = arena.data.cached?.tw
+            if (cache) arena.data.tw = cache;
+          }
           setDataSub('tw', d => `[${d}]`, d => `<div style="font-size: 9pt!important">Attempt ${d}</div>`);
           break;
         case 'iw':
-          setDataSub('equip', d => `${d.world + 1}/${d.max}`, d => `<div style="font-size: 9pt!important">[${d.id}]${d.name}</div>`);
+          if (!arena.data.equip) {
+            const equip = arena.data.cached?.iw?.find(d => d.id === _query['eqids[]'])?.equip;
+            if (equip) arena.data.equip = { data: equip };
+          }
+          setDataSub('equip', d => `${d.world + 1}/${d.max}`, d => `<div style="font-size: 9pt!important">${UI.byLang(difficulty[d.diffbase-1])}${d.diffboost ? `+${d.diffboost}%DMG&HP<br>`: ''}[${d.id}]${d.name}</div>`);
       }
       return { title, full: `${UI.byLang(info?.name ?? ['未知', '未知', 'Unknown'])}:[${title}]${subtype}` };
     }
