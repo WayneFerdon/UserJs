@@ -1080,7 +1080,7 @@
     }
 
     function cacheIWorTW() {
-      if (isInBattle() || forIsekaiEncounter) return;
+      if (forIsekaiEncounter || isInBattle()) return;
       switch (_query.s) {
           case 'Bazaar': {
             if (_query.ss !== 'am') return;
