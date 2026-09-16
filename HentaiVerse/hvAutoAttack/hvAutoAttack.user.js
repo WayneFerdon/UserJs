@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.234
+// @version      2.91.235
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -5092,6 +5092,12 @@
       if (optionBox.style.display === 'none' && !ui) return;
       const idleStart = times.idle;
       const now = time(0);
+      const conditions = {};
+      conditions.encounter = option.encounter;
+      conditions.arena = option.idleArena && option.idleArenaValue;
+      conditions.switch = option.isekai;
+      conditions.switchCD = conditions.switch;
+      conditions.onIdle = conditions.encounter || conditions.switch || conditions.arena;
       const durations = {
         onIdle: { name: UI.l('闲置延时', '閒置延時', 'Idle Delay'), selector: '.onIdleRemain', start: times.idle, wait: option.onIdleDelay },
         encounter: { name: UI.l('遭遇延时', '遭遇延時', 'Encounter Delay'), selector: '.encounterDelayRemain', start: times.encounter.start ?? now, wait: option.encounterDelay },
@@ -5103,10 +5109,10 @@
       const remain = Object.fromEntries(Object.entries(durations).map(([k, data]) => {
         const r = Math.floor(Math.max(0, data.start + (data.wait ?? 0) * _1s - now) / _1s) * _1s;
         if (k === 'onIdle') idleStarted = r <= 0;
-        return [k, { ...data, time: r, str: remainTime2Str(r) }];
+        return [k, { ...data, time: r, str: remainTime2Str(r), condition: conditions[k] }];
       }));
       if (optionBox.style.display !== 'none') Object.values(remain).forEach(r => gE(r.selector, 'all').forEach(ui => { ui.innerHTML = r.str }));
-      if (ui) appendEncounterUITitle('i', Object.values(remain).map(r => `${r.name}: ${r.str}`).join('\n'))
+      if (ui) appendEncounterUITitle('i', Object.values(remain).filter(data => data.condition && data.wait).map(r => `${r.name}: ${r.str}`).join('\n'))
       return idleStarted && Object.values(remain).every(r => !r.time);
     }, _1s);
   } catch (err) { console.error(err); }}
