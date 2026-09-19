@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.235
+// @version      2.91.236
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1258,7 +1258,9 @@
       if (isRaw) return option;
       g.version = script.scriptVersion;
       if (!forIsekaiEncounter && !option) {
+        if (isFrame) return false;
         lang = window.prompt('请输入以下语言代码对应的数字\nPlease put in the number of your preferred language (0, 1 or 2)\n0.简体中文\n1.繁體中文\n2.English', 0) || 2;
+        option = g.option = { lang };
         addStyle();
         UI.alert('请设置hvAutoAttack', '請設置hvAutoAttack', 'Please config this script');
         gE('.hvAAButton').click();
