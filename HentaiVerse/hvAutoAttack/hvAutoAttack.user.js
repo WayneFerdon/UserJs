@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.237
+// @version      2.91.238
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -5233,7 +5233,7 @@
     runtime.document.title = updated;
   }
 
-  function getTodayEncounter(encounter) { return encounter.filter(e => time(2, e.time) === time(2)).sortBy(x => -x.time); }
+  function getTodayEncounter(encounter) { return encounter?.filter(e => time(2, e.time) === time(2)).sortBy(x => -x.time) ?? []; }
 
   function getLocalEncounter(encounter = []) {
     let gm = getValue('encounter', true) ?? [];
