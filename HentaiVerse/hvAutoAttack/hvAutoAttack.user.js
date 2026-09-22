@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.238
+// @version      2.91.239
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -8384,7 +8384,7 @@ text-align: left;
   function formatMonsterNames(t) {
     const monsterNames = g.battle.monsterStatus.map(m => gE(`.btm3>div>div`, getMonster(getMonsterID(m))).innerText);
     [...monsterNames].sortBy(x => x.length).reverse().forEach(name => {
-      t = t.replaceAll(new RegExp(escapeRegExp(name), 'g'), match => `MONSTER_${((monsterNames.findIndex(x => x === match)*1+1)||11)-1}`);
+      t = t.replaceAll(new RegExp(escapeRegExp(name), 'g'), match => `MONSTER_${((monsterNames.findIndex(x => x === match)*1+1)||1)-1}`);
     });
     return t;
   }
@@ -8598,6 +8598,10 @@ text-align: left;
             recorder: () => handleDamage('Bleeding Wound', match[1])
           },
           {
+            match: () => text.match(/^MONSTER_\d is eviscerated for (\d+) Void damage, putting it out of its misery/),
+            recorder: () => handleDamage('211', match[1])
+          },
+          {
             match: () => text.match(/^(Refreshment|Replenishment|Regeneration|Regen) restores (\d+) points of (health|magic|spirit)\.$/)
             || text.match(/^You are (healed) for (\d+) (Health) Points\.$/),
             recorder: () => {
@@ -8661,7 +8665,7 @@ text-align: left;
             || text.match(/^Scanning MONSTER_\d\.\.\./)
             || text.match(/^You do not have a .+ gem\.$/)
             || text.match(/^You gain the effect .*\.$/)
-            || text.match(/^You block the attack from MONSTER_\d\.$/)
+            || text.match(/^Used: .*$/)
             || text.match(/^You use ((Health|Mana|Spirit) (Elixir|Potion|Draught|Gem)|Last Elixir|Mystic Gem|Scroll of (Life|the Avatar|the Gods|Swiftness|Protection|Absorption|Shadows)|Infusion of (Flames|Frost|Lightning|Storms|Divinity|Darkness)|Flower Vase|Bubble-Gum|Energy Drink|Caffeinated Candy|Vital Strike|Shield Bash|Merciful Blow|Skyward Sword|Frenzied Blows|Concussive Strike|Iris Strike|Backstab|Shatter Strike|Rending Blow|Great Cleave|FUS RO DAH|Orbital Friendship Cannon)\.$/)
             || text.match(/^You cast (Regen|Heartseeker|Fiery Blast|Inferno|Flames of Loki|Freeze|Blizzard|Fimbulvetr|Shockblast|Chained Lightning|Wrath of Thor|Gale|Downburst|Storms of Njord|Smite|Banishment|Paradise Lost|Corruption|Disintegrate|Ragnarok|Drain|Slow|Weaken|Silence|Sleep|Confuse|Imperil|Blind|MagNet|Immobilize|Cure|Regen|Full-Cure|Haste|Protection|Shadow Veil|Absorb|Spark of Life|Arcane Focus|Heartseeker|Spirit Shield)\.$/)
             || text.match(/^Cooldown expired for .*$/)
