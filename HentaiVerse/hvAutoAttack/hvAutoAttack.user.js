@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.236
+// @version      2.91.237
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2726,8 +2726,9 @@
                   ': <br>',
                   UI.expendData(UIDatas.staminaCheck, (id, names, v) => `${UI.hidden(UI.for(`stamina${id}`, UI.l('精力: ', '精力: ', 'Stamina: ')+names))}${id === 'LowWithReNat' ? UI.b('<br>[S!!]') : ''}${names}: ${id === 'Low' ? 'Min(85, ' : ''}${UI.number(`stamina${id}`, v)}${id === 'Low' ? ')' : ''};`),
                   '<br>',
-                  `${UI.labeled(`restoreStamina`, UI.l('战前恢复', '戰前恢復', 'Restore stamina'))}`,
-                  `${UI.labeled(`staminaRatio`, UI.l('检查惩罚倍率', '檢查懲罰倍率', 'Check Punishment Ratio'))}`,
+                  `${UI.labeled(`restoreStamina`, UI.l('战前恢复', '戰前恢復', 'Restore stamina'))};`,
+                  `${UI.labeled(`staminaRatio`, UI.l('检查惩罚倍率', '檢查懲罰倍率', 'Check Punishment Ratio'))};`,
+                  `${UI.for(`staminaCostFloorThreshold`, UI.l('精力消耗向下取整阈值', '精力消耗向下取整閾值', 'Stamina Cost Floor Threshold'))}${UI.number('staminaCostFloorThreshold', _server.isekai ? 0.06 : 0.03)}`,
                 ),
                 UI.div(
                   UI.labeled('repair', UI.b('[R!]', UI.l('修复装备', '修復裝備', 'Repair Equipment'))),
@@ -5796,19 +5797,18 @@
     const option = g.option;
     const stamina = getValue('stamina', true);
     const [low, lowNR, cost, ratio] = [condition.staminaLow ?? option.staminaLow, option.staminaLowWithReNat ?? 0, Math.round((condition.staminaCost ?? 0) * 100) / 100, stamina.punish ? stamina.ratio ?? 1 : 1]
-    const checked = await checkStamina(low, cost);
-    const [staminaChecked, stmNR] = [checked.checked, checked.stmNR];
+    const { checked, stmNR, floored } = await checkStamina(low, cost);
     const [neat, neatNR] = [stamina.current-low, stmNR-lowNR];
     console.log(
-      `${forIsekaiEncounter ? '[Persistent]' : ''}stamina check succeed:`, staminaChecked === 1, ...staminaChecked === -1 ? ['with nature recover', lowNR, 'stmNR:', stmNR, '(', ...neatNR >= 0 ? ['+', neatNR] : ['-', -neatNR], ')'] : [],
-      '\nlow:', low, ...cost ? ['cost:', cost, ...stamina.punish ? ['*', ratio, '=', Math.round(cost * ratio * 10000) / 10000] : [], 'current:', stamina.current, '(', neat >= 0 ? '+' : '-', neat, ')'] : [],
+      `${forIsekaiEncounter ? '[Persistent]' : ''}stamina check succeed:`, checked === 1, ...checked === -1 ? ['with nature recover', lowNR, 'stmNR:', stmNR, '(', ...neatNR >= 0 ? ['+', neatNR] : ['-', -neatNR], ')'] : [],
+      '\nlow:', low, ...cost ? ['cost:', cost, ...stamina.punish ? ['*', ratio, '=', Math.round(cost * ratio * 10000) / 10000] : [], '=> floored:', floored, 'current:', stamina.current, '(', neat >= 0 ? '+' : '-', neat, ')'] : [],
       '\nstamina:', stamina,
     );
-    if (staminaChecked === 1) { // succeed
+    if (checked === 1) { // succeed
       document.title = document.title.replace(`[S!${forIsekaiEncounter?'p':''}]`, '');
       return true;
     }
-    if (staminaChecked === 0) { // failed currently
+    if (checked === 0) { // failed currently
       const now = time(0);
       setTimeout(method, Math.floor(now / _1h + 1) * _1h - now);
       if (!document.title.includes(`[S!${forIsekaiEncounter?'p':''}]`)) {
@@ -5848,8 +5848,13 @@
     if (punish && option.staminaRatio) {
       cost *= stamina.ratio
     }
-    const stmNRChecked = !cost || stmNR - cost >= option.staminaLowWithReNat;
-    const result = { checked: stmNRChecked ? (current - cost >= (low ?? option.staminaLow)) ? 1 : 0 : -1, stmNR: stmNR };
+    let floored = cost;
+    if (option.staminaCostFloorThreshold) {
+      const mod = cost % 1;
+      floored = Math.floor(cost) + (mod <= option.staminaCostFloorThreshold ? 0 : mod);
+    }
+    const stmNRChecked = !floored || stmNR - floored >= option.staminaLowWithReNat;
+    const result = { checked: stmNRChecked ? (current - floored >= (low ?? option.staminaLow)) ? 1 : 0 : -1, stmNR: stmNR, floored };
     $async.logSwitch(arguments);
     if (result.checked === 1 || _server.isekai || !option.restoreStamina) return result;
     const items = g.items;
