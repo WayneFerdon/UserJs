@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.239
+// @version      2.91.240
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1754,16 +1754,25 @@
       return value;
     }
 
+    // 读取 GM 存储，并规范化到当前 realm。
+    // 脚本中所有 GM_getValue 调用都应经过此函数。
+    function getRealmNormalizedGMValue(key) {
+      const v = GM_getValue(key);
+      if (v === null || typeof v !== 'object' || v instanceof Object) return v;
+      try { return JSON.parse(JSON.stringify(v)); }
+      catch { return v; }
+    }
+
     function getLocal(key, isLocalStorage) {
       let value, gmValue;
       isLocalStorage ||= typeof GM_getValue === 'undefined';
-      if (isLocalStorage || ((gmValue = GM_getValue(key)) === undefined)) {
+      if (isLocalStorage || ((gmValue = getRealmNormalizedGMValue(key)) === undefined)) {
         key = `hvAA-${key}`;
         return window.localStorage[key];
       }
       if (!isLocalStorage) return gmValue;
       key = `hvAA-${key}`;
-      if ((value = window.localStorage[key]) === undefined) return GM_getValue(key);
+      if ((value = window.localStorage[key]) === undefined) return getRealmNormalizedGMValue(key);
       return value;
     }
 
@@ -8947,7 +8956,7 @@ text-align: left;
     if (size) formated = formated.slice(0, size);
     return formated.map(t => pad(t)).join(`:`);
   }
-  
+
   function formatTime(t, size = 2, quick) {
     t = [t / _1h, (t / _1m) % 60, (t / _1s) % 60, (t % _1s) / 10].map(cdi => Math.floor(cdi));
     while (t.length > Math.max(size, quick ? 2 : 3)) { // remove zero front
