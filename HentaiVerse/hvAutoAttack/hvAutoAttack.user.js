@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.242
+// @version      2.91.243
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1914,6 +1914,7 @@
         '.hvAAcheckItems>input.hvAANumber{width:32px}',
         '.hvAAConfig{width:100%;height:16px;}',
         '.hvAAButtonBox{position:relative;top:0px;}',
+        '.hvAABackupList {display: grid; grid-template-columns: auto 20px 1fr;}',
         '.hvAAPauseUI>.encounterUI{font-weight:bold;position:unset;font-size:10pt;text-decoration:none;}',
         '.encounterUI{font-weight:bold;font-size:10pt;position:absolute;top:58px;left:1240px;text-decoration:none;}',
         '.quickSiteBar{position:absolute;top:0px;left:1290px;font-size:18px;text-align:left;width:165px;height:calc(100% - 10px);display:flex;flex-direction:column;flex-wrap:wrap;}',
@@ -1956,10 +1957,36 @@
       };
     }
 
+    function backupUI(code) {
+      const list = gE('.hvAABackupList', gE('#hvAABox'));
+      const button = list.appendChild(cE('button'));
+      button.innerHTML = UI.l('还原','還原','Restore');
+      button.onclick = () => {
+        if (!UI.confirm(`是否还原设置预设: ${code}`, `是否還原設置預設: ${code}`, `Whether to restore config as: ${code}`)) return;
+        backupRestore(code);
+      };
+      list.appendChild(cE('span'));
+      const li = list.appendChild(cE('li'));
+      li.innerHTML = code;
+      return li;
+    }
+
+    function backupRestore(code) {
+      code ??= UI.prompt('请输入配置代号', '請輸入配置代號', 'Please put in a name for a configuration');
+      const backups = getValue('backup', true) || {};
+      if (!(code in backups) || isBackupCodeEmpty(code)) return;
+      setValue('option', backups[code]);
+      goto();
+    };
+
+    function isBackupCodeEmpty(code) {
+      return !code && code !== 0;
+    }
+
     function rmListItem(code) { // 同步删除界面显示对应的项
       const configs = gE('#hvAATab-Tools > * > ul[class="hvAABackupList"] > li', 'all');
       for (const config of configs) {
-        if (config.textContent === code) config.remove();
+        if (gE('span', config).innerText === code) config.remove();
       }
     }
 
@@ -1988,8 +2015,7 @@
       }
       setIfChanged('backup', backups);
       if (!gE('#hvAABox')) return;
-      const li = gE('.hvAABackupList', gE('#hvAABox')).appendChild(cE('li'));
-      li.textContent = code;
+      gE('#hvAABox .hvAABackupList').appendChild(backupUI(code));
     }
 
     function appendInput(container, value, innerHTML) {
@@ -3697,24 +3723,15 @@
           this.select();
         };
         gE('.hvAABackup', optionBox).onclick = function () {
-          const code = UI.prompt('请输入当前配置代号（或默认使用当前时间）', '請輸入當前配置代號（或默認使用當前時間）', 'Please put in a name for the current configuration (or use current time as default)');
+          let code = UI.prompt('请输入当前配置代号（或默认使用当前时间）', '請輸入當前配置代號（或默認使用當前時間）', 'Please put in a name for the current configuration (or use current time as default)');
+          if (isBackupCodeEmpty(code)) code = `[${_server.name}@${option.version}] ${time(3)}`;
           backup(code, '是否覆盖已有的同名配置？', '是否覆蓋已有的同名配置？', 'Do you want to overwrite the configuration with the same name?')
         };
-        gE('.hvAARestore', optionBox).onclick = function () {
-          const code = UI.prompt('请输入配置代号', '請輸入配置代號', 'Please put in a name for a configuration');
-          const backups = getValue('backup', true) || {};
-          if (!(code in backups) || !code) {
-            return;
-          }
-          setValue('option', backups[code]);
-          goto();
-        };
+        gE('.hvAARestore', optionBox).onclick = () => backupRestore();
         gE('.hvAADelete', optionBox).onclick = function () {
           const code = UI.prompt('请输入配置代号', '請輸入配置代號', 'Please put in a name for a configuration');
           const backups = getValue('backup', true) || {};
-          if (!(code in backups) || !code) {
-            return;
-          }
+          if (!(code in backups) || isBackupCodeEmpty(code)) return;
           delete backups[code];
           setValue('backup', backups);
           rmListItem(code);
@@ -4000,10 +4017,8 @@
         const backups = getValue('backup', true);
         if (!backups) return;
         _html = '';
-        for (const i in backups) {
-          _html = `${_html}<li>${i}</li>`;
-        }
-        gE('.hvAABackupList', optionBox).innerHTML = _html;
+        const list = gE('#hvAABox .hvAABackupList');
+        Object.keys(backups).forEach(code => list.appendChild(backupUI(code)));
       };
     }
 
