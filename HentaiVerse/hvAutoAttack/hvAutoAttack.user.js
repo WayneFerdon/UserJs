@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.243
+// @version      2.91.244
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1914,7 +1914,7 @@
         '.hvAAcheckItems>input.hvAANumber{width:32px}',
         '.hvAAConfig{width:100%;height:16px;}',
         '.hvAAButtonBox{position:relative;top:0px;}',
-        '.hvAABackupList {display: grid; grid-template-columns: auto 20px 1fr;}',
+        '.hvAABackupList {display: grid; grid-template-columns: auto auto 20px 1fr;}',
         '.hvAAPauseUI>.encounterUI{font-weight:bold;position:unset;font-size:10pt;text-decoration:none;}',
         '.encounterUI{font-weight:bold;font-size:10pt;position:absolute;top:58px;left:1240px;text-decoration:none;}',
         '.quickSiteBar{position:absolute;top:0px;left:1290px;font-size:18px;text-align:left;width:165px;height:calc(100% - 10px);display:flex;flex-direction:column;flex-wrap:wrap;}',
@@ -1959,14 +1959,21 @@
 
     function backupUI(code) {
       const list = gE('.hvAABackupList', gE('#hvAABox'));
-      const button = list.appendChild(cE('button'));
+      let button;
+      button = list.appendChild(cE('button'));
+      button.backUpName = code;
+      button.innerHTML = UI.l('覆盖','覆蓋','Override');
+      button.onclick = () => backup(code, `是否覆盖设置预设: ${code}`, `是否覆蓋設置預設: ${code}`, `Whether to override config: ${code}`);
+      button = list.appendChild(cE('button'));
+      button.backUpName = code;
       button.innerHTML = UI.l('还原','還原','Restore');
       button.onclick = () => {
-        if (!UI.confirm(`是否还原设置预设: ${code}`, `是否還原設置預設: ${code}`, `Whether to restore config as: ${code}`)) return;
+        if (!UI.confirm(`是否还原设置预设: ${code}`, `是否還原設置預設: ${code}`, `Whether to restore config: ${code}`)) return;
         backupRestore(code);
       };
-      list.appendChild(cE('span'));
+      list.appendChild(cE('span')).backUpName = code;
       const li = list.appendChild(cE('li'));
+      li.backUpName = code;
       li.innerHTML = code;
       return li;
     }
@@ -1984,9 +1991,9 @@
     }
 
     function rmListItem(code) { // 同步删除界面显示对应的项
-      const configs = gE('#hvAATab-Tools > * > ul[class="hvAABackupList"] > li', 'all');
+      const configs = gE(`#hvAATab-Tools > * > ul[class="hvAABackupList"] > *`, 'all');
       for (const config of configs) {
-        if (gE('span', config).innerText === code) config.remove();
+        if (config.backUpName === code) config.remove();
       }
     }
 
