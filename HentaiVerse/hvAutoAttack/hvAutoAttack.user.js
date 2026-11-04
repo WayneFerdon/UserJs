@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.244
+// @version      2.91.245
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -1960,22 +1960,24 @@
     function backupUI(code) {
       const list = gE('.hvAABackupList', gE('#hvAABox'));
       let button;
-      button = list.appendChild(cE('button'));
-      button.backUpName = code;
-      button.innerHTML = UI.l('覆盖','覆蓋','Override');
-      button.onclick = () => backup(code, `是否覆盖设置预设: ${code}`, `是否覆蓋設置預設: ${code}`, `Whether to override config: ${code}`);
-      button = list.appendChild(cE('button'));
-      button.backUpName = code;
-      button.innerHTML = UI.l('还原','還原','Restore');
-      button.onclick = () => {
-        if (!UI.confirm(`是否还原设置预设: ${code}`, `是否還原設置預設: ${code}`, `Whether to restore config: ${code}`)) return;
-        backupRestore(code);
-      };
-      list.appendChild(cE('span')).backUpName = code;
-      const li = list.appendChild(cE('li'));
-      li.backUpName = code;
-      li.innerHTML = code;
-      return li;
+
+      function backupSubUI(type) {
+        const ui = cE(type);
+        list.prepend(ui);
+        ui.backUpName = code;
+        return ui;
+      }
+
+      function backupButton(text, onclick) {
+        button = backupSubUI('button');
+        button.innerHTML = text;
+        button.onclick = onclick
+      }
+
+      backupSubUI('li').innerHTML = code;
+      backupSubUI('span');
+      backupButton(UI.l('还原','還原','Restore'), () => { if (UI.confirm(`是否还原设置预设: ${code}`, `是否還原設置預設: ${code}`, `Whether to restore config: ${code}`)) backupRestore(code); });
+      backupButton(UI.l('覆盖','覆蓋','Override'), () => backup(code, `是否覆盖设置预设: ${code}`, `是否覆蓋設置預設: ${code}`, `Whether to override config: ${code}`));
     }
 
     function backupRestore(code) {
@@ -2022,7 +2024,7 @@
       }
       setIfChanged('backup', backups);
       if (!gE('#hvAABox')) return;
-      gE('#hvAABox .hvAABackupList').appendChild(backupUI(code));
+      backupUI(code);
     }
 
     function appendInput(container, value, innerHTML) {
@@ -4025,7 +4027,7 @@
         if (!backups) return;
         _html = '';
         const list = gE('#hvAABox .hvAABackupList');
-        Object.keys(backups).forEach(code => list.appendChild(backupUI(code)));
+        Object.entries(backups).sortBy(x => -(x[1].auto??0)).forEach(x => backupUI(x[0]));
       };
     }
 
