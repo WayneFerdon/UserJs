@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.246
+// @version      2.91.247
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -7971,8 +7971,8 @@
       setBattleSkillParam(id, { skill: skill, range: skillRange });
       let target = checkCondition(option[`skill${skill}Condition`], monsterStatus);
       if (!target) continue;
-      updateSkillOTOS(i, skillOTOS);
-      updateSkillOTOS(skill, skillOTOS);
+      updateSkillOTOS(i);
+      updateSkillOTOS(skill);
       gE(id).click();
       clickMonster(getRangeCenter(target, skillRange).id);
       return true;
@@ -8251,12 +8251,10 @@
     };
   }
 
-  function updateSkillOTOS(id, skillOTOS) {
-    let local;
-    skillOTOS ??= (local = getWithStringfied('skillOTOS', true, {})).data;
-    skillOTOS[id] ??= 0;
-    skillOTOS[id]++;
-    return setIfChanged('skillOTOS', { data:skillOTOS, old: local?.old });
+  function updateSkillOTOS(id) {
+    const local = getWithStringfied('skillOTOS', true, {});
+    local.data[id] = (local.data[id] ?? 0) + 1;
+    return setIfChanged('skillOTOS', { data: local.data, old: local.old });
   }
 
   // TODO TBD 根据lv模糊推测（一般数据都是等级逐渐提升的，可能可以直接用缓存而不需要推测，异世界新赛季时可以自动刷新缓存?）
