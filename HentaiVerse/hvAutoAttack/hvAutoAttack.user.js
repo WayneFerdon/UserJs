@@ -1082,35 +1082,35 @@
     function cacheIWorTW() {
       if (forIsekaiEncounter || isInBattle()) return;
       switch (_query.s) {
-          case 'Bazaar': {
-            if (_query.ss !== 'am') return;
-            if (_query.screen !== 'modify') return;
-            const id = _query['eqids[]'];
-            if (!id) return;
-            const detail = getItemWorldDetail();
-            if (!detail) return;
-            let equip = { ...detail, filter: _query.filter, id };
-            const arena = getWithStringfied('arena', true, {});
+        case 'Bazaar': {
+          if (_query.ss !== 'am') return;
+          if (_query.screen !== 'modify') return;
+          const id = _query['eqids[]'];
+          if (!id) return;
+          const detail = getItemWorldDetail();
+          if (!detail) return;
+          let equip = { ...detail, filter: _query.filter, id };
+          const arena = getWithStringfied('arena', true, {});
+          arena.data.cached ??= {};
+          arena.data.cached.iw ??= [];
+          const index = arena.data.cached.iw.findIndex(d => d.id === id);
+          if (index !== -1) arena.data.cached.iw.splice(index, 1);
+          arena.data.cached.iw.unshift( { id, equip } );
+          arena.data.cached.iw = arena.data.cached.iw.slice(0, 10);
+          setIfChanged('arena', arena);
+          return;
+        }
+        case 'Battle': {
+          if (_query.ss !== 'tw') return;
+          const arena = getWithStringfied('arena', true, {});
+          const attempts = gE('#towerstart').innerText.match(/.*: (\d+) \/ \d+(?:\n|.)*: \d+ \/ \d+/)[1] * 1;
+          if ((arena.data.cached?.tw?.data??0) <= attempts) {
             arena.data.cached ??= {};
-            arena.data.cached.iw ??= [];
-            const index = arena.data.cached.iw.findIndex(d => d.id === id);
-            if (index !== -1) arena.data.cached.iw.splice(index, 1);
-            arena.data.cached.iw.unshift( { id, equip } );
-            arena.data.cached.iw = arena.data.cached.iw.slice(0, 10);
-            setIfChanged('arena', arena);
-            return;
+            arena.data.cached.tw = { data: attempts };
           }
-          case 'Battle': {
-            if (_query.ss !== 'tw') return;
-            const arena = getWithStringfied('arena', true, {});
-            const attempts = gE('#towerstart').innerText.match(/.*: (\d+) \/ \d+(?:\n|.)*: \d+ \/ \d+/)[1] * 1;
-            if ((arena.data.cached?.tw?.data??0) <= attempts) {
-              arena.data.cached ??= {};
-              arena.data.cached.tw = { data: attempts };
-            }
-            setIfChanged('arena', arena);
-            return;
-          }
+          setIfChanged('arena', arena);
+          return;
+        }
       }
     }
 
