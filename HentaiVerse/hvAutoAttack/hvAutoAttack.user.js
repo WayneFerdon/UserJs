@@ -8808,11 +8808,17 @@ text-align: left;
         return list;
       },
       add: function (method, url, data, onload, onerror, context = {}, headers = {}, isInsert = false, isForBattle) {
-        method = !data ? 'GET' : method ?? 'POST';
+        method = !data ? 'GET' : method || 'POST';
         if (method === 'POST') {
           headers['Content-Type'] ??= 'application/x-www-form-urlencoded';
           if (data && typeof data === 'object') {
             data = Object.entries(data).map(([k, v]) => encodeURIComponent(k) + '=' + encodeURIComponent(v)).join('&');
+          }
+        } else if (method === 'FORM') {
+          method = 'POST';
+          //headers['Content-Type'] = 'multipart/form-data';
+          if (data instanceof FormData === false) {
+            data = new FormData(data);
           }
         } else if (method === 'JSON') {
           method = 'POST';
