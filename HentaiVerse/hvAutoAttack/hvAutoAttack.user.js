@@ -8261,8 +8261,8 @@
   }
 
   // TODO TBD 根据lv模糊推测（一般数据都是等级逐渐提升的，可能可以直接用缓存而不需要推测，异世界新赛季时可以自动刷新缓存?）
-  function getHPFromMonsterDB(mdb, name, lv) {
-    return mdb?.[name]?.[lv];
+  function getHPFromMonsterDB(monsterDB, name, lv) {
+    return monsterDB?.[name]?.[lv];
   }
 
   function fixMonsterStatus(battle) { // 修复monsterStatus
