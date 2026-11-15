@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.251
+// @version      2.91.252
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -50,13 +50,23 @@
   const dataFlags = { sharable: ['option'] };
   dataFlags.portable = ['drop', 'stats', 'dropOld', 'statsOld', 'monsterDB', 'monsterMID'];
   dataFlags.battleDatas = [...dataFlags.portable, 'battle', 'battleCode', 'disabled', 'stepIn', 'skillOTOS', 'onriddle', 'rec'];
-  dataFlags.local = [...dataFlags.battleDatas, 'stamina', 'logCache', 'statsStatic', 'proficiency'];
+  dataFlags.local = [...dataFlags.battleDatas, 'stamina', 'logCache', 'statsStatic', 'proficiency', 'difficulty'];
   dataFlags.standalone = [...dataFlags.sharable, ...dataFlags.local, 'arena', 'lastUrl', 'ability', 'lastSwitch', 'itemWorldDatas', 'lastPersona', 'lastEquipSet'];
   dataFlags.excludeStandalone = { 'option': ['optionStandalone', 'version', 'lang'] };
   const _1s = 1000;
   const _1m = 60 * _1s;
   const _1h = 60 * _1m;
   const _1d = 24 * _1h;
+  const difficulty = {
+    'Normal': { names: ['普通×1', '普通×1', 'Normal×1'], tower: 1, hpRatio: 1 },
+    'Hard': { names: ['困难×2', '困難×2', 'Hard×2'], tower: 7, hpRatio: 1.1 },
+    'Nightmare': { names: ['噩梦×4', '噩夢×4', 'Nightmare×4'], tower: 14, hpRatio: 1.2 },
+    'Hell': { names: ['地狱×7', '地獄×7', 'Hell×7'], tower: 20, hpRatio: 1.4 },
+    'Nintendo': { names: ['任天堂×10', '任天堂×10', 'Nintendo×10'], tower: 27, hpRatio: 1.7 },
+    'IWBTH': { names: ['IWBTH×15', 'IWBTH×15', 'IWBTH×15'], tower: 34, hpRatio: 2 },
+    'PFUDOR': { names: ['PFUDOR×20', 'PFUDOR×20', 'PFUDOR×20'], tower: 40, hpRatio: 2 },
+  };
+
   const monsterStateKeys = { obj: `div.btm1`, lv: `div.btm2`, name: `div.btm3`, bars: `div.btm4>div.btm5`, buffs: `div.btm6` };
   const setMonsterBuffSkillLib = ability => { return {
     // debuff skill ------------
@@ -1324,6 +1334,10 @@
 
     function onIdle() {
       if (!gE('#navbar')) return (engaged = false);
+      (async () => {
+        const readout = gE('#level_readout > div > div');
+        setValue('difficulty', (await until(() => readout.innerHTML)).split(' ')[0]);
+      })();
       if (forIsekaiEncounter) return (encounterAsyncOnIdle = asyncOnIdle);
 
       // 战斗结束跳转回原链接
@@ -3057,6 +3071,8 @@
                   UI.number('YggdrasilExtraWeight', -1000),
                   '<br>',
                   UI.labeled('cacheMonsterHP', UI.l('启用HP缓存', '啟用HP緩存', 'Use HP Cache')),
+                  UI.for('maxHPCache', UI.l('缓存数量（≤0则不限制）', '緩存數量（≤0則不限制）', 'Max cache count (unlimited if ≤ 0)')),
+                  UI.number('maxHPCache'),
                   UI.button.class('clearMonsterHPCache', UI.l('清空缓存', '清空緩存', 'Clear HP Cache')),
                   '<span class="cacheMonsterHPInner">',
                   UI.labeled('portable_monsterDB', UI.hidden(UI.l('HP缓存 ', 'HP緩存 ', 'HP Cache '))+'<l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2><l0>注意：便携数据模式可能会显著增加硬盘读写</l0><l1>注意：便攜數據模式可能會顯著增加硬盤讀寫</l1><l2>Notice：portable mode may significantly increase hard disk I/O</l2>'),
@@ -6425,15 +6441,6 @@
     }
 
     function getBattleTypeDisplay() {
-      const difficulty = [
-        ['普通×1', '普通×1', 'Normal×1', 1],
-        ['困难×2', '困難×2', 'Hard×2', 7],
-        ['噩梦×4', '噩夢×4', 'Nightmare×4', 14],
-        ['地狱×7', '地獄×7', 'Hell×7', 20],
-        ['任天堂×10', '任天堂×10', 'Nintendo×10', 27],
-        ['IWBTH×15', 'IWBTH×15', 'IWBTH×15', 34],
-        ['PFUDOR×20', 'PFUDOR×20', 'PFUDOR×20', 40],
-      ];
       const battleInfoList = getBattleTypeDisplay.prototype.battleInfoList ??= {
         'gr': {
           name: ['压榨', '壓榨', 'Grindfest'],
@@ -6499,10 +6506,8 @@
         'tw': {
           name: ['塔楼', '塔樓', 'The Tower'],
           title: 'TW',
-          list: difficulty,
-          condition: sub => sub[3] && sub[3] <= battle.data.tower,
           content: _ => battle.data.tower,
-          format: formatted => `<div style="font-size: 9pt!important">${formatted}<br>${battle.data.tower > 40 ? `+${(battle.data.tower - 40) * 5}%DMG&HP` : ''}</div>`,
+          format: formatted => `<div style="font-size: 9pt!important">${formatted}${getDiffboostDesc(battle.data.diffboost)}</div>`,
         }
       }
       const type = battle.data.roundType;
@@ -6526,6 +6531,7 @@
           let formatted = UI.byLang(sub);
           if (info.format) formatted = info.format(formatted);
           subtype = formatted ? `<br>${formatted}` : '';
+          subtype += difficulty[battle.data.difficulty] ? `<div style="font-size: 9pt!important">${UI.l(...difficulty[battle.data.difficulty]?.names??[])}</div>` : '';
           return;
         }
       }
@@ -6564,7 +6570,7 @@
             const equip = arena.data.cached?.iw?.find(d => d.id === _query['eqids[]'])?.equip;
             if (equip) arena.data.equip = { data: equip };
           }
-          setDataSub('equip', d => `${d.world + 1}/${d.max}`, d => `<div style="font-size: 9pt!important">${UI.byLang(difficulty[d.diffbase-1])}${d.diffboost ? `+${d.diffboost}%DMG&HP<br>`: ''}[${d.id}]${d.name}</div>`);
+          setDataSub('equip', d => `${d.world + 1}/${d.max}`, d => `<div style="font-size: 9pt!important">${getDiffboostDesc(battle.data.diffboost)}[${d.id}]${d.name}</div>`);
       }
       return { title, full: `${UI.byLang(info?.name ?? ['未知', '未知', 'Unknown'])}:[${title}]${subtype}` };
     }
@@ -6579,7 +6585,7 @@
       `R${battle.data.roundNow}/${battle.data.roundAll}:T${currentTurn}<span style="font-size: 9pt!important">(+${currentActions-currentTurn}*0tic)</span>`,
       `<div style="font-size: 9pt!important">TPS: ${runtime.runSpeed}<br>${runtime.runTimeGap??''}</div>`,
       `${UI.l('敌人', '敵人', 'Monsters')}: ${realtime.monsterAlive}/${realtime.monsterAll}`,
-    ].join(`<br>`).replaceAll(`</div><br>`, `</div>`);
+    ].join(`<br>`).replaceAll(`</div><br>`, `</div>`).replaceAll(`<br></div>`, `</div>`).replaceAll(`<br><div`, `<div`);
     if (!battle.data.roundAll) {
       pauseChange();
       $debug.shiftLog();
@@ -7424,20 +7430,28 @@
       }
     }
 
+    battle.data.difficulty = getValue('difficulty');
+    battle.data.diffboost = 0;
+    if (battle.data?.tower) {
+      battle.data.difficulty = Object.keys(difficulty).filter(id => difficulty[id].tower <= battle.data.tower).sortBy(id => -difficulty[id].tower)[0];
+      battle.data.diffboost = battle.data.tower > 40 ? (battle.data.tower - 40) * 5 : 0;
+    } else if (arena.data?.equip) {
+      battle.data.difficulty = arena.data.equip.diffbase-1;
+      battle.data.diffboost = arena.data.equip.diffboost;
+    }
+
     const roundPrev = battle.data.roundNow;
 
     if (firstLog?.match('Initializing')) {
       const monsterStatus = [];
-      let order = 0;
+      let order = 0, level = 500;
       const monsterNames = Array.from(gE(`${monsterStateKeys.name}>div>div`, 'all', doc)).map(monster => monster.innerText);
       const monsterLvs = Array.from(gE(`${monsterStateKeys.lv}>div>div`, 'all', doc)).map(monster => monster.innerText);
       const monsterDB = getWithStringfied('monsterDB', true, {});
       const monsterMID = getWithStringfied('monsterMID', true, {});
       for (let i = battleLog.length - 2; i > battleLog.length - 2 - realtime.monsterAll; i--) {
         let hp = battleLog[i].textContent.match(/HP=(\d+)$/)[1] * 1;
-        if (isNaN(hp)) {
-          hp = getHPFromMonsterDB(monsterDB.data, monsterNames[order], monsterLvs[order]) ?? monsterStatus[monsterStatus.length - 1].hp;
-        }
+        if (isNaN(hp)) hp = getHPFromMonsterDB(battle, monsterDB.data, monsterNames[order], monsterLvs[order]) ?? monsterStatus[monsterStatus.length - 1].hp;
         monsterStatus[order] = { order, hp };
         order++;
 
@@ -7446,6 +7460,7 @@
         let [_, mid, name] = battleLog[i].textContent.match(/MID=(\d+) \((.*)\) LV/);
         mid*=1;
         if (!name || isNaN(lv) || isNaN(mid)) continue;
+        level = lv;
         monsterDB.data[name] ??= {};
         if (monsterDB.data[name].mid && monsterDB.data[name].mid !== mid) { // 名称被其他mid被占用
           monsterMID.data[monsterDB.data[name].mid] = copy(monsterDB.data[name]); // 将之前mid的数据进行另外备份
@@ -7456,11 +7471,61 @@
           delete monsterMID.data[mid];
         }
         monsterDB.data[name].mid = mid;
-        monsterDB.data[name][lv] = hp;
+        if (battle.data.difficulty) {
+          let hpData = monsterDB.data[name].data ??= [];
+          let base = findHPData(hpData, battle.data.difficulty, battle.data.diffboost, lv);
+          if (!base) {
+            base = hpData.push({ difficulty: battle.data.difficulty, diffboost: battle.data.diffboost, lv });
+            base = hpData[base-1];
+          }
+          base.hp = hp;
+          base.time = time(0);
+          delete monsterDB.data[name][lv] // delete legacy
+        }
       }
       if (option.cacheMonsterHP) {
-        setIfChanged('monsterDB', monsterDB);
         setIfChanged('monsterMID', monsterMID);
+        const timeList = Object.entries(monsterDB.data).reduce((acc, cur) => [...acc, ...cur[1].data ?? []], []).map(d => d.time).sortBy(x => -(x ?? 0));
+        const legacy = Object.entries(monsterDB.data).reduce((acc, cur) => [...acc, ...Object.keys(cur[1]).map(d => d*1)], []).filter(d => !isNaN(d)).sortBy(x => Math.abs(x - level));
+        let targets = [...timeList, ...legacy];
+        let keepCount = Math.max(0, option.maxHPCache) || targets.length;
+        while (true) {
+          try {
+            targets = targets.slice(0, keepCount);
+            const end = targets.slice(-1);
+            let endCount = targets.filter(d => d === end).length;
+            for (const name in monsterDB.data) {
+              const mon = monsterDB.data[name];
+              mon.data = mon.data?.sortBy(d => -(d.time ?? 0)).filter(d => {
+                if (d.time !== end) return targets.includes(d.time);
+                if (endCount <= 0) return false;
+                endCount--;
+                return true;
+              });
+              if (!mon.data?.length) delete mon.data;
+
+              for (const key in mon) {
+                if (['mid', 'data'].includes(key)) continue;
+                const keyNum = key * 1;
+                if (targets.includes(keyNum) && (endCount > 0 || end !== keyNum)) {
+                  if (end === keyNum) endCount--;
+                  continue;
+                }
+                delete mon[key];
+              }
+
+              if (Object.keys(mon).length <= 1) delete monsterDB.data[name];
+            }
+            setIfChanged('monsterDB', monsterDB);
+            break;
+          } catch (error) {
+            if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+              keepCount = Math.floor(keepCount / 2);
+              continue;
+            }
+            break;
+          }
+        }
       }
       battle.data.monsterStatus = monsterStatus;
 
@@ -8261,8 +8326,30 @@
   }
 
   // TODO TBD 根据lv模糊推测（一般数据都是等级逐渐提升的，可能可以直接用缓存而不需要推测，异世界新赛季时可以自动刷新缓存?）
-  function getHPFromMonsterDB(monsterDB, name, lv) {
-    return monsterDB?.[name]?.[lv];
+  function getHPFromMonsterDB(battle, monsterDB, name, lv) {
+    let data = monsterDB?.[name]?.data;
+    const legacy = monsterDB?.[name]?.[lv];
+    if (!Array.isArray(data)) return legacy;
+    const base = findHPData(data, battle.data.difficulty, battle.data.diffboost, lv, {});
+    return base?.hp ? base.hp * getHPRatio(battle.data) / getHPRatio(base) : legacy;
+    }
+    
+    function getDiffboostDesc(diffboost) { 
+      return diffboost ? `<br>+${diffboost}%DMG&HP<br>` : '';
+    }
+
+  function findHPData(data, difficulty, diffboost, lv, loosely) {
+    difficulty ??= data.sortBy(d => -d.lv)[0]?.difficulty;
+    for (const d of data) {
+      if (d.lv*1 !== lv*1) continue;
+      if (d.difficulty === difficulty && d.diffboost === diffboost) return d;
+      if (loosely) loosely = d;
+    }
+    return loosely;
+  }
+
+  function getHPRatio(base) {
+    return difficulty[base.difficulty].hpRatio * (1 + base.diffboost / 100);
   }
 
   function fixMonsterStatus(battle) { // 修复monsterStatus
@@ -8274,7 +8361,7 @@
     gE(monsterStateKeys.lv, 'all').forEach((monster, order) => {
       monsterStatus.push({
         order: order,
-        hp: getHPFromMonsterDB(monsterDB, monsterNames[order], monsterLvs[order]) ?? ((monster.style.background === '') ? 1000 : 100000),
+        hp: getHPFromMonsterDB(battle, monsterDB, monsterNames[order], monsterLvs[order]) ?? ((monster.style.background === '') ? 1000 : 100000),
       });
     });
     battle.data.monsterStatus = monsterStatus;
