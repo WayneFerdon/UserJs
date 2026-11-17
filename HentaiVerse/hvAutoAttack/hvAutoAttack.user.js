@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.253
+// @version      2.91.254
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -3071,11 +3071,15 @@
                   UI.number('YggdrasilExtraWeight', -1000),
                   '<br>',
                   UI.labeled('cacheMonsterHP', UI.l('启用HP缓存', '啟用HP緩存', 'Use HP Cache')),
+                  '<span class="cacheMonsterHPInner">',
+                  '<br>',
                   UI.for('maxHPCache', UI.l('缓存数量（≤0则不限制）', '緩存數量（≤0則不限制）', 'Max cache count (unlimited if ≤ 0)')),
                   UI.number('maxHPCache'),
                   UI.button.class('clearMonsterHPCache', UI.l('清空缓存', '清空緩存', 'Clear HP Cache')),
-                  '<span class="cacheMonsterHPInner">',
+                  '<br>',
                   UI.labeled('portable_monsterDB', UI.hidden(UI.l('HP缓存 ', 'HP緩存 ', 'HP Cache '))+'<l0>使用便携数据模式（导出脚本数据时将包含）</l0><l1>使用便攜數據模式（導出腳本數據時將包含）</l1><l2>Portable Mode (will be included while exporting script datas)</l2><l0>注意：便携数据模式可能会显著增加硬盘读写</l0><l1>注意：便攜數據模式可能會顯著增加硬盤讀寫</l1><l2>Notice：portable mode may significantly increase hard disk I/O</l2>'),
+                  '<br>',
+                  UI.labeled('hpCacheDebug', 'record with debug infos'),
                   '<input id="portable_monsterMID" type="checkbox" hidden>'
                 ),
                 '</span>',
@@ -6481,6 +6485,7 @@
           ],
           condition: sub => sub[4] === battle.data.roundAll,
           content: sub => sub[3],
+          format: formatted => `<div style="font-size: 9pt!important">${formatted}${getDiffboostDesc(getDiffboostLab(battle.data))}</div>`,
         },
         'rb': {
           name: ['浴血', '浴血', 'Ring of Blood'],
@@ -7409,6 +7414,10 @@
     const battleLog = gE('#textlog>tbody>tr>td', 'all', doc);
     const firstLog = battleLog[battleLog.length - 1]?.textContent;
 
+    battle.data.difficulty = getValue('difficulty');
+    battle.data.diffboost = 0;
+    battle.data.diffboostLab = 0;
+
     if (firstLog && (!battle.data.roundType || firstLog.match(/^Initializing/))) {
       battle.data.tower = (firstLog.match(/\(Floor (\d+)\)/) ?? [null])[1] * 1;
       const id = (firstLog.match(/\d+/) ?? [null])[0] * 1;
@@ -7420,6 +7429,10 @@
         battle.data.roundType = name;
         break;
       }
+      if (name === 'ar') {
+        if ([33, 34, 35].includes(id)) battle.data.difficulty = 'PFUDOR';
+        battle.data.diffboostLab = id === 34 ? 1 : id === 35 ? 2 : 0;
+      }
       if (!battle.data.roundType) console.warn('Unable to get battle type from log:', _server, firstLog);
     }
     if (battle.data.roundType === 'ba' || document.body.innerHTML.match(/Initializing random encounter/)) {
@@ -7430,8 +7443,6 @@
       }
     }
 
-    battle.data.difficulty = getValue('difficulty');
-    battle.data.diffboost = 0;
     if (battle.data?.tower) {
       battle.data.difficulty = Object.keys(difficulty).filter(id => difficulty[id].tower <= battle.data.tower).sortBy(id => -difficulty[id].tower)[0];
       battle.data.diffboost = battle.data.tower > 40 ? (battle.data.tower - 40) * 5 : 0;
@@ -7441,17 +7452,18 @@
     }
 
     const roundPrev = battle.data.roundNow;
-
     if (firstLog?.match('Initializing')) {
       const monsterStatus = [];
       let order = 0, level = 500;
       const monsterNames = Array.from(gE(`${monsterStateKeys.name}>div>div`, 'all', doc)).map(monster => monster.innerText);
       const monsterLvs = Array.from(gE(`${monsterStateKeys.lv}>div>div`, 'all', doc)).map(monster => monster.innerText);
+      const monsterBoss = Array.from(gE(monsterStateKeys.obj, 'all', doc)).map(monster => gE(`${monsterStateKeys.lv}[style^="background"]`, monster)?.style.background);
       const monsterDB = getWithStringfied('monsterDB', true, {});
       const monsterMID = getWithStringfied('monsterMID', true, {});
       for (let i = battleLog.length - 2; i > battleLog.length - 2 - realtime.monsterAll; i--) {
         let hp = battleLog[i].textContent.match(/HP=(\d+)$/)[1] * 1;
-        if (isNaN(hp)) hp = getHPFromMonsterDB(battle, monsterDB.data, monsterNames[order], monsterLvs[order]) ?? monsterStatus[monsterStatus.length - 1].hp;
+        const boss = monsterBoss[order];
+        if (isNaN(hp)) hp = getHPFromMonsterDB(battle, monsterDB.data, monsterNames[order], monsterLvs[order], boss) ?? monsterStatus[monsterStatus.length - 1].hp;
         monsterStatus[order] = { order, hp };
         order++;
 
@@ -7473,14 +7485,16 @@
         monsterDB.data[name].mid = mid;
         if (battle.data.difficulty) {
           let hpData = monsterDB.data[name].data ??= [];
-          let base = findHPData(hpData, battle.data.difficulty, battle.data.diffboost, lv);
+          let base;
+          if (!option.hpCacheDebug) base = findHPData(hpData, battle.data.difficulty, battle.data.diffboost, lv, boss);
           if (!base) {
-            base = hpData.push({ difficulty: battle.data.difficulty, diffboost: battle.data.diffboost, lv });
+            base = hpData.push({ difficulty: battle.data.difficulty, diffboost: battle.data.diffboost, lv, boss });
             base = hpData[base-1];
           }
           base.hp = hp;
           base.time = time(0);
-          delete monsterDB.data[name][lv] // delete legacy
+          if (option.hpCacheDebug) base.battle = firstLog;
+          delete monsterDB.data[name][lv]; // delete legacy
         }
       }
       if (option.cacheMonsterHP) {
@@ -8325,31 +8339,61 @@
     return setIfChanged('skillOTOS', { data: local.data, old: local.old });
   }
 
-  // TODO TBD 根据lv模糊推测（一般数据都是等级逐渐提升的，可能可以直接用缓存而不需要推测，异世界新赛季时可以自动刷新缓存?）
-  function getHPFromMonsterDB(battle, monsterDB, name, lv) {
+  // TODO TBD 根据lv推测
+  /* wiki 公式待确认，可能存在偏差，需要进一步研究
+  *   暂时统计的数据对应的公式：HP = ceil( floor(core * level_mod * class_mod * difficulty_mod + 50) * (1 + chaosRank*0.05) )
+  *   chaosRank = 0..20，每级 +5%，满级 ×2（对应“生命翻倍”）
+  *   core = 100 + monster_level*10 + END(monster_level)*5
+  *   level_mod = MAX(1, (monster_level - 100) * 0.01)
+  *   END(monster_level) = floor(0.01*base_stat*monster_level + monster_level^1.0992 * 0.28948)
+  *   核心差异 1：END_wiki = int(0.01 * base_stat * monster_level + (monster_level ^ 1.076675) * 0.3325), 两个常数不同
+  *   核心差异 2：HP_wiki = (100 + monster_level * 10 + END * 5) * level_mod * class_mod * difficulty_mod * (1 + chaos_fortitude_rank * 5%), chaos 前实测还有个+50
+  *   未知但会被微小参数差异吸收的：core/level_mod/class_mod/difficulty_mod 的运算先后及乘后是否/如何取整，END/+50后的取整方式（但已知必须取整），且均能被END两个参数的微小变化吸收
+  *   refs:
+  *   main:
+  *   https://ehwiki.org/wiki/Monster_Stats#Points
+  *   scaled end:
+  *   https://ehwiki.org/wiki/Monster_Stats#Primary_Attributes
+  *   class & crystal:
+  *   https://ehwiki.org/wiki/Monster_Lab#Monster_Classes
+  *   https://ehwiki.org/wiki/System_Monsters
+  *   extra ratios:
+  *   https://ehwiki.org/wiki/Monster_Lab#Chaos_Upgrades
+  *   https://ehwiki.org/wiki/HentaiVerse_Settings#Challenge_Level
+  *   https://ehwiki.org/wiki/Arena#Arena_Challenges
+  *   AR 400, 500 的lab mon HP倍率不确定，wiki是50%/100%，实测400是25%?
+  */
+  function getHPFromMonsterDB(battle, monsterDB, name, lv, boss) {
     let data = monsterDB?.[name]?.data;
     const legacy = monsterDB?.[name]?.[lv];
     if (!Array.isArray(data)) return legacy;
-    const base = findHPData(data, battle.data.difficulty, battle.data.diffboost, lv, {});
+    const base = findHPData(data, battle.data.difficulty, battle.data.diffboost, lv, boss, {});
     return base?.hp ? base.hp * getHPRatio(battle.data) / getHPRatio(base) : legacy;
-    }
-    
-    function getDiffboostDesc(diffboost) { 
-      return diffboost ? `<br>+${diffboost}%DMG&HP<br>` : '';
-    }
+  }
 
-  function findHPData(data, difficulty, diffboost, lv, loosely) {
+  function getDiffboostDesc(diffboost) {
+    return diffboost ? `<br>+${diffboost}%DMG&HP<br>` : '';
+  }
+
+  function findHPData(data, difficulty, diffboost, lv, boss, loosely) {
     difficulty ??= data.sortBy(d => -d.lv)[0]?.difficulty;
     for (const d of data) {
       if (d.lv*1 !== lv*1) continue;
-      if (d.difficulty === difficulty && d.diffboost === diffboost) return d;
+      if (d.difficulty === difficulty && d.diffboost === diffboost && d.boss === boss) return d;
       if (loosely) loosely = d;
     }
     return loosely;
   }
 
   function getHPRatio(base) {
-    return difficulty[base.difficulty].hpRatio * (1 + base.diffboost / 100);
+    // TBD check if boss/battleType rasing unidentified ratio ×1.25 randomly for lab monsters
+    // TBD check how diffboostLab multiples
+    let bossRatio = 1;
+    return difficulty[base.difficulty].hpRatio * (1 + base.diffboost / 100) * ( 1+ getDiffboostLab(base) / 100) * bossRatio;
+  }
+
+  function getDiffboostLab(base) {
+    return base.diffboostLab === 1 ? 50 : base.diffboostLab === 2 ? 100 : 0;
   }
 
   function fixMonsterStatus(battle) { // 修复monsterStatus
@@ -8357,11 +8401,12 @@
     const monsterStatus = [];
     const monsterNames = Array.from(gE(`${monsterStateKeys.name}>div>div`, 'all')).map(monster => monster.innerText);
     const monsterLvs = Array.from(gE(`${monsterStateKeys.lv}>div>div`, 'all')).map(monster => monster.innerText);
+    const monsterBoss = Array.from(gE(monsterStateKeys.obj, 'all')).map(monster => gE(`${monsterStateKeys.lv}[style^="background"]`).style.background);
     const monsterDB = getValue('monsterDB', true);
     gE(monsterStateKeys.lv, 'all').forEach((monster, order) => {
       monsterStatus.push({
         order: order,
-        hp: getHPFromMonsterDB(battle, monsterDB, monsterNames[order], monsterLvs[order]) ?? ((monster.style.background === '') ? 1000 : 100000),
+        hp: getHPFromMonsterDB(battle, monsterDB, monsterNames[order], monsterLvs[order], monsterBoss[order]) ?? ((monster.style.background === '') ? 1000 : 100000),
       });
     });
     battle.data.monsterStatus = monsterStatus;
