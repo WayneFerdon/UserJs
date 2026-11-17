@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.254
+// @version      2.91.255
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -6485,7 +6485,7 @@
           ],
           condition: sub => sub[4] === battle.data.roundAll,
           content: sub => sub[3],
-          format: formatted => `<div style="font-size: 9pt!important">${formatted}${getDiffboostDesc(getDiffboostLab(battle.data))}</div>`,
+          format: formatted => `<div style="font-size: 9pt!important">${formatted}${getDiffboostDesc(getDiffboostLab(battle.data), true)}</div>`,
         },
         'rb': {
           name: ['浴血', '浴血', 'Ring of Blood'],
@@ -7415,8 +7415,6 @@
     const firstLog = battleLog[battleLog.length - 1]?.textContent;
 
     battle.data.difficulty = getValue('difficulty');
-    battle.data.diffboost = 0;
-    battle.data.diffboostLab = 0;
 
     if (firstLog && (!battle.data.roundType || firstLog.match(/^Initializing/))) {
       battle.data.tower = (firstLog.match(/\(Floor (\d+)\)/) ?? [null])[1] * 1;
@@ -7431,7 +7429,7 @@
       }
       if (name === 'ar') {
         if ([33, 34, 35].includes(id)) battle.data.difficulty = 'PFUDOR';
-        battle.data.diffboostLab = id === 34 ? 1 : id === 35 ? 2 : 0;
+        battle.data.diffboostLab = id === 34 ? 1 : id === 35 ? 2 : undefined;
       }
       if (!battle.data.roundType) console.warn('Unable to get battle type from log:', _server, firstLog);
     }
@@ -7445,10 +7443,10 @@
 
     if (battle.data?.tower) {
       battle.data.difficulty = Object.keys(difficulty).filter(id => difficulty[id].tower <= battle.data.tower).sortBy(id => -difficulty[id].tower)[0];
-      battle.data.diffboost = battle.data.tower > 40 ? (battle.data.tower - 40) * 5 : 0;
+      battle.data.diffboost = battle.data.tower > 40 ? (battle.data.tower - 40) * 5 : undefined;
     } else if (arena.data?.equip) {
       battle.data.difficulty = arena.data.equip.diffbase-1;
-      battle.data.diffboost = arena.data.equip.diffboost;
+      battle.data.diffboost = arena.data.equip.diffboost || undefined;
     }
 
     const roundPrev = battle.data.roundNow;
@@ -7460,10 +7458,15 @@
       const monsterBoss = Array.from(gE(monsterStateKeys.obj, 'all', doc)).map(monster => gE(`${monsterStateKeys.lv}[style^="background"]`, monster)?.style.background);
       const monsterDB = getWithStringfied('monsterDB', true, {});
       const monsterMID = getWithStringfied('monsterMID', true, {});
+      const pickBase = base => {
+        const keys = ['difficulty', 'diffboost', 'diffboostLab'];
+        return Object.fromEntries(Object.entries(base).filter(([k, v]) => keys.includes(k)))
+      }
+
       for (let i = battleLog.length - 2; i > battleLog.length - 2 - realtime.monsterAll; i--) {
         let hp = battleLog[i].textContent.match(/HP=(\d+)$/)[1] * 1;
         const boss = monsterBoss[order];
-        if (isNaN(hp)) hp = getHPFromMonsterDB(battle, monsterDB.data, monsterNames[order], monsterLvs[order], boss) ?? monsterStatus[monsterStatus.length - 1].hp;
+        if (isNaN(hp)) hp = getHPFromMonsterDB(battle, monsterDB.data, monsterNames[order], monsterLvs[order]) ?? monsterStatus[monsterStatus.length - 1].hp;
         monsterStatus[order] = { order, hp };
         order++;
 
@@ -7486,14 +7489,17 @@
         if (battle.data.difficulty) {
           let hpData = monsterDB.data[name].data ??= [];
           let base;
-          if (!option.hpCacheDebug) base = findHPData(hpData, battle.data.difficulty, battle.data.diffboost, lv, boss);
+          if (!option.hpCacheDebug) base = findHPData(hpData, lv, battle.data);
           if (!base) {
-            base = hpData.push({ difficulty: battle.data.difficulty, diffboost: battle.data.diffboost, lv, boss });
+            base = hpData.push({ lv, ...pickBase(battle.data) });
             base = hpData[base-1];
           }
           base.hp = hp;
           base.time = time(0);
-          if (option.hpCacheDebug) base.battle = firstLog;
+          if (option.hpCacheDebug) {
+            base.battle = firstLog;
+            base.boss = boss;
+          }
           delete monsterDB.data[name][lv]; // delete legacy
         }
       }
@@ -8363,33 +8369,32 @@
   *   https://ehwiki.org/wiki/Arena#Arena_Challenges
   *   AR 400, 500 的lab mon HP倍率不确定，wiki是50%/100%，实测400是25%?
   */
-  function getHPFromMonsterDB(battle, monsterDB, name, lv, boss) {
+  function getHPFromMonsterDB(battle, monsterDB, name, lv) {
     let data = monsterDB?.[name]?.data;
     const legacy = monsterDB?.[name]?.[lv];
     if (!Array.isArray(data)) return legacy;
-    const base = findHPData(data, battle.data.difficulty, battle.data.diffboost, lv, boss, {});
+    const base = findHPData(data, lv, battle.data, {});
     return base?.hp ? base.hp * getHPRatio(battle.data) / getHPRatio(base) : legacy;
   }
 
-  function getDiffboostDesc(diffboost) {
-    return diffboost ? `<br>+${diffboost}%DMG&HP<br>` : '';
+  function getDiffboostDesc(diffboost, labOnly) {
+    return diffboost ? `<br>${labOnly ? 'lab' : ''}+${diffboost}%DMG&HP<br>` : '';
   }
 
-  function findHPData(data, difficulty, diffboost, lv, boss, loosely) {
+  function findHPData(data, lv, target, loosely) {
     difficulty ??= data.sortBy(d => -d.lv)[0]?.difficulty;
     for (const d of data) {
+      if (d.boss !== target.boss) console.log('debug: d.boss !== target.boss', d, target);
       if (d.lv*1 !== lv*1) continue;
-      if (d.difficulty === difficulty && d.diffboost === diffboost && d.boss === boss) return d;
+      if (d.difficulty === target.difficulty && (d.diffboost??0) === (target.diffboost??0) && (d.diffboostLab??0) === (target.diffboostLab??0)) return d;
       if (loosely) loosely = d;
     }
     return loosely;
   }
 
   function getHPRatio(base) {
-    // TBD check if boss/battleType rasing unidentified ratio ×1.25 randomly for lab monsters
     // TBD check how diffboostLab multiples
-    let bossRatio = 1;
-    return difficulty[base.difficulty].hpRatio * (1 + base.diffboost / 100) * ( 1+ getDiffboostLab(base) / 100) * bossRatio;
+    return difficulty[base.difficulty].hpRatio * (1 + (base.diffboost??0) / 100) * (1+ getDiffboostLab(base) / 100);
   }
 
   function getDiffboostLab(base) {
@@ -8401,12 +8406,11 @@
     const monsterStatus = [];
     const monsterNames = Array.from(gE(`${monsterStateKeys.name}>div>div`, 'all')).map(monster => monster.innerText);
     const monsterLvs = Array.from(gE(`${monsterStateKeys.lv}>div>div`, 'all')).map(monster => monster.innerText);
-    const monsterBoss = Array.from(gE(monsterStateKeys.obj, 'all')).map(monster => gE(`${monsterStateKeys.lv}[style^="background"]`).style.background);
     const monsterDB = getValue('monsterDB', true);
     gE(monsterStateKeys.lv, 'all').forEach((monster, order) => {
       monsterStatus.push({
         order: order,
-        hp: getHPFromMonsterDB(battle, monsterDB, monsterNames[order], monsterLvs[order], monsterBoss[order]) ?? ((monster.style.background === '') ? 1000 : 100000),
+        hp: getHPFromMonsterDB(battle, monsterDB, monsterNames[order], monsterLvs[order]) ?? ((monster.style.background === '') ? 1000 : 100000),
       });
     });
     battle.data.monsterStatus = monsterStatus;
