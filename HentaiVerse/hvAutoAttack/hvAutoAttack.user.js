@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.259
+// @version      2.91.260
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -58,13 +58,13 @@
   const _1h = 60 * _1m;
   const _1d = 24 * _1h;
   const difficulty = {
-    'Normal': { names: ['普通×1', '普通×1', 'Normal×1'], tower: 1, hpRatio: 1 },
-    'Hard': { names: ['困难×2', '困難×2', 'Hard×2'], tower: 7, hpRatio: 1.1 },
-    'Nightmare': { names: ['噩梦×4', '噩夢×4', 'Nightmare×4'], tower: 14, hpRatio: 1.2 },
-    'Hell': { names: ['地狱×7', '地獄×7', 'Hell×7'], tower: 20, hpRatio: 1.4 },
-    'Nintendo': { names: ['任天堂×10', '任天堂×10', 'Nintendo×10'], tower: 27, hpRatio: 1.7 },
-    'IWBTH': { names: ['IWBTH×15', 'IWBTH×15', 'IWBTH×15'], tower: 34, hpRatio: 2 },
-    'PFUDOR': { names: ['PFUDOR×20', 'PFUDOR×20', 'PFUDOR×20'], tower: 40, hpRatio: 2 },
+    'Normal': { names: ['普通×1', '普通×1', 'Normal×1'], tower: 1, hpboost: 0 },
+    'Hard': { names: ['困难×2', '困難×2', 'Hard×2'], tower: 7, hpboost: 0.1 },
+    'Nightmare': { names: ['噩梦×4', '噩夢×4', 'Nightmare×4'], tower: 14, hpboost: 0.2 },
+    'Hell': { names: ['地狱×7', '地獄×7', 'Hell×7'], tower: 20, hpboost: 0.4 },
+    'Nintendo': { names: ['任天堂×10', '任天堂×10', 'Nintendo×10'], tower: 27, hpboost: 0.7 },
+    'IWBTH': { names: ['IWBTH×15', 'IWBTH×15', 'IWBTH×15'], tower: 34, hpboost: 1 },
+    'PFUDOR': { names: ['PFUDOR×20', 'PFUDOR×20', 'PFUDOR×20'], tower: 40, hpboost: 1 },
   };
 
   const monsterStateKeys = { obj: `div.btm1`, lv: `div.btm2`, name: `div.btm3`, bars: `div.btm4>div.btm5`, buffs: `div.btm6` };
@@ -8345,16 +8345,19 @@
     return setIfChanged('skillOTOS', { data: local.data, old: local.old });
   }
 
-  /* wiki 公式待确认，可能存在偏差，需要进一步研究
-  *   暂时统计的数据对应的公式：
-  *   baseHp = ceil( (floor((100 + level*10 + END(level)*5) * level_mod * difficulty_mod) + 50) * (1 + chaosRank*0.05) )
-  *   HP = stageBoost>1 ? ceil(baseHp * stageBoost) : baseHp
+  /* monster HP 公式
   *   END(level) = floor(0.01*endBase*level + level^1.0992 * 0.28948)
-  *   stageBoost 沿用 diffboostLab（#34 → 1.25，乘在最外层且再次 ceil；#35 保持 +100%）
-  *   反解：endBase = 13 种族起始值 + 0..25 点，chaosRank = 0..20，逐样本匹配收敛（见 estimateProfile）
-  *   核心差异 1：END_wiki = int(0.01 * base_stat * monster_level + (monster_level ^ 1.076675) * 0.3325), 两个常数不同
-  *   核心差异 2：HP_wiki = (100 + monster_level * 10 + END * 5) * level_mod * class_mod * difficulty_mod * (1 + chaos_fortitude_rank * 5%), chaos 前实测还有个+50
-  *   未知但会被微小参数差异吸收的：core/level_mod/class_mod/difficulty_mod 的运算先后及乘后是否/如何取整，END/+50后的取整方式（但已知必须取整），且均能被END两个参数的微小变化吸收
+  *   difficulty = 1 + hpboost  （Normal 0 / Hard .1 / Nightmare .2 / Hell .4 / Nintendo .7 / IWBTH·PFUDOR 1）
+  *   baseHp = ceil( (floor((100 + level*10 + END(level)*5) * level_mod * class_mod * difficulty) + 50) * (1 + chaosRank*0.05) )
+  *   HP = stageBoost > 1 ? ceil(baseHp * stageBoost) : baseHp
+  *   stageBoost = 1 + (diffboost + boostLab) / [100 × difficulty]，作用在最外层（+50 也参与倍率）
+  *     使总倍率 difficulty × stageBoost = difficulty + (diffboost + boostLab)/100，与 getHPRatio 一致
+  *     - diffboost：IW/tower 加成，作用所有怪（UI 显示 "+X%DMG&HP"）
+  *     - boostLab：arena #34/+50%、#35/+100%，lab-only，特殊怪排除（UI 显示 "lab+X%DMG&HP"）
+  *     - #34 锁定难度2 → 分母 200 → 最外层 ×1.25（wiki 标称 +50%）；#35 缺数据，同结构 ×1.5
+  *   level_mod = MAX(1, (level-100)*0.01)（数据侧 lv>500 有封顶 4 的发现，本脚本未采用）
+  *   endBase = 13 种族起始值 + clamp(起始/10, 6, 10) * 0..25 点，chaosRank = 0..20，逐样本匹配收敛（见 estimateProfile）
+  *   与 wiki 的差异：END 两常数不同（wiki 用 1.076675 / 0.3325）；chaos 的 +50 为实测补充项
   *   refs:
   *   main:
   *   https://ehwiki.org/wiki/Monster_Stats#Points
@@ -8367,14 +8370,20 @@
   *   https://ehwiki.org/wiki/Monster_Lab#Chaos_Upgrades
   *   https://ehwiki.org/wiki/HentaiVerse_Settings#Challenge_Level
   *   https://ehwiki.org/wiki/Arena#Arena_Challenges
-  *   AR 400, 500 的lab mon HP倍率不确定，wiki是50%/100%，实测400是25%?
   */
   // 返回 { hp, abs_delta }：abs_delta = |估算 hp - battleData.hp|（battleData 无 hp 时为 0）
   function calcHPByProfile(level, profile, battleData) {
     if (!profile) return;
-    const difficultyMod = (difficulty[battleData?.difficulty]?.hpRatio ?? 1) * (1 + (battleData?.diffboost ?? 0) / 100);
-    const stageBoost = profile.classMod ? 1 : 1 + getDiffboostLab(battleData) / 100; // 特殊怪不吃关卡加成
-    const end = getScaledEnd(profile.endBase, level);
+    // 难度与 boost 均为加法结构：difficulty = 1 + hpboost，
+    //   外层倍率 = 1 + (db + boostLab)/(100*difficulty)，使总倍率 = difficulty + (db+boostLab)/100，
+    //   与 getHPRatio 的加法结构一致；难度=2 时分母=200（即观测到的「半效」），wiki 标称与实测统一。
+    const difficultyMod = 1 + (difficulty[battleData?.difficulty]?.hpboost ?? 0);
+    // boostLab（arena #34/#35）lab-only（UI 显示 "lab+X%"），特殊怪排除；
+    // diffboost（IW/tower）作用所有怪（UI 显示 "X%" 无 lab 前缀），特殊怪保留。
+    const labBoost = profile.classMod ? 0 : getDiffboostLab(battleData);
+    const stageBoost = 1 + ((battleData?.diffboost ?? 0) + labBoost) / (100 * difficultyMod);
+    const endPowCache = calcHPByProfile.prototype.endPowCache ??= {};
+    const end = Math.floor(0.01 * profile.endBase * level + (endPowCache[level] ??= Math.pow(level, 1.0992) * 0.28948));
     const levelMod = Math.max(1, (level - 100) * 0.01);
     const core = (100 + level * 10 + end * 5) * levelMod * (profile.classMod ?? 1) * difficultyMod;
     const baseHp = Math.ceil((Math.floor(core) + 50) * (1 + profile.chaosRank * 0.05));
@@ -8384,7 +8393,7 @@
 
   function findSpecialMonster(name, mid) {
     // 特殊怪静态表：name → [mid, endBase, classMod, chaosRank]
-    //   PostGame/Pony 吃满 chaos(rank20)，其余 rank0；特殊怪不吃关卡加成。
+    //   PostGame/Pony 吃满 chaos(rank20)，其余 rank0；特殊怪只排除 boostLab，diffboost 保留。
     const specialMonsterTable = findSpecialMonster.prototype.specialTable ??= {
       'Manbearpig': [16, 140, 11, 0], 'White Bunneh': [17, 140, 11, 0],
       'Mithra': [18, 140, 11, 0], 'Dalek': [19, 140, 11, 0],
@@ -8484,18 +8493,27 @@
   function getHPFromMonsterDB(battle, monsterDB, name, lv) {
     const record = monsterDB?.[name];
     const data = record?.data;
-    if (!Array.isArray(data)) return hpFromProfile();
+    if (!Array.isArray(data)) return calcHPByProfile(lv * 1, estimateProfile(record, name), battle.data)?.hp ?? record?.[lv];
+    // 完全匹配（同lv+同难度+同boost）：实测值精确，比率=1 无需换算
+    const exact = findHPData(data, lv, battle.data);
+    if (exact?.hp) return exact.hp;
+    // 不完全匹配：外层 boost 含 +50 与取整，线性 ratio 非真实倍率，优先用 profile 精确推算
+    const profile = estimateProfile(record, name);
+    const profiled = profile && calcHPByProfile(lv * 1, profile, battle.data)?.hp;
+    if (profiled != null) return profiled;
+    // 无 profile 才退回线性 ratio（特殊怪不吃 boostLab，需排除）
     const base = findHPData(data, lv, battle.data, {});
-    return base?.hp ? base.hp * getHPRatio(battle.data) / getHPRatio(base) : hpFromProfile();
-
-    function hpFromProfile() { // calc or legacy
-      return calcHPByProfile(lv * 1, estimateProfile(record, name), battle.data)?.hp ?? record?.[lv];
-    };
-  }
-
-  function getScaledEnd(endBase, level) {
-    const endPowCache = getScaledEnd.prototype.endPowCache ??= {};
-    return Math.floor(0.01 * endBase * level + (endPowCache[level] ??= Math.pow(level, 1.0992) * 0.28948));
+    return base?.hp ? base.hp * getHPRatio(battle.data) / getHPRatio(base) : record?.[lv];
+    
+    function getHPRatio(base) {
+      // 难度与 boost 均为加法结构：1 + hpboost + (db + boostLab)/100
+      //   #34 锁定难度2、无常规 boost，故 (1+1+50/100) = 2.5 = 2×1.25
+      //   等价于 calcHPByProfile 的外层 stageBoost = 1 + db/(100×difficulty)
+      // boostLab lab-only（实测 10 只特殊怪 #34 样本均精确等于无 boost 表值），特殊怪排除；
+      // diffboost 作用所有怪，保留。
+      const labBoost = name && findSpecialMonster(name) ? 0 : getDiffboostLab(base);
+      return 1 + (difficulty[base.difficulty]?.hpboost ?? 0) + ((base.diffboost??0) + labBoost) / 100;
+    }
   }
 
   function getDiffboostDesc(diffboost, labOnly) {
@@ -8513,14 +8531,11 @@
     return loosely;
   }
 
-  function getHPRatio(base) {
-    // TBD check how diffboostLab multiples
-    return difficulty[base.difficulty].hpRatio * (1 + (base.diffboost??0) / 100) * (1+ getDiffboostLab(base) / 100);
-  }
 
   function getDiffboostLab(base) {
-    // #34（diffboostLab=1）实测为最外层 ×1.25（+25%），#35（=2）缺少数据暂时保持 +100%
-    return base.diffboostLab === 1 ? 25 : base.diffboostLab === 2 ? 100 : 0;
+    // wiki 标称 #34 +50%、#35 +100%；按 stageBoost=1+value/(100×difficulty)，
+    //   难度2 时分母 200：#34 实测 ×1.25，#35 为 ×1.5（缺数据，同结构外推）
+    return base.diffboostLab === 1 ? 50 : base.diffboostLab === 2 ? 100 : 0;
   }
 
   function fixMonsterStatus(battle) { // 修复monsterStatus
