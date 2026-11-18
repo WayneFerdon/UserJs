@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.256
+// @version      2.91.257
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -6575,7 +6575,7 @@
             const equip = arena.data.cached?.iw?.find(d => d.id === _query['eqids[]'])?.equip;
             if (equip) arena.data.equip = { data: equip };
           }
-          setDataSub('equip', d => `${d.world + 1}/${d.max}`, d => `<div style="font-size: 9pt!important">${getDiffboostDesc(battle.data.diffboost)}[${d.id}]${d.name}</div>`);
+          setDataSub('equip', d => `${d.world + 1}/${d.max}`, d => `<div style="font-size: 9pt!important">${UI.l(...difficulty[battle.data.difficulty]?.names??[])}<br>${getDiffboostDesc(battle.data.diffboost)}[${d.id}]${d.name}</div>`);
       }
       return { title, full: `${UI.byLang(info?.name ?? ['未知', '未知', 'Unknown'])}:[${title}]${subtype}` };
     }
@@ -6588,8 +6588,8 @@
       `${(_server.isekai) ? UI.l('异世界', '異世界', 'Isekai') : UI.l('恒定世界', '恆定世界', 'Persistent')}`, // 战役模式显示
       `${display.full}`, // 战役模式显示
       `R${battle.data.roundNow}/${battle.data.roundAll}:T${currentTurn}<span style="font-size: 9pt!important">(+${currentActions-currentTurn}*0tic)</span>`,
-      `<div style="font-size: 9pt!important">TPS: ${runtime.runSpeed}<br>${runtime.runTimeGap??''}</div>`,
       `${UI.l('敌人', '敵人', 'Monsters')}: ${realtime.monsterAlive}/${realtime.monsterAll}`,
+      `<div style="font-size: 9pt!important">TPS: ${runtime.runSpeed}<br>${runtime.runTimeGap??''}</div>`,
     ].join(`<br>`).replaceAll(`</div><br>`, `</div>`).replaceAll(`<br></div>`, `</div>`).replaceAll(`<br><div`, `<div`);
     if (!battle.data.roundAll) {
       pauseChange();
