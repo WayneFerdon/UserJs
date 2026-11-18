@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.258
+// @version      2.91.259
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -6590,7 +6590,7 @@
       `R${battle.data.roundNow}/${battle.data.roundAll}:T${currentTurn}<span style="font-size: 9pt!important">(+${currentActions-currentTurn}*0tic)</span>`,
       `${UI.l('敌人', '敵人', 'Monsters')}: ${realtime.monsterAlive}/${realtime.monsterAll}`,
       `<div style="font-size: 9pt!important">TPS: ${runtime.runSpeed}<br>${runtime.runTimeGap??''}</div>`,
-    ].join(`<br>`).replaceAll(`</div><br>`, `</div>`).replaceAll(`<br></div>`, `</div>`).replaceAll(`<br><div`, `<div`);
+    ].join(`<br>`).replaceAll(`</div><br>`, `</div>`).replaceAll(/(<br>)+/g, `<br>`).replaceAll(`<br></div>`, `</div>`).replaceAll(`<br><div`, `<div`);
     if (!battle.data.roundAll) {
       pauseChange();
       $debug.shiftLog();
@@ -7444,9 +7444,9 @@
     if (battle.data?.tower) {
       battle.data.difficulty = Object.keys(difficulty).filter(id => difficulty[id].tower <= battle.data.tower).sortBy(id => -difficulty[id].tower)[0];
       battle.data.diffboost = battle.data.tower > 40 ? (battle.data.tower - 40) * 5 : undefined;
-    } else if (arena.data?.equip) {
-      battle.data.difficulty = arena.data.equip.diffbase-1;
-      battle.data.diffboost = arena.data.equip.diffboost || undefined;
+    } else if (arena.equip?.data) {
+      battle.data.difficulty = arena.equip?.data.diffname;
+      battle.data.diffboost = arena.equip?.data.diffboost || undefined;
     }
 
     const roundPrev = battle.data.roundNow;
@@ -8497,7 +8497,7 @@
     const endPowCache = getScaledEnd.prototype.endPowCache ??= {};
     return Math.floor(0.01 * endBase * level + (endPowCache[level] ??= Math.pow(level, 1.0992) * 0.28948));
   }
-    
+
   function getDiffboostDesc(diffboost, labOnly) {
     return diffboost ? `<br>${labOnly ? 'lab' : ''}+${diffboost}%DMG&HP<br>` : '';
   }
