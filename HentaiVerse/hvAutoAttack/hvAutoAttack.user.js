@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.255
+// @version      2.91.256
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -8345,13 +8345,13 @@
     return setIfChanged('skillOTOS', { data: local.data, old: local.old });
   }
 
-  // TODO TBD 根据lv推测
   /* wiki 公式待确认，可能存在偏差，需要进一步研究
-  *   暂时统计的数据对应的公式：HP = ceil( floor(core * level_mod * class_mod * difficulty_mod + 50) * (1 + chaosRank*0.05) )
-  *   chaosRank = 0..20，每级 +5%，满级 ×2（对应“生命翻倍”）
-  *   core = 100 + monster_level*10 + END(monster_level)*5
-  *   level_mod = MAX(1, (monster_level - 100) * 0.01)
-  *   END(monster_level) = floor(0.01*base_stat*monster_level + monster_level^1.0992 * 0.28948)
+  *   暂时统计的数据对应的公式：
+  *   baseHp = ceil( (floor((100 + level*10 + END(level)*5) * level_mod * difficulty_mod) + 50) * (1 + chaosRank*0.05) )
+  *   HP = stageBoost>1 ? ceil(baseHp * stageBoost) : baseHp
+  *   END(level) = floor(0.01*endBase*level + level^1.0992 * 0.28948)
+  *   stageBoost 沿用 diffboostLab（#34 → 1.25，乘在最外层且再次 ceil；#35 保持 +100%）
+  *   反解：endBase = 13 种族起始值 + 0..25 点，chaosRank = 0..20，逐样本匹配收敛（见 estimateProfile）
   *   核心差异 1：END_wiki = int(0.01 * base_stat * monster_level + (monster_level ^ 1.076675) * 0.3325), 两个常数不同
   *   核心差异 2：HP_wiki = (100 + monster_level * 10 + END * 5) * level_mod * class_mod * difficulty_mod * (1 + chaos_fortitude_rank * 5%), chaos 前实测还有个+50
   *   未知但会被微小参数差异吸收的：core/level_mod/class_mod/difficulty_mod 的运算先后及乘后是否/如何取整，END/+50后的取整方式（但已知必须取整），且均能被END两个参数的微小变化吸收
@@ -8369,14 +8369,135 @@
   *   https://ehwiki.org/wiki/Arena#Arena_Challenges
   *   AR 400, 500 的lab mon HP倍率不确定，wiki是50%/100%，实测400是25%?
   */
-  function getHPFromMonsterDB(battle, monsterDB, name, lv) {
-    let data = monsterDB?.[name]?.data;
-    const legacy = monsterDB?.[name]?.[lv];
-    if (!Array.isArray(data)) return legacy;
-    const base = findHPData(data, lv, battle.data, {});
-    return base?.hp ? base.hp * getHPRatio(battle.data) / getHPRatio(base) : legacy;
+  // 返回 { hp, abs_delta }：abs_delta = |估算 hp - battleData.hp|（battleData 无 hp 时为 0）
+  function calcHPByProfile(level, profile, battleData) {
+    if (!profile) return;
+    const difficultyMod = (difficulty[battleData?.difficulty]?.hpRatio ?? 1) * (1 + (battleData?.diffboost ?? 0) / 100);
+    const stageBoost = profile.classMod ? 1 : 1 + getDiffboostLab(battleData) / 100; // 特殊怪不吃关卡加成
+    const end = getScaledEnd(profile.endBase, level);
+    const levelMod = Math.max(1, (level - 100) * 0.01);
+    const core = (100 + level * 10 + end * 5) * levelMod * (profile.classMod ?? 1) * difficultyMod;
+    const baseHp = Math.ceil((Math.floor(core) + 50) * (1 + profile.chaosRank * 0.05));
+    const hp = stageBoost > 1 ? Math.ceil(baseHp * stageBoost) : baseHp;
+    return { hp, abs_delta: Math.abs(hp - (battleData?.hp ?? hp)) };
   }
 
+  function findSpecialMonster(name, mid) {
+    // 特殊怪静态表：name → [mid, endBase, classMod, chaosRank]
+    //   PostGame/Pony 吃满 chaos(rank20)，其余 rank0；特殊怪不吃关卡加成。
+    const specialMonsterTable = findSpecialMonster.prototype.specialTable ??= {
+      'Manbearpig': [16, 140, 11, 0], 'White Bunneh': [17, 140, 11, 0],
+      'Mithra': [18, 140, 11, 0], 'Dalek': [19, 140, 11, 0],
+      'Konata': [20, 160, 16, 0], 'Mikuru Asahina': [21, 180, 26, 0],
+      'Ryouko Asakura': [22, 180, 26, 0], 'Yuki Nagato': [23, 180, 26, 0],
+      'Real Life': [24, 200, 51, 0], 'Invisible Pink Unicorn': [31, 220, 76, 0],
+      'Flying Spaghetti Monster': [32, 250, 101, 0],
+      'Skuld': [27, 150, 26, 0], 'Urd': [28, 150, 26, 0], 'Verdandi': [29, 150, 26, 0],
+      'Yggdrasil': [30, 150, 21, 0],
+      'Rhaegal': [8223, 270, 26, 0], 'Viserion': [8224, 270, 26, 0], 'Drogon': [8225, 270, 51, 0],
+      'Recycled Boss Rush': [262405, 350, 26, 20], 'Bottomless Dungeon': [262406, 370, 26, 20],
+      'New Game +': [262407, 200, 26, 20], 'Achievement Grind': [262408, 190, 26, 20],
+      'Time Trial Mode': [262409, 170, 26, 20], 'Hardcore Mode': [262410, 245, 26, 20],
+      'Fluttershy': [154404, 245, 26, 20], 'Gummy': [261394, 280, 26, 20],
+      'Rainbow Dash': [261395, 245, 26, 20], 'Twilight Sparkle': [261396, 245, 26, 20],
+      'Rarity': [261397, 245, 26, 20], 'Applejack': [261398, 500, 26, 20],
+      'Pinkie Pie': [261399, 245, 26, 20], 'Angel Bunny': [261400, 190, 26, 20],
+      'Spike': [261793, 315, 26, 20],
+    };
+    const byMid = Object.values(specialMonsterTable).find(v => v[0] === mid);
+    const entry = byMid ?? specialMonsterTable[name];
+    if (!entry) return undefined;
+    // 名字命中但 mid 不符 → 视为玩家同名 lab 怪，不套表
+    if (!byMid && mid != null && entry[0] !== mid) return undefined;
+    return { endBase: entry[1], classMod: entry[2], chaosRank: entry[3] };
+  }
+
+  // 从 record.data 反解怪物 profile，结果连同所依据的最新记录时间写入 record.profile：
+  //   特殊怪按 name/mid 查静态表（endBase/classMod/chaosRank）；lab 怪初始解集=全部格点，
+  //   逐条最新样本匹配（容差默认 ±3），单解即返回、无解跳过、多解则与当前解集取交集；
+  //   全部样本走完仍多解：返回剩余候选中总偏差最小者（并列取第一个）。
+  function estimateProfile(record, name, matchTolerance=3) {
+    if (!record) return undefined;
+    const samples = record.data;
+    const latestTime = Array.isArray(samples) && samples.length ? samples.reduce((max, d) => Math.max(max, d.time ?? 0), 0) : 0;
+    // 没有比上次估算更新的记录：直接复用已有 profile，不重复估算
+    if (record.profile && record.profile.time >= latestTime) return record.profile;
+    if (!samples?.length) return record.profile;
+    // 特殊怪：按 name 或 mid 查表，表值必须能复现样本才算（否则退回 lab 网格）
+    const special = findSpecialMonster(name, record.mid);
+    if (special) {
+      const profile = { endBase: special.endBase, classMod: special.classMod, chaosRank: special.chaosRank };
+      const ok = samples.every(s => calcHPByProfile(s.lv * 1, profile, s)?.abs_delta <= matchTolerance);
+      if (ok) { profile.time = latestTime; record.profile = profile; return profile; }
+      return record.profile;
+    }
+    const labSpecies = {
+      Arthropod: [100, 10], Avion: [40, 6], Beast: [70, 7], Celestial: [50, 6], Daimon: [40, 6],
+      Dragonkin: [90, 9], Elemental: [40, 6], Giant: [120, 10], Humanoid: [50, 6],
+      Mechanoid: [70, 7], Reptilian: [80, 8], Sprite: [20, 6], Undead: [100, 10],
+    };
+    // 全部格点（endBase 去重后 × chaosRank 0..20）；匹配时按时间从新到旧逐条收敛
+    const allProfiles = estimateProfile.prototype.allProfiles ??= [...new Set(
+      Object.values(labSpecies).flatMap(([base, step]) => Array.from({ length: 26 }, (_, points) => base + points * step))
+    )].flatMap(endBase => Array.from({ length: 20 + 1 }, (_, chaosRank) => ({ endBase, chaosRank })));
+    const ordered = samples.slice().sortBy(s => -(s.time ?? 0));  // 最新优先
+    // 筛选时记录每个样本对每个格点的 abs_delta，供“偏差最小回退”直接复用，避免二次全量比对
+    const deltaMaps = [];
+    let candidates = allProfiles, found = undefined;
+    for (let index = 0; index < ordered.length; index++) {
+      const sample = ordered[index];
+      const deltaMap = new Map();
+      for (const profile of allProfiles)
+        deltaMap.set(profile, calcHPByProfile(sample.lv * 1, profile, sample)?.abs_delta);
+      deltaMaps.push(deltaMap);
+      const matched = allProfiles.filter(profile => deltaMap.get(profile) <= matchTolerance);
+      if (matched.length === 1) { found = matched[0]; break; }  // 2.a 单解
+      if (matched.length === 0) continue;                        // 2.b 无解：跳过该样本
+      const intersect = candidates.filter(p => matched.some(m => m.endBase === p.endBase && m.chaosRank === p.chaosRank));
+      if (intersect.length === 0) continue;                      // 3.a 交集为空：跳过
+      if (intersect.length === 1) { found = intersect[0]; break; } // 3.b 交集单解
+      candidates = intersect;                                    // 3.c 交集多解：替换待确认集合
+    }
+    if (!found) {
+      if (candidates.length === 1) found = candidates[0];
+      else {
+        // 仍多解：按记录的 delta 累加总偏差取最小（不再重算 HP）
+        let bestError = Infinity;
+        for (const profile of candidates) {
+          let error = 0;
+          for (const deltaMap of deltaMaps) {
+            error += deltaMap.get(profile) ?? 0;
+            if (error >= bestError) break;                       // 已不可能更优
+          }
+          if (error < bestError) { bestError = error; found = profile; }
+        }
+      }
+    }
+    // 统一写入：解出则连同所依据的最新记录时间写入 profile
+    if (found) {
+      found.time = latestTime;
+      record.profile = found;
+    }
+    return found ?? record.profile;
+  }
+
+  function getHPFromMonsterDB(battle, monsterDB, name, lv) {
+    const record = monsterDB?.[name];
+    const data = record?.data;
+    if (!Array.isArray(data)) return hpFromProfile();
+    const base = findHPData(data, lv, battle.data, {});
+    return base?.hp ? base.hp * getHPRatio(battle.data) / getHPRatio(base) : hpFromProfile();
+
+    function hpFromProfile() { // calc or legacy
+      return calcHPByProfile(lv * 1, estimateProfile(record, name), battle.data)?.hp ?? record?.[lv];
+    };
+  }
+
+  function getScaledEnd(endBase, level) {
+    const endPowCache = getScaledEnd.prototype.endPowCache ??= {};
+    return Math.floor(0.01 * endBase * level + (endPowCache[level] ??= Math.pow(level, 1.0992) * 0.28948));
+  }
+    
   function getDiffboostDesc(diffboost, labOnly) {
     return diffboost ? `<br>${labOnly ? 'lab' : ''}+${diffboost}%DMG&HP<br>` : '';
   }
@@ -8398,7 +8519,8 @@
   }
 
   function getDiffboostLab(base) {
-    return base.diffboostLab === 1 ? 50 : base.diffboostLab === 2 ? 100 : 0;
+    // #34（diffboostLab=1）实测为最外层 ×1.25（+25%），#35（=2）缺少数据暂时保持 +100%
+    return base.diffboostLab === 1 ? 25 : base.diffboostLab === 2 ? 100 : 0;
   }
 
   function fixMonsterStatus(battle) { // 修复monsterStatus
