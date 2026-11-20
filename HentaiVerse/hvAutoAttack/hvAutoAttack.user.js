@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.263
+// @version      2.91.264
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -3060,7 +3060,7 @@
                   '<b>1. ',
                   '<l0>初始血量权重=Log10(目标血量/场上最低血量)</l0><l1>初始血量權重=Log10(目標血量/場上最低血量)</l1><l2>BaseHpWeight = BaseHpRatio*Log10(TargetHP/MaxHPOnField)</l2></b><br>',
                   UI.for('baseHpRatio', UI.l('初始权重系数(>0:低血量优先;<0:高血量优先)', '初始權重係數(>0:低血量優先;<0:高血量優先)', 'BaseHpRatio(>0:low hp first;<0:high hp first)')),
-                  UI.number('baseHpRatio'),
+                  UI.number('baseHpRatio', 1),
                   '<br>',
                   UI.for('unreachableWeight', UI.l('不可命中目标的权重公式', '不可命中目標的權重公式', 'Unreachable Target Weight Formula')),
                   '<l0>不可命中目标的权重公式</l0><l1>不可命中目標的權重公式</l1><l2>Unreachable Target Weight Formula</l2>: ',
