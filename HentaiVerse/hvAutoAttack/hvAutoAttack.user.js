@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.262
+// @version      2.91.263
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -8293,12 +8293,12 @@
     }
     // 3.0 try check skill condition
     skill = 1 * (() => {
-      const conditions = [option.lowSkillCondition, option.middleSkillCondition, option.highSkillCondition];
+      const skillChecks = ['low', 'middle', 'high'].map(t => ({ option: option[`${t}Skill`], condition: option[`${t}SkillCondition`]}));
       for (const lv of range(tier ?? 2, -1, -1)) {
         let id = `1${attackStatus}${lv + 1}` * 1;
         attackTier = lv+1;
         setBattleSkillParam(id, { attackTier });
-        if (isOn(id) && (target = checkCondition(conditions[lv], monsters))) return id;
+        if (isOn(id) && skillChecks[lv].option && (target = checkCondition(skillChecks[lv].condition, monsters))) return id;
         if (tier) return 0;
       }
     })();
