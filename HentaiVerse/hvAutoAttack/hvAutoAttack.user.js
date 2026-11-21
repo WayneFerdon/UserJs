@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.266
+// @version      2.91.267
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -7465,14 +7465,17 @@
 
       for (let i = battleLog.length - 2; i > battleLog.length - 2 - realtime.monsterAll; i--) {
         let hp = battleLog[i].textContent.match(/HP=(\d+)$/)[1] * 1;
+        let lv = battleLog[i].textContent.match(/LV=(\d+)/)[1] * 1;
+        let [_, mid, name] = battleLog[i].textContent.match(/MID=(\d+) \((.*)\) LV/);
         const boss = monsterBoss[order];
-        if (isNaN(hp)) hp = getHPFromMonsterDB(battle, monsterDB.data, monsterNames[order], monsterLvs[order]) ?? monsterStatus[monsterStatus.length - 1].hp;
+        let sim;
+        if (isNaN(hp) || option.hpCacheDebug) sim = getHPFromMonsterDB(battle, monsterDB.data, monsterNames[order], monsterLvs[order]);
+        if (isNaN(hp)) hp = sim ?? monsterStatus[monsterStatus.length - 1].hp;
+        else if (option.hpCacheDebug && sim !== hp) console.log(hp, '-', sim,'=', hp-sim, monsterDB.data[name], battle.data);
         monsterStatus[order] = { order, hp };
         order++;
 
         if (!option.cacheMonsterHP) continue;
-        let lv = battleLog[i].textContent.match(/LV=(\d+)/)[1] * 1;
-        let [_, mid, name] = battleLog[i].textContent.match(/MID=(\d+) \((.*)\) LV/);
         mid*=1;
         if (!name || isNaN(lv) || isNaN(mid)) continue;
         level = lv;
