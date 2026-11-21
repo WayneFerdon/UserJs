@@ -8379,8 +8379,8 @@
     const labBoost = profile.classMod ? 0 : getDiffboostLab(battleData);
     const stageBoost = 1 + ((battleData?.diffboost ?? 0) + labBoost) / (100 * difficultyMod);
     const endPowCache = calcHPByProfile.prototype.endPowCache ??= {};
-    const end = Math.floor(0.01 * profile.endBase * level + (endPowCache[level] ??= Math.pow(level, 1.0992) * 0.28948));
-    const levelMod = Math.max(1, (level - 100) * 0.01);
+    const end = Math.floor(0.01 * profile.endBase * level + (endPowCache[level] ??= Math.pow(level, 1.09792) * 0.291710794));
+    const levelMod = Math.min(4, Math.max(1, (level - 100) * 0.01));
     const core = (100 + level * 10 + end * 5) * levelMod * (profile.classMod ?? 1) * difficultyMod;
     const baseHp = Math.ceil((Math.floor(core) + 50) * (1 + profile.chaosRank * 0.05));
     const hp = stageBoost > 1 ? Math.ceil(baseHp * stageBoost) : baseHp;
