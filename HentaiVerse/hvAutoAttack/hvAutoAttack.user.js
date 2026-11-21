@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.265
+// @version      2.91.266
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -6512,7 +6512,7 @@
           name: ['塔楼', '塔樓', 'The Tower'],
           title: 'TW',
           content: _ => battle.data.tower,
-          format: formatted => `<div style="font-size: 9pt!important">${formatted}${getDiffboostDesc(battle.data.diffboost)}</div>`,
+          format: formatted => `<div style="font-size: 9pt!important">${getDiffboostDesc(battle.data.diffboost)}</div>`,
         }
       }
       const type = battle.data.roundType;
