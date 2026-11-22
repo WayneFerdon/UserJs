@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.267
+// @version      2.91.268
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2302,16 +2302,27 @@
           { id: 'autoPause', names: ['自动暂停', '自動暫停', 'Auto Pause'], values: ['Pause'] },
           { id: 'autoSSDisable', names: ['关闭灵动架式', '關閉靈動架式', 'Disable Sprite'], values: ['SSDisable'] },
           { id: 'autoRecover', names: ['恢复(含治疗)', '恢復(含治療)', 'Recover(& cure)'], values: ['Rec'] },
-          { id: 'useScroll', names: ['使用卷轴', '使用捲軸', 'Use Scroll</l2>'], values: ['Scroll'] },
+          { id: 'useScroll', names: ['使用卷轴', '使用捲軸', 'Use Scroll'], values: ['Scroll'] },
           { id: 'useInfusions', names: ['使用魔药', '使用魔藥', 'Infusions'], values: ['Infus'] },
           { id: 'autoDefend', names: ['自动防御', '自動防禦', 'Auto Defence'], values: ['Def'] },
           { id: 'useChannelSkill', names: ['引导技能', '引導技能', 'Channel Skill'], values: ['Channel'] },
           { id: 'useBuffSkill', names: ['Buff技能', 'Buff技能', 'Buff Skills'], values: ['Buff'] },
-          { id: 'useDeSkill', names: ['Debuff技能', 'Debuff技能', 'Debuff Skills</l2>'], values: ['Debuff'] },
+          { id: 'useDeSkill', names: ['Debuff技能', 'Debuff技能', 'Debuff Skills'], values: ['Debuff'] },
           { id: 'autoFocus', names: ['自动集中', '自動集中', 'Focus'], values: ['Focus'] },
           { id: 'autoSS', names: ['灵动架式(开&关)', '靈動架式(開&關)', 'On & Off Sprite'], values: ['SS'] },
           { id: 'autoSkill', names: ['释放技能', '釋放技能', 'Auto Skill'], values: ['Skill'] },
           { id: 'attack', names: ['自动攻击', '自動攻擊', 'Attack'], values: ['Atk'] },
+          ...Object.entries({
+            Rec: ['FC', 'HE', 'LE', 'HG', 'HP', 'Cure', 'MG', 'MP', 'ME', 'SG', 'SP', 'SE', 'Mystic', 'CC', 'ED'],
+            Buff: ['HD', 'MD', 'SD', 'FV', 'BG', 'SS', 'SL', 'Pr', 'Ab', 'SV', 'Re', 'Ha', 'He', 'AF'],
+            Debuff: ['Sle', 'Bl', 'Slo', 'We', 'Si', 'Dr', 'Im', 'MN', 'Co', 'SleAll', 'BlAll', 'SloAll', 'WeAll', 'SiAll', 'DrAll', 'ImAll', 'MNAll', 'CoAll'],
+            Infus: ['Divinity', 'Darkness', 'Flames', 'Frost', 'Lightning', 'Storms'],
+            Scroll: ['Sw', 'Pr', 'Av', 'Ab', 'Sh', 'Li', 'Go'],
+            Atk: ['T1', 'T2', 'T3', 'physical', 'etherTap'],
+            Skill: ['OFC', 'FRD', 'T3', 'T2', 'T1'],
+          }).map(([k, v]) => {
+            return v.map(i => `${k}:${i}`).map(id => ({ id, names: [id, id, id], values: [id] }));
+          }).reduce((acc, cur) => (acc ?? []).concat(cur ?? []), [])
         ],
         hotkeys: [
           { id: 'pause', names: ['暂停', '暫停', 'Pause']},
@@ -2663,12 +2674,13 @@
                   UI.b(UI.l('战斗执行顺序(未配置的按照下面的顺序)', '戰鬥執行順序(未配置的按照下面的順序)', 'Battal Order(Using order below as default if not configed)')),
                   ': ',
                   UI.for(`battleOrderName`, UI.l('战斗执行顺序', '戰鬥執行順序', 'Battal Order')),
+                  UI.button.class('hvAAShowSubActions', UI.button.details()),
                   UI.labeled('battleOrderDefaultOnly', UI.l('只使用默认顺序', '只使用默認順序', 'Default order only'), 'class="battleOrderNameInner"'),
                   UI.div({
                     args: { class: 'battleOrder battleOrderDefaultOnlyInnerReverted' },
                     inner: [
                       UI.orderValue('battleOrderName'),
-                      UI.hvAATable(UI.repeat(7), '', UI.expendData(UIDatas.battleOrder, (id, names, v) => UI.div(`${UI.labeled(`battleOrder_${id}`, names, `value="${v}"`, 'class="battleOrderNameInner"')}`)))
+                      UI.hvAATable(UI.repeat(7), '', UI.expendData(UIDatas.battleOrder, (id, names, v) => UI.div(`${UI.labeled(`battleOrder_${id}`, names, `value="${v}"`, `class="${v.match(':') ? 'battleOrderSubAction' : ''} battleOrderNameInner"`)}`))),
                     ]
                   }),
                 ),
@@ -3318,6 +3330,9 @@
             ]}),
         ].join('').replace(/{{(.*?)}}/g, '<div class="customize" name="$1"></div>');
 
+        const orderChecks = gE('.battleOrderSubAction', 'all', optionBox);
+        orderChecks.forEach(check => check.parentNode.style.display = 'none');
+
         [...gE('.customize', 'all', optionBox)].map(customize => {
           const name = customize.getAttribute('name');
           let replaced = name.replace('Condition', '');
@@ -3605,6 +3620,12 @@
           const isDisplay = gE('.hvAAArenaLevels', optionBox).style.display !== 'grid';
           this.innerHTML = UI.button.details(isDisplay);
           gE('.hvAAArenaLevels', optionBox).style.display = isDisplay ? 'grid' : 'none';
+        };
+        gE('.hvAAShowSubActions', optionBox).onclick = function () {
+          const orderChecks = gE('.battleOrderSubAction', 'all', optionBox);
+          const isDisplay = orderChecks[0].parentNode.style.display !== 'block';
+          this.innerHTML = UI.button.details(isDisplay);
+          orderChecks.forEach(check => check.parentNode.style.display = isDisplay ? 'block' : 'none');
         };
         gE('.hvAALevelsClear', optionBox).onclick = function () {
           gE('[name="idleArenaLevels"]', optionBox).value = '';
@@ -6617,7 +6638,7 @@
     killBug(); // 解决 HentaiVerse 可能出现的 bug
 
     const taskList = {
-      'Flee': () => {
+      Flee: () => {
         setBattleSkillParam(1001, { flee: 1, skill: 'flee' });
         if (option.autoFlee && checkCondition(option.fleeCondition)) {
           if (option.fleeAlarm) setAlarm('Flee');
@@ -6626,23 +6647,31 @@
           return true;
         }
       },
-      'Cure': () => autoRecover(true),
-      'Pause': () => autoPause(battle),
-      'SSDisable': () => autoSS(true),
-      'Rec': () => autoRecover(false),
-      'Scroll': useScroll,
-      'Infus': useInfusions,
-      'Def': autoDefend,
-      'Channel': useChannelSkill,
-      'Buff': useBuffSkill,
-      'Debuff': useDeSkill,
-      'Focus': autoFocus,
-      'SS': () => autoSS(false),
-      'Skill': autoSkill,
-      'Atk': attack,
+      Cure: () => autoRecover(undefined, true),
+      Pause: () => autoPause(battle),
+      SSDisable: () => autoSS(true),
+      Rec: autoRecover,
+      Scroll: useScroll,
+      Infus: useInfusions,
+      Def: autoDefend,
+      Channel: useChannelSkill,
+      Buff: useBuffSkill,
+      Debuff: useDeSkill,
+      Focus: autoFocus,
+      SS: autoSS,
+      Skill: autoSkill,
+      Atk: attack,
     };
-    const order = ['Flee', ...option.battleOrderDefaultOnly ? [] : splitOrders(option.battleOrderName)];
-
+    let order = ['Flee', ...option.battleOrderDefaultOnly ? [] : splitOrders(option.battleOrderName)];
+    order = order.map(name => {
+      let subAction;
+      [name, subAction] = name.split(':');
+      return { name, subAction, action: () => taskList[name](subAction) };
+    });
+    for (const name in taskList) { 
+      if (order.some(task => task.name === name && !task.subAction)) continue;
+      order.push({name, action: taskList[name]})
+    }
     if (init || currentActions === 0) await waitBattleDelay('BeforeRound');
 
     onTasks();
@@ -6653,20 +6682,15 @@
       const remainDelay = prevActionTime + option.delay - time(0);
       if (remainDelay > 0) await sleep(remainDelay, true);
 
-      const onTask = name => {
-        if (!taskList[name]()) return;
+      order.find(task => {
+        realtime.task = task.name ?? 0;
+        realtime.subAction = task.subAction ?? 0;
+        if (!task.action()) return;
         setIfChanged('battle', battle);
         onStepInDone();
         delete flags.battle;
         return true;
-      }
-      for (const name of range(order).map(i => order[i])) {
-        if (onTask(name)) return;
-        delete taskList[name];
-      }
-      for (let name in taskList) {
-        if (onTask(name)) return;
-      }
+      });
       delete flags.battle;
     }
   }
@@ -7471,7 +7495,12 @@
         let sim;
         if (isNaN(hp) || option.hpCacheDebug) sim = getHPFromMonsterDB(battle, monsterDB.data, monsterNames[order], monsterLvs[order]);
         if (isNaN(hp)) hp = sim ?? monsterStatus[monsterStatus.length - 1].hp;
-        else if (option.hpCacheDebug && sim !== hp) console.log(hp, '-', sim,'=', hp-sim, monsterDB.data[name], battle.data);
+        else if (option.hpCacheDebug && monsterDB.data[name] && (sim !== hp)) {
+          console.log(hp, '-', sim,'=', hp-sim, monsterDB.data[name], battle.data);
+          const TEST = JSON.parse(localStorage.getItem('hvAA-debug') ?? "[]");
+          TEST.push({hp, sim, name, mid, battle, firstLog });
+          localStorage.setItem('hvAA-debug', JSON.stringify(TEST));
+        }
         monsterStatus[order] = { order, hp };
         order++;
 
@@ -7671,17 +7700,18 @@
     return result;
   }
 
-  function autoRecover(isCureOnly) { // 自动回血回魔
+  function autoRecover(subAction, isCureOnly) { // 自动回血回魔
     const option = g.option;
     if (!option.item) return false;
-    const name = splitOrders(option.itemOrderName, getDefaultOrder('itemOrder'));
+    const names = splitOrders(option.itemOrderName, getDefaultOrder('itemOrder'));
     const order = splitOrders(option.itemOrderValue, getDefaultOrder('itemOrder', ord => ord.value.match(/,(.*)/)[1] * 1));
     const cures = [313, 11199, 11501, 10005, 11195, 311];
-    for (const i of range(name)) {
+    for (const i of range(names)) {
       let id = order[i];
+      if (subAction && subAction !== names[i]) continue;
       if (isCureOnly && !cures.includes(id)) continue;
       setBattleSkillParam(id);
-      if (option.item[name[i]] && checkCondition(option[`item${name[i]}Condition`]) && isOn(id)) {
+      if (option.item[names[i]] && checkCondition(option[`item${names[i]}Condition`]) && isOn(id)) {
         updateSkillOTOS(id);
         (gE(`.bti3>div[onmouseover*="(${id})"]`) ?? gE(id)).click();
         return true
@@ -7690,24 +7720,16 @@
     return false;
   }
 
-  function useScroll() { // 自动使用卷轴
+  function useScroll(subAction) { // 自动使用卷轴
     const option = g.option;
-    if (!option.scrollSwitch) {
-      return false;
-    }
-    if (!option.scroll) {
-      return false;
-    }
-    if (!option.scrollRoundType) {
-      return false;
-    }
-    if (!option.scrollRoundType[g.battle.roundType]) {
-      return false;
-    }
+    if (!option.scrollSwitch) return false;
+    if (!option.scroll) return false;
+    if (!option.scrollRoundType) return false;
+    if (!option.scrollRoundType[g.battle.roundType]) return false;
+
     setBattleSkillParam('scroll');
-    if (!checkCondition(option.scrollCondition)) {
-      return false;
-    }
+    if (!checkCondition(option.scrollCondition)) return false;
+
     const scrollLib = useScroll.prototype.scrollLib ??= {
       Go: {
         name: 'Scroll of the Gods',
@@ -7757,9 +7779,8 @@
     };
     const scrollFirst = (option.scrollFirst) ? '_scroll' : '';
     for (const i in scrollLib) {
-      if (!option.scroll[i]) {
-        continue;
-      }
+      if (!option.scroll[i]) continue;
+      if (subAction && subAction !== i) continue;
       const id = scrollLib[i].id;
       if (!gE(`.bti3>div[onmouseover*="(${id})"]`)) {
         continue;
@@ -7796,12 +7817,8 @@
 
   function useChannelSkill() { // 自动施法Channel技能
     const option = g.option;
-    if (!option.channelSkillSwitch) {
-      return false;
-    }
-    if (!getBuff('channeling')) {
-      return false;
-    }
+    if (!option.channelSkillSwitch) return false;
+    if (!getBuff('channeling')) return false;
 
     playerBuffSkillLib.CF.id = getBuff('sparklife') ? undefined : 422;
     if (option.channelSkill) {
@@ -7847,21 +7864,18 @@
     return false;
   }
 
-  function useBuffSkill() { // 自动施法BUFF技能
+  function useBuffSkill(subAction) { // 自动施法BUFF技能
     const option = g.option;
-    if (!option.buffSkillSwitch) {
-      return false;
-    }
-    if (!option.buffSkill) {
-      return false;
-    }
+    if (!option.buffSkillSwitch) return false;
+    if (!option.buffSkill) return false;
+
     setBattleSkillParam('buff');
-    if (!checkCondition(option.buffSkillCondition)) {
-      return false;
-    }
+    if (!checkCondition(option.buffSkillCondition)) return false;
+
     const skillPack = splitOrders(option.buffSkillOrderValue, getDefaultOrder('buffSkillOrder'));
     for (const buff of skillPack) {
       if (!option.buffSkill[buff]) continue;
+      if (subAction && subAction !== buff) continue;
 
       const { id, buffObj, current, threshold, checked } = checkBuffThreshold(buff, option.buffSkillThreshold);
       if (checked) continue;
@@ -7896,6 +7910,7 @@
     };
     for (const i in draughtPack) {
       const id = draughtPack[i].id;
+      if (subAction && subAction !== i) continue;
       setBattleSkillParam(id, { draught: 1});
       if (!getBuff(draughtPack[i].img) && option.buffSkill && option.buffSkill[i] && checkCondition(option[`buffSkill${i}Condition`]) && gE(`.bti3>div[onmouseover*="(${id})"]`)) {
         updateSkillOTOS(id);
@@ -7906,13 +7921,11 @@
     return false;
   }
 
-  function useInfusions() { // 自动使用魔药
+  function useInfusions(subAction) { // 自动使用魔药
     const option = g.option;
     if (!option.infusionSwitch) return false;
     setBattleSkillParam('infusion');
-    if (!checkCondition(option.infusionCondition)) {
-      return false;
-    }
+    if (!checkCondition(option.infusionCondition)) return false;
 
     const onUse = function(status) {
       if (getBuff(infusionLib[status].img)) return false;
@@ -7958,6 +7971,7 @@
     if (!option.infusion) return false;
     const order = splitOrders(option.infusionOrderName, getDefaultOrder('infusionOrder'));
     for (const name of order) {
+      if (subAction && subAction !== name) continue;
       const condition = option[`infusion${name}Condition`];
       const status = infusionLib.findIndex(i => i?.name === name);
       const id = infusionLib[status].id;
@@ -8014,7 +8028,7 @@
 *
 * 优先释放先天和武器技能
 */
-  function autoSkill() {
+  function autoSkill(subAction) {
     const option = g.option;
     if (!option.skillSwitch) return false;
     if (!option.skill) return false;
@@ -8044,9 +8058,9 @@
     const skillOTOS = getValue('skillOTOS', true) ?? {};
     for (let i in skillOrder) {
       let skill = skillOrder[i];
-      if (!skill || !option.skill[skill]) {
-        continue;
-      }
+      if (!skill || !option.skill[skill]) continue;
+      if (subAction && subAction !== skill) continue;
+
       let id = skillLib[skill];
       if (!isOn(id)) {
         continue;
@@ -8069,7 +8083,7 @@
     return false;
   }
 
-  function useDeSkill() { // 自动施法DEBUFF技能
+  function useDeSkill(subAction) { // 自动施法DEBUFF技能
     const option = g.option;
     const monsterStatus = g.battle.monsterStatus;
     setBattleSkillParam('debuff');
@@ -8081,6 +8095,12 @@
     let skillPack = splitOrders(option.debuffSkillOrderAllValue, getDefaultOrder('debuffSkillOrderAll'));
     for (let i = 0; i < skillPack.length; i++) {
       let buff = skillPack[i];
+      if (subAction && subAction !== `${buff}All`) { 
+        skillPack.splice(i, 1);
+        i--;
+        continue;
+      }
+
       if (option[`debuffSkill${buff}All`]) { // 是否启用
         const skill = monsterBuffSkillLib[buff];
         const id = skill.id*1;
@@ -8101,6 +8121,7 @@
       let buff = skillPack[i];
       const isToAll = i < toAllCount;
       if (!isToAll) { // 非先全体
+        if (subAction && subAction !== buff) continue;
         const skill = monsterBuffSkillLib[skillPack[i]];
         const id = skill.id*1;
         setBattleSkillParam(id, { debuff: buff });
@@ -8108,6 +8129,7 @@
           continue;
         }
       }
+      else if (subAction && subAction !== `${buff}All`) continue;
       let succeed = useDebuffSkill(buff, isToAll);
       // 前 toAllCount 个都是先给全体上的
       if (succeed) {
@@ -8206,14 +8228,14 @@
   function getCurrentAttackStatus() {
     let current = realtime.attackStatusCurrent;
     if (current === undefined) { // first stack of condition
-      attack(true);
+      attack(undefined, true);
       current = realtime.attackStatusCurrent
       realtime.attackStatusCurrent = undefined;
     }
     return current;
   }
 
-  function attack(selectStatusOnly = false) { // 自动打怪
+  function attack(subAction, selectStatusOnly = false) { // 自动打怪
     const option = g.option;
     const monsters = g.battle.monsterStatus;
     if (option.attackStatusSwitch) {
@@ -8226,16 +8248,16 @@
           realtime.attackStatusCurrent = status;
           setBattleSkillParam('switch', { tier });
           if (!checkCondition(option[`attackStatusSwitchCondition${status}`], monsters)) continue;
-          if (onAttack(status, selectStatusOnly, tier)) return true;
+          if (onAttack(status, selectStatusOnly, tier, subAction)) return true;
         }
         if (tier === undefined) break;
       }
     }
     realtime.attackStatusCurrent = realtime.attackStatus;
-    return onAttack(realtime.attackStatus, selectStatusOnly);
+    return onAttack(realtime.attackStatus, selectStatusOnly, undefined, subAction);
   }
 
-  function onAttack(attackStatus, selectStatusOnly = false, tier = undefined) {
+  function onAttack(attackStatus, selectStatusOnly = false, tier = undefined, subAction) {
     const updateAbility = onAttack.prototype.updateAbility ??= {
       4301: { //火
         111: [3, 4, 4, 5, 5, 5, 5, 5],
@@ -8286,6 +8308,8 @@
       setBattleSkillParam('attack', { range: skillRange });
       return tryAttack();
     }
+    if (subAction === 'physical') return;
+
     // 2. etherTap
     if (option.etherTap && getBuff('coalescemana', getMonsterID(target))) {
       const expiring = [getBuffStackFromImg, getBuffTurnFromImg].map(getter => getter(getBuff('wpn_et')) <= 1).reduce((acc, cur) => acc || cur);
@@ -8294,6 +8318,8 @@
         return tryAttack();
       }
     }
+    if (subAction === 'etherTap') return;
+
     // 3.0 try check skill condition
     skill = 1 * (() => {
       const skillChecks = ['low', 'middle', 'high'].map(t => ({ option: option[`${t}Skill`], condition: option[`${t}SkillCondition`]}));
@@ -8322,12 +8348,10 @@
     return tryAttack(skill);
 
     function tryAttack (skill=0) {
-      if (!target || target.isDead) {
-        return false;
-      }
-      if (selectStatusOnly) {
-        return true;
-      }
+      if (!target || target.isDead) return false;
+      if (subAction && ![`${skill}`, `T${skill%10}`].includes(subAction)) return false;
+
+      if (selectStatusOnly) return true;
       if (skill && gE(skill)) {
         updateSkillOTOS(skill, `attackStatus${attackStatus}`, `attackTier${attackTier}`);
         gE(skill).click();
