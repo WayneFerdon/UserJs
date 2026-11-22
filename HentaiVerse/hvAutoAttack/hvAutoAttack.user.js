@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.268
+// @version      2.91.269
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -2662,6 +2662,7 @@
                   UI.div(UI.l('频率指示符号', '頻率指示符號', 'Frequency Signal'), ': ', UI.text('frequencySign1'), ' & ', UI.text('frequencySign2')),
                   UI.hidden(UI.for('frequencySign1', UI.l('频率指示符号 1', '頻率指示符號 1', 'Frequency Signal 1'))),
                   UI.hidden(UI.for('frequencySign2', UI.l('频率指示符号 2', '頻率指示符號 2', 'Frequency Signal 2'))),
+                  UI.labeled(`hideTurnVictory`, UI.l('隐藏turn胜利弹窗', '隱藏turn勝利彈窗', 'Hide turn victory popup'))
                 ),
                 UI.div({
                   args: { style: 'color:red;' },
@@ -7058,6 +7059,7 @@
           case realtime.monsterAlive > 0: return setExitBattleTimeout('Defeat');
           case g.battle.roundNow === g.battle.roundAll: return setExitBattleTimeout('Victory');
         }
+        if (option.hideTurnVictory && gE('#btcp')) gE('#btcp').style.display = 'none'
         await waitBattleDelay('NewRound');
         if (gE('#btcp')?.innerHTML.includes("finishbattle.png")) return console.error(`gE('#btcp')?.innerHTML.includes("finishbattle.png")`);
         await checkURLBeforeNewRound();
