@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.269
+// @version      2.91.270
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -7441,6 +7441,7 @@
     const firstLog = battleLog[battleLog.length - 1]?.textContent;
 
     battle.data.difficulty = getValue('difficulty');
+    battle.data.version = g.hvVersion.ver;
 
     if (firstLog && (!battle.data.roundType || firstLog.match(/^Initializing/))) {
       battle.data.tower = (firstLog.match(/\(Floor (\d+)\)/) ?? [null])[1] * 1;
@@ -7470,9 +7471,11 @@
     if (battle.data?.tower) {
       battle.data.difficulty = Object.keys(difficulty).filter(id => difficulty[id].tower <= battle.data.tower).sortBy(id => -difficulty[id].tower)[0];
       battle.data.diffboost = battle.data.tower > 40 ? (battle.data.tower - 40) * 5 : undefined;
-    } else if (arena.equip?.data) {
-      battle.data.difficulty = arena.equip?.data.diffname;
-      battle.data.diffboost = arena.equip?.data.diffboost || undefined;
+    } else if (battle.data.roundType === 'iw') {
+      const iwEquip = arena.equip?.data;
+      battle.data.iwBoostUnknown = !iwEquip;
+      battle.data.difficulty = iwEquip?.diffname;
+      battle.data.diffboost = iwEquip ? (iwEquip.diffboost || 0) : undefined;
     }
 
     const roundPrev = battle.data.roundNow;
@@ -7485,7 +7488,7 @@
       const monsterDB = getWithStringfied('monsterDB', true, {});
       const monsterMID = getWithStringfied('monsterMID', true, {});
       const pickBase = base => {
-        const keys = ['difficulty', 'diffboost', 'diffboostLab'];
+        const keys = ['difficulty', 'diffboost', 'diffboostLab', 'version'];
         return Object.fromEntries(Object.entries(base).filter(([k, v]) => keys.includes(k)))
       }
 
@@ -7497,10 +7500,10 @@
         let sim;
         if (isNaN(hp) || option.hpCacheDebug) sim = getHPFromMonsterDB(battle, monsterDB.data, monsterNames[order], monsterLvs[order]);
         if (isNaN(hp)) hp = sim ?? monsterStatus[monsterStatus.length - 1].hp;
-        else if (option.hpCacheDebug && monsterDB.data[name] && (sim !== hp)) {
+        else if (option.hpCacheDebug && !battle.data.iwBoostUnknown && monsterDB.data[name] && (sim !== hp)) {
           console.log(hp, '-', sim,'=', hp-sim, monsterDB.data[name], battle.data);
           const TEST = JSON.parse(localStorage.getItem('hvAA-debug') ?? "[]");
-          TEST.push({hp, sim, name, mid, battle, firstLog });
+          TEST.push({ hp, sim, name, mid, battle, firstLog, time: time(0) });
           localStorage.setItem('hvAA-debug', JSON.stringify(TEST));
         }
         monsterStatus[order] = { order, hp };
@@ -7520,7 +7523,7 @@
           delete monsterMID.data[mid];
         }
         monsterDB.data[name].mid = mid;
-        if (battle.data.difficulty) {
+        if (battle.data.difficulty && !battle.data.iwBoostUnknown) {
           let hpData = monsterDB.data[name].data ??= [];
           let base = findHPData(hpData, lv, battle.data);
           if (!base) {
@@ -8380,7 +8383,10 @@
   *     - diffboost：IW/tower 加成，作用所有怪（UI 显示 "+X%DMG&HP"）
   *     - boostLab：arena #34/+50%、#35/+100%，lab-only，特殊怪排除（UI 显示 "lab+X%DMG&HP"）
   *     - #34 锁定难度2 → 分母 200 → 最外层 ×1.25（wiki 标称 +50%）；#35 缺数据，同结构 ×1.5
-  *   level_mod = MAX(1, (level-100)*0.01)（数据侧 lv>500 有封顶 4 的发现，本脚本未采用）
+  *   level_mod = clamp(level-100)*0.01, 1, 4)
+  *   服务器参数表差异：wiki 的 classMod 是 1+boost 形式；091e对 MID 16–24
+  *     这批怪把 boost 减半 → classModEff = 1 + (classMod-1)/2 = (classMod+1)/2。
+  *     公式链不变，只换算参数
   *   endBase = 13 种族起始值 + clamp(起始/10, 6, 10) * 0..25 点，chaosRank = 0..20，逐样本匹配收敛（见 estimateProfile）
   *   与 wiki 的差异：END 两常数不同（wiki 用 1.076675 / 0.3325）；chaos 的 +50 为实测补充项
   *   refs:
@@ -8410,40 +8416,41 @@
     const endPowCache = calcHPByProfile.prototype.endPowCache ??= {};
     const end = Math.floor(0.01 * profile.endBase * level + (endPowCache[level] ??= Math.pow(level, 1.09792) * 0.291710794));
     const levelMod = Math.min(4, Math.max(1, (level - 100) * 0.01));
-    const core = (100 + level * 10 + end * 5) * levelMod * (profile.classMod ?? 1) * difficultyMod;
+    const cmRatio = [16, 17, 18, 19, 20, 21, 22, 23, 24].includes(profile.mid) && Version(battleData?.version ?? g.hvVersion.ver).upto(Version('091.e')) ? 0.5 : 1;
+    const core = (100 + level * 10 + end * 5) * levelMod * (1 + (profile.classMod ?? 0) * cmRatio) * difficultyMod;
     const baseHp = Math.ceil((Math.floor(core) + 50) * (1 + profile.chaosRank * 0.05));
     const hp = stageBoost > 1 ? Math.ceil(baseHp * stageBoost) : baseHp;
     return { hp, abs_delta: Math.abs(hp - (battleData?.hp ?? hp)) };
   }
 
   function findSpecialMonster(name, mid) {
-    // 特殊怪静态表：name → [mid, endBase, classMod, chaosRank]
+    // 特殊怪静态表：name → [mid, endBase, boost(=cm_wiki-1), chaosRank]
     //   PostGame/Pony 吃满 chaos(rank20)，其余 rank0；特殊怪只排除 boostLab，diffboost 保留。
     const specialMonsterTable = findSpecialMonster.prototype.specialTable ??= {
-      'Manbearpig': [16, 140, 11, 0], 'White Bunneh': [17, 140, 11, 0],
-      'Mithra': [18, 140, 11, 0], 'Dalek': [19, 140, 11, 0],
-      'Konata': [20, 160, 16, 0], 'Mikuru Asahina': [21, 180, 26, 0],
-      'Ryouko Asakura': [22, 180, 26, 0], 'Yuki Nagato': [23, 180, 26, 0],
-      'Real Life': [24, 200, 51, 0], 'Invisible Pink Unicorn': [31, 220, 76, 0],
-      'Flying Spaghetti Monster': [32, 250, 101, 0],
-      'Skuld': [27, 150, 26, 0], 'Urd': [28, 150, 26, 0], 'Verdandi': [29, 150, 26, 0],
-      'Yggdrasil': [30, 150, 21, 0],
-      'Rhaegal': [8223, 270, 26, 0], 'Viserion': [8224, 270, 26, 0], 'Drogon': [8225, 270, 51, 0],
-      'Recycled Boss Rush': [262405, 350, 26, 20], 'Bottomless Dungeon': [262406, 370, 26, 20],
-      'New Game +': [262407, 200, 26, 20], 'Achievement Grind': [262408, 190, 26, 20],
-      'Time Trial Mode': [262409, 170, 26, 20], 'Hardcore Mode': [262410, 245, 26, 20],
-      'Fluttershy': [154404, 245, 26, 20], 'Gummy': [261394, 280, 26, 20],
-      'Rainbow Dash': [261395, 245, 26, 20], 'Twilight Sparkle': [261396, 245, 26, 20],
-      'Rarity': [261397, 245, 26, 20], 'Applejack': [261398, 500, 26, 20],
-      'Pinkie Pie': [261399, 245, 26, 20], 'Angel Bunny': [261400, 190, 26, 20],
-      'Spike': [261793, 315, 26, 20],
+      'Manbearpig': [16, 140, 10, 0], 'White Bunneh': [17, 140, 10, 0],
+      'Mithra': [18, 140, 10, 0], 'Dalek': [19, 140, 10, 0],
+      'Konata': [20, 160, 15, 0], 'Mikuru Asahina': [21, 180, 25, 0],
+      'Ryouko Asakura': [22, 180, 25, 0], 'Yuki Nagato': [23, 180, 25, 0],
+      'Real Life': [24, 200, 50, 0], 'Invisible Pink Unicorn': [31, 220, 75, 0],
+      'Flying Spaghetti Monster': [32, 250, 100, 0],
+      'Skuld': [27, 150, 25, 0], 'Urd': [28, 150, 25, 0], 'Verdandi': [29, 150, 25, 0],
+      'Yggdrasil': [30, 150, 20, 0],
+      'Rhaegal': [8223, 270, 25, 0], 'Viserion': [8224, 270, 25, 0], 'Drogon': [8225, 270, 50, 0],
+      'Recycled Boss Rush': [262405, 350, 25, 20], 'Bottomless Dungeon': [262406, 370, 25, 20],
+      'New Game +': [262407, 200, 25, 20], 'Achievement Grind': [262408, 190, 25, 20],
+      'Time Trial Mode': [262409, 170, 25, 20], 'Hardcore Mode': [262410, 245, 25, 20],
+      'Fluttershy': [154404, 245, 25, 20], 'Gummy': [261394, 280, 25, 20],
+      'Rainbow Dash': [261395, 245, 25, 20], 'Twilight Sparkle': [261396, 245, 25, 20],
+      'Rarity': [261397, 245, 25, 20], 'Applejack': [261398, 500, 25, 20],
+      'Pinkie Pie': [261399, 245, 25, 20], 'Angel Bunny': [261400, 190, 25, 20],
+      'Spike': [261793, 315, 25, 20],
     };
     const byMid = Object.values(specialMonsterTable).find(v => v[0] === mid);
     const entry = byMid ?? specialMonsterTable[name];
     if (!entry) return undefined;
     // 名字命中但 mid 不符 → 视为玩家同名 lab 怪，不套表
     if (!byMid && mid != null && entry[0] !== mid) return undefined;
-    return { endBase: entry[1], classMod: entry[2], chaosRank: entry[3] };
+    return { mid: entry[0], endBase: entry[1], classMod: entry[2], chaosRank: entry[3] };
   }
 
   // 从 record.data 反解怪物 profile，结果连同所依据的最新记录时间写入 record.profile：
@@ -8460,7 +8467,7 @@
     // 特殊怪：按 name 或 mid 查表，表值必须能复现样本才算（否则退回 lab 网格）
     const special = findSpecialMonster(name, record.mid);
     if (special) {
-      const profile = { endBase: special.endBase, classMod: special.classMod, chaosRank: special.chaosRank };
+      const profile = { mid: special.mid, endBase: special.endBase, classMod: special.classMod, chaosRank: special.chaosRank };
       const ok = samples.every(s => calcHPByProfile(s.lv * 1, profile, s)?.abs_delta <= matchTolerance);
       if (ok) { profile.time = latestTime; record.profile = profile; return profile; }
       return record.profile;
@@ -8549,7 +8556,8 @@
     difficulty ??= data.sortBy(d => -d.lv)[0]?.difficulty;
     for (const d of data) {
       if (d.lv*1 !== lv*1) continue;
-      if (d.difficulty === target.difficulty && (d.diffboost??0) === (target.diffboost??0) && (d.diffboostLab??0) === (target.diffboostLab??0)) return d;
+      const sameVer = !d.version || !target.version || d.version === target.version;
+      if (sameVer && d.difficulty === target.difficulty && (d.diffboost??0) === (target.diffboost??0) && (d.diffboostLab??0) === (target.diffboostLab??0)) return d;
       if (loosely) loosely = d;
     }
     return loosely;
