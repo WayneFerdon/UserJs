@@ -210,10 +210,11 @@ PS: 对于需要带下划线`_`开头的func式变量，可以省略`_`开头（
 | Flower Vase / flowers | Bubble-Gum / gum | Blessing of the RiddleMaster / riddlemaster |
 | Sleep / sleep | Blind / blind | Slow / slow |
 | Imperil / imperil | MagNet / magnet | Silence / silence |
-| Drain / drainhp | Weaken / weaken | Confuse / confuse |
-| Coalesced Mana / coalescemana | Stunned / stun / wpn_stun | Penetrated Armor / ap / wpn_ap |
-| Bleeding Wound / bleed / wpn_bleed | Absorbing Ward / absorb | Fury of the Sisters / trio_furyofthesisters |
-| Lamentations of the Future / trio_skuld | Screams of the Past / trio_urd | Wailings of the Present / trio_verdandi | Searing Skin / firedot | Freezing Limbs / coldslow |
+| Drain / drainhp | Ether Theft / drainmp | Spirit Theft / drainsp |
+| Weaken / weaken | Confuse / confuse | Coalesced Mana / coalescemana |
+| Stunned / stun / wpn_stun | Penetrated Armor / ap / wpn_ap | Bleeding Wound / bleed / wpn_bleed |
+| Absorbing Ward / absorb | Fury of the Sisters / trio_furyofthesisters | Lamentations of the Future / trio_skuld |
+| Screams of the Past / trio_urd | Wailings of the Present / trio_verdandi | Searing Skin / firedot |
 | Freezing Limbs / coldslow | Turbulent Air / windmiss | Deep Burns / elecweak |
 | Searing Skin / firedot | - | Breached Defense / holybreach |
 Blunted Attack / darknerf | Burning Soul / soulfire | Ripened Soul / ripesoul |
