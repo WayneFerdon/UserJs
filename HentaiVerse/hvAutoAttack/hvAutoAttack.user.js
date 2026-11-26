@@ -3080,7 +3080,7 @@
                   UI.text('unreachableWeight', 'placeholder="1000"'),
                   '<br>',
                   UI.for('YggdrasilExtraWeight', UI.l('BOSS:Yggdrasil额外权重', 'BOSS:Yggdrasil额外权重', 'BOSS:Yggdrasil Extra Weight')),
-                  '<l0>BOSS:Yggdrasil额外权重</l0><l1>BOSS:Yggdrasil额外权重</l1><l2>BOSS:Yggdrasil Extra Weight</l2></b>',
+                  '</b>',
                   UI.number('YggdrasilExtraWeight', -1000),
                   '<br>',
                   UI.labeled('cacheMonsterHP', UI.l('启用HP缓存', '啟用HP緩存', 'Use HP Cache')),
