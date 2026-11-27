@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.270
+// @version      2.91.271
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -8374,7 +8374,8 @@
   }
 
   /* monster HP 公式
-  *   END(level) = floor(0.01*endBase*level + level^1.0992 * 0.28948)
+  *   END(level) = floor(0.01*endBase*level + level^p * c)
+  *     p,c 按版本分池：091.c(Persistent)=1.09300/0.3006995；091.e+(Isekai)=1.10135/0.28600798
   *   difficulty = 1 + hpboost  （Normal 0 / Hard .1 / Nightmare .2 / Hell .4 / Nintendo .7 / IWBTH·PFUDOR 1）
   *   baseHp = ceil( (floor((100 + level*10 + END(level)*5) * level_mod * class_mod * difficulty) + 50) * (1 + chaosRank*0.05) )
   *   HP = stageBoost > 1 ? ceil(baseHp * stageBoost) : baseHp
@@ -8383,7 +8384,7 @@
   *     - diffboost：IW/tower 加成，作用所有怪（UI 显示 "+X%DMG&HP"）
   *     - boostLab：arena #34/+50%、#35/+100%，lab-only，特殊怪排除（UI 显示 "lab+X%DMG&HP"）
   *     - #34 锁定难度2 → 分母 200 → 最外层 ×1.25（wiki 标称 +50%）；#35 缺数据，同结构 ×1.5
-  *   level_mod = clamp(level-100)*0.01, 1, 4)
+  *   level_mod = clamp(level-100) / 100, 1, 4)
   *   服务器参数表差异：wiki 的 classMod 是 1+boost 形式；091e对 MID 16–24
   *     这批怪把 boost 减半 → classModEff = 1 + (classMod-1)/2 = (classMod+1)/2。
   *     公式链不变，只换算参数
@@ -8413,10 +8414,19 @@
     // diffboost（IW/tower）作用所有怪（UI 显示 "X%" 无 lab 前缀），特殊怪保留。
     const labBoost = profile.classMod ? 0 : getDiffboostLab(battleData);
     const stageBoost = 1 + ((battleData?.diffboost ?? 0) + labBoost) / (100 * difficultyMod);
+    // END 缩放幂律常数按版本分池（2026-11-27 分池拟合；两池均 100% 精确）：
+    //   091.c Persistent → p=1.09300 / c=0.3006995
+    //   091.e+ Isekai    → p=1.10135 / c=0.28600798
+    // 阈值与 cmRatio 共用 091.e；缺 version 时按当前版本 g.hvVersion.ver。
+    const version = battleData?.version ?? g.hvVersion.ver;
+    const v091e = Version(version).upto(Version('091.e'));
+    const endExp = v091e ? 1.10135 : 1.09300;
+    const endCoef = v091e ? 0.28600798 : 0.3006995;
     const endPowCache = calcHPByProfile.prototype.endPowCache ??= {};
-    const end = Math.floor(0.01 * profile.endBase * level + (endPowCache[level] ??= Math.pow(level, 1.09792) * 0.291710794));
-    const levelMod = Math.min(4, Math.max(1, (level - 100) * 0.01));
-    const cmRatio = [16, 17, 18, 19, 20, 21, 22, 23, 24].includes(profile.mid) && Version(battleData?.version ?? g.hvVersion.ver).upto(Version('091.e')) ? 0.5 : 1;
+    const powKey = level + '|' + (v091e ? 'i' : 'p');
+    const end = Math.floor(0.01 * profile.endBase * level + (endPowCache[powKey] ??= Math.pow(level, endExp) * endCoef));
+    const levelMod = Math.min(4, Math.max(1, (level - 100) / 100));
+    const cmRatio = [16, 17, 18, 19, 20, 21, 22, 23, 24].includes(profile.mid) && v091e ? 0.5 : 1;
     const core = (100 + level * 10 + end * 5) * levelMod * (1 + (profile.classMod ?? 0) * cmRatio) * difficultyMod;
     const baseHp = Math.ceil((Math.floor(core) + 50) * (1 + profile.chaosRank * 0.05));
     const hp = stageBoost > 1 ? Math.ceil(baseHp * stageBoost) : baseHp;
