@@ -6,7 +6,7 @@
 // @description  HV auto attack script, for the first user, should configure before use it.
 // @description:zh-CN HV自动打怪脚本，初次使用，请先设置好选项，请确认字体设置正常
 // @description:zh-TW HV自動打怪腳本，初次使用，請先設置好選項，請確認字體設置正常
-// @version      2.91.271
+// @version      2.91.272
 // @author       dodying
 // @namespace    https://github.com/dodying/
 // @supportURL   https://github.com/dodying/UserJs/issues
@@ -447,6 +447,9 @@
       },
       continue: function (option) {
         return `${UI.l('继续', '繼續', 'Continue', 'style="color:red;"')}<span style="color:red;">${(option.pauseHotkey && option.pauseHotkeyStr) ? `(${option.pauseHotkeyStr})` : ''}</span>`;
+      },
+      alt: function (option) {
+        return (window.location.host.includes('alt') ? `<span>ExitAlt</span>` : `<span>ToAlt</span>`) + `${(option.altHotkey && option.altHotkeyStr) ? `(${option.altHotkeyStr})` : '' }`;
       },
     },
     expendData: function (datas, method) {
@@ -1619,94 +1622,40 @@
     }
 
     function setPauseUI(parent) {
-      setPauseButton(parent);
-      setPauseHotkey();
-      setStepInButton(parent);
-      setStepInHotkey();
-      setAltButton(parent);
-      setAltHotkey();
-    }
-
-    function setPauseButton(parent) {
       const option = g.option;
-      if (!option.pauseButton) {
-        return;
-      }
-      const button = parent.appendChild(cE('button'));
-      button.innerHTML = UI.button.pause(option);
-      if (getPause()) { // 如果禁用
-        runtime.document.title = titlePause();
-        button.innerHTML = UI.button.continue(option);
-      }
-      button.className = 'pauseChange';
-      button.onclick = pauseChange;
-    }
+      const bindings = {
+        pause: { method: pauseChange, extra: button => {
+          if (!getPause()) return;
+          runtime.document.title = titlePause();
+          pauseButton.innerHTML = UI.button.continue(option);
+        }},
+        stepIn: { method: stepIn },
+        alt: { method: gotoAlt },
+        switchOptionUI: { method: gE('.hvAAButton').onclick, condition: e => !!(e.target.name?.match('HotkeyStr')), disableBtn: true },
+      };
+      Object.entries(bindings).forEach(([name, data]) => {
+        let button, { method, condition, extra, disableBtn } = data;
+        if (!name.disableBtn) button = setHVAAButton(name, method);
+        if (extra) data.extra(button);
+        setHVAAHotkey(name, method, condition);
+      });
 
-    function setPauseHotkey() {
-      const option = g.option;
-      if (!option.pauseHotkey) {
-        return;
+      function setHVAAButton(name, onclick, html) {
+        if (!option[`${name}Button`]) return;
+        const button = parent.appendChild(cE('button'));
+        button.innerHTML = html ?? UI.button[name](option);
+        button.className = onclick.name;
+        button.onclick = () => onclick();
+        return button;
       }
-      document.addEventListener('keydown', (e) => {
-        if (e.target.tagName.toUpperCase() === 'INPUT' || e.target.tagName.toUpperCase() === 'TEXTAREA') {
-          return;
-        }
-        if (e.keyCode === option.pauseHotkeyCode) {
-          pauseChange();
-        }
-      }, false);
-    }
 
-    function setStepInButton(parent) {
-      const option = g.option;
-      if (!option.stepInButton) {
-        return;
+      function setHVAAHotkey(name, method, condition) {
+        if (!option[`${name}Hotkey`]) return;
+        document.addEventListener('keydown', (e) => {
+          if (((typeof condition === 'function') ? condition(e) : undefined) ?? (e.target.tagName.toUpperCase() === 'INPUT' || e.target.tagName.toUpperCase() === 'TEXTAREA')) return;
+          if (e.keyCode === option[`${name}HotkeyCode`]) method();
+        }, false);
       }
-      const button = parent.appendChild(cE('button'));
-      button.innerHTML = UI.button.stepIn(option);
-      button.className = 'stepIn';
-      button.onclick = stepIn;
-    }
-
-    function setStepInHotkey() {
-      const option = g.option;
-      if (!option.stepInHotkey) {
-        return;
-      }
-      document.addEventListener('keydown', (e) => {
-        if (e.target.tagName.toUpperCase() === 'INPUT' || e.target.tagName.toUpperCase() === 'TEXTAREA') {
-          return;
-        }
-        if (e.keyCode === option.stepInHotkeyCode) {
-          stepIn();
-        }
-      }, false);
-    }
-
-    function setAltButton(parent) {
-      const option = g.option;
-      if (!option.altButton) {
-        return;
-      }
-      const button = parent.appendChild(cE('button'));
-      button.innerHTML = (window.location.host.includes('alt') ? `<span>ExitAlt</span>` : `<span>ToAlt</span>`) + `${(option.altHotkey && option.altHotkeyStr) ? `(${option.altHotkeyStr})` : '' }`;
-      button.className = 'gotoAlt';
-      button.onclick = () => gotoAlt();
-    }
-
-    function setAltHotkey() {
-      const option = g.option;
-      if (!option.altHotkey) {
-        return;
-      }
-      document.addEventListener('keydown', (e) => {
-        if (e.target.tagName.toUpperCase() === 'INPUT' || e.target.tagName.toUpperCase() === 'TEXTAREA') {
-          return;
-        }
-        if (e.keyCode === option.altHotkeyCode) {
-          gotoAlt();
-        }
-      }, false);
     }
 
     function getKeys(objArr, prop) {
@@ -2328,6 +2277,7 @@
           { id: 'pause', names: ['暂停', '暫停', 'Pause']},
           { id: 'stepIn', names: ['步进', '步進', 'Step In']},
           { id: 'alt', names: ['Alt切换', 'Alt切換', 'Alt Switch']},
+          { id: 'switchOptionUI', names: ['切换设置界面', '切換設置界面', 'Option UI Switch'], values: [ true ]},
         ],
         attackStatus: [
           { id: 0, names: ['物理', '物理', 'Physical'], values: ['Phys'] },
@@ -2637,7 +2587,7 @@
                   '<br>',
                   UI.labeled('waitHVMonsterDB', UI.l('等待HVMonsterDB加载', '等待HVMonsterDB加載', 'Wait until HV Monster DB loaded')), `. ${UI.for('waitHVMonsterDBTime', UI.hidden(UI.l('等待HVMonsterDB加载', '等待HVMonsterDB加載', 'Wait until HV Monster DB loaded')) + UI.l('最多', '最多', 'Max'))}: ${UI.text('waitHVMonsterDBTime')}ms`,
                   UI.expendData(UIDatas.hotkeys, (id, names, v) => UI.div(
-                    `${UI.labeled(`${id}Button`, `${names}${UI.l('按钮', '按鈕', ' Button')}`)}; ${UI.labeled(`${id}Hotkey`, `${names}${UI.l('热键', '熱鍵', ' Hotkey')}${UI.text(`${id}HotkeyStr`)}`)}${UI.hidden(UI.for(`${id}HotkeyStr`, `${names}${UI.l('热键', '熱鍵', ' Hotkey')}`))}: `,
+                    `${!v ? UI.labeled(`${id}Button`, `${names}${UI.l('按钮', '按鈕', ' Button')}; `) : '' }${UI.labeled(`${id}Hotkey`, `${names}${UI.l('热键', '熱鍵', ' Hotkey')}${UI.text(`${id}HotkeyStr`)}`)}${UI.hidden(UI.for(`${id}HotkeyStr`, `${names}${UI.l('热键', '熱鍵', ' Hotkey')}`))}`,
                     `${UI.number(`${id}HotkeyCode`, 'undefined', 'hidden', '', 'disabled="true"')}`)),
                   UI.div(
                     `${UI.l('警告相关', '警告相關', ' To Warn')}`,
@@ -3555,18 +3505,16 @@
           updateGroup();
         };
         // 标签页-主要选项
-        gE('input[name="pauseHotkeyStr"]', optionBox).onkeyup = function (e) {
-          this.value = (/^[a-z]$/.test(e.key)) ? e.key.toUpperCase() : e.key;
-          gE('input[name="pauseHotkeyCode"]', optionBox).value = e.keyCode;
-        };
-        gE('input[name="stepInHotkeyStr"]', optionBox).onkeyup = function (e) {
-          this.value = (/^[a-z]$/.test(e.key)) ? e.key.toUpperCase() : e.key;
-          gE('input[name="stepInHotkeyCode"]', optionBox).value = e.keyCode;
-        };
-        gE('input[name="altHotkeyStr"]', optionBox).onkeyup = function (e) {
-          this.value = (/^[a-z]$/.test(e.key)) ? e.key.toUpperCase() : e.key;
-          gE('input[name="altHotkeyCode"]', optionBox).value = e.keyCode;
-        };
+        function hotkeyBind (name) {
+          const input = gE(`input[name="${name}HotkeyStr"]`, optionBox);
+          customizeInputAutoFit(input);
+          input.onkeyup = function (e) {
+            gE(`input[name="${name}HotkeyCode"]`, optionBox).value = e.keyCode;
+            input.value = (/^[a-z]$/.test(e.key)) ? e.key.toUpperCase() : e.key;
+            customizeInputAutoFit(input);
+          };
+        }
+        ['pause', 'stepIn', 'alt', 'switchOptionUI'].forEach(hotkeyBind);
         gE('.testAlarm', 'all', optionBox).forEach(button => {
           button.onclick = function () {
             const srcInput = gE('input[type="text"]', button.parentNode);
